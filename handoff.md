@@ -1,8 +1,8 @@
 # Handoff.md - SwiftMandarin iOS Redesign
 
-**Last Updated (UTC):** 2026-02-11T12:00:00Z
+**Last Updated (UTC):** 2026-02-11T12:47:00Z
 **Status:** In Progress
-**Current Focus:** Testing and Validation Phase
+**Current Focus:** Release documentation, packaging, and branch integration
 
 ## 1) Request & Context
 
@@ -92,6 +92,8 @@ Start with core services and models (shared across platforms), then build iOS-fi
 - [ ] Verify Translation API integration — pending
 - [ ] Polish animations and transitions — pending
 - [ ] App icon and branding — pending
+- [x] Create comprehensive README.md with installation, usage, architecture, and screenshots — **completed**
+- [x] Build macOS Release app and package distributable DMG installer — **completed**
 
 ## 5) Findings, Decisions, Assumptions
 
@@ -209,6 +211,9 @@ Start with core services and models (shared across platforms), then build iOS-fi
 | PhrasesView | ✅ Complete | Categories with 50+ phrases |
 | MoreView | ✅ Complete | History, Settings, About |
 | Liquid Glass | ✅ Complete | .glassEffect(), .buttonStyle(.glass) applied |
+| README documentation | ✅ Complete | README.md with install/run/use + screenshot gallery |
+| macOS release build | ✅ Complete | xcodebuild Release build succeeded on 2026-02-11 |
+| DMG packaging | ✅ Complete | dist/SwiftMandarin-2.0-macOS.dmg + SHA256 generated |
 | iPhone full-screen UI | Pending | Requires device testing |
 | Translation API works | Pending | Requires runtime test |
 | iPad sidebar works | Pending | Requires device testing |
@@ -244,6 +249,20 @@ Start with core services and models (shared across platforms), then build iOS-fi
   - Fixed 5 build issues (see Issues section)
   - Build now succeeds for all platforms
   - Ready for device testing
+
+- 2026-02-11 12:47: Documentation and packaging update
+  - Added README.md with platform requirements, installation steps, feature walkthrough, architecture notes, and screenshot sections for macOS/iOS/iPadOS
+  - Structured iPhone screenshots in a horizontal gallery layout for GitHub viewing
+  - Built Release macOS app using xcodebuild with destination platform=macOS
+  - Packaged distributable installer: dist/SwiftMandarin-2.0-macOS.dmg
+  - Verified DMG mount content includes SwiftMandarin.app and Applications symlink
+  - Generated checksum file: dist/SwiftMandarin-2.0-macOS.dmg.sha256
+
+- 2026-02-11 12:53: GitHub delivery and branch integration
+  - Pushed branch updates to origin/v3.0-claude-cross-platform-ship
+  - Merged v3.0 work into origin/main (merge commit 5f4b6b2)
+  - Created branch alias origin/v3.0 pointing to commit e355f7c
+  - Published GitHub release v3.0.0 with DMG and checksum assets
 
 ## Files Created/Modified
 
