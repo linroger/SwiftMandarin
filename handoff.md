@@ -258,6 +258,12 @@ Start with core services and models (shared across platforms), then build iOS-fi
   - Verified DMG mount content includes SwiftMandarin.app and Applications symlink
   - Generated checksum file: dist/SwiftMandarin-2.0-macOS.dmg.sha256
 
+- 2026-02-11 12:53: GitHub delivery and branch integration
+  - Pushed branch updates to origin/v3.0-claude-cross-platform-ship
+  - Merged v3.0 work into origin/main (merge commit 5f4b6b2)
+  - Created branch alias origin/v3.0 pointing to commit e355f7c
+  - Published GitHub release v3.0.0 with DMG and checksum assets
+
 ## Files Created/Modified
 
 ### Models (SwiftMandarin/Models/)
