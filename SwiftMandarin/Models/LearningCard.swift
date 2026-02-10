@@ -1,0 +1,225 @@
+//
+//  LearningCard.swift
+//  SwiftMandarin
+//
+//  Flashcard model for learning with spaced repetition
+//
+
+import Foundation
+import SwiftUI
+import Observation
+
+struct LearningCard: Identifiable, Hashable, Codable {
+    let id: String
+    let chinese: String
+    let english: String
+    let exampleSentence: String?
+    let tags: [String]
+    let notes: String?
+    
+    init(chinese: String, english: String, exampleSentence: String? = nil, tags: [String] = [], notes: String? = nil) {
+        self.id = chinese
+        self.chinese = chinese
+        self.english = english
+        self.exampleSentence = exampleSentence
+        self.tags = tags
+        self.notes = notes
+    }
+}
+
+// MARK: - Card Progress (Spaced Repetition)
+
+struct CardProgress: Codable, Identifiable {
+    let cardId: String
+    var masteryLevel: MasteryLevel
+    var reviewCount: Int
+    var correctCount: Int
+    var lastReviewDate: Date?
+    var nextReviewDate: Date
+    var easeFactor: Double
+    
+    var id: String { cardId }
+    
+    var accuracy: Double {
+        guard reviewCount > 0 else { return 0 }
+        return Double(correctCount) / Double(reviewCount)
+    }
+    
+    init(cardId: String) {
+        self.cardId = cardId
+        self.masteryLevel = .new
+        self.reviewCount = 0
+        self.correctCount = 0
+        self.lastReviewDate = nil
+        self.nextReviewDate = Date()
+        self.easeFactor = 2.5
+    }
+    
+    mutating func recordReview(correct: Bool, quality: ReviewQuality) {
+        reviewCount += 1
+        if correct { correctCount += 1 }
+        lastReviewDate = Date()
+        updateMasteryLevel()
+        calculateNextReview(quality: quality)
+    }
+    
+    private mutating func updateMasteryLevel() {
+        switch accuracy {
+        case 0..<0.3: masteryLevel = .learning
+        case 0.3..<0.5: masteryLevel = .learning
+        case 0.5..<0.7: masteryLevel = .familiar
+        case 0.7..<0.9: masteryLevel = .proficient
+        default: masteryLevel = reviewCount >= 5 ? .mastered : .proficient
+        }
+    }
+    
+    private mutating func calculateNextReview(quality: ReviewQuality) {
+        let q = Double(quality.rawValue)
+        easeFactor = max(1.3, easeFactor + 0.1 - (5.0 - q) * (0.08 + (5.0 - q) * 0.02))
+        
+        let interval: TimeInterval
+        if quality.rawValue < 3 {
+            interval = 60 * 10 // 10 minutes
+        } else {
+            switch reviewCount {
+            case 1: interval = 60 * 60 * 24 // 1 day
+            case 2: interval = 60 * 60 * 24 * 6 // 6 days
+            default:
+                let previousInterval = lastReviewDate.map { Date().timeIntervalSince($0) } ?? (60 * 60 * 24)
+                interval = previousInterval * easeFactor
+            }
+        }
+        nextReviewDate = Date().addingTimeInterval(interval)
+    }
+}
+
+enum MasteryLevel: String, Codable, CaseIterable {
+    case new, learning, familiar, proficient, mastered
+    
+    var label: String {
+        rawValue.capitalized
+    }
+}
+
+enum ReviewQuality: Int, CaseIterable {
+    case blackout = 0
+    case incorrect = 1
+    case difficult = 2
+    case hard = 3
+    case good = 4
+    case easy = 5
+}
+
+// MARK: - Learning Deck (Built-in Cards)
+
+enum LearningDeck {
+    static let cards: [LearningCard] = [
+        LearningCard(chinese: "你好", english: "Hello", exampleSentence: "你好，我是小明。", tags: ["Greeting"]),
+        LearningCard(chinese: "谢谢", english: "Thank you", exampleSentence: "谢谢你的帮助。", tags: ["Polite"]),
+        LearningCard(chinese: "对不起", english: "Sorry", exampleSentence: "对不起，我迟到了。", tags: ["Polite"]),
+        LearningCard(chinese: "没关系", english: "No problem", exampleSentence: "没关系，别担心。", tags: ["Polite"]),
+        LearningCard(chinese: "再见", english: "Goodbye", exampleSentence: "再见，明天见！", tags: ["Greeting"]),
+        LearningCard(chinese: "请问", english: "Excuse me", exampleSentence: "请问，这是哪里？", tags: ["Travel"]),
+        LearningCard(chinese: "多少钱", english: "How much?", exampleSentence: "这个多少钱？", tags: ["Shopping"]),
+        LearningCard(chinese: "我想要这个", english: "I want this", exampleSentence: "我想要这个苹果。", tags: ["Shopping"]),
+        LearningCard(chinese: "卫生间在哪儿", english: "Where is the restroom?", tags: ["Travel"]),
+        LearningCard(chinese: "我叫", english: "My name is...", exampleSentence: "我叫张伟。", tags: ["Intro"]),
+        LearningCard(chinese: "你叫什么名字", english: "What's your name?", tags: ["Intro"]),
+        LearningCard(chinese: "今天", english: "Today", exampleSentence: "今天天气很好。", tags: ["Time"]),
+        LearningCard(chinese: "明天", english: "Tomorrow", exampleSentence: "明天我要去北京。", tags: ["Time"]),
+        LearningCard(chinese: "好吃", english: "Delicious", exampleSentence: "这个菜很好吃！", tags: ["Food"]),
+        LearningCard(chinese: "我们走吧", english: "Let's go", tags: ["Everyday"]),
+    ]
+}
+
+// MARK: - Learning Progress Store
+
+@Observable
+@MainActor
+final class LearningProgressStore {
+    static let shared = LearningProgressStore()
+    
+    private(set) var progress: [String: CardProgress] = [:]
+    private(set) var todayReviewedCount: Int = 0
+    
+    private let storageKey = "learningProgress"
+    private let todayCountKey = "todayReviewedCount"
+    private let lastResetDateKey = "lastProgressResetDate"
+    
+    private init() {
+        load()
+        resetDailyCountIfNeeded()
+    }
+    
+    func getProgress(for cardId: String) -> CardProgress {
+        progress[cardId] ?? CardProgress(cardId: cardId)
+    }
+    
+    func recordReview(cardId: String, quality: ReviewQuality) {
+        var cardProgress = getProgress(for: cardId)
+        let correct = quality.rawValue >= 3
+        cardProgress.recordReview(correct: correct, quality: quality)
+        progress[cardId] = cardProgress
+        todayReviewedCount += 1
+        save()
+    }
+    
+    func getCardsForReview(from cards: [LearningCard], limit: Int = 20) -> [LearningCard] {
+        let now = Date()
+        
+        let sorted = cards.sorted { card1, card2 in
+            let p1 = getProgress(for: card1.id)
+            let p2 = getProgress(for: card2.id)
+            
+            if p1.masteryLevel == .new && p2.masteryLevel != .new { return false }
+            if p1.masteryLevel != .new && p2.masteryLevel == .new { return true }
+            
+            let due1 = p1.nextReviewDate
+            let due2 = p2.nextReviewDate
+            
+            if due1 <= now && due2 > now { return true }
+            if due1 > now && due2 <= now { return false }
+            
+            return due1 < due2
+        }
+        
+        return Array(sorted.prefix(limit))
+    }
+    
+    func getDueCards(from cards: [LearningCard]) -> [LearningCard] {
+        let now = Date()
+        return cards.filter { card in
+            let p = getProgress(for: card.id)
+            return p.nextReviewDate <= now || p.masteryLevel == .new
+        }
+    }
+    
+    func resetProgress() {
+        progress.removeAll()
+        todayReviewedCount = 0
+        save()
+    }
+    
+    private func resetDailyCountIfNeeded() {
+        let lastResetDate = UserDefaults.standard.object(forKey: lastResetDateKey) as? Date ?? .distantPast
+        if !Calendar.current.isDateInToday(lastResetDate) {
+            todayReviewedCount = 0
+            UserDefaults.standard.set(Date(), forKey: lastResetDateKey)
+        }
+    }
+    
+    private func load() {
+        if let data = UserDefaults.standard.data(forKey: storageKey),
+           let decoded = try? JSONDecoder().decode([String: CardProgress].self, from: data) {
+            progress = decoded
+        }
+        todayReviewedCount = UserDefaults.standard.integer(forKey: todayCountKey)
+    }
+    
+    private func save() {
+        if let data = try? JSONEncoder().encode(progress) {
+            UserDefaults.standard.set(data, forKey: storageKey)
+        }
+        UserDefaults.standard.set(todayReviewedCount, forKey: todayCountKey)
+    }
+}

@@ -6,27 +6,29 @@
 //
 
 import SwiftUI
-import SwiftData
 
 @main
 struct SwiftMandarinApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
+    // Shared stores for app-wide state using @Observable
+    @State private var savedTermsStore = SavedTermsStore.shared
+    @State private var historyStore = TranslationHistoryStore.shared
+    @State private var learningStore = LearningProgressStore.shared
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(savedTermsStore)
+                .environment(historyStore)
+                .environment(learningStore)
         }
-        .modelContainer(sharedModelContainer)
+        
+        #if os(macOS)
+        Settings {
+            SettingsView()
+                .environment(savedTermsStore)
+                .environment(historyStore)
+                .environment(learningStore)
+        }
+        #endif
     }
 }
