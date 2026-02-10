@@ -65,6 +65,8 @@ final class TranslationHistoryStore {
         }
         
         save()
+        // Track activity
+        LearningActivityStore.shared.recordTranslationMade()
     }
     
     func remove(_ entry: TranslationHistoryEntry) {

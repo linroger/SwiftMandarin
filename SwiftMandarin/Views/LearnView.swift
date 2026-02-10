@@ -16,7 +16,7 @@ struct LearnView: View {
     @State private var isFlipped: Bool = false
     @State private var showingStats: Bool = false
     @State private var studyMode: StudyMode = .all
-    @State private var cardSource: CardSource = .builtin
+    @State private var cardSource: CardSource = .combined
     
     enum CardSource: String, CaseIterable {
         case builtin = "Built-in Deck"
@@ -37,6 +37,7 @@ struct LearnView: View {
             LearningCard(
                 chinese: term.chinese,
                 english: term.definition,
+                pinyin: term.pinyin.isEmpty ? nil : term.pinyin,
                 exampleSentence: nil,
                 tags: ["Vocabulary"],
                 notes: term.partOfSpeech.isEmpty ? nil : term.partOfSpeech
@@ -153,6 +154,56 @@ struct LearnView: View {
                 currentCardIndex = 0
                 isFlipped = false
             }
+            // Keyboard navigation works on macOS and iOS/iPadOS with hardware keyboard
+            .onKeyPress(.leftArrow) {
+                goToPreviousCard()
+                return .handled
+            }
+            .onKeyPress(.rightArrow) {
+                goToNextCard()
+                return .handled
+            }
+            .onKeyPress(.space) {
+                flipCard()
+                return .handled
+            }
+            .onKeyPress(.return) {
+                flipCard()
+                return .handled
+            }
+        }
+        .focusable()
+    }
+    
+    // MARK: - Keyboard Navigation
+    
+    private func goToPreviousCard() {
+        guard !studyCards.isEmpty else { return }
+        withAnimation {
+            isFlipped = false
+            if currentCardIndex > 0 {
+                currentCardIndex -= 1
+            } else {
+                currentCardIndex = studyCards.count - 1 // Wrap to last card
+            }
+        }
+    }
+    
+    private func goToNextCard() {
+        guard !studyCards.isEmpty else { return }
+        withAnimation {
+            isFlipped = false
+            if currentCardIndex < studyCards.count - 1 {
+                currentCardIndex += 1
+            } else {
+                currentCardIndex = 0 // Wrap to first card
+            }
+        }
+    }
+    
+    private func flipCard() {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+            isFlipped.toggle()
         }
     }
     
@@ -312,8 +363,15 @@ struct FlashcardView: View {
                     Text(card.chinese)
                         .font(.system(size: 72, weight: .medium))
                     
-                    Text(PinyinConverter.coloredPinyin(card.chinese))
-                        .font(.title2)
+                    // Use stored pinyin if available, otherwise convert
+                    if let pinyin = card.pinyin, !pinyin.isEmpty {
+                        Text(pinyin)
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(PinyinConverter.coloredPinyin(card.chinese))
+                            .font(.title2)
+                    }
                     
                     Button {
                         SpeechService.speakChinese(card.chinese)

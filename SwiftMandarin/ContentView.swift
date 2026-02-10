@@ -31,6 +31,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     case vocabulary
     case learn
     case phrases
+    case stats
     case more
     
     var id: String { rawValue }
@@ -42,6 +43,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .vocabulary: return "Vocabulary"
         case .learn: return "Learn"
         case .phrases: return "Phrases"
+        case .stats: return "Stats"
         case .more: return "More"
         }
     }
@@ -53,6 +55,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .vocabulary: return "text.book.closed"
         case .learn: return "brain.head.profile"
         case .phrases: return "quote.bubble"
+        case .stats: return "chart.bar.fill"
         case .more: return "ellipsis.circle"
         }
     }
@@ -85,6 +88,10 @@ struct iOSContentView: View {
                 PhrasesView()
             }
             
+            Tab(AppTab.stats.title, systemImage: AppTab.stats.icon, value: .stats) {
+                StatsView()
+            }
+            
             Tab(AppTab.more.title, systemImage: AppTab.more.icon, value: .more) {
                 MoreView()
             }
@@ -98,9 +105,8 @@ struct iOSContentView: View {
 #if os(macOS)
 struct MacOSContentView: View {
     @Binding var selectedTab: AppTab
-    @State private var showingSettings: Bool = false
     
-    /// Filter out "More" tab on macOS since Settings is in toolbar
+    /// Filter out "More" tab on macOS since Settings is in menu bar
     private var macOSTabs: [AppTab] {
         AppTab.allCases.filter { $0 != .more }
     }
@@ -117,17 +123,13 @@ struct MacOSContentView: View {
             detailView
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            showingSettings = true
-                        } label: {
+                        // Use SettingsLink for proper macOS Settings integration
+                        SettingsLink {
                             Image(systemName: "gear")
                         }
-                        .help("Settings")
+                        .help("Settings (⌘,)")
                     }
                 }
-        }
-        .sheet(isPresented: $showingSettings) {
-            MacOSSettingsView()
         }
     }
     
@@ -144,9 +146,11 @@ struct MacOSContentView: View {
             LearnView()
         case .phrases:
             PhrasesView()
+        case .stats:
+            StatsView()
         case .more:
-            // Redirect to Settings on macOS
-            MacOSSettingsView()
+            // This shouldn't be reachable on macOS, but provide fallback
+            Text("Use ⌘, or the gear button to open Settings")
         }
     }
 }
@@ -159,4 +163,5 @@ struct MacOSContentView: View {
         .environment(SavedTermsStore.shared)
         .environment(TranslationHistoryStore.shared)
         .environment(LearningProgressStore.shared)
+        .environment(LearningActivityStore.shared)
 }

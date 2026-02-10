@@ -13,14 +13,16 @@ struct LearningCard: Identifiable, Hashable, Codable {
     let id: String
     let chinese: String
     let english: String
+    let pinyin: String?
     let exampleSentence: String?
     let tags: [String]
     let notes: String?
     
-    init(chinese: String, english: String, exampleSentence: String? = nil, tags: [String] = [], notes: String? = nil) {
+    init(chinese: String, english: String, pinyin: String? = nil, exampleSentence: String? = nil, tags: [String] = [], notes: String? = nil) {
         self.id = chinese
         self.chinese = chinese
         self.english = english
+        self.pinyin = pinyin
         self.exampleSentence = exampleSentence
         self.tags = tags
         self.notes = notes
@@ -162,6 +164,8 @@ final class LearningProgressStore {
         progress[cardId] = cardProgress
         todayReviewedCount += 1
         save()
+        // Track activity
+        LearningActivityStore.shared.recordReviewCompleted()
     }
     
     func getCardsForReview(from cards: [LearningCard], limit: Int = 20) -> [LearningCard] {

@@ -48,6 +48,9 @@ final class SavedTermsStore {
         didSet { save() }
     }
     
+    /// Public accessor for saved terms (alias for terms)
+    var savedTerms: [SavedTerm] { terms }
+    
     private let saveKey = "savedTerms"
     
     private init() {
@@ -61,6 +64,8 @@ final class SavedTermsStore {
         var newTerm = term
         newTerm.sortOrder = terms.count
         terms.append(newTerm)
+        // Track activity with part of speech
+        LearningActivityStore.shared.recordWordLearned(partOfSpeech: term.partOfSpeech)
     }
     
     func add(chinese: String, pinyin: String, definition: String, partOfSpeech: String = "") {
@@ -74,6 +79,8 @@ final class SavedTermsStore {
             sortOrder: terms.count
         )
         terms.append(newTerm)
+        // Track activity with part of speech
+        LearningActivityStore.shared.recordWordLearned(partOfSpeech: partOfSpeech)
     }
     
     func remove(at offsets: IndexSet) {

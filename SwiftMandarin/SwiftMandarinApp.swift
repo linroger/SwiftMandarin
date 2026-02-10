@@ -13,6 +13,7 @@ struct SwiftMandarinApp: App {
     @State private var savedTermsStore = SavedTermsStore.shared
     @State private var historyStore = TranslationHistoryStore.shared
     @State private var learningStore = LearningProgressStore.shared
+    @State private var activityStore = LearningActivityStore.shared
     
     var body: some Scene {
         WindowGroup {
@@ -20,14 +21,16 @@ struct SwiftMandarinApp: App {
                 .environment(savedTermsStore)
                 .environment(historyStore)
                 .environment(learningStore)
+                .environment(activityStore)
         }
         
         #if os(macOS)
         Settings {
-            SettingsView()
+            MacOSSettingsView()
                 .environment(savedTermsStore)
                 .environment(historyStore)
                 .environment(learningStore)
+                .environment(activityStore)
         }
         #endif
     }
