@@ -23,9 +23,9 @@ struct TranslateView: View {
     
     @State private var translationConfiguration: TranslationSession.Configuration?
     
-    // For word analysis popover
+    // For word analysis popover - using sheet(item:) pattern to avoid race condition
+    // When selectedSegment is set, the sheet automatically shows; when nil, it dismisses
     @State private var selectedSegment: RubySegment?
-    @State private var showWordPopover: Bool = false
     
     // Settings
     @AppStorage("autoTranslate") private var autoTranslate: Bool = false
@@ -162,6 +162,7 @@ struct TranslateView: View {
                 
                 if !sharedState.sourceText.isEmpty {
                     Button {
+                        translationConfiguration = nil
                         sharedState.clear()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -198,6 +199,8 @@ struct TranslateView: View {
                     if autoTranslate && !newValue.isEmpty {
                         triggerTranslation()
                     } else if newValue.isEmpty {
+                        // Reset configuration when text is cleared to ensure next translation triggers
+                        translationConfiguration = nil
                         sharedState.translatedText = ""
                         sharedState.translationError = nil
                     }
@@ -234,6 +237,7 @@ struct TranslateView: View {
                     
                     Button {
                         withAnimation {
+                            translationConfiguration = nil
                             sharedState.clear()
                         }
                     } label: {
@@ -455,8 +459,9 @@ struct TranslateView: View {
                         chineseText: chineseText,
                         englishMeaning: englishText
                     ) { segment in
+                        // Simply set the segment - sheet(item:) will automatically show when non-nil
+                        // This completely eliminates the race condition
                         selectedSegment = segment
-                        showWordPopover = true
                     }
                 }
                 
@@ -486,49 +491,10 @@ struct TranslateView: View {
         )
         .padding(.horizontal)
         #if os(iOS)
-        .sheet(isPresented: $showWordPopover) {
-            if let segment = selectedSegment {
-                NavigationStack {
-                    WordDetailPopover(
-                        segment: segment,
-                        contextTranslation: englishText,
-                        onSave: { definition in
-                            let term = SavedTerm(
-                                chinese: segment.text,
-                                pinyin: segment.pinyin,
-                                definition: definition,
-                                partOfSpeech: segment.partOfSpeech.rawValue
-                            )
-                            if savedTermsStore.contains(chinese: segment.text) {
-                                savedTermsStore.remove(term)
-                            } else {
-                                savedTermsStore.add(term)
-                            }
-                        },
-                        onCopy: {
-                            triggerHaptic()
-                        },
-                        onDismiss: {
-                            showWordPopover = false
-                        }
-                    )
-                    .navigationTitle("Word Details")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") {
-                                showWordPopover = false
-                            }
-                        }
-                    }
-                }
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-            }
-        }
-        #else
-        .popover(isPresented: $showWordPopover) {
-            if let segment = selectedSegment {
+        // Using sheet(item:) eliminates race condition - sheet only shows when item is non-nil
+        // and the item is guaranteed to be available when the sheet content is built
+        .sheet(item: $selectedSegment) { segment in
+            NavigationStack {
                 WordDetailPopover(
                     segment: segment,
                     contextTranslation: englishText,
@@ -545,13 +511,51 @@ struct TranslateView: View {
                             savedTermsStore.add(term)
                         }
                     },
-                    onCopy: {},
+                    onCopy: {
+                        triggerHaptic()
+                    },
                     onDismiss: {
-                        showWordPopover = false
+                        selectedSegment = nil
                     }
                 )
-                .frame(minWidth: 300, minHeight: 350)
+                .navigationTitle("Word Details")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") {
+                            selectedSegment = nil
+                        }
+                    }
+                }
             }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        #else
+        // Using popover(item:) eliminates race condition on macOS
+        .popover(item: $selectedSegment) { segment in
+            WordDetailPopover(
+                segment: segment,
+                contextTranslation: englishText,
+                onSave: { definition in
+                    let term = SavedTerm(
+                        chinese: segment.text,
+                        pinyin: segment.pinyin,
+                        definition: definition,
+                        partOfSpeech: segment.partOfSpeech.rawValue
+                    )
+                    if savedTermsStore.contains(chinese: segment.text) {
+                        savedTermsStore.remove(term)
+                    } else {
+                        savedTermsStore.add(term)
+                    }
+                },
+                onCopy: {},
+                onDismiss: {
+                    selectedSegment = nil
+                }
+            )
+            .frame(minWidth: 300, minHeight: 350)
         }
         #endif
     }
@@ -561,10 +565,19 @@ struct TranslateView: View {
     private func triggerTranslation() {
         guard !sharedState.sourceText.isEmpty else { return }
         
-        translationConfiguration = TranslationSession.Configuration(
-            source: sharedState.direction.sourceLanguage,
-            target: sharedState.direction.targetLanguage
-        )
+        // Apple's recommended pattern for triggering translations:
+        // - First time: Create a new configuration
+        // - Subsequent times: Call invalidate() on existing configuration
+        if translationConfiguration == nil {
+            // First translation - create new configuration
+            translationConfiguration = TranslationSession.Configuration(
+                source: sharedState.direction.sourceLanguage,
+                target: sharedState.direction.targetLanguage
+            )
+        } else {
+            // Subsequent translation - invalidate to re-trigger
+            translationConfiguration?.invalidate()
+        }
     }
     
     private func performTranslation(session: TranslationSession) async {
@@ -600,6 +613,8 @@ struct TranslateView: View {
     }
     
     private func clearAll() {
+        // Reset the translation configuration to ensure next translation triggers properly
+        translationConfiguration = nil
         sharedState.clear()
     }
     

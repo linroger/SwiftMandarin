@@ -98,9 +98,8 @@ struct iOSContentView: View {
 #if os(macOS)
 struct MacOSContentView: View {
     @Binding var selectedTab: AppTab
-    @State private var showingSettings: Bool = false
     
-    /// Filter out "More" tab on macOS since Settings is in toolbar
+    /// Filter out "More" tab on macOS since Settings is in menu bar
     private var macOSTabs: [AppTab] {
         AppTab.allCases.filter { $0 != .more }
     }
@@ -117,17 +116,13 @@ struct MacOSContentView: View {
             detailView
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            showingSettings = true
-                        } label: {
+                        // Use SettingsLink for proper macOS Settings integration
+                        SettingsLink {
                             Image(systemName: "gear")
                         }
-                        .help("Settings")
+                        .help("Settings (⌘,)")
                     }
                 }
-        }
-        .sheet(isPresented: $showingSettings) {
-            MacOSSettingsView()
         }
     }
     
@@ -145,8 +140,8 @@ struct MacOSContentView: View {
         case .phrases:
             PhrasesView()
         case .more:
-            // Redirect to Settings on macOS
-            MacOSSettingsView()
+            // This shouldn't be reachable on macOS, but provide fallback
+            Text("Use ⌘, or the gear button to open Settings")
         }
     }
 }

@@ -24,7 +24,7 @@ struct SwiftMandarinApp: App {
         
         #if os(macOS)
         Settings {
-            SettingsView()
+            MacOSSettingsView()
                 .environment(savedTermsStore)
                 .environment(historyStore)
                 .environment(learningStore)

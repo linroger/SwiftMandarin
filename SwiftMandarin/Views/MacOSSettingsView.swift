@@ -39,8 +39,7 @@ struct MacOSSettingsView: View {
                     Label("Data", systemImage: "externaldrive")
                 }
         }
-        .frame(width: 520, height: 480)
-        .fixedSize()
+        .frame(minWidth: 500, idealWidth: 550, minHeight: 400, idealHeight: 450)
     }
 }
 
@@ -53,50 +52,46 @@ struct GeneralSettingsTab: View {
     @AppStorage("globalHotkey") private var globalHotkey: String = "⌘⇧T"
     
     var body: some View {
-        ScrollView {
-            Form {
-                Section {
-                    Toggle("Launch at Login", isOn: $launchAtLogin)
-                    Toggle("Show in Menu Bar", isOn: $showInMenuBar)
-                    Toggle("Show Dock Icon", isOn: $showDockIcon)
-                } header: {
-                    Text("Startup")
-                }
-                
-                Section {
-                    LabeledContent("Global Hotkey") {
-                        Text(globalHotkey)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(.quaternary)
-                            )
-                    }
-                } header: {
-                    Text("Shortcuts")
-                }
-                
-                Section {
-                    LabeledContent("Version") {
-                        Text("1.0.0")
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    LabeledContent("Build") {
-                        Text("2026.02.11")
-                            .foregroundStyle(.secondary)
-                    }
-                } header: {
-                    Text("About")
-                }
+        Form {
+            Section {
+                Toggle("Launch at Login", isOn: $launchAtLogin)
+                Toggle("Show in Menu Bar", isOn: $showInMenuBar)
+                Toggle("Show Dock Icon", isOn: $showDockIcon)
+            } header: {
+                Text("Startup")
             }
-            .formStyle(.grouped)
+            
+            Section {
+                LabeledContent("Global Hotkey") {
+                    Text(globalHotkey)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(.quaternary)
+                        )
+                }
+            } header: {
+                Text("Shortcuts")
+            }
+            
+            Section {
+                LabeledContent("Version") {
+                    Text("1.0.0")
+                        .foregroundStyle(.secondary)
+                }
+                
+                LabeledContent("Build") {
+                    Text("2026.02.11")
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("About")
+            }
         }
-        .padding(.top, 8)
-        .padding(.horizontal, 8)
-        .padding(.bottom, 8)
+        .formStyle(.grouped)
+        .padding()
     }
 }
 
@@ -112,54 +107,45 @@ struct TranslationSettingsTab: View {
     @AppStorage("maxHistoryEntries") private var maxHistoryEntries: Double = 100
     
     var body: some View {
-        ScrollView {
-            Form {
-                Section {
-                    Picker("Default Direction", selection: $defaultDirection) {
-                        ForEach(TranslationDirection.allCases) { direction in
-                            Text(direction.label).tag(direction.rawValue)
-                        }
+        Form {
+            Section {
+                Picker("Default Direction", selection: $defaultDirection) {
+                    ForEach(TranslationDirection.allCases) { direction in
+                        Text(direction.label).tag(direction.rawValue)
                     }
-                    .pickerStyle(.segmented)
-                    
-                    Toggle("Auto-Translate While Typing", isOn: $autoTranslate)
-                    
-                    Text("When enabled, translation runs automatically as you type.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    
-                    Toggle("Translate on Paste", isOn: $translateOnPaste)
-                } header: {
-                    Text("Translation Behavior")
                 }
+                .pickerStyle(.segmented)
                 
-                Section {
-                    Toggle("Auto-Speak Translations", isOn: $autoSpeak)
-                    Toggle("Copy Translation to Clipboard", isOn: $copyTranslationAutomatically)
-                } header: {
-                    Text("Output")
-                }
-                
-                Section {
-                    Toggle("Save Translations to History", isOn: $saveToHistoryAutomatically)
-                    
-                    LabeledContent("Max History Entries") {
-                        Slider(value: $maxHistoryEntries, in: 50...500, step: 50) {
-                            Text("Max Entries")
-                        }
-                        Text("\(Int(maxHistoryEntries))")
-                            .foregroundStyle(.secondary)
-                            .frame(width: 40, alignment: .trailing)
-                    }
-                } header: {
-                    Text("History")
-                }
+                Toggle("Auto-Translate While Typing", isOn: $autoTranslate)
+                Toggle("Translate on Paste", isOn: $translateOnPaste)
+            } header: {
+                Text("Translation Behavior")
             }
-            .formStyle(.grouped)
+            
+            Section {
+                Toggle("Auto-Speak Translations", isOn: $autoSpeak)
+                Toggle("Copy Translation to Clipboard", isOn: $copyTranslationAutomatically)
+            } header: {
+                Text("Output")
+            }
+            
+            Section {
+                Toggle("Save Translations to History", isOn: $saveToHistoryAutomatically)
+                
+                LabeledContent("Max History Entries") {
+                    Slider(value: $maxHistoryEntries, in: 50...500, step: 50) {
+                        Text("Max Entries")
+                    }
+                    Text("\(Int(maxHistoryEntries))")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 40, alignment: .trailing)
+                }
+            } header: {
+                Text("History")
+            }
         }
-        .padding(.top, 8)
-        .padding(.horizontal, 8)
-        .padding(.bottom, 8)
+        .formStyle(.grouped)
+        .padding()
     }
 }
 
@@ -175,64 +161,52 @@ struct AppearanceSettingsTab: View {
     @AppStorage("compactMode") private var compactMode: Bool = false
     
     var body: some View {
-        ScrollView {
-            Form {
-                Section {
-                    Toggle("Show Pinyin", isOn: $showPinyin)
-                    
-                    Picker("Pinyin Position", selection: $pinyinPosition) {
-                        Text("Above Characters").tag("above")
-                        Text("Below Characters").tag("below")
-                        Text("Inline").tag("inline")
-                    }
+        Form {
+            Section {
+                Toggle("Show Pinyin", isOn: $showPinyin)
+                
+                Picker("Pinyin Position", selection: $pinyinPosition) {
+                    Text("Above Characters").tag("above")
+                    Text("Below Characters").tag("below")
+                    Text("Inline").tag("inline")
+                }
+                .disabled(!showPinyin)
+                
+                Toggle("Tone Colors", isOn: $toneColors)
                     .disabled(!showPinyin)
-                    
-                    Toggle("Tone Colors", isOn: $toneColors)
-                        .disabled(!showPinyin)
-                    
-                    Text("Color-code pinyin based on tones (1st=red, 2nd=orange, 3rd=green, 4th=blue)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } header: {
-                    Text("Pinyin Display")
-                }
-                
-                Section {
-                    LabeledContent("Text Size") {
-                        Slider(value: $fontSize, in: 0.8...1.6, step: 0.1) {
-                            Text("Size")
-                        }
-                        Text("\(Int(fontSize * 100))%")
-                            .foregroundStyle(.secondary)
-                            .frame(width: 50, alignment: .trailing)
-                    }
-                    
-                    Picker("Chinese Font", selection: $chineseFont) {
-                        Text("System Default").tag("System")
-                        Text("PingFang SC").tag("PingFang SC")
-                        Text("STSong").tag("STSong")
-                        Text("Kaiti SC").tag("Kaiti SC")
-                    }
-                } header: {
-                    Text("Typography")
-                }
-                
-                Section {
-                    Toggle("Show Word Borders", isOn: $wordBorders)
-                    Toggle("Compact Mode", isOn: $compactMode)
-                    
-                    Text("Compact mode reduces spacing for smaller windows.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } header: {
-                    Text("Layout")
-                }
+            } header: {
+                Text("Pinyin Display")
             }
-            .formStyle(.grouped)
+            
+            Section {
+                LabeledContent("Text Size") {
+                    Slider(value: $fontSize, in: 0.8...1.6, step: 0.1) {
+                        Text("Size")
+                    }
+                    Text("\(Int(fontSize * 100))%")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 50, alignment: .trailing)
+                }
+                
+                Picker("Chinese Font", selection: $chineseFont) {
+                    Text("System Default").tag("System")
+                    Text("PingFang SC").tag("PingFang SC")
+                    Text("STSong").tag("STSong")
+                    Text("Kaiti SC").tag("Kaiti SC")
+                }
+            } header: {
+                Text("Typography")
+            }
+            
+            Section {
+                Toggle("Show Word Borders", isOn: $wordBorders)
+                Toggle("Compact Mode", isOn: $compactMode)
+            } header: {
+                Text("Layout")
+            }
         }
-        .padding(.top, 8)
-        .padding(.horizontal, 8)
-        .padding(.bottom, 8)
+        .formStyle(.grouped)
+        .padding()
     }
 }
 
@@ -248,45 +222,41 @@ struct LearningSettingsTab: View {
     @AppStorage("showHints") private var showHints: Bool = true
     
     var body: some View {
-        ScrollView {
-            Form {
-                Section {
-                    LabeledContent("Daily Goal") {
-                        Slider(value: $dailyGoal, in: 5...100, step: 5) {
-                            Text("Goal")
-                        }
-                        Text("\(Int(dailyGoal)) cards")
-                            .foregroundStyle(.secondary)
-                            .frame(width: 70, alignment: .trailing)
+        Form {
+            Section {
+                LabeledContent("Daily Goal") {
+                    Slider(value: $dailyGoal, in: 5...100, step: 5) {
+                        Text("Goal")
                     }
-                    
-                    Toggle("Show Streak", isOn: $showStreak)
-                } header: {
-                    Text("Goals")
+                    Text("\(Int(dailyGoal)) cards")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 70, alignment: .trailing)
                 }
                 
-                Section {
-                    Toggle("Review Reminders", isOn: $reviewReminders)
-                    
-                    DatePicker("Reminder Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
-                        .disabled(!reviewReminders)
-                } header: {
-                    Text("Notifications")
-                }
-                
-                Section {
-                    Toggle("Auto-Advance After Review", isOn: $autoAdvance)
-                    Toggle("Show Hints", isOn: $showHints)
-                    Toggle("Haptic Feedback", isOn: $hapticFeedback)
-                } header: {
-                    Text("Flashcards")
-                }
+                Toggle("Show Streak", isOn: $showStreak)
+            } header: {
+                Text("Goals")
             }
-            .formStyle(.grouped)
+            
+            Section {
+                Toggle("Review Reminders", isOn: $reviewReminders)
+                
+                DatePicker("Reminder Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                    .disabled(!reviewReminders)
+            } header: {
+                Text("Notifications")
+            }
+            
+            Section {
+                Toggle("Auto-Advance After Review", isOn: $autoAdvance)
+                Toggle("Show Hints", isOn: $showHints)
+                Toggle("Haptic Feedback", isOn: $hapticFeedback)
+            } header: {
+                Text("Flashcards")
+            }
         }
-        .padding(.top, 8)
-        .padding(.horizontal, 8)
-        .padding(.bottom, 8)
+        .formStyle(.grouped)
+        .padding()
     }
 }
 
@@ -304,63 +274,59 @@ struct DataSettingsTab: View {
     @State private var showingImportSheet: Bool = false
     
     var body: some View {
-        ScrollView {
-            Form {
-                Section {
-                    LabeledContent("Saved Words") {
-                        Text("\(savedTermsStore.terms.count)")
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    LabeledContent("History Entries") {
-                        Text("\(historyStore.entries.count)")
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    LabeledContent("Flashcards") {
-                        Text("\(learningStore.progress.count)")
-                            .foregroundStyle(.secondary)
-                    }
-                } header: {
-                    Text("Statistics")
+        Form {
+            Section {
+                LabeledContent("Saved Words") {
+                    Text("\(savedTermsStore.terms.count)")
+                        .foregroundStyle(.secondary)
                 }
                 
-                Section {
-                    Button("Export Data...") {
-                        showingExportSheet = true
-                    }
-                    
-                    Button("Import Data...") {
-                        showingImportSheet = true
-                    }
-                } header: {
-                    Text("Backup")
+                LabeledContent("History Entries") {
+                    Text("\(historyStore.entries.count)")
+                        .foregroundStyle(.secondary)
                 }
                 
-                Section {
-                    Button("Clear Vocabulary", role: .destructive) {
-                        showingClearVocabularyAlert = true
-                    }
-                    .disabled(savedTermsStore.terms.isEmpty)
-                    
-                    Button("Clear History", role: .destructive) {
-                        showingClearHistoryAlert = true
-                    }
-                    .disabled(historyStore.entries.isEmpty)
-                    
-                    Button("Reset Learning Progress", role: .destructive) {
-                        showingResetProgressAlert = true
-                    }
-                    .disabled(learningStore.progress.isEmpty)
-                } header: {
-                    Text("Clear Data")
+                LabeledContent("Flashcards") {
+                    Text("\(learningStore.progress.count)")
+                        .foregroundStyle(.secondary)
                 }
+            } header: {
+                Text("Statistics")
             }
-            .formStyle(.grouped)
+            
+            Section {
+                Button("Export Data...") {
+                    showingExportSheet = true
+                }
+                
+                Button("Import Data...") {
+                    showingImportSheet = true
+                }
+            } header: {
+                Text("Backup")
+            }
+            
+            Section {
+                Button("Clear Vocabulary", role: .destructive) {
+                    showingClearVocabularyAlert = true
+                }
+                .disabled(savedTermsStore.terms.isEmpty)
+                
+                Button("Clear History", role: .destructive) {
+                    showingClearHistoryAlert = true
+                }
+                .disabled(historyStore.entries.isEmpty)
+                
+                Button("Reset Learning Progress", role: .destructive) {
+                    showingResetProgressAlert = true
+                }
+                .disabled(learningStore.progress.isEmpty)
+            } header: {
+                Text("Clear Data")
+            }
         }
-        .padding(.top, 8)
-        .padding(.horizontal, 8)
-        .padding(.bottom, 8)
+        .formStyle(.grouped)
+        .padding()
         .alert("Clear Vocabulary", isPresented: $showingClearVocabularyAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Clear", role: .destructive) {
