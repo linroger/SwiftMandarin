@@ -6,14 +6,30 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Saved vocabulary terms view with search, sorting, and export
 struct VocabularyView: View {
+    @Environment(AppRouteStore.self) private var routeStore
     @Environment(SavedTermsStore.self) private var savedTermsStore
     @State private var searchText: String = ""
     @State private var sortOrder: SortOrder = .dateAdded
+    @State private var sortAscending: Bool = false  // false = newest first (default), true = oldest first
     @State private var showingExportSheet: Bool = false
+    @State private var showingImportResult: Bool = false
+    @State private var importResult: ImportResult?
     @State private var selectedTerm: SavedTerm?
+    @FocusState private var isVocabularyFocused: Bool
+    @State private var showingImportPicker: Bool = false
+    @State private var importFileURL: URL?
+    @State private var importFileErrorMessage: String?
+    
+    /// Term selected for AI explanation
+    @State private var aiExplanationTerm: SavedTerm?
+
+    /// Font size for Chinese characters in the vocabulary list (persisted)
+    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 22
+    @AppStorage("vocabularyDetailUsesInspector") private var vocabularyDetailUsesInspector: Bool = true
     
     enum SortOrder: String, CaseIterable {
         case dateAdded = "Date Added"
@@ -33,15 +49,20 @@ struct VocabularyView: View {
             }
         }
         
-        // Apply sort
+        // Apply sort with direction
         switch sortOrder {
         case .dateAdded:
-            return terms.sorted { $0.dateAdded > $1.dateAdded }
+            return terms.sorted { sortAscending ? $0.dateAdded < $1.dateAdded : $0.dateAdded > $1.dateAdded }
         case .alphabetical:
-            return terms.sorted { $0.chinese < $1.chinese }
+            return terms.sorted { sortAscending ? $0.chinese < $1.chinese : $0.chinese > $1.chinese }
         case .pinyin:
-            return terms.sorted { $0.pinyin < $1.pinyin }
+            return terms.sorted { sortAscending ? $0.pinyin < $1.pinyin : $0.pinyin > $1.pinyin }
         }
+    }
+
+    private func syncSelectedTerm() {
+        guard let currentID = selectedTerm?.id else { return }
+        selectedTerm = savedTermsStore.term(withID: currentID)
     }
     
     var body: some View {
@@ -58,8 +79,70 @@ struct VocabularyView: View {
             .navigationBarTitleDisplayMode(.large)
             #endif
             .searchable(text: $searchText, prompt: "Search vocabulary")
+            .onChange(of: savedTermsStore.terms) { _, _ in
+                syncSelectedTerm()
+            }
+            #if os(macOS)
+            .inspector(isPresented: .constant(vocabularyDetailUsesInspector && selectedTerm != nil)) {
+                if vocabularyDetailUsesInspector, let term = selectedTerm {
+                    TermDetailInspector(
+                        term: term,
+                        selectedTerm: $selectedTerm,
+                        savedTermsStore: savedTermsStore
+                    )
+                    .id(term.id)
+                    .inspectorColumnWidth(min: 280, ideal: 320, max: 400)
+                }
+            }
+            #endif
             .toolbar {
-                ToolbarItem(placement: .primaryAction) {
+                #if os(macOS)
+                ToolbarItemGroup(placement: .primaryAction) {
+                    // Font size controls
+                    Button {
+                        if chineseFontSize > 14 {
+                            chineseFontSize -= 2
+                        }
+                    } label: {
+                        Label("Decrease Font Size", systemImage: "textformat.size.smaller")
+                    }
+                    .disabled(chineseFontSize <= 14)
+                    .help("Decrease Chinese font size (⌘-)")
+                    .keyboardShortcut("-", modifiers: .command)
+                    
+                    Button {
+                        if chineseFontSize < 48 {
+                            chineseFontSize += 2
+                        }
+                    } label: {
+                        Label("Increase Font Size", systemImage: "textformat.size.larger")
+                    }
+                    .disabled(chineseFontSize >= 48)
+                    .help("Increase Chinese font size (⌘+)")
+                    .keyboardShortcut("=", modifiers: .command)
+                    
+                    Divider()
+                    
+                    Button {
+                        VocabularyImportExportService.shared.importFromFile(into: savedTermsStore) { result in
+                            if let result = result {
+                                importResult = result
+                                showingImportResult = true
+                            }
+                        }
+                    } label: {
+                        Label("Import", systemImage: "square.and.arrow.down")
+                    }
+                    .help("Import vocabulary from file")
+                    
+                    Button {
+                        showingExportSheet = true
+                    } label: {
+                        Label("Export", systemImage: "square.and.arrow.up")
+                    }
+                    .disabled(savedTermsStore.terms.isEmpty)
+                    .help("Export vocabulary to file")
+                    
                     Menu {
                         Picker("Sort by", selection: $sortOrder) {
                             ForEach(SortOrder.allCases, id: \.self) { order in
@@ -69,12 +152,87 @@ struct VocabularyView: View {
                         
                         Divider()
                         
+                        // Sort direction toggle
+                        Button {
+                            sortAscending.toggle()
+                        } label: {
+                            Label(
+                                sortAscending ? "Oldest First" : "Newest First",
+                                systemImage: sortAscending ? "arrow.up" : "arrow.down"
+                            )
+                        }
+                        
+                        Divider()
+                        
+                        Button(role: .destructive) {
+                            savedTermsStore.clear()
+                        } label: {
+                            Label("Clear All", systemImage: "trash")
+                        }
+                        .disabled(savedTermsStore.terms.isEmpty)
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .help("More options")
+                }
+                #else
+                ToolbarItemGroup(placement: .primaryAction) {
+                    // Font size controls for iOS
+                    Button {
+                        if chineseFontSize > 14 {
+                            chineseFontSize -= 2
+                        }
+                    } label: {
+                        Image(systemName: "textformat.size.smaller")
+                    }
+                    .disabled(chineseFontSize <= 14)
+                    
+                    Button {
+                        if chineseFontSize < 48 {
+                            chineseFontSize += 2
+                        }
+                    } label: {
+                        Image(systemName: "textformat.size.larger")
+                    }
+                    .disabled(chineseFontSize >= 48)
+                    
+                    Menu {
+                        Picker("Sort by", selection: $sortOrder) {
+                            ForEach(SortOrder.allCases, id: \.self) { order in
+                                Text(order.rawValue).tag(order)
+                            }
+                        }
+
+                        Divider()
+
+                        // Sort direction toggle
+                        Button {
+                            sortAscending.toggle()
+                        } label: {
+                            Label(
+                                sortAscending ? "Oldest First" : "Newest First",
+                                systemImage: sortAscending ? "arrow.up" : "arrow.down"
+                            )
+                        }
+
+                        Divider()
+
+                        Button {
+                            showingImportPicker = true
+                        } label: {
+                            Label("Import", systemImage: "square.and.arrow.down")
+                        }
+
+                        Divider()
+
                         Button {
                             showingExportSheet = true
                         } label: {
                             Label("Export", systemImage: "square.and.arrow.up")
                         }
                         .disabled(savedTermsStore.terms.isEmpty)
+                        
+                        Divider()
                         
                         Button(role: .destructive) {
                             savedTermsStore.clear()
@@ -86,15 +244,118 @@ struct VocabularyView: View {
                         Image(systemName: "ellipsis.circle")
                     }
                 }
+                #endif
             }
-            .sheet(item: $selectedTerm) { term in
-                TermDetailSheet(term: term)
+            #if os(iOS)
+            .sheet(item: $selectedTerm) { _ in
+                TermDetailSheet(selectedTerm: $selectedTerm)
             }
+            #endif
             .sheet(isPresented: $showingExportSheet) {
                 ExportSheet(terms: savedTermsStore.terms)
             }
+            .sheet(item: $aiExplanationTerm) { term in
+                AIExplanationSheet(term: term)
+            }
+            #if os(iOS)
+            .fileImporter(
+                isPresented: $showingImportPicker,
+                allowedContentTypes: [UTType.json, UTType.commaSeparatedText, UTType.plainText],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    importFileURL = urls.first
+                case .failure(let error):
+                    importFileErrorMessage = error.localizedDescription
+                }
+            }
+            .onChange(of: importFileURL) { _, newValue in
+                guard let url = newValue else { return }
+                let result = VocabularyImportExportService.shared.importFromFileURL(url, into: savedTermsStore)
+                importResult = result
+                showingImportResult = true
+                importFileURL = nil
+            }
+            .onChange(of: importFileErrorMessage) { _, newValue in
+                guard let message = newValue else { return }
+                importResult = ImportResult(imported: 0, skipped: 0, errors: [message])
+                showingImportResult = true
+                importFileErrorMessage = nil
+            }
+            #endif
+            .alert("Import Complete", isPresented: $showingImportResult) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(importResult?.summary ?? "Import completed")
+            }
+            #if os(macOS)
+            .focusable()
+            .focusEffectDisabled()
+            .focused($isVocabularyFocused)
+            .onAppear {
+                isVocabularyFocused = true
+            }
+            .onKeyPress(keys: [.downArrow, .rightArrow]) { _ in
+                guard isVocabularyFocused else { return .ignored }
+                selectNextTerm()
+                return .handled
+            }
+            .onKeyPress(keys: [.upArrow, .leftArrow]) { _ in
+                guard isVocabularyFocused else { return .ignored }
+                selectPreviousTerm()
+                return .handled
+            }
+            .onKeyPress(.space) {
+                guard isVocabularyFocused else { return .ignored }
+                toggleSelectedMastered()
+                return .handled
+            }
+            .onKeyPress(.return) {
+                guard isVocabularyFocused else { return .ignored }
+                toggleSelectedMastered()
+                return .handled
+            }
+            #endif
         }
     }
+    
+    // MARK: - Keyboard Navigation
+    
+    #if os(macOS)
+    private func selectNextTerm() {
+        let terms = filteredTerms
+        guard !terms.isEmpty else { return }
+        
+        if let current = selectedTerm,
+           let currentIndex = terms.firstIndex(where: { $0.id == current.id }) {
+            let nextIndex = min(currentIndex + 1, terms.count - 1)
+            selectedTerm = terms[nextIndex]
+        } else {
+            // No selection, select first
+            selectedTerm = terms.first
+        }
+    }
+    
+    private func selectPreviousTerm() {
+        let terms = filteredTerms
+        guard !terms.isEmpty else { return }
+        
+        if let current = selectedTerm,
+           let currentIndex = terms.firstIndex(where: { $0.id == current.id }) {
+            let prevIndex = max(currentIndex - 1, 0)
+            selectedTerm = terms[prevIndex]
+        } else {
+            // No selection, select last
+            selectedTerm = terms.last
+        }
+    }
+    
+    private func toggleSelectedMastered() {
+        guard let term = selectedTerm else { return }
+        savedTermsStore.toggleMastered(term)
+    }
+    #endif
     
     // MARK: - Empty State
     
@@ -105,7 +366,7 @@ struct VocabularyView: View {
             Text("Words you save while translating will appear here")
         } actions: {
             Button {
-                // Navigate to translate tab - would need tab binding
+                routeStore.selectedTab = .translate
             } label: {
                 Text("Start Translating")
             }
@@ -115,14 +376,28 @@ struct VocabularyView: View {
     
     // MARK: - Vocabulary List
     
+    @ViewBuilder
     private var vocabularyList: some View {
-        List {
+        let list = List {
             ForEach(filteredTerms) { term in
-                VocabularyRow(term: term)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedTerm = term
+                VocabularyRow(
+                    term: term,
+                    chineseFontSize: chineseFontSize,
+                    isSelected: selectedTerm?.id == term.id,
+                    onMasteredToggle: {
+                        savedTermsStore.toggleMastered(term)
+                    },
+                    onAIExplainTap: {
+                        aiExplanationTerm = term
                     }
+                )
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selectedTerm = term
+                    #if os(macOS)
+                    isVocabularyFocused = true
+                    #endif
+                }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button(role: .destructive) {
                             savedTermsStore.remove(term)
@@ -130,7 +405,17 @@ struct VocabularyView: View {
                             Label("Delete", systemImage: "trash")
                         }
                     }
-                    .swipeActions(edge: .leading) {
+                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                        Button {
+                            savedTermsStore.toggleMastered(term)
+                        } label: {
+                            Label(
+                                term.isMastered ? "Unmaster" : "Mastered",
+                                systemImage: term.isMastered ? "xmark.circle" : "checkmark.circle"
+                            )
+                        }
+                        .tint(term.isMastered ? .orange : .green)
+                        
                         Button {
                             SpeechService.speakChinese(term.chinese)
                         } label: {
@@ -139,14 +424,29 @@ struct VocabularyView: View {
                         .tint(.blue)
                     }
             }
-            .onMove { from, to in
-                // Handle reordering
-                guard let fromIndex = from.first else { return }
-                savedTermsStore.move(from: fromIndex, to: to)
-            }
         }
         #if os(iOS)
-        .listStyle(.insetGrouped)
+        list
+            .listStyle(.insetGrouped)
+        #else
+        if vocabularyDetailUsesInspector {
+            list
+                .focusable()
+                .focused($isVocabularyFocused)
+        } else {
+            list
+                .focusable()
+                .focused($isVocabularyFocused)
+                .popover(item: $selectedTerm) { term in
+                    TermDetailInspector(
+                        term: term,
+                        selectedTerm: $selectedTerm,
+                        savedTermsStore: savedTermsStore
+                    )
+                    .id(term.id)
+                    .frame(minWidth: 320, minHeight: 420)
+                }
+        }
         #endif
     }
 }
@@ -155,18 +455,31 @@ struct VocabularyView: View {
 
 struct VocabularyRow: View {
     let term: SavedTerm
+    var chineseFontSize: Double = 22
+    var isSelected: Bool = false
+    var onMasteredToggle: (() -> Void)?
+    var onAIExplainTap: (() -> Void)?
     
     var body: some View {
         HStack(spacing: 12) {
-            // Chinese character
+            // Clickable mastered checkbox
+            Button {
+                onMasteredToggle?()
+            } label: {
+                Image(systemName: term.isMastered ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(term.isMastered ? .green : .secondary)
+                    .font(.system(size: 20))
+            }
+            .buttonStyle(.plain)
+            
+            // Chinese character with adjustable font size
             Text(term.chinese)
-                .font(.title2)
-                .fontWeight(.medium)
-                .frame(minWidth: 60, alignment: .leading)
+                .font(.system(size: chineseFontSize, weight: .medium))
+                .frame(minWidth: max(60, chineseFontSize * 2.5), alignment: .leading)
             
             VStack(alignment: .leading, spacing: 4) {
                 // Pinyin with tone colors
-                Text(PinyinConverter.coloredPinyin(term.chinese))
+                Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chinese))
                     .font(.subheadline)
                 
                 // Definition
@@ -177,6 +490,15 @@ struct VocabularyRow: View {
             }
             
             Spacer()
+            
+            // AI Explain button
+            if let onAIExplainTap = onAIExplainTap {
+                AIExplainButton(
+                    word: term.chinese,
+                    pinyin: term.pinyin,
+                    onTap: onAIExplainTap
+                )
+            }
             
             // Part of speech badge
             if !term.partOfSpeech.isEmpty {
@@ -193,19 +515,33 @@ struct VocabularyRow: View {
             }
         }
         .padding(.vertical, 4)
+        .padding(.horizontal, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(isSelected ? Color.accentColor.opacity(0.5) : Color.clear, lineWidth: 1.5)
+        )
     }
 }
 
 // MARK: - Term Detail Sheet
 
 struct TermDetailSheet: View {
-    let term: SavedTerm
+    @Binding var selectedTerm: SavedTerm?
     @Environment(\.dismiss) private var dismiss
     @Environment(SavedTermsStore.self) private var savedTermsStore
     
     @State private var fetchedTranslation: String = ""
     @State private var isLoadingTranslation: Bool = false
     @State private var showCopiedFeedback: Bool = false
+    
+    /// The current term being displayed
+    private var term: SavedTerm {
+        selectedTerm ?? SavedTerm(chinese: "", pinyin: "", definition: "")
+    }
     
     /// The definition to display - use fetched if available, otherwise stored
     private var displayDefinition: String {
@@ -229,7 +565,7 @@ struct TermDetailSheet: View {
                         Text(term.chinese)
                             .font(.system(size: 80, weight: .medium))
                         
-                        Text(PinyinConverter.coloredPinyin(term.chinese))
+                        Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chinese))
                             .font(.title)
                         
                         if !term.partOfSpeech.isEmpty {
@@ -352,6 +688,21 @@ struct TermDetailSheet: View {
                             }
                         }
                         .buttonStyle(.bordered)
+                        
+                        Button {
+                            savedTermsStore.toggleMastered(term)
+                            selectedTerm = savedTermsStore.term(withID: term.id)
+                            triggerHaptic()
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: term.isMastered ? "checkmark.circle.fill" : "checkmark.circle")
+                                    .font(.title2)
+                                Text(term.isMastered ? "Mastered" : "Master")
+                                    .font(.caption)
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(term.isMastered ? .green : nil)
                     }
                     
                     // Update definition button if we have a better translation
@@ -375,6 +726,25 @@ struct TermDetailSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
                     
+                    Divider()
+                        .padding(.vertical, 8)
+                    
+                    // AI Word Explanation Section
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("AI Word Analysis")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                            .padding(.horizontal)
+                        
+                        AIWordExplanationView(
+                            word: term.chinese,
+                            pinyin: term.pinyin,
+                            context: term.definition.isEmpty ? nil : term.definition
+                        )
+                    }
+                    
                     Spacer()
                 }
             }
@@ -387,7 +757,12 @@ struct TermDetailSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
-            .task {
+            .task(id: selectedTerm?.id) {
+                // Reset state when term changes
+                fetchedTranslation = ""
+                isLoadingTranslation = false
+                showCopiedFeedback = false
+                
                 // Auto-fetch translation if definition is empty
                 if term.definition.isEmpty {
                     await fetchTranslation()
@@ -421,12 +796,12 @@ struct TermDetailSheet: View {
             pinyin: term.pinyin,
             definition: fetchedTranslation,
             partOfSpeech: term.partOfSpeech,
-            dateAdded: term.dateAdded
+            dateAdded: term.dateAdded,
+            isMastered: term.isMastered
         )
         
-        // Remove old and add updated
-        savedTermsStore.remove(term)
-        savedTermsStore.add(updatedTerm)
+        savedTermsStore.update(updatedTerm)
+        selectedTerm = savedTermsStore.term(withID: term.id)
         triggerHaptic()
     }
     
@@ -441,83 +816,570 @@ struct TermDetailSheet: View {
     }
 }
 
+// MARK: - Term Detail Inspector (macOS)
+
+#if os(macOS)
+struct TermDetailInspector: View {
+    let term: SavedTerm
+    @Binding var selectedTerm: SavedTerm?
+    var savedTermsStore: SavedTermsStore
+    
+    @State private var fetchedTranslation: String = ""
+    @State private var isLoadingTranslation: Bool = false
+    @State private var showCopiedFeedback: Bool = false
+    
+    private var displayDefinition: String {
+        if !fetchedTranslation.isEmpty {
+            return fetchedTranslation
+        }
+        return term.definition
+    }
+    
+    private var shouldOfferTranslation: Bool {
+        term.definition.isEmpty || term.definition.count > 100
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Close button
+                HStack {
+                    Spacer()
+                    Button {
+                        selectedTerm = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal)
+                
+                // Large character display
+                VStack(spacing: 10) {
+                    Text(term.chinese)
+                        .font(.system(size: 64, weight: .medium))
+                    
+                    Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chinese))
+                        .font(.title2)
+                    
+                    if !term.partOfSpeech.isEmpty {
+                        Text(term.partOfSpeech)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(.blue))
+                    }
+                }
+                
+                Divider()
+                
+                // Mastered toggle
+                Button {
+                    savedTermsStore.toggleMastered(term)
+                    selectedTerm = savedTermsStore.term(withID: term.id)
+                } label: {
+                    HStack {
+                        Image(systemName: term.isMastered ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(term.isMastered ? .green : .secondary)
+                        Text(term.isMastered ? "Mastered" : "Mark as Mastered")
+                            .foregroundStyle(term.isMastered ? .green : .primary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                }
+                .buttonStyle(.plain)
+                
+                Divider()
+                
+                // Definition section
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Definition")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                        
+                        Spacer()
+                        
+                        if isLoadingTranslation {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else if shouldOfferTranslation && fetchedTranslation.isEmpty {
+                            Button {
+                                Task { await fetchTranslation() }
+                            } label: {
+                                Label("Translate", systemImage: "arrow.triangle.2.circlepath")
+                                    .font(.caption)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                    }
+                    
+                    if displayDefinition.isEmpty {
+                        Text("No definition available")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .italic()
+                    } else {
+                        Text(displayDefinition)
+                            .font(.body)
+                            .textSelection(.enabled)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                
+                // Actions
+                HStack(spacing: 16) {
+                    Button {
+                        SpeechService.speakChinese(term.chinese)
+                    } label: {
+                        VStack(spacing: 3) {
+                            Image(systemName: "speaker.wave.2")
+                                .font(.title3)
+                            Text("Speak")
+                                .font(.caption2)
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    
+                    Button {
+                        ClipboardService.copy(term.chinese)
+                        showCopiedFeedback = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            showCopiedFeedback = false
+                        }
+                    } label: {
+                        VStack(spacing: 3) {
+                            Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
+                                .font(.title3)
+                            Text(showCopiedFeedback ? "Copied!" : "Copy")
+                                .font(.caption2)
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(showCopiedFeedback ? .green : nil)
+                    
+                    Button {
+                        let text = "\(term.chinese)\n\(term.pinyin)\n\(displayDefinition)"
+                        ClipboardService.copy(text)
+                        showCopiedFeedback = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            showCopiedFeedback = false
+                        }
+                    } label: {
+                        VStack(spacing: 3) {
+                            Image(systemName: "doc.on.doc.fill")
+                                .font(.title3)
+                            Text("Copy All")
+                                .font(.caption2)
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                }
+                
+                // Update definition button
+                if !fetchedTranslation.isEmpty && fetchedTranslation != term.definition {
+                    Button {
+                        updateTermDefinition()
+                    } label: {
+                        Label("Update Saved Definition", systemImage: "arrow.down.doc")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding(.horizontal)
+                }
+                
+                // Metadata
+                Text("Added \(term.dateAdded.formatted(date: .abbreviated, time: .shortened))")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                
+                Divider()
+                    .padding(.vertical, 8)
+                
+                // AI Word Explanation Section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("AI Word Analysis")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                        .padding(.horizontal)
+                    
+                    AIWordExplanationView(
+                        word: term.chinese,
+                        pinyin: term.pinyin,
+                        context: term.definition.isEmpty ? nil : term.definition
+                    )
+                }
+                
+                Spacer()
+            }
+            .padding(.vertical)
+        }
+        .task(id: term.id) {
+            // Reset state when term changes
+            fetchedTranslation = ""
+            isLoadingTranslation = false
+            showCopiedFeedback = false
+            
+            if term.definition.isEmpty {
+                await fetchTranslation()
+            }
+        }
+    }
+    
+    private func fetchTranslation() async {
+        isLoadingTranslation = true
+        
+        do {
+            let translation = try await WordTranslationService.shared.translateToEnglish(term.chinese)
+            await MainActor.run {
+                fetchedTranslation = translation
+                isLoadingTranslation = false
+            }
+        } catch {
+            await MainActor.run {
+                isLoadingTranslation = false
+            }
+            print("Failed to fetch translation: \(error)")
+        }
+    }
+    
+    private func updateTermDefinition() {
+        let updatedTerm = SavedTerm(
+            id: term.id,
+            chinese: term.chinese,
+            pinyin: term.pinyin,
+            definition: fetchedTranslation,
+            partOfSpeech: term.partOfSpeech,
+            dateAdded: term.dateAdded,
+            isMastered: term.isMastered
+        )
+        
+        savedTermsStore.update(updatedTerm)
+        selectedTerm = savedTermsStore.term(withID: term.id)
+    }
+}
+#endif
+
 // MARK: - Export Sheet
 
 struct ExportSheet: View {
     let terms: [SavedTerm]
     @Environment(\.dismiss) private var dismiss
-    @State private var exportFormat: ExportFormat = .csv
+    @State private var exportFormat: VocabularyExportFormat = .json
+    @State private var showExportSuccess: Bool = false
+    @State private var exportSuccessMessage: String = "Exported Successfully"
     
-    enum ExportFormat: String, CaseIterable {
-        case csv = "CSV"
-        case json = "JSON"
-        case text = "Plain Text"
+    private var exportPreview: String {
+        guard let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat),
+              let content = String(data: data, encoding: .utf8) else {
+            return ""
+        }
+        if content.count > 400 {
+            return String(content.prefix(400)) + "..."
+        }
+        return content
     }
     
     var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    Picker("Format", selection: $exportFormat) {
-                        ForEach(ExportFormat.allCases, id: \.self) { format in
-                            Text(format.rawValue).tag(format)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
+        VStack(spacing: 0) {
+            // Header with word count and icon
+            HStack(spacing: 16) {
+                Image(systemName: "square.and.arrow.up.circle.fill")
+                    .font(.system(size: 44))
+                    .foregroundStyle(.blue)
                 
-                Section("Preview") {
-                    Text(generateExport().prefix(500))
-                        .font(.caption.monospaced())
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Export Vocabulary")
+                        .font(.headline)
+                    Text("\(terms.count) word\(terms.count == 1 ? "" : "s") ready to export")
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 
+                Spacer()
+                
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding()
+            .background(.quaternary.opacity(0.3))
+            
+            Divider()
+            
+            // Content
+            Form {
+                // Format Selection with visual cards
                 Section {
-                    Button {
-                        ClipboardService.copy(generateExport())
-                        dismiss()
-                    } label: {
-                        Label("Copy to Clipboard", systemImage: "doc.on.doc")
+                    HStack(spacing: 12) {
+                        ForEach(VocabularyExportFormat.allCases) { format in
+                            FormatCard(
+                                format: format,
+                                isSelected: exportFormat == format
+                            ) {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    exportFormat = format
+                                }
+                            }
+                        }
                     }
-                    
-                    ShareLink(item: generateExport()) {
-                        Label("Share", systemImage: "square.and.arrow.up")
+                    .padding(.vertical, 4)
+                } header: {
+                    Text("Format")
+                }
+                
+                // Preview Section
+                Section {
+                    ScrollView {
+                        Text(exportPreview)
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                    }
+                    .frame(height: 120)
+                } header: {
+                    HStack {
+                        Text("Preview")
+                        Spacer()
+                        Text(".\(exportFormat.fileExtension)")
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(.blue))
                     }
                 }
+                
+                // Export Actions
+                Section {
+                    #if os(macOS)
+                    ExportActionRow(
+                        icon: "folder.badge.plus",
+                        iconColor: .blue,
+                        title: "Save to File...",
+                        subtitle: "Choose location and filename"
+                    ) {
+                        VocabularyImportExportService.shared.exportToFile(terms: terms, format: exportFormat)
+                        exportSuccessMessage = "Saved to File"
+                        showExportSuccess = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            dismiss()
+                        }
+                    }
+                    #endif
+                    
+                    ExportActionRow(
+                        icon: "doc.on.doc",
+                        iconColor: .orange,
+                        title: "Copy to Clipboard",
+                        subtitle: "Paste anywhere you need"
+                    ) {
+                        if let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat),
+                           let content = String(data: data, encoding: .utf8) {
+                            ClipboardService.copy(content)
+                        }
+                        exportSuccessMessage = "Copied to Clipboard"
+                        showExportSuccess = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            dismiss()
+                        }
+                    }
+                    
+                    if let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat),
+                       let content = String(data: data, encoding: .utf8) {
+                        ShareLink(item: content) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.title2)
+                                    .foregroundStyle(.green)
+                                    .frame(width: 32)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Share")
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+                                    Text("Send via Messages, Mail, AirDrop...")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text("Export To")
+                }
             }
-            .navigationTitle("Export Vocabulary")
+            .formStyle(.grouped)
+        }
+        .frame(minWidth: 420, idealWidth: 480, minHeight: 480, idealHeight: 520)
+        .overlay {
+            if showExportSuccess {
+                exportSuccessOverlay
+            }
+        }
+    }
+    
+    private var exportSuccessOverlay: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 50))
+                .foregroundStyle(.green)
+            Text(exportSuccessMessage)
+                .font(.headline)
+        }
+        .padding(24)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .transition(.scale.combined(with: .opacity))
+    }
+}
+
+// MARK: - Format Card
+
+private struct FormatCard: View {
+    let format: VocabularyExportFormat
+    let isSelected: Bool
+    let action: () -> Void
+    
+    private var formatDescription: String {
+        switch format {
+        case .json:
+            return "Best for backup"
+        case .csv:
+            return "For spreadsheets"
+        }
+    }
+    
+    private var formatIcon: String {
+        switch format {
+        case .json:
+            return "doc.text"
+        case .csv:
+            return "tablecells"
+        }
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: formatIcon)
+                    .font(.title)
+                    .foregroundStyle(isSelected ? .white : .blue)
+                
+                Text(format.rawValue)
+                    .font(.headline)
+                    .foregroundStyle(isSelected ? .white : .primary)
+                
+                Text(formatDescription)
+                    .font(.caption2)
+                    .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(isSelected ? AnyShapeStyle(.blue) : AnyShapeStyle(.quaternary.opacity(0.5)))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(isSelected ? AnyShapeStyle(.clear) : AnyShapeStyle(.quaternary), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Export Action Row
+
+private struct ExportActionRow: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let subtitle: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(iconColor)
+                    .frame(width: 32)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - AI Explanation Sheet
+
+struct AIExplanationSheet: View {
+    let term: SavedTerm
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            AIWordExplanationView(
+                word: term.chinese,
+                pinyin: term.pinyin,
+                context: term.definition.isEmpty ? nil : term.definition
+            )
+            .navigationTitle("AI Word Analysis")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
                 }
             }
         }
-    }
-    
-    private func generateExport() -> String {
-        switch exportFormat {
-        case .csv:
-            var csv = "Chinese,Pinyin,Definition,Part of Speech,Date Added\n"
-            for term in terms {
-                csv += "\"\(term.chinese)\",\"\(term.pinyin)\",\"\(term.definition)\",\"\(term.partOfSpeech)\",\"\(term.dateAdded.ISO8601Format())\"\n"
-            }
-            return csv
-            
-        case .json:
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            if let data = try? encoder.encode(terms),
-               let json = String(data: data, encoding: .utf8) {
-                return json
-            }
-            return "[]"
-            
-        case .text:
-            return terms.map { "\($0.chinese) (\($0.pinyin)) - \($0.definition)" }.joined(separator: "\n")
-        }
+        #if os(macOS)
+        .frame(minWidth: 450, idealWidth: 500, minHeight: 550, idealHeight: 650)
+        #endif
     }
 }
 
@@ -526,4 +1388,5 @@ struct ExportSheet: View {
 #Preview {
     VocabularyView()
         .environment(SavedTermsStore.shared)
+        .environment(AppRouteStore.shared)
 }
