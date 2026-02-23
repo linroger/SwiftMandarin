@@ -143,8 +143,8 @@ struct StatsView: View {
                         
                         CompactStatCard(
                             icon: "checkmark.circle.fill",
-                            value: "\(activityStore.totalReviewsCompleted)",
-                            label: "Reviews",
+                            value: "\(termsStore.masteredCount)",
+                            label: "Mastered",
                             color: .green
                         )
                     }
@@ -748,9 +748,9 @@ struct StatsView: View {
                     icon: "chart.bar"
                 )
                 QuickStatCell(
-                    value: "\(masteredCardCount)",
-                    label: "Mastered",
-                    icon: "star.fill"
+                    value: "\(termsStore.masteredCount)",
+                    label: "Words Mastered",
+                    icon: "checkmark.circle.fill"
                 )
             }
             .padding(.horizontal)

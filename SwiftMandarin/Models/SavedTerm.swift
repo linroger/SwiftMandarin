@@ -17,6 +17,7 @@ struct SavedTerm: Identifiable, Codable, Equatable, Hashable {
     let partOfSpeech: String
     let dateAdded: Date
     var sortOrder: Int
+    var isMastered: Bool
     
     init(
         id: UUID = UUID(),
@@ -25,7 +26,8 @@ struct SavedTerm: Identifiable, Codable, Equatable, Hashable {
         definition: String,
         partOfSpeech: String = "",
         dateAdded: Date = Date(),
-        sortOrder: Int = 0
+        sortOrder: Int = 0,
+        isMastered: Bool = false
     ) {
         self.id = id
         self.chinese = chinese
@@ -34,6 +36,7 @@ struct SavedTerm: Identifiable, Codable, Equatable, Hashable {
         self.partOfSpeech = partOfSpeech
         self.dateAdded = dateAdded
         self.sortOrder = sortOrder
+        self.isMastered = isMastered
     }
 }
 
@@ -104,6 +107,23 @@ final class SavedTermsStore {
     
     func clear() {
         terms.removeAll()
+    }
+    
+    /// Toggle the mastered status of a term
+    func toggleMastered(_ term: SavedTerm) {
+        guard let index = terms.firstIndex(where: { $0.id == term.id }) else { return }
+        terms[index].isMastered.toggle()
+    }
+    
+    /// Set the mastered status of a term
+    func setMastered(_ term: SavedTerm, isMastered: Bool) {
+        guard let index = terms.firstIndex(where: { $0.id == term.id }) else { return }
+        terms[index].isMastered = isMastered
+    }
+    
+    /// Count of mastered terms
+    var masteredCount: Int {
+        terms.filter { $0.isMastered }.count
     }
     
     // MARK: - Private Methods

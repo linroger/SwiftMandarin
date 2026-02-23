@@ -270,8 +270,10 @@ struct DataSettingsTab: View {
     @State private var showingClearVocabularyAlert: Bool = false
     @State private var showingClearHistoryAlert: Bool = false
     @State private var showingResetProgressAlert: Bool = false
-    @State private var showingExportSheet: Bool = false
-    @State private var showingImportSheet: Bool = false
+    @State private var showingImportResult: Bool = false
+    @State private var importResult: ImportResult?
+    @State private var selectedExportFormat: VocabularyExportFormat = .json
+    @State private var showExportSuccess: Bool = false
     
     var body: some View {
         Form {
@@ -295,15 +297,38 @@ struct DataSettingsTab: View {
             }
             
             Section {
-                Button("Export Data...") {
-                    showingExportSheet = true
+                Picker("Export Format", selection: $selectedExportFormat) {
+                    ForEach(VocabularyExportFormat.allCases) { format in
+                        Text(format.rawValue).tag(format)
+                    }
                 }
+                .pickerStyle(.segmented)
                 
-                Button("Import Data...") {
-                    showingImportSheet = true
+                Button {
+                    VocabularyImportExportService.shared.exportToFile(
+                        terms: savedTermsStore.terms,
+                        format: selectedExportFormat
+                    )
+                    showExportSuccess = true
+                } label: {
+                    Label("Export Vocabulary...", systemImage: "square.and.arrow.up")
+                }
+                .disabled(savedTermsStore.terms.isEmpty)
+                
+                Button {
+                    VocabularyImportExportService.shared.importFromFile(into: savedTermsStore) { result in
+                        if let result = result {
+                            importResult = result
+                            showingImportResult = true
+                        }
+                    }
+                } label: {
+                    Label("Import Vocabulary...", systemImage: "square.and.arrow.down")
                 }
             } header: {
-                Text("Backup")
+                Text("Backup & Restore")
+            } footer: {
+                Text("JSON format is recommended for backup. Duplicate words will be skipped during import.")
             }
             
             Section {
@@ -350,6 +375,16 @@ struct DataSettingsTab: View {
             }
         } message: {
             Text("This will reset all learning progress. This action cannot be undone.")
+        }
+        .alert("Import Complete", isPresented: $showingImportResult) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(importResult?.summary ?? "Import completed")
+        }
+        .alert("Export Successful", isPresented: $showExportSuccess) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your vocabulary has been exported successfully.")
         }
     }
 }

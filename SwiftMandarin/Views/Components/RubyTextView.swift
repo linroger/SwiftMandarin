@@ -132,6 +132,8 @@ struct RubyWordView: View {
 
 /// Detailed popup view for a selected word
 /// Fetches the actual translation of the word using Translation API
+/// Always displays: Chinese word, pinyin, and English definition
+/// Handles both Chinese and English input words
 struct WordDetailPopover: View {
     let segment: RubySegment
     let contextTranslation: String  // Full sentence translation for context
@@ -141,41 +143,56 @@ struct WordDetailPopover: View {
     
     @Environment(SavedTermsStore.self) private var savedTermsStore
     @State private var showCopiedFeedback: Bool = false
-    @State private var wordTranslation: String = ""
+    @State private var englishDefinition: String = ""
+    @State private var chineseWord: String = ""
+    @State private var pinyinText: String = ""
     @State private var isLoadingTranslation: Bool = true
     @State private var translationError: String?
     
+    /// Check if the segment text contains Chinese characters
+    private var segmentIsChinese: Bool {
+        segment.text.contains { $0.isChineseCharacter }
+    }
+    
     private var isSaved: Bool {
-        savedTermsStore.contains(chinese: segment.text)
+        savedTermsStore.contains(chinese: chineseWord.isEmpty ? segment.text : chineseWord)
     }
     
     var body: some View {
         VStack(spacing: 16) {
-            // Large character display
+            // Large character display - always show Chinese with pinyin
             VStack(spacing: 4) {
-                Text(segment.pinyin)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                
-                Text(segment.text)
-                    .font(.system(size: 56, weight: .medium))
-                
-                // Part of speech badge
-                Text(segment.partOfSpeech.displayName)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 3)
-                    .background(
-                        Capsule()
-                            .fill(segment.partOfSpeech.color)
-                    )
+                if isLoadingTranslation {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Loading...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text(pinyinText)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                    
+                    Text(chineseWord)
+                        .font(.system(size: 56, weight: .medium))
+                    
+                    // Part of speech badge
+                    Text(segment.partOfSpeech.displayName)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule()
+                                .fill(segment.partOfSpeech.color)
+                        )
+                }
             }
             
             Divider()
             
-            // Definition section - shows actual word translation
+            // Definition section - always shows English translation
             VStack(alignment: .leading, spacing: 8) {
                 Text("Definition")
                     .font(.caption)
@@ -206,7 +223,7 @@ struct WordDetailPopover: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
-                    Text(wordTranslation)
+                    Text(englishDefinition)
                         .font(.body)
                         .fontWeight(.medium)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -219,14 +236,15 @@ struct WordDetailPopover: View {
             // Action buttons
             HStack(spacing: 16) {
                 Button {
-                    SpeechService.speakChinese(segment.text)
+                    SpeechService.speakChinese(chineseWord)
                 } label: {
                     Label("Speak", systemImage: "speaker.wave.2")
                 }
                 .buttonStyle(.bordered)
+                .disabled(isLoadingTranslation || chineseWord.isEmpty)
                 
                 Button {
-                    ClipboardService.copy(segment.text)
+                    ClipboardService.copy(chineseWord)
                     showCopiedFeedback = true
                     onCopy()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -237,10 +255,11 @@ struct WordDetailPopover: View {
                 }
                 .buttonStyle(.bordered)
                 .tint(showCopiedFeedback ? .green : nil)
+                .disabled(isLoadingTranslation || chineseWord.isEmpty)
                 
                 Button {
                     // Pass the word-specific translation when saving
-                    let definition = wordTranslation.isEmpty ? contextTranslation : wordTranslation
+                    let definition = englishDefinition.isEmpty ? contextTranslation : englishDefinition
                     onSave(definition)
                 } label: {
                     Label(isSaved ? "Saved" : "Save", systemImage: isSaved ? "bookmark.fill" : "bookmark")
@@ -252,8 +271,8 @@ struct WordDetailPopover: View {
             
             // Copy with pinyin button
             Button {
-                let definition = wordTranslation.isEmpty ? contextTranslation : wordTranslation
-                let fullText = "\(segment.text) (\(segment.pinyin))\n\(definition)"
+                let definition = englishDefinition.isEmpty ? contextTranslation : englishDefinition
+                let fullText = "\(chineseWord) (\(pinyinText))\n\(definition)"
                 ClipboardService.copy(fullText)
                 showCopiedFeedback = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -269,28 +288,49 @@ struct WordDetailPopover: View {
         .padding()
         .frame(minWidth: 280)
         .task {
-            await fetchWordTranslation()
+            await fetchWordDetails()
         }
     }
     
-    /// Fetch the translation for this specific word using Translation API
-    private func fetchWordTranslation() async {
+    /// Fetch the translation details for this word
+    /// Always produces: Chinese word, pinyin, and English definition
+    private func fetchWordDetails() async {
         isLoadingTranslation = true
         translationError = nil
         
         do {
-            // Translate the specific word from Chinese to English
-            let translation = try await WordTranslationService.shared.translateToEnglish(segment.text)
+            if segmentIsChinese {
+                // Input is Chinese: use as-is for Chinese, translate to English for definition
+                chineseWord = segment.text
+                pinyinText = segment.pinyin
+                
+                let translation = try await WordTranslationService.shared.translateToEnglish(segment.text)
+                englishDefinition = translation
+            } else {
+                // Input is English: translate to Chinese, get pinyin, use original as definition
+                englishDefinition = segment.text
+                
+                let chineseTranslation = try await WordTranslationService.shared.translateToChinese(segment.text)
+                chineseWord = chineseTranslation
+                pinyinText = PinyinConverter.convert(chineseTranslation)
+            }
             
             await MainActor.run {
-                wordTranslation = translation
                 isLoadingTranslation = false
             }
         } catch {
             await MainActor.run {
-                // If translation fails, use context as fallback
+                // If translation fails, use what we have
                 translationError = "Could not translate word"
-                wordTranslation = contextTranslation
+                if segmentIsChinese {
+                    chineseWord = segment.text
+                    pinyinText = segment.pinyin
+                    englishDefinition = contextTranslation
+                } else {
+                    englishDefinition = segment.text
+                    chineseWord = contextTranslation.isEmpty ? segment.text : contextTranslation
+                    pinyinText = PinyinConverter.convert(chineseWord)
+                }
                 isLoadingTranslation = false
             }
             print("Word translation error for '\(segment.text)': \(error)")
