@@ -1,0 +1,18 @@
+[
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "claude-opus-4-6"
+  },
+  {
+    "session_id": "61f3100f-1f70-4650-a205-015bc9acf82a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/61f3100f-1f70-4650-a205-015bc9acf82a.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "claude-opus-4-6"
+  }
+]

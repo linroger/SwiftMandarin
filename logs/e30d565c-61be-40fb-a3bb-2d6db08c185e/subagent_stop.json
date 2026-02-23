@@ -1,0 +1,14 @@
+[
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_id": "a7f90e95d5c31a509",
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e/subagents/agent-a7f90e95d5c31a509.jsonl",
+    "agent_type": "",
+    "last_assistant_message": "merge this branch into main"
+  }
+]

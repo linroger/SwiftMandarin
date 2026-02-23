@@ -1,0 +1,465 @@
+[
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git log --oneline -5",
+      "description": "Check recent commits"
+    },
+    "tool_response": {
+      "stdout": "c27a950 eb-23-2026-ready-to-ship\n344e1bc Add polished README, screenshots, and macOS DMG installer package\n74aca5a ship",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01WPNcM571cWdrhLdynhzBkt"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls /Users/rogerlin/Downloads/SwiftMandarin/",
+      "description": "List project root"
+    },
+    "tool_response": {
+      "stdout": "build\ndist\nhandoff.md\nlogs\nREADME.md\nScreenshots\nSwiftMandarin\nSwiftMandarin.xcodeproj",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01E9UDsqhvogWq7z4BbRUHBt"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git remote -v",
+      "description": "Check git remotes"
+    },
+    "tool_response": {
+      "stdout": "origin\thttps://github.com/linroger/SwiftMandarin.git (fetch)\norigin\thttps://github.com/linroger/SwiftMandarin.git (push)",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_017GR4JcsrDoShCCF2Z1trFN"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls /Users/rogerlin/Downloads/SwiftMandarin/dist/",
+      "description": "Check dist directory for existing DMG"
+    },
+    "tool_response": {
+      "stdout": "dmg_payload_20260211\nSwiftMandarin-2.0-macOS.dmg\nSwiftMandarin-2.0-macOS.dmg.sha256",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_012ZVbhHb8TuEXhbSLbocxN1"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls /Users/rogerlin/Downloads/SwiftMandarin/build/",
+      "description": "Check build directory"
+    },
+    "tool_response": {
+      "stdout": "DerivedData_release_20260211",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01NhuhHoCj4H3b9nyLwV7vLu"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git branch -a",
+      "description": "Check branches"
+    },
+    "tool_response": {
+      "stdout": "* feb-23-2026-ready-to-ship\n  main\n  main-integration\n  v1-claude-working\n  v2-claude\n  v3-claude-cross-platform-ship\n  v3.0\n  v3.0-claude-cross-platform-ship\n  v4.0-claude-ship\n  v4.1-claude-ship\n  v4.2-feb-22-2025\n  v5-feb-22-2026\n  remotes/origin/HEAD -> origin/main\n  remotes/origin/feat/audit-and-improvements-2470562626356746575\n  remotes/origin/feb-23-2026-ready-to-ship\n  remotes/origin/main\n  remotes/origin/v1-claude-working\n  remotes/origin/v3-claude-cross-platform-ship\n  remotes/origin/v3.0\n  remotes/origin/v3.0-claude-cross-platform-ship\n  remotes/origin/v4.1-claude-ship\n  remotes/origin/v4.2-feb-22-2025\n  remotes/origin/v5-feb-22-2026",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01KwhriB82ppyYxShJqou9aJ"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -lh /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg",
+      "description": "Check existing DMG size"
+    },
+    "tool_response": {
+      "stdout": "-rw-r--r--  1 rogerlin  staff   1.7M Feb 11 04:51 /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01C43gD8mqgKGRx3jwhWTwux"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "gh release list --repo linroger/SwiftMandarin 2>&1 | head -10",
+      "description": "Check existing releases"
+    },
+    "tool_response": {
+      "stdout": "non-200 OK status code: 401 Unauthorized body: \"{\\r\\n  \\\"message\\\": \\\"Bad credentials\\\",\\r\\n  \\\"documentation_url\\\": \\\"https://docs.github.com/rest\\\",\\r\\n  \\\"status\\\": \\\"401\\\"\\r\\n}\"",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_012eUqNF8gKKjM2pHEnhXjq4"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "unset GH_TOKEN && unset GITHUB_TOKEN && gh auth switch --user linroger 2>&1",
+      "description": "Switch to keyring-authenticated account"
+    },
+    "tool_response": {
+      "stdout": "\u2713 Switched active account for github.com to linroger",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01MvfizJfVvMk13XDA2AT7AS"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "unset GH_TOKEN && unset GITHUB_TOKEN && gh release list --repo linroger/SwiftMandarin 2>&1",
+      "description": "List existing releases"
+    },
+    "tool_response": {
+      "stdout": "SwiftMandarin v3.0.0\tLatest\tv3.0.0\t2026-02-10T20:52:40Z",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01YMatTKU8DdcWr4UUukdTmv"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "xcodebuild -project /Users/rogerlin/Downloads/SwiftMandarin/SwiftMandarin.xcodeproj -showBuildSettings 2>/dev/null | grep -E \"MARKETING_VERSION|CURRENT_PROJECT_VERSION|PRODUCT_NAME\" | head -6",
+      "description": "Get app version from Xcode project"
+    },
+    "tool_response": {
+      "stdout": "    CURRENT_PROJECT_VERSION = 2\n    MARKETING_VERSION = 2.0\n    PRODUCT_NAME = SwiftMandarin",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01JHkUqP6cZVGDFATw3dTZtD"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "unset GH_TOKEN && unset GITHUB_TOKEN && gh release view v3.0.0 --repo linroger/SwiftMandarin 2>&1",
+      "description": "View existing release details"
+    },
+    "tool_response": {
+      "stdout": "title:\tSwiftMandarin v3.0.0\ntag:\tv3.0.0\ndraft:\tfalse\nprerelease:\tfalse\nimmutable:\tfalse\nauthor:\tlinroger\ncreated:\t2026-02-10T20:51:30Z\npublished:\t2026-02-10T20:52:40Z\nurl:\thttps://github.com/linroger/SwiftMandarin/releases/tag/v3.0.0\nasset:\tSwiftMandarin-2.0-macOS.dmg\nasset:\tSwiftMandarin-2.0-macOS.dmg.sha256\n--\nSwiftMandarin v3.0.0 release\\n\\nIncludes:\\n- New README with install, usage, and architecture documentation\\n- Organized screenshot galleries for macOS, iPhone, and iPad\\n- Packaged macOS installer DMG\\n\\nSHA-256 checksum is included as a separate asset.",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01D1jmMVjBWE4D4ZhYGmSkxS"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "xcodebuild -project /Users/rogerlin/Downloads/SwiftMandarin/SwiftMandarin.xcodeproj -list 2>&1",
+      "description": "List Xcode schemes and targets"
+    },
+    "tool_response": {
+      "stdout": "Command line invocation:\n    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project /Users/rogerlin/Downloads/SwiftMandarin/SwiftMandarin.xcodeproj -list\n\nInformation about project \"SwiftMandarin\":\n    Targets:\n        SwiftMandarin\n\n    Build Configurations:\n        Debug\n        Release\n\n    If no build configuration is specified and -scheme is not passed then \"Release\" is used.\n\n    Schemes:\n        SwiftMandarin",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01YZN5bxrRCHn97GmByr3Ava"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "xcodebuild -project /Users/rogerlin/Downloads/SwiftMandarin/SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration Release -derivedDataPath /Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release clean build 2>&1 | tail -20",
+      "timeout": 120000,
+      "description": "Build Release configuration"
+    },
+    "tool_response": {
+      "stdout": "        /Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Products/Release/SwiftMandarin.app\n\n    Task output dependencies:\n        /Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Products/Release/SwiftMandarin.app\n\nTouch /Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Products/Release/SwiftMandarin.app (in target 'SwiftMandarin' from project 'SwiftMandarin')\n    cd /Users/rogerlin/Downloads/SwiftMandarin\n    /usr/bin/touch -c /Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Products/Release/SwiftMandarin.app\n\n    Task input dependencies:\n        /Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Products/Release/SwiftMandarin.app\n\n    Task output dependencies:\n\nnote: build debugging is enabled, completed trace: '/Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Intermediates.noindex/XCBuildData/buildDebugging-1771837069.77274/completed-build.trace'\nnote: build debugging is enabled, completed database: '/Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Intermediates.noindex/XCBuildData/buildDebugging-1771837069.77274/completed-build.db'\nnote: Attempting to load build description from disk\nnote: Constructing description\n** BUILD SUCCEEDED **",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01AdFsTunegGdJeXaPzhHW4K"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "APP_PATH=\"/Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Products/Release/SwiftMandarin.app\" && ls -la \"$APP_PATH\" && /usr/libexec/PlistBuddy -c \"Print CFBundleShortVersionString\" \"$APP_PATH/Contents/Info.plist\" 2>/dev/null && /usr/libexec/PlistBuddy -c \"Print CFBundleVersion\" \"$APP_PATH/Contents/Info.plist\" 2>/dev/null",
+      "description": "Verify built app and get version"
+    },
+    "tool_response": {
+      "stdout": "total 0\ndrwxr-xr-x  3 rogerlin  staff   96 Feb 23 16:58 .\ndrwxr-xr-x@ 5 rogerlin  staff  160 Feb 23 16:58 ..\ndrwxr-xr-x  7 rogerlin  staff  224 Feb 23 16:58 Contents\n2.0\n2",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01CsEziVTkjrQRn13ck3bqVg"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "STAGING=\"/tmp/SwiftMandarin_dmg_staging\" && mkdir -p \"$STAGING\"",
+      "description": "Create staging directory"
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_019Wv5urrDqiFV5em6bew6ox"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cp -R \"/Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Products/Release/SwiftMandarin.app\" \"/tmp/SwiftMandarin_dmg_staging/\" && ln -sf /Applications \"/tmp/SwiftMandarin_dmg_staging/Applications\"",
+      "description": "Copy app and create Applications symlink"
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": true
+    },
+    "tool_use_id": "toolu_017qw5H1JygEzrZAZggFkVSg"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "hdiutil create -volname \"SwiftMandarin\" -srcfolder \"/tmp/SwiftMandarin_dmg_staging\" -ov -format UDZO \"/Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg\" 2>&1",
+      "timeout": 30000,
+      "description": "Create compressed DMG"
+    },
+    "tool_response": {
+      "stdout": "created: /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01WPM4HdSBPQfqzmBo6umjtU"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "shasum -a 256 /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg > /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg.sha256 && cat /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg.sha256",
+      "description": "Generate SHA-256 checksum"
+    },
+    "tool_response": {
+      "stdout": "5c6d63abcfb406c2a57ad30ed46e1b08870461d08823f6da5419b5f7f4cd422d  /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_014G1AhK9fjr84diQp6Ydp9a"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -lh /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg",
+      "description": "Check DMG file size"
+    },
+    "tool_response": {
+      "stdout": "-rw-r--r--@ 1 rogerlin  staff   1.9M Feb 23 16:58 /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01RArdxpm42j3EcHHZ1Q9Gm6"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git -C /Users/rogerlin/Downloads/SwiftMandarin push origin feb-23-2026-ready-to-ship 2>&1",
+      "description": "Push current branch to origin"
+    },
+    "tool_response": {
+      "stdout": "Everything up-to-date",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01R7zMzDdgNLY8qFpsHvDmvg"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "unset GH_TOKEN && unset GITHUB_TOKEN && gh release create v4.0.0 \\\n  --repo linroger/SwiftMandarin \\\n  --target feb-23-2026-ready-to-ship \\\n  --title \"SwiftMandarin v4.0.0\" \\\n  --notes \"$(cat <<'EOF'\n## SwiftMandarin v4.0.0\n\n### What's New\n- Latest build from the `feb-23-2026-ready-to-ship` branch\n- Polished README with install, usage, and architecture documentation\n- Organized screenshot galleries for macOS, iPhone, and iPad\n- Fresh macOS DMG installer package\n\n### Installation\n1. Download `SwiftMandarin-2.0-macOS.dmg`\n2. Open the DMG and drag **SwiftMandarin** to your **Applications** folder\n3. Launch from Applications or Spotlight\n\n### Verify Download Integrity\n```\nshasum -a 256 SwiftMandarin-2.0-macOS.dmg\n```\nExpected: `5c6d63abcfb406c2a57ad30ed46e1b08870461d08823f6da5419b5f7f4cd422d`\n\n### Assets\n- `SwiftMandarin-2.0-macOS.dmg` \u2014 macOS installer (1.9 MB)\n- `SwiftMandarin-2.0-macOS.dmg.sha256` \u2014 SHA-256 checksum\nEOF\n)\" \\\n  /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg \\\n  /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg.sha256 \\\n  2>&1",
+      "timeout": 60000,
+      "description": "Create GitHub release v4.0.0 with DMG assets"
+    },
+    "tool_response": {
+      "stdout": "https://github.com/linroger/SwiftMandarin/releases/tag/v4.0.0",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01DgJKLZFeRWe1tTVZAF12jm"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "unset GH_TOKEN && unset GITHUB_TOKEN && gh release view v4.0.0 --repo linroger/SwiftMandarin 2>&1",
+      "description": "Verify the new release"
+    },
+    "tool_response": {
+      "stdout": "title:\tSwiftMandarin v4.0.0\ntag:\tv4.0.0\ndraft:\tfalse\nprerelease:\tfalse\nimmutable:\tfalse\nauthor:\tlinroger\ncreated:\t2026-02-23T08:50:17Z\npublished:\t2026-02-23T08:59:39Z\nurl:\thttps://github.com/linroger/SwiftMandarin/releases/tag/v4.0.0\nasset:\tSwiftMandarin-2.0-macOS.dmg\nasset:\tSwiftMandarin-2.0-macOS.dmg.sha256\n--\n## SwiftMandarin v4.0.0\n\n### What's New\n- Latest build from the `feb-23-2026-ready-to-ship` branch\n- Polished README with install, usage, and architecture documentation\n- Organized screenshot galleries for macOS, iPhone, and iPad\n- Fresh macOS DMG installer package\n\n### Installation\n1. Download `SwiftMandarin-2.0-macOS.dmg`\n2. Open the DMG and drag **SwiftMandarin** to your **Applications** folder\n3. Launch from Applications or Spotlight\n\n### Verify Download Integrity\n```\nshasum -a 256 SwiftMandarin-2.0-macOS.dmg\n```\nExpected: `5c6d63abcfb406c2a57ad30ed46e1b08870461d08823f6da5419b5f7f4cd422d`\n\n### Assets\n- `SwiftMandarin-2.0-macOS.dmg` \u2014 macOS installer (1.9 MB)\n- `SwiftMandarin-2.0-macOS.dmg.sha256` \u2014 SHA-256 checksum",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01PjnauATUB8M6T4Yt4Aj1YD"
+  }
+]
