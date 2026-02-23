@@ -1,0 +1,437 @@
+[
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls /Users/rogerlin/Downloads/SwiftMandarin/",
+      "description": "List project root"
+    },
+    "tool_use_id": "toolu_01E9UDsqhvogWq7z4BbRUHBt"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git log --oneline -5",
+      "description": "Check recent commits"
+    },
+    "tool_use_id": "toolu_01WPNcM571cWdrhLdynhzBkt"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git remote -v",
+      "description": "Check git remotes"
+    },
+    "tool_use_id": "toolu_017GR4JcsrDoShCCF2Z1trFN"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls /Users/rogerlin/Downloads/SwiftMandarin/dist/",
+      "description": "Check dist directory for existing DMG"
+    },
+    "tool_use_id": "toolu_012ZVbhHb8TuEXhbSLbocxN1"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls /Users/rogerlin/Downloads/SwiftMandarin/build/",
+      "description": "Check build directory"
+    },
+    "tool_use_id": "toolu_01NhuhHoCj4H3b9nyLwV7vLu"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git branch -a",
+      "description": "Check branches"
+    },
+    "tool_use_id": "toolu_01KwhriB82ppyYxShJqou9aJ"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -lh /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg",
+      "description": "Check existing DMG size"
+    },
+    "tool_use_id": "toolu_01C43gD8mqgKGRx3jwhWTwux"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "gh release list --repo linroger/SwiftMandarin 2>&1 | head -10",
+      "description": "Check existing releases"
+    },
+    "tool_use_id": "toolu_012eUqNF8gKKjM2pHEnhXjq4"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "gh auth status 2>&1",
+      "description": "Check gh auth status"
+    },
+    "tool_use_id": "toolu_013d6N2pZyHXBAtMCEPuc6EC"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "unset GH_TOKEN && gh auth status 2>&1",
+      "description": "Check auth without invalid GH_TOKEN"
+    },
+    "tool_use_id": "toolu_01YAsyAP3Fzrpr5yjJ9z4n8j"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "unset GH_TOKEN && unset GITHUB_TOKEN && gh auth switch --user linroger 2>&1",
+      "description": "Switch to keyring-authenticated account"
+    },
+    "tool_use_id": "toolu_01MvfizJfVvMk13XDA2AT7AS"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "unset GH_TOKEN && unset GITHUB_TOKEN && gh release list --repo linroger/SwiftMandarin 2>&1",
+      "description": "List existing releases"
+    },
+    "tool_use_id": "toolu_01YMatTKU8DdcWr4UUukdTmv"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "xcodebuild -project /Users/rogerlin/Downloads/SwiftMandarin/SwiftMandarin.xcodeproj -showBuildSettings 2>/dev/null | grep -E \"MARKETING_VERSION|CURRENT_PROJECT_VERSION|PRODUCT_NAME\" | head -6",
+      "description": "Get app version from Xcode project"
+    },
+    "tool_use_id": "toolu_01JHkUqP6cZVGDFATw3dTZtD"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "unset GH_TOKEN && unset GITHUB_TOKEN && gh release view v3.0.0 --repo linroger/SwiftMandarin 2>&1",
+      "description": "View existing release details"
+    },
+    "tool_use_id": "toolu_01D1jmMVjBWE4D4ZhYGmSkxS"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "xcodebuild -project /Users/rogerlin/Downloads/SwiftMandarin/SwiftMandarin.xcodeproj -list 2>&1",
+      "description": "List Xcode schemes and targets"
+    },
+    "tool_use_id": "toolu_01YZN5bxrRCHn97GmByr3Ava"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "xcodebuild -project /Users/rogerlin/Downloads/SwiftMandarin/SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration Release -derivedDataPath /Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release clean build 2>&1 | tail -20",
+      "timeout": 120000,
+      "description": "Build Release configuration"
+    },
+    "tool_use_id": "toolu_01AdFsTunegGdJeXaPzhHW4K"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "APP_PATH=\"/Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Products/Release/SwiftMandarin.app\" && ls -la \"$APP_PATH\" && /usr/libexec/PlistBuddy -c \"Print CFBundleShortVersionString\" \"$APP_PATH/Contents/Info.plist\" 2>/dev/null && /usr/libexec/PlistBuddy -c \"Print CFBundleVersion\" \"$APP_PATH/Contents/Info.plist\" 2>/dev/null",
+      "description": "Verify built app and get version"
+    },
+    "tool_use_id": "toolu_01CsEziVTkjrQRn13ck3bqVg"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "STAGING=\"/tmp/SwiftMandarin_dmg_staging\" && mkdir -p \"$STAGING\"",
+      "description": "Create staging directory"
+    },
+    "tool_use_id": "toolu_019Wv5urrDqiFV5em6bew6ox"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cp -R \"/Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Products/Release/SwiftMandarin.app\" \"/tmp/SwiftMandarin_dmg_staging/\" && ln -sf /Applications \"/tmp/SwiftMandarin_dmg_staging/Applications\"",
+      "description": "Copy app and create Applications symlink"
+    },
+    "tool_use_id": "toolu_017qw5H1JygEzrZAZggFkVSg"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "hdiutil create -volname \"SwiftMandarin\" -srcfolder \"/tmp/SwiftMandarin_dmg_staging\" -ov -format UDZO \"/Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg\" 2>&1",
+      "timeout": 30000,
+      "description": "Create compressed DMG"
+    },
+    "tool_use_id": "toolu_01WPM4HdSBPQfqzmBo6umjtU"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "shasum -a 256 /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg > /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg.sha256 && cat /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg.sha256",
+      "description": "Generate SHA-256 checksum"
+    },
+    "tool_use_id": "toolu_014G1AhK9fjr84diQp6Ydp9a"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -lh /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg",
+      "description": "Check DMG file size"
+    },
+    "tool_use_id": "toolu_01RArdxpm42j3EcHHZ1Q9Gm6"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git -C /Users/rogerlin/Downloads/SwiftMandarin push origin feb-23-2026-ready-to-ship 2>&1",
+      "description": "Push current branch to origin"
+    },
+    "tool_use_id": "toolu_01R7zMzDdgNLY8qFpsHvDmvg"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "unset GH_TOKEN && unset GITHUB_TOKEN && gh release create v4.0.0 \\\n  --repo linroger/SwiftMandarin \\\n  --target feb-23-2026-ready-to-ship \\\n  --title \"SwiftMandarin v4.0.0\" \\\n  --notes \"$(cat <<'EOF'\n## SwiftMandarin v4.0.0\n\n### What's New\n- Latest build from the `feb-23-2026-ready-to-ship` branch\n- Polished README with install, usage, and architecture documentation\n- Organized screenshot galleries for macOS, iPhone, and iPad\n- Fresh macOS DMG installer package\n\n### Installation\n1. Download `SwiftMandarin-2.0-macOS.dmg`\n2. Open the DMG and drag **SwiftMandarin** to your **Applications** folder\n3. Launch from Applications or Spotlight\n\n### Verify Download Integrity\n```\nshasum -a 256 SwiftMandarin-2.0-macOS.dmg\n```\nExpected: `5c6d63abcfb406c2a57ad30ed46e1b08870461d08823f6da5419b5f7f4cd422d`\n\n### Assets\n- `SwiftMandarin-2.0-macOS.dmg` \u2014 macOS installer (1.9 MB)\n- `SwiftMandarin-2.0-macOS.dmg.sha256` \u2014 SHA-256 checksum\nEOF\n)\" \\\n  /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg \\\n  /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg.sha256 \\\n  2>&1",
+      "timeout": 60000,
+      "description": "Create GitHub release v4.0.0 with DMG assets"
+    },
+    "tool_use_id": "toolu_01DgJKLZFeRWe1tTVZAF12jm"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "unset GH_TOKEN && unset GITHUB_TOKEN && gh release view v4.0.0 --repo linroger/SwiftMandarin 2>&1",
+      "description": "Verify the new release"
+    },
+    "tool_use_id": "toolu_01PjnauATUB8M6T4Yt4Aj1YD"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git -C /Users/rogerlin/Downloads/SwiftMandarin log --oneline -10",
+      "description": "Check recent commits for new features"
+    },
+    "tool_use_id": "toolu_01QD4F4BREXmHBnZUxRVQqg1"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "xcodebuild -project /Users/rogerlin/Downloads/SwiftMandarin/SwiftMandarin.xcodeproj -showBuildSettings 2>/dev/null | grep -E \"MARKETING_VERSION|CURRENT_PROJECT_VERSION\"",
+      "description": "Get current app version"
+    },
+    "tool_use_id": "toolu_018sAtqQAWFzRHQTRX9TYuDM"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "xcodebuild -project /Users/rogerlin/Downloads/SwiftMandarin/SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration Release -derivedDataPath /Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release clean build 2>&1 | tail -5",
+      "timeout": 120000,
+      "description": "Build Release configuration"
+    },
+    "tool_use_id": "toolu_01E1eRVd36JgZ2KGwSpKokVd"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "mkdir -p /tmp/SwiftMandarin_dmg_staging && cp -R \"/Users/rogerlin/Downloads/SwiftMandarin/build/DerivedData_release/Build/Products/Release/SwiftMandarin.app\" /tmp/SwiftMandarin_dmg_staging/ && ln -sf /Applications /tmp/SwiftMandarin_dmg_staging/Applications",
+      "description": "Stage app and Applications symlink"
+    },
+    "tool_use_id": "toolu_015ipfQG4jTcPwMz9HcLbKP8"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "hdiutil create -volname \"SwiftMandarin\" -srcfolder /tmp/SwiftMandarin_dmg_staging -ov -format UDZO /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg 2>&1",
+      "timeout": 30000,
+      "description": "Create compressed DMG"
+    },
+    "tool_use_id": "toolu_0189eyN4T4cz2f1ts6agPufB"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "shasum -a 256 /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg > /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg.sha256 && cat /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg.sha256 && ls -lh /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg",
+      "description": "Generate checksum and check size"
+    },
+    "tool_use_id": "toolu_01BBgFiQ2BUSexiseunJF3oC"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git -C /Users/rogerlin/Downloads/SwiftMandarin push origin feb-23-2026-ready-to-ship 2>&1",
+      "description": "Push latest commits"
+    },
+    "tool_use_id": "toolu_011zo44wPH19kvSb9FdHLbBC"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "SHA=\"931c537485b2f3bc6b505d2479371811e3bcf1383d4d64bc2edd0f5b17ae51b2\"\nunset GH_TOKEN && unset GITHUB_TOKEN && gh release create v4.1.0 \\\n  --repo linroger/SwiftMandarin \\\n  --target feb-23-2026-ready-to-ship \\\n  --title \"SwiftMandarin v4.1.0\" \\\n  --notes \"$(cat <<'EOF'\n## SwiftMandarin v4.1.0\n\n### What's New\n- **Camera & Live Photo support** \u2014 capture and interact with live photos directly in the app\n- All previous improvements (polished README, screenshots, architecture docs)\n\n### Installation\n1. Download `SwiftMandarin-2.0-macOS.dmg`\n2. Open the DMG and drag **SwiftMandarin** to your **Applications** folder\n3. Launch from Applications or Spotlight\n\n### Verify Download Integrity\n```\nshasum -a 256 SwiftMandarin-2.0-macOS.dmg\n```\nExpected: `931c537485b2f3bc6b505d2479371811e3bcf1383d4d64bc2edd0f5b17ae51b2`\n\n### Assets\n- `SwiftMandarin-2.0-macOS.dmg` \u2014 macOS installer (2.1 MB)\n- `SwiftMandarin-2.0-macOS.dmg.sha256` \u2014 SHA-256 checksum\nEOF\n)\" \\\n  /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg \\\n  /Users/rogerlin/Downloads/SwiftMandarin/dist/SwiftMandarin-2.0-macOS.dmg.sha256 \\\n  2>&1",
+      "timeout": 60000,
+      "description": "Create GitHub release v4.1.0"
+    },
+    "tool_use_id": "toolu_01EPMfqcu6SRTXJ8TXdwb24Y"
+  }
+]

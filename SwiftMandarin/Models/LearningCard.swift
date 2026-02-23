@@ -209,6 +209,7 @@ final class LearningProgressStore {
         if !Calendar.current.isDateInToday(lastResetDate) {
             todayReviewedCount = 0
             UserDefaults.standard.set(Date(), forKey: lastResetDateKey)
+            UserDefaults.standard.set(todayReviewedCount, forKey: todayCountKey)
         }
     }
     

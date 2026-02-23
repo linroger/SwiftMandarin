@@ -42,9 +42,16 @@ final class TranslationHistoryStore {
     
     private(set) var entries: [TranslationHistoryEntry] = []
     var selectedEntry: TranslationHistoryEntry?
-    
+
     private let storageKey = "translationHistory"
-    private let maxEntries = 100
+
+    private var maxEntries: Int {
+        if let doubleValue = UserDefaults.standard.object(forKey: "maxHistoryEntries") as? Double {
+            return max(1, Int(doubleValue))
+        }
+        let intValue = UserDefaults.standard.integer(forKey: "maxHistoryEntries")
+        return intValue > 0 ? intValue : 100
+    }
     
     private init() {
         load()
@@ -101,6 +108,9 @@ final class TranslationHistoryStore {
         guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
         if let decoded = try? JSONDecoder().decode([TranslationHistoryEntry].self, from: data) {
             entries = decoded
+        }
+        if entries.count > maxEntries {
+            entries = Array(entries.prefix(maxEntries))
         }
     }
     

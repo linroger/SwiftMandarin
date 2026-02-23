@@ -27,6 +27,7 @@ struct ContentView: View {
 
 enum AppTab: String, CaseIterable, Identifiable {
     case translate
+    case photo
     case history
     case vocabulary
     case learn
@@ -39,6 +40,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .translate: return "Translate"
+        case .photo: return "Photo"
         case .history: return "History"
         case .vocabulary: return "Vocabulary"
         case .learn: return "Learn"
@@ -51,6 +53,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .translate: return "character.bubble"
+        case .photo: return "camera.viewfinder"
         case .history: return "clock"
         case .vocabulary: return "text.book.closed"
         case .learn: return "brain.head.profile"
@@ -70,6 +73,10 @@ struct iOSContentView: View {
         TabView(selection: $selectedTab) {
             Tab(AppTab.translate.title, systemImage: AppTab.translate.icon, value: .translate) {
                 TranslateView()
+            }
+            
+            Tab(AppTab.photo.title, systemImage: AppTab.photo.icon, value: .photo) {
+                PhotoTranslateView()
             }
             
             Tab(AppTab.history.title, systemImage: AppTab.history.icon, value: .history) {
@@ -138,6 +145,8 @@ struct MacOSContentView: View {
         switch selectedTab {
         case .translate:
             TranslateView()
+        case .photo:
+            PhotoTranslateView()
         case .history:
             HistoryTabView(selectedTab: $selectedTab)
         case .vocabulary:

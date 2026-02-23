@@ -18,7 +18,7 @@ struct StatsView: View {
     
     @State private var barChartTimeRange: BarChartTimeRange = .week
     @State private var selectedContributionDate: DailyActivity?
-    @State private var selectedMasterySegment: MasteryLevel?
+    @State private var selectedMasterySegment: VocabularyMasterySegment?
     @State private var selectedPOSSegment: String?
     @Namespace private var namespace
     
@@ -32,6 +32,11 @@ struct StatsView: View {
             case .twoWeeks: return 14
             }
         }
+    }
+
+    enum VocabularyMasterySegment: String, CaseIterable {
+        case learning = "Learning"
+        case mastered = "Mastered"
     }
     
     /// Platform detection for adaptive layouts
@@ -143,8 +148,8 @@ struct StatsView: View {
                         
                         CompactStatCard(
                             icon: "checkmark.circle.fill",
-                            value: "\(activityStore.totalReviewsCompleted)",
-                            label: "Reviews",
+                            value: "\(termsStore.masteredCount)",
+                            label: "Mastered",
                             color: .green
                         )
                     }
@@ -212,15 +217,20 @@ struct StatsView: View {
                 Spacer()
             }
             .padding(.horizontal)
-            
+
+            let maxScore = contributionMaxScore
+
             // Adaptive contribution grid - shows fewer days on iPhone
             ContributionHeatmap(
                 activities: activityStore.activitiesForLastDays(contributionDays),
                 selectedDate: $selectedContributionDate,
-                isCompact: isCompactWidth
+                isCompact: isCompactWidth,
+                colorForScore: { score in
+                    contributionColor(forScore: score, maxScore: maxScore)
+                }
             )
             .padding(.horizontal, isCompactWidth ? 0 : 4)
-            
+
             // Legend
             HStack(spacing: 16) {
                 Spacer()
@@ -228,9 +238,11 @@ struct StatsView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                 HStack(spacing: 3) {
-                    ForEach(0..<5, id: \.self) { level in
+                    let steps: [Double] = [0.0, 0.25, 0.5, 0.75, 1.0]
+                    ForEach(0..<steps.count, id: \.self) { index in
+                        let score = Int(Double(maxScore) * steps[index])
                         RoundedRectangle(cornerRadius: 3)
-                            .fill(contributionColor(for: level))
+                            .fill(contributionColor(forScore: score, maxScore: maxScore))
                             .frame(width: 14, height: 14)
                     }
                 }
@@ -274,14 +286,20 @@ struct StatsView: View {
         .padding(.horizontal)
     }
     
-    private func contributionColor(for level: Int) -> Color {
-        switch level {
-        case 0: return Color.gray.opacity(0.3)
-        case 1: return Color.green.opacity(0.4)
-        case 2: return Color.green.opacity(0.6)
-        case 3: return Color.green.opacity(0.8)
-        default: return Color.green
-        }
+    private var contributionMaxScore: Int {
+        let activities = activityStore.activitiesForLastDays(contributionDays)
+        let maxActivityScore = activities.map(\.activityScore).max() ?? 0
+        let baseline = max(5, Int(ceil(Double(activityStore.totalWordsLearned) / 30.0)))
+        return max(maxActivityScore, baseline)
+    }
+
+    private func contributionColor(forScore score: Int, maxScore: Int) -> Color {
+        guard score > 0 else { return Color.gray.opacity(0.25) }
+        let maxValue = max(1, maxScore)
+        let normalized = min(1.0, log1p(Double(score)) / log1p(Double(maxValue)))
+        let saturation = 0.25 + (0.55 * normalized)
+        let brightness = 0.95 - (0.35 * normalized)
+        return Color(hue: 0.33, saturation: saturation, brightness: brightness)
     }
     
     // MARK: - Stacked Bar Chart Section (Daily/Weekly by Parts of Speech)
@@ -458,53 +476,50 @@ struct StatsView: View {
     
     private var masteryPieChart: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Mastery Progress")
+            Text("Vocabulary Mastery")
                 .font(.headline)
-            
-            let masteryData = calculateMasteryDistribution()
+
+            let masteryData = calculateVocabularyMasteryDistribution()
             let total = masteryData.reduce(0) { $0 + $1.count }
-            
+
             if masteryData.isEmpty {
                 emptyChartPlaceholder(
                     icon: "brain.head.profile",
-                    message: "Start learning to track mastery"
+                    message: "Save words to track mastery"
                 )
                 .frame(height: 180)
             } else {
                 VStack(spacing: 8) {
                     ZStack {
-                        Chart(masteryData, id: \.level) { item in
+                        Chart(masteryData, id: \.segment) { item in
                             SectorMark(
                                 angle: .value("Count", item.count),
                                 innerRadius: .ratio(0.55),
-                                outerRadius: selectedMasterySegment == item.level ? .ratio(1.0) : .ratio(0.92),
+                                outerRadius: selectedMasterySegment == item.segment ? .ratio(1.0) : .ratio(0.92),
                                 angularInset: 1.5
                             )
-                            .foregroundStyle(by: .value("Level", item.level.displayName))
+                            .foregroundStyle(by: .value("Level", item.segment.rawValue))
                             .cornerRadius(4)
-                            .opacity(selectedMasterySegment == nil || selectedMasterySegment == item.level ? 1.0 : 0.4)
+                            .opacity(selectedMasterySegment == nil || selectedMasterySegment == item.segment ? 1.0 : 0.4)
                         }
                         .chartLegend(.hidden)
                         .chartForegroundStyleScale([
-                            MasteryLevel.new.displayName: Color.gray.opacity(0.6),
-                            MasteryLevel.learning.displayName: Color.red.opacity(0.8),
-                            MasteryLevel.familiar.displayName: Color.orange,
-                            MasteryLevel.proficient.displayName: Color.blue,
-                            MasteryLevel.mastered.displayName: Color.green
+                            VocabularyMasterySegment.learning.rawValue: Color.orange,
+                            VocabularyMasterySegment.mastered.rawValue: Color.green
                         ])
                         .chartAngleSelection(value: $selectedMasteryAngle)
                         .frame(height: 140)
-                        
+
                         // Center label showing selected segment info
                         VStack(spacing: 2) {
                             if let selected = selectedMasterySegment,
-                               let item = masteryData.first(where: { $0.level == selected }) {
+                               let item = masteryData.first(where: { $0.segment == selected }) {
                                 Text("\(item.count)")
                                     .font(.system(size: 22, weight: .bold, design: .rounded))
-                                    .foregroundStyle(colorForMasteryLevel(selected))
-                                Text(selected.displayName)
+                                    .foregroundStyle(colorForVocabularyMastery(selected))
+                                Text(selected.rawValue)
                                     .font(.caption)
-                                    .foregroundStyle(colorForMasteryLevel(selected))
+                                    .foregroundStyle(colorForVocabularyMastery(selected))
                             } else {
                                 Text("\(total)")
                                     .font(.system(size: 22, weight: .bold, design: .rounded))
@@ -515,15 +530,15 @@ struct StatsView: View {
                             }
                         }
                     }
-                    
+
                     // Custom legend with better wrapping
                     FlowLayout(spacing: 8) {
-                        ForEach(masteryData, id: \.level) { item in
+                        ForEach(masteryData, id: \.segment) { item in
                             HStack(spacing: 4) {
                                 Circle()
-                                    .fill(colorForMasteryLevel(item.level))
+                                    .fill(colorForVocabularyMastery(item.segment))
                                     .frame(width: 8, height: 8)
-                                Text(item.level.displayName)
+                                Text(item.segment.rawValue)
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
@@ -539,13 +554,10 @@ struct StatsView: View {
         .frame(maxWidth: .infinity)
         .background(.background, in: RoundedRectangle(cornerRadius: 16))
     }
-    
-    private func colorForMasteryLevel(_ level: MasteryLevel) -> Color {
-        switch level {
-        case .new: return Color.gray.opacity(0.6)
-        case .learning: return Color.red.opacity(0.8)
-        case .familiar: return Color.orange
-        case .proficient: return Color.blue
+
+    private func colorForVocabularyMastery(_ segment: VocabularyMasterySegment) -> Color {
+        switch segment {
+        case .learning: return Color.orange
         case .mastered: return Color.green
         }
     }
@@ -553,17 +565,17 @@ struct StatsView: View {
     @State private var selectedMasteryAngle: Int?
     @State private var selectedPOSAngle: Int?
     
-    private func updateMasterySelection(from angle: Int?, data: [(level: MasteryLevel, count: Int)]) {
+    private func updateMasterySelection(from angle: Int?, data: [(segment: VocabularyMasterySegment, count: Int)]) {
         guard let angle = angle else {
             selectedMasterySegment = nil
             return
         }
-        
+
         var cumulative = 0
         for item in data {
             cumulative += item.count
             if angle <= cumulative {
-                selectedMasterySegment = item.level
+                selectedMasterySegment = item.segment
                 return
             }
         }
@@ -679,21 +691,17 @@ struct StatsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
-    private func calculateMasteryDistribution() -> [(level: MasteryLevel, count: Int)] {
-        var distribution: [MasteryLevel: Int] = [:]
-        
-        for level in MasteryLevel.allCases {
-            distribution[level] = 0
-        }
-        
-        for progress in progressStore.progress.values {
-            distribution[progress.masteryLevel, default: 0] += 1
-        }
-        
-        return distribution
-            .filter { $0.value > 0 }
-            .map { (level: $0.key, count: $0.value) }
-            .sorted { $0.level.sortOrder < $1.level.sortOrder }
+    private func calculateVocabularyMasteryDistribution() -> [(segment: VocabularyMasterySegment, count: Int)] {
+        let total = termsStore.savedTerms.count
+        guard total > 0 else { return [] }
+
+        let mastered = termsStore.masteredCount
+        let learning = max(0, total - mastered)
+
+        return [
+            (segment: .learning, count: learning),
+            (segment: .mastered, count: mastered)
+        ]
     }
     
     private func calculatePartsOfSpeechDistribution() -> [(partOfSpeech: String, count: Int)] {
@@ -748,9 +756,9 @@ struct StatsView: View {
                     icon: "chart.bar"
                 )
                 QuickStatCell(
-                    value: "\(masteredCardCount)",
-                    label: "Mastered",
-                    icon: "star.fill"
+                    value: "\(termsStore.masteredCount)",
+                    label: "Words Mastered",
+                    icon: "checkmark.circle.fill"
                 )
             }
             .padding(.horizontal)
@@ -865,6 +873,7 @@ struct ContributionHeatmap: View {
     let activities: [DailyActivity]
     @Binding var selectedDate: DailyActivity?
     var isCompact: Bool = false
+    let colorForScore: (Int) -> Color
     
     private var spacing: CGFloat { isCompact ? 2 : 3 }
     private let rows: Int = 7 // Days of week
@@ -906,6 +915,7 @@ struct ContributionHeatmap: View {
                                             activity: activities[index],
                                             size: cellSize,
                                             isSelected: selectedDate?.dateKey == activities[index].dateKey,
+                                            colorForScore: colorForScore,
                                             onTap: {
                                                 withAnimation(.smooth(duration: 0.2)) {
                                                     if selectedDate?.dateKey == activities[index].dateKey {
@@ -1024,6 +1034,7 @@ struct ContributionCell: View {
     let activity: DailyActivity
     let size: CGFloat
     let isSelected: Bool
+    let colorForScore: (Int) -> Color
     let onTap: () -> Void
     
     var body: some View {
@@ -1041,14 +1052,7 @@ struct ContributionCell: View {
     }
     
     private var colorForActivity: Color {
-        let score = activity.activityScore
-        switch score {
-        case 0: return Color.gray.opacity(0.3)
-        case 1...3: return Color.green.opacity(0.4)
-        case 4...7: return Color.green.opacity(0.6)
-        case 8...15: return Color.green.opacity(0.8)
-        default: return Color.green
-        }
+        colorForScore(activity.activityScore)
     }
 }
 

@@ -33,6 +33,10 @@ struct TranslateView: View {
     // Focus state for keyboard dismissal
     @FocusState private var isInputFocused: Bool
     
+    // State for additional translation when input language mismatches direction
+    @State private var additionalTranslation: String = ""
+    @State private var isLoadingAdditionalTranslation: Bool = false
+    
     // Computed bindings to shared state
     private var sourceText: Binding<String> {
         Binding(
@@ -421,23 +425,122 @@ struct TranslateView: View {
     
     // MARK: - Interactive Translation View
     
+    /// Helper to detect if text contains Chinese characters
+    private func containsChinese(_ text: String) -> Bool {
+        text.contains { $0.isChineseCharacter }
+    }
+    
+    /// Whether input language mismatches the expected source language
+    private var inputLanguageMismatch: Bool {
+        let sourceIsChinese = containsChinese(sharedState.sourceText)
+        if sharedState.direction == .chineseToEnglish {
+            // Expected Chinese input, but got English
+            return !sourceIsChinese && !sharedState.sourceText.isEmpty
+        } else {
+            // Expected English input, but got Chinese
+            return sourceIsChinese && !sharedState.sourceText.isEmpty
+        }
+    }
+    
+    /// Determine which text is Chinese based on actual content detection
+    private var detectedChineseText: String {
+        let sourceIsChinese = containsChinese(sharedState.sourceText)
+        let translatedIsChinese = containsChinese(sharedState.translatedText)
+        
+        // If we have an additional translation (from mismatch scenario), use it
+        if inputLanguageMismatch && !additionalTranslation.isEmpty {
+            if containsChinese(additionalTranslation) {
+                return additionalTranslation
+            }
+        }
+        
+        if sourceIsChinese && !translatedIsChinese {
+            return sharedState.sourceText
+        } else if !sourceIsChinese && translatedIsChinese {
+            return sharedState.translatedText
+        } else if sourceIsChinese && translatedIsChinese {
+            return sharedState.direction == .englishToChinese ? sharedState.translatedText : sharedState.sourceText
+        } else {
+            // Neither is Chinese - use additional translation if available
+            if !additionalTranslation.isEmpty && containsChinese(additionalTranslation) {
+                return additionalTranslation
+            }
+            return sharedState.direction == .englishToChinese ? sharedState.translatedText : sharedState.sourceText
+        }
+    }
+    
+    /// Determine which text is English based on actual content detection
+    private var detectedEnglishText: String {
+        let sourceIsChinese = containsChinese(sharedState.sourceText)
+        let translatedIsChinese = containsChinese(sharedState.translatedText)
+        
+        // If we have an additional translation (from mismatch scenario), use it
+        if inputLanguageMismatch && !additionalTranslation.isEmpty {
+            if !containsChinese(additionalTranslation) {
+                return additionalTranslation
+            }
+        }
+        
+        if sourceIsChinese && !translatedIsChinese {
+            return sharedState.translatedText
+        } else if !sourceIsChinese && translatedIsChinese {
+            return sharedState.sourceText
+        } else if sourceIsChinese && translatedIsChinese {
+            return sharedState.direction == .englishToChinese ? sharedState.sourceText : sharedState.translatedText
+        } else {
+            // Neither is Chinese - the source is likely English
+            // Use additional translation for Chinese if available
+            if !additionalTranslation.isEmpty && !containsChinese(additionalTranslation) {
+                return additionalTranslation
+            }
+            return sharedState.sourceText
+        }
+    }
+    
+    /// Whether to show English section first (when source was Chinese)
+    private var showEnglishFirst: Bool {
+        containsChinese(sharedState.sourceText) && !containsChinese(sharedState.translatedText)
+    }
+    
+    /// Fetch additional translation when input language mismatches direction
+    private func fetchAdditionalTranslation() async {
+        guard inputLanguageMismatch else {
+            additionalTranslation = ""
+            return
+        }
+        
+        isLoadingAdditionalTranslation = true
+        
+        do {
+            let sourceIsChinese = containsChinese(sharedState.sourceText)
+            if sourceIsChinese {
+                // Input is Chinese but direction was EN→CN, translate to English
+                additionalTranslation = try await WordTranslationService.shared.translateToEnglish(sharedState.sourceText)
+            } else {
+                // Input is English but direction was CN→EN, translate to Chinese
+                additionalTranslation = try await WordTranslationService.shared.translateToChinese(sharedState.sourceText)
+            }
+        } catch {
+            print("Additional translation error: \(error)")
+            additionalTranslation = ""
+        }
+        
+        isLoadingAdditionalTranslation = false
+    }
+    
     @ViewBuilder
     private var interactiveTranslationView: some View {
-        let isChinese = sharedState.direction == .englishToChinese
-        let chineseText = isChinese ? sharedState.translatedText : sharedState.sourceText
-        let englishText = isChinese ? sharedState.sourceText : sharedState.translatedText
-        
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Show English translation if translating from Chinese
-                if !isChinese {
+                // Show English first if the source was Chinese (CN→EN scenario)
+                if showEnglishFirst {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("ENGLISH")
                             .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundStyle(.secondary)
                         
-                        Text(sharedState.translatedText)
+                        Text(detectedEnglishText)
                             .font(.title3)
                             .fontWeight(.medium)
                             .textSelection(.enabled)
@@ -447,26 +550,34 @@ struct TranslateView: View {
                     Divider()
                 }
                 
-                // Chinese text with interleaved pinyin - always show for both directions
+                // Chinese text with interleaved pinyin - always show
                 VStack(alignment: .leading, spacing: 8) {
                     Text("CHINESE (TAP WORDS FOR DETAILS)")
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
                     
-                    // Ruby text view with pinyin above each character
-                    RubyTextView(
-                        chineseText: chineseText,
-                        englishMeaning: englishText
-                    ) { segment in
-                        // Simply set the segment - sheet(item:) will automatically show when non-nil
-                        // This completely eliminates the race condition
-                        selectedSegment = segment
+                    if isLoadingAdditionalTranslation && inputLanguageMismatch {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Getting Chinese translation...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        // Ruby text view with pinyin above each character
+                        RubyTextView(
+                            chineseText: detectedChineseText,
+                            englishMeaning: detectedEnglishText
+                        ) { segment in
+                            selectedSegment = segment
+                        }
                     }
                 }
                 
-                // Show English below if translating to Chinese
-                if isChinese {
+                // Show English below if it wasn't shown above
+                if !showEnglishFirst {
                     Divider()
                     
                     VStack(alignment: .leading, spacing: 8) {
@@ -475,7 +586,7 @@ struct TranslateView: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(.secondary)
                         
-                        Text(sharedState.sourceText)
+                        Text(detectedEnglishText)
                             .font(.body)
                             .foregroundStyle(.secondary)
                             .textSelection(.enabled)
@@ -490,6 +601,10 @@ struct TranslateView: View {
                 .fill(.ultraThinMaterial)
         )
         .padding(.horizontal)
+        .task(id: sharedState.translatedText) {
+            // Fetch additional translation when translated text changes and there's a mismatch
+            await fetchAdditionalTranslation()
+        }
         #if os(iOS)
         // Using sheet(item:) eliminates race condition - sheet only shows when item is non-nil
         // and the item is guaranteed to be available when the sheet content is built
@@ -497,7 +612,7 @@ struct TranslateView: View {
             NavigationStack {
                 WordDetailPopover(
                     segment: segment,
-                    contextTranslation: englishText,
+                    contextTranslation: detectedEnglishText,
                     onSave: { definition in
                         let term = SavedTerm(
                             chinese: segment.text,
@@ -506,7 +621,7 @@ struct TranslateView: View {
                             partOfSpeech: segment.partOfSpeech.rawValue
                         )
                         if savedTermsStore.contains(chinese: segment.text) {
-                            savedTermsStore.remove(term)
+                            savedTermsStore.remove(chinese: segment.text)
                         } else {
                             savedTermsStore.add(term)
                         }
@@ -536,7 +651,7 @@ struct TranslateView: View {
         .popover(item: $selectedSegment) { segment in
             WordDetailPopover(
                 segment: segment,
-                contextTranslation: englishText,
+                contextTranslation: detectedEnglishText,
                 onSave: { definition in
                     let term = SavedTerm(
                         chinese: segment.text,
@@ -545,7 +660,7 @@ struct TranslateView: View {
                         partOfSpeech: segment.partOfSpeech.rawValue
                     )
                     if savedTermsStore.contains(chinese: segment.text) {
-                        savedTermsStore.remove(term)
+                        savedTermsStore.remove(chinese: segment.text)
                     } else {
                         savedTermsStore.add(term)
                     }
@@ -629,9 +744,9 @@ struct TranslateView: View {
             definition: english,
             partOfSpeech: ""
         )
-        
+
         if savedTermsStore.contains(chinese: chinese) {
-            savedTermsStore.remove(term)
+            savedTermsStore.remove(chinese: chinese)
         } else {
             savedTermsStore.add(term)
         }

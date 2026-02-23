@@ -1,0 +1,26 @@
+[
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "hook_event_name": "Notification",
+    "message": "Claude Code login successful",
+    "notification_type": "auth_success"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input",
+    "notification_type": "idle_prompt"
+  },
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input",
+    "notification_type": "idle_prompt"
+  }
+]
