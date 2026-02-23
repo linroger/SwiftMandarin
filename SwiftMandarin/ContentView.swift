@@ -6,19 +6,41 @@
 //
 
 import SwiftUI
+import AppIntents
 
 /// Main navigation container using TabView with sidebarAdaptable style
 /// - iOS: Bottom tab bar (5 tabs)
 /// - iPadOS: Floating tab bar that morphs to sidebar
 /// - macOS: NavigationSplitView with sidebar
 struct ContentView: View {
-    @State private var selectedTab: AppTab = .translate
+    @Environment(AppRouteStore.self) private var routeStore
+    @Environment(\.scenePhase) private var scenePhase
+    
+    private var selectedTabBinding: Binding<AppTab> {
+        Binding(
+            get: { routeStore.selectedTab },
+            set: { routeStore.selectedTab = $0 }
+        )
+    }
     
     var body: some View {
+        contentView
+            .onAppear {
+                SwiftMandarinShortcutsProvider.updateAppShortcutParameters()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                if newPhase == .active {
+                    SwiftMandarinShortcutsProvider.updateAppShortcutParameters()
+                }
+            }
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
         #if os(macOS)
-        MacOSContentView(selectedTab: $selectedTab)
+        MacOSContentView(selectedTab: selectedTabBinding)
         #else
-        iOSContentView(selectedTab: $selectedTab)
+        iOSContentView(selectedTab: selectedTabBinding)
         #endif
     }
 }
@@ -27,6 +49,7 @@ struct ContentView: View {
 
 enum AppTab: String, CaseIterable, Identifiable {
     case translate
+    case photo
     case history
     case vocabulary
     case learn
@@ -39,6 +62,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .translate: return "Translate"
+        case .photo: return "Photo"
         case .history: return "History"
         case .vocabulary: return "Vocabulary"
         case .learn: return "Learn"
@@ -51,6 +75,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .translate: return "character.bubble"
+        case .photo: return "camera.viewfinder"
         case .history: return "clock"
         case .vocabulary: return "text.book.closed"
         case .learn: return "brain.head.profile"
@@ -70,6 +95,10 @@ struct iOSContentView: View {
         TabView(selection: $selectedTab) {
             Tab(AppTab.translate.title, systemImage: AppTab.translate.icon, value: .translate) {
                 TranslateView()
+            }
+            
+            Tab(AppTab.photo.title, systemImage: AppTab.photo.icon, value: .photo) {
+                PhotoTranslateView()
             }
             
             Tab(AppTab.history.title, systemImage: AppTab.history.icon, value: .history) {
@@ -138,6 +167,8 @@ struct MacOSContentView: View {
         switch selectedTab {
         case .translate:
             TranslateView()
+        case .photo:
+            PhotoTranslateView()
         case .history:
             HistoryTabView(selectedTab: $selectedTab)
         case .vocabulary:
@@ -164,4 +195,5 @@ struct MacOSContentView: View {
         .environment(TranslationHistoryStore.shared)
         .environment(LearningProgressStore.shared)
         .environment(LearningActivityStore.shared)
+        .environment(AppRouteStore.shared)
 }

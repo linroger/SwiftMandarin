@@ -29,9 +29,29 @@ struct TranslateView: View {
     
     // Settings
     @AppStorage("autoTranslate") private var autoTranslate: Bool = false
+    @AppStorage("defaultDirection") private var defaultDirectionRawValue: String = TranslationDirection.englishToChinese.rawValue
+    @AppStorage("translateOnPaste") private var translateOnPaste: Bool = true
+    @AppStorage("copyTranslationAutomatically") private var copyTranslationAutomatically: Bool = false
+    @AppStorage("saveToHistoryAutomatically") private var saveToHistoryAutomatically: Bool = true
     
     // Focus state for keyboard dismissal
     @FocusState private var isInputFocused: Bool
+    @State private var pendingAutoTranslateTask: Task<Void, Never>?
+    @State private var preserveSourceTextDuringProgrammaticUpdate: Bool = false
+    
+    // State for additional translation when input language mismatches direction
+    @State private var additionalTranslation: String = ""
+    @State private var isLoadingAdditionalTranslation: Bool = false
+    
+    // State for AI translation
+    @State private var isAITranslating: Bool = false
+    @State private var aiTranslationError: String?
+    
+    // Track last detected direction to reset configuration when input language changes
+    @State private var lastDetectedDirection: TranslationDirection?
+    
+    // State for live speech translation
+    @State private var showLiveSpeechTranslation: Bool = false
     
     // Computed bindings to shared state
     private var sourceText: Binding<String> {
@@ -60,6 +80,23 @@ struct TranslateView: View {
     // Store translation context for word definitions
     private var translationContext: String {
         sharedState.direction == .englishToChinese ? sharedState.sourceText : sharedState.translatedText
+    }
+
+    private var activeChineseText: String {
+        let candidate = detectedChineseText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return containsChinese(candidate) ? candidate : ""
+    }
+
+    private var activeEnglishText: String {
+        detectedEnglishText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var canSaveActiveTerm: Bool {
+        !activeChineseText.isEmpty && !activeEnglishText.isEmpty
+    }
+
+    private var isActiveTermSaved: Bool {
+        canSaveActiveTerm && savedTermsStore.contains(chinese: activeChineseText)
     }
     
     var body: some View {
@@ -91,6 +128,9 @@ struct TranslateView: View {
                     isInputFocused = false
                 }
             }
+            .task {
+                applyDefaultDirectionIfNeeded()
+            }
             .navigationTitle("Translate")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -108,6 +148,38 @@ struct TranslateView: View {
             .translationTask(translationConfiguration) { session in
                 await performTranslation(session: session)
             }
+            .sheet(isPresented: $showLiveSpeechTranslation) {
+                LiveSpeechTranslationView(
+                    translationDirection: sharedState.direction,
+                    onUseTranscript: { transcript in
+                        // Set the transcript as source text
+                        sharedState.sourceText = transcript
+                        // Trigger translation if auto-translate is off
+                        if !autoTranslate {
+                            triggerTranslation()
+                        }
+                    },
+                    onUseTranslation: { translation in
+                        // Set the transcript as source and translation as result
+                        // Detect if the translation is Chinese or English
+                        let translationIsChinese = translation.contains { $0.isChineseCharacter }
+                        if translationIsChinese {
+                            // Translation is Chinese, so source was English
+                            // Keep the translated text
+                            sharedState.translatedText = translation
+                        } else {
+                            // Translation is English, so source was Chinese
+                            sharedState.translatedText = translation
+                        }
+                    }
+                )
+                #if os(iOS)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                #else
+                .frame(minWidth: 500, minHeight: 600)
+                #endif
+            }
         }
     }
     
@@ -122,12 +194,20 @@ struct TranslateView: View {
             
             Button {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    sharedState.direction = sharedState.direction.opposite
-                    // Swap texts if both exist
-                    if !sharedState.sourceText.isEmpty && !sharedState.translatedText.isEmpty {
-                        let temp = sharedState.sourceText
-                        sharedState.sourceText = sharedState.translatedText
-                        sharedState.translatedText = temp
+                    preserveCurrentTranslationDuringSourceUpdate {
+                        additionalTranslation = ""
+                        translationConfiguration = nil
+                        lastDetectedDirection = nil
+                        sharedState.translationError = nil
+                        aiTranslationError = nil
+                        
+                        sharedState.direction = sharedState.direction.opposite
+                        // Swap texts if both exist
+                        if !sharedState.sourceText.isEmpty && !sharedState.translatedText.isEmpty {
+                            let temp = sharedState.sourceText
+                            sharedState.sourceText = sharedState.translatedText
+                            sharedState.translatedText = temp
+                        }
                     }
                 }
             } label: {
@@ -162,8 +242,7 @@ struct TranslateView: View {
                 
                 if !sharedState.sourceText.isEmpty {
                     Button {
-                        translationConfiguration = nil
-                        sharedState.clear()
+                        clearAll()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
@@ -195,14 +274,24 @@ struct TranslateView: View {
                     }
                 }
                 .onChange(of: sharedState.sourceText) { oldValue, newValue in
+                    pendingAutoTranslateTask?.cancel()
+
                     // Only auto-translate if setting is enabled
-                    if autoTranslate && !newValue.isEmpty {
-                        triggerTranslation()
-                    } else if newValue.isEmpty {
+                    if !preserveSourceTextDuringProgrammaticUpdate && oldValue != newValue {
+                        sharedState.translatedText = ""
+                        sharedState.translationError = nil
+                        additionalTranslation = ""
+                        aiTranslationError = nil
+                    }
+
+                    if newValue.isEmpty {
                         // Reset configuration when text is cleared to ensure next translation triggers
                         translationConfiguration = nil
                         sharedState.translatedText = ""
                         sharedState.translationError = nil
+                        additionalTranslation = ""
+                    } else if autoTranslate {
+                        scheduleAutoTranslation(for: newValue)
                     }
                 }
             
@@ -221,12 +310,28 @@ struct TranslateView: View {
                 Button {
                     if let pastedText = ClipboardService.paste(), !pastedText.isEmpty {
                         sharedState.sourceText = pastedText
+                        if translateOnPaste {
+                            isInputFocused = false
+                            triggerTranslation()
+                        }
                     }
                 } label: {
                     Label("Paste", systemImage: "doc.on.clipboard")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
+                
+                // Microphone button for live speech translation
+                Button {
+                    isInputFocused = false
+                    showLiveSpeechTranslation = true
+                } label: {
+                    Image(systemName: "mic.fill")
+                        .font(.body)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(.red)
                 
                 Spacer()
                 
@@ -237,8 +342,7 @@ struct TranslateView: View {
                     
                     Button {
                         withAnimation {
-                            translationConfiguration = nil
-                            sharedState.clear()
+                            clearAll()
                         }
                     } label: {
                         Label("Clear", systemImage: "xmark.circle.fill")
@@ -250,18 +354,35 @@ struct TranslateView: View {
             }
             .padding(.horizontal)
             
-            // Prominent Translate button (shown when not auto-translating)
-            if !sharedState.sourceText.isEmpty && !autoTranslate && sharedState.translatedText.isEmpty && !sharedState.isTranslating {
-                Button {
-                    isInputFocused = false
-                    triggerTranslation()
-                } label: {
-                    Label("Translate", systemImage: "arrow.right.circle.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
+            // Prominent Translate buttons (shown when not auto-translating)
+            if !sharedState.sourceText.isEmpty && !autoTranslate && sharedState.translatedText.isEmpty && !sharedState.isTranslating && !isAITranslating {
+                VStack(spacing: 8) {
+                    // Standard Translation API button
+                    Button {
+                        isInputFocused = false
+                        triggerTranslation()
+                    } label: {
+                        Label("Translate", systemImage: "arrow.right.circle.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    
+                    // Apple Intelligence translation button
+                    if AIWordExplanationService.shared.isAvailable {
+                        Button {
+                            isInputFocused = false
+                            Task { await triggerAITranslation() }
+                        } label: {
+                            Label("Translate with Apple Intelligence", systemImage: "apple.intelligence")
+                                .font(.subheadline)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
                 .padding(.horizontal)
                 .padding(.top, 8)
             }
@@ -276,20 +397,38 @@ struct TranslateView: View {
                 .fill(.separator)
                 .frame(height: 1)
             
-            if sharedState.isTranslating {
+            if sharedState.isTranslating || isAITranslating {
                 ProgressView()
                     .controlSize(.small)
                     .padding(.horizontal, 8)
             } else {
-                Button {
-                    triggerTranslation()
-                } label: {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.tint)
+                HStack(spacing: 12) {
+                    // Standard translate button
+                    Button {
+                        triggerTranslation()
+                    } label: {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.tint)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(sharedState.sourceText.isEmpty)
+                    .help("Translate with Apple Translation")
+                    
+                    // AI translate button
+                    if AIWordExplanationService.shared.isAvailable {
+                        Button {
+                            Task { await triggerAITranslation() }
+                        } label: {
+                            Image(systemName: "apple.intelligence")
+                                .font(.title2)
+                                .foregroundStyle(.blue)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(sharedState.sourceText.isEmpty)
+                        .help("Translate with Apple Intelligence")
+                    }
                 }
-                .buttonStyle(.plain)
-                .disabled(sharedState.sourceText.isEmpty)
             }
             
             Rectangle()
@@ -317,10 +456,11 @@ struct TranslateView: View {
                     Button {
                         saveToVocabulary()
                     } label: {
-                        Image(systemName: savedTermsStore.contains(chinese: sharedState.direction == .englishToChinese ? sharedState.translatedText : sharedState.sourceText) ? "bookmark.fill" : "bookmark")
+                        Image(systemName: isActiveTermSaved ? "bookmark.fill" : "bookmark")
                             .foregroundStyle(.tint)
                     }
                     .buttonStyle(.plain)
+                    .disabled(!canSaveActiveTerm)
                 }
             }
             .padding(.horizontal)
@@ -362,6 +502,20 @@ struct TranslateView: View {
                         .padding(.horizontal)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if isAITranslating {
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .controlSize(.large)
+                    Text("Translating with Apple Intelligence...")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text("Using on-device AI for translation")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 // Ready to translate state with action button
                 VStack(spacing: 16) {
@@ -372,21 +526,35 @@ struct TranslateView: View {
                     Text("Ready to Translate")
                         .font(.headline)
                     
-                    Text(autoTranslate ? "Translation will start automatically" : "Tap the button below to translate")
+                    Text(autoTranslate ? "Translation will start automatically" : "Tap a button below to translate")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                     
                     if !autoTranslate {
-                        Button {
-                            isInputFocused = false
-                            triggerTranslation()
-                        } label: {
-                            Label("Translate Now", systemImage: "arrow.right.circle.fill")
-                                .font(.headline)
+                        VStack(spacing: 10) {
+                            Button {
+                                isInputFocused = false
+                                triggerTranslation()
+                            } label: {
+                                Label("Translate Now", systemImage: "arrow.right.circle.fill")
+                                    .font(.headline)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
+                            
+                            if AIWordExplanationService.shared.isAvailable {
+                                Button {
+                                    isInputFocused = false
+                                    Task { await triggerAITranslation() }
+                                } label: {
+                                    Label("Use Apple Intelligence", systemImage: "apple.intelligence")
+                                        .font(.subheadline)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.regular)
+                            }
                         }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -421,23 +589,122 @@ struct TranslateView: View {
     
     // MARK: - Interactive Translation View
     
+    /// Helper to detect if text contains Chinese characters
+    private func containsChinese(_ text: String) -> Bool {
+        text.contains { $0.isChineseCharacter }
+    }
+    
+    /// Whether input language mismatches the expected source language
+    private var inputLanguageMismatch: Bool {
+        let sourceIsChinese = containsChinese(sharedState.sourceText)
+        if sharedState.direction == .chineseToEnglish {
+            // Expected Chinese input, but got English
+            return !sourceIsChinese && !sharedState.sourceText.isEmpty
+        } else {
+            // Expected English input, but got Chinese
+            return sourceIsChinese && !sharedState.sourceText.isEmpty
+        }
+    }
+    
+    /// Determine which text is Chinese based on actual content detection
+    private var detectedChineseText: String {
+        let sourceIsChinese = containsChinese(sharedState.sourceText)
+        let translatedIsChinese = containsChinese(sharedState.translatedText)
+        
+        // If we have an additional translation (from mismatch scenario), use it
+        if inputLanguageMismatch && !additionalTranslation.isEmpty {
+            if containsChinese(additionalTranslation) {
+                return additionalTranslation
+            }
+        }
+        
+        if sourceIsChinese && !translatedIsChinese {
+            return sharedState.sourceText
+        } else if !sourceIsChinese && translatedIsChinese {
+            return sharedState.translatedText
+        } else if sourceIsChinese && translatedIsChinese {
+            return sharedState.direction == .englishToChinese ? sharedState.translatedText : sharedState.sourceText
+        } else {
+            // Neither is Chinese - use additional translation if available
+            if !additionalTranslation.isEmpty && containsChinese(additionalTranslation) {
+                return additionalTranslation
+            }
+            return sharedState.direction == .englishToChinese ? sharedState.translatedText : sharedState.sourceText
+        }
+    }
+    
+    /// Determine which text is English based on actual content detection
+    private var detectedEnglishText: String {
+        let sourceIsChinese = containsChinese(sharedState.sourceText)
+        let translatedIsChinese = containsChinese(sharedState.translatedText)
+        
+        // If we have an additional translation (from mismatch scenario), use it
+        if inputLanguageMismatch && !additionalTranslation.isEmpty {
+            if !containsChinese(additionalTranslation) {
+                return additionalTranslation
+            }
+        }
+        
+        if sourceIsChinese && !translatedIsChinese {
+            return sharedState.translatedText
+        } else if !sourceIsChinese && translatedIsChinese {
+            return sharedState.sourceText
+        } else if sourceIsChinese && translatedIsChinese {
+            return sharedState.direction == .englishToChinese ? sharedState.sourceText : sharedState.translatedText
+        } else {
+            // Neither is Chinese - the source is likely English
+            // Use additional translation for Chinese if available
+            if !additionalTranslation.isEmpty && !containsChinese(additionalTranslation) {
+                return additionalTranslation
+            }
+            return sharedState.sourceText
+        }
+    }
+    
+    /// Whether to show English section first (when source was Chinese)
+    private var showEnglishFirst: Bool {
+        containsChinese(sharedState.sourceText) && !containsChinese(sharedState.translatedText)
+    }
+    
+    /// Fetch additional translation when input language mismatches direction
+    private func fetchAdditionalTranslation() async {
+        guard inputLanguageMismatch else {
+            additionalTranslation = ""
+            return
+        }
+        
+        isLoadingAdditionalTranslation = true
+        
+        do {
+            let sourceIsChinese = containsChinese(sharedState.sourceText)
+            if sourceIsChinese {
+                // Input is Chinese but direction was EN→CN, translate to English
+                additionalTranslation = try await WordTranslationService.shared.translateToEnglish(sharedState.sourceText)
+            } else {
+                // Input is English but direction was CN→EN, translate to Chinese
+                additionalTranslation = try await WordTranslationService.shared.translateToChinese(sharedState.sourceText)
+            }
+        } catch {
+            print("Additional translation error: \(error)")
+            additionalTranslation = ""
+        }
+        
+        isLoadingAdditionalTranslation = false
+    }
+    
     @ViewBuilder
     private var interactiveTranslationView: some View {
-        let isChinese = sharedState.direction == .englishToChinese
-        let chineseText = isChinese ? sharedState.translatedText : sharedState.sourceText
-        let englishText = isChinese ? sharedState.sourceText : sharedState.translatedText
-        
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Show English translation if translating from Chinese
-                if !isChinese {
+                // Show English first if the source was Chinese (CN→EN scenario)
+                if showEnglishFirst {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("ENGLISH")
                             .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundStyle(.secondary)
                         
-                        Text(sharedState.translatedText)
+                        Text(detectedEnglishText)
                             .font(.title3)
                             .fontWeight(.medium)
                             .textSelection(.enabled)
@@ -447,26 +714,34 @@ struct TranslateView: View {
                     Divider()
                 }
                 
-                // Chinese text with interleaved pinyin - always show for both directions
+                // Chinese text with interleaved pinyin - always show
                 VStack(alignment: .leading, spacing: 8) {
                     Text("CHINESE (TAP WORDS FOR DETAILS)")
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
                     
-                    // Ruby text view with pinyin above each character
-                    RubyTextView(
-                        chineseText: chineseText,
-                        englishMeaning: englishText
-                    ) { segment in
-                        // Simply set the segment - sheet(item:) will automatically show when non-nil
-                        // This completely eliminates the race condition
-                        selectedSegment = segment
+                    if isLoadingAdditionalTranslation && inputLanguageMismatch {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Getting Chinese translation...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        // Ruby text view with pinyin above each character
+                        RubyTextView(
+                            chineseText: detectedChineseText,
+                            englishMeaning: detectedEnglishText
+                        ) { segment in
+                            selectedSegment = segment
+                        }
                     }
                 }
                 
-                // Show English below if translating to Chinese
-                if isChinese {
+                // Show English below if it wasn't shown above
+                if !showEnglishFirst {
                     Divider()
                     
                     VStack(alignment: .leading, spacing: 8) {
@@ -475,7 +750,7 @@ struct TranslateView: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(.secondary)
                         
-                        Text(sharedState.sourceText)
+                        Text(detectedEnglishText)
                             .font(.body)
                             .foregroundStyle(.secondary)
                             .textSelection(.enabled)
@@ -490,6 +765,10 @@ struct TranslateView: View {
                 .fill(.ultraThinMaterial)
         )
         .padding(.horizontal)
+        .task(id: sharedState.translatedText) {
+            // Fetch additional translation when translated text changes and there's a mismatch
+            await fetchAdditionalTranslation()
+        }
         #if os(iOS)
         // Using sheet(item:) eliminates race condition - sheet only shows when item is non-nil
         // and the item is guaranteed to be available when the sheet content is built
@@ -497,7 +776,7 @@ struct TranslateView: View {
             NavigationStack {
                 WordDetailPopover(
                     segment: segment,
-                    contextTranslation: englishText,
+                    contextTranslation: detectedEnglishText,
                     onSave: { definition in
                         let term = SavedTerm(
                             chinese: segment.text,
@@ -505,9 +784,7 @@ struct TranslateView: View {
                             definition: definition,
                             partOfSpeech: segment.partOfSpeech.rawValue
                         )
-                        if savedTermsStore.contains(chinese: segment.text) {
-                            savedTermsStore.remove(term)
-                        } else {
+                        if !savedTermsStore.contains(chinese: segment.text) {
                             savedTermsStore.add(term)
                         }
                     },
@@ -536,7 +813,7 @@ struct TranslateView: View {
         .popover(item: $selectedSegment) { segment in
             WordDetailPopover(
                 segment: segment,
-                contextTranslation: englishText,
+                contextTranslation: detectedEnglishText,
                 onSave: { definition in
                     let term = SavedTerm(
                         chinese: segment.text,
@@ -544,9 +821,7 @@ struct TranslateView: View {
                         definition: definition,
                         partOfSpeech: segment.partOfSpeech.rawValue
                     )
-                    if savedTermsStore.contains(chinese: segment.text) {
-                        savedTermsStore.remove(term)
-                    } else {
+                    if !savedTermsStore.contains(chinese: segment.text) {
                         savedTermsStore.add(term)
                     }
                 },
@@ -562,40 +837,95 @@ struct TranslateView: View {
     
     // MARK: - Actions
     
+    /// Determines the actual translation direction based on detected input language
+    /// According to the translation logic table:
+    /// - Input EN → Output ZH (regardless of setting)
+    /// - Input ZH → Output EN (regardless of setting)
+    private var detectedTranslationDirection: TranslationDirection {
+        let sourceIsChinese = containsChinese(sharedState.sourceText)
+        // If input is Chinese, translate to English; if input is English, translate to Chinese
+        return sourceIsChinese ? .chineseToEnglish : .englishToChinese
+    }
+    
     private func triggerTranslation() {
-        guard !sharedState.sourceText.isEmpty else { return }
+        let trimmedSource = sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedSource.isEmpty else { return }
+        
+        // Detect actual input language and use appropriate translation direction
+        // This ensures: EN input → ZH output, ZH input → EN output
+        let actualDirection = detectedTranslationDirection
         
         // Apple's recommended pattern for triggering translations:
         // - First time: Create a new configuration
-        // - Subsequent times: Call invalidate() on existing configuration
-        if translationConfiguration == nil {
-            // First translation - create new configuration
+        // - When detected direction changes: Create new configuration
+        // - Otherwise: Call invalidate() on existing configuration
+        if translationConfiguration == nil || lastDetectedDirection != actualDirection {
+            // Create new configuration based on detected language
+            lastDetectedDirection = actualDirection
             translationConfiguration = TranslationSession.Configuration(
-                source: sharedState.direction.sourceLanguage,
-                target: sharedState.direction.targetLanguage
+                source: actualDirection.sourceLanguage,
+                target: actualDirection.targetLanguage
             )
         } else {
-            // Subsequent translation - invalidate to re-trigger
+            // Subsequent translation with same direction - invalidate to re-trigger
             translationConfiguration?.invalidate()
         }
     }
     
+    private func triggerAITranslation() async {
+        let sourceSnapshot = sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let directionSnapshot = sharedState.direction
+        guard !sourceSnapshot.isEmpty else { return }
+        
+        isAITranslating = true
+        aiTranslationError = nil
+        sharedState.translationError = nil
+        
+        do {
+            // Detect actual input language (not based on setting)
+            // EN input → ZH output, ZH input → EN output
+            let sourceIsChinese = containsChinese(sourceSnapshot)
+            
+            let translation = try await AIWordExplanationService.shared.translateWithProvider(
+                sourceSnapshot,
+                sourceIsChinese: sourceIsChinese
+            )
+            
+            guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot,
+                  sharedState.direction == directionSnapshot else {
+                isAITranslating = false
+                return
+            }
+
+            sharedState.translatedText = translation
+            isAITranslating = false
+            handleCompletedTranslation(source: sourceSnapshot, target: translation, direction: directionSnapshot)
+        } catch {
+            isAITranslating = false
+            sharedState.translationError = "AI Translation failed: \(error.localizedDescription)"
+            print("AI Translation error: \(error)")
+        }
+    }
+    
     private func performTranslation(session: TranslationSession) async {
+        let sourceSnapshot = sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let directionSnapshot = sharedState.direction
+
         sharedState.isTranslating = true
         sharedState.translationError = nil
         
         do {
-            let response = try await session.translate(sharedState.sourceText)
+            let response = try await session.translate(sourceSnapshot)
             await MainActor.run {
-                sharedState.translatedText = response.targetText
                 sharedState.isTranslating = false
-                
-                // Save to history
-                historyStore.add(
-                    source: sharedState.sourceText,
-                    target: sharedState.translatedText,
-                    direction: sharedState.direction
-                )
+
+                guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot,
+                      sharedState.direction == directionSnapshot else {
+                    return
+                }
+
+                sharedState.translatedText = response.targetText
+                handleCompletedTranslation(source: sourceSnapshot, target: response.targetText, direction: directionSnapshot)
             }
         } catch {
             await MainActor.run {
@@ -613,14 +943,19 @@ struct TranslateView: View {
     }
     
     private func clearAll() {
+        pendingAutoTranslateTask?.cancel()
         // Reset the translation configuration to ensure next translation triggers properly
         translationConfiguration = nil
+        lastDetectedDirection = nil
+        additionalTranslation = ""
+        aiTranslationError = nil
         sharedState.clear()
     }
     
     private func saveToVocabulary() {
-        let chinese = sharedState.direction == .englishToChinese ? sharedState.translatedText : sharedState.sourceText
-        let english = sharedState.direction == .englishToChinese ? sharedState.sourceText : sharedState.translatedText
+        let chinese = activeChineseText
+        let english = activeEnglishText
+        guard !chinese.isEmpty, !english.isEmpty else { return }
         let pinyin = PinyinConverter.convert(chinese)
         
         let term = SavedTerm(
@@ -629,14 +964,56 @@ struct TranslateView: View {
             definition: english,
             partOfSpeech: ""
         )
-        
+
         if savedTermsStore.contains(chinese: chinese) {
-            savedTermsStore.remove(term)
+            savedTermsStore.remove(chinese: chinese)
         } else {
             savedTermsStore.add(term)
         }
         
         triggerHaptic()
+    }
+
+    private func applyDefaultDirectionIfNeeded() {
+        guard !sharedState.hasContent,
+              let storedDirection = TranslationDirection(rawValue: defaultDirectionRawValue) else {
+            return
+        }
+        sharedState.direction = storedDirection
+    }
+
+    private func scheduleAutoTranslation(for text: String) {
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else { return }
+
+        pendingAutoTranslateTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled,
+                  sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == trimmedText else {
+                return
+            }
+            triggerTranslation()
+        }
+    }
+
+    private func handleCompletedTranslation(source: String, target: String, direction: TranslationDirection) {
+        guard !target.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        if saveToHistoryAutomatically {
+            historyStore.add(source: source, target: target, direction: direction)
+        }
+
+        if copyTranslationAutomatically {
+            ClipboardService.copy(target)
+        }
+    }
+
+    private func preserveCurrentTranslationDuringSourceUpdate(_ updates: () -> Void) {
+        preserveSourceTextDuringProgrammaticUpdate = true
+        updates()
+        DispatchQueue.main.async {
+            preserveSourceTextDuringProgrammaticUpdate = false
+        }
     }
     
     private func triggerHaptic() {

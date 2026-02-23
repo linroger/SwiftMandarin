@@ -39,17 +39,15 @@ final class ChineseTextAnalyzer {
         
         var words: [AnalyzedWord] = []
         
+        // Don't omit punctuation - we want to preserve it in the output
         tagger.enumerateTags(in: text.startIndex..<text.endIndex,
                             unit: .word,
                             scheme: .lexicalClass,
-                            options: [.omitWhitespace, .omitPunctuation]) { tag, range in
+                            options: [.omitWhitespace]) { tag, range in
             let word = String(text[range])
             let partOfSpeech = tag.map { PartOfSpeech(from: $0) } ?? .unknown
             
-            // Skip punctuation that may slip through (check if word is only punctuation/symbols)
-            let trimmed = word.trimmingCharacters(in: .punctuationCharacters.union(.symbols).union(.whitespaces))
-            guard !trimmed.isEmpty else { return true }
-            
+            // Include all tokens including punctuation
             words.append(AnalyzedWord(text: word, range: range, partOfSpeech: partOfSpeech))
             return true
         }
@@ -121,6 +119,7 @@ enum PartOfSpeech: String {
     case noun, verb, adjective, adverb, pronoun
     case preposition, conjunction, particle
     case number, classifier, interjection
+    case punctuation
     case unknown
     
     init(from tag: NLTag) {
@@ -136,12 +135,18 @@ enum PartOfSpeech: String {
         case .number: self = .number
         case .classifier: self = .classifier
         case .interjection: self = .interjection
+        case .punctuation: self = .punctuation
         default: self = .unknown
         }
     }
     
     var displayName: String {
         rawValue.capitalized
+    }
+    
+    /// Whether this part of speech represents punctuation
+    var isPunctuation: Bool {
+        self == .punctuation
     }
     
     var color: Color {
@@ -157,6 +162,7 @@ enum PartOfSpeech: String {
         case .number: return .indigo
         case .classifier: return .pink
         case .interjection: return .yellow
+        case .punctuation: return .clear
         case .unknown: return .secondary
         }
     }

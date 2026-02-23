@@ -1,0 +1,672 @@
+//
+//  AIWordExplanationService.swift
+//  SwiftMandarin
+//
+//  Service for generating detailed word explanations using Apple Intelligence
+//  (Foundation Models framework) or Ollama for on-device AI processing
+//
+
+import Foundation
+import SwiftUI
+import Ollama
+
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
+
+// MARK: - Word Explanation Models
+
+/// Structured response for a detailed Mandarin word explanation
+/// Uses @Generable for type-safe structured generation from Apple Intelligence
+#if canImport(FoundationModels)
+@Generable
+struct WordExplanation {
+    @Guide(description: "A clear, concise definition of the word in English (1-2 sentences)")
+    let definition: String
+    
+    @Guide(description: "The part of speech (noun, verb, adjective, adverb, etc.)")
+    let partOfSpeech: String
+    
+    @Guide(description: "Explanation of cultural or contextual nuances, including formality level and when to use this word")
+    let nuances: String
+    
+    @Guide(description: "Detailed grammatical explanation including sentence patterns and word order")
+    let grammarUsage: String
+    
+    @Guide(description: "Common contexts where this word is used", .minimumCount(1), .maximumCount(3))
+    let usageContexts: [String]
+    
+    @Guide(description: "Example sentences containing the EXACT word being explained", .minimumCount(1), .maximumCount(3))
+    let exampleSentences: [ExampleSentence]
+    
+    @Guide(description: "Similar words in Mandarin", .minimumCount(1), .maximumCount(2))
+    let synonyms: [RelatedWord]
+    
+    @Guide(description: "Opposite words if applicable", .maximumCount(2))
+    let antonyms: [RelatedWord]
+    
+    @Guide(description: "Common phrases with this word", .minimumCount(1), .maximumCount(2))
+    let commonCollocations: [Collocation]
+    
+    @Guide(description: "Brief note on difficulty level and learning tips for this word")
+    let learningTip: String
+}
+
+@Generable
+struct ExampleSentence {
+    @Guide(description: "The example sentence in Chinese characters. CRITICAL: This sentence MUST contain the exact word being explained, not a different word or synonym.")
+    let chinese: String
+    
+    @Guide(description: "The pinyin romanization of the sentence with accurate tone marks (ā á ǎ à). CRITICAL: The pinyin MUST exactly match the Chinese characters in the sentence.")
+    let pinyin: String
+    
+    @Guide(description: "The English translation of the sentence")
+    let english: String
+}
+
+@Generable
+struct RelatedWord {
+    @Guide(description: "The related word in Chinese characters")
+    let chinese: String
+    
+    @Guide(description: "The pinyin romanization with accurate tone marks (ā á ǎ à). Must exactly match the Chinese characters.")
+    let pinyin: String
+    
+    @Guide(description: "Brief English meaning")
+    let meaning: String
+    
+    @Guide(description: "How this word differs from the main word in usage or nuance")
+    let difference: String
+}
+
+@Generable
+struct Collocation {
+    @Guide(description: "The collocation or phrase in Chinese characters. Must contain the word being explained.")
+    let chinese: String
+    
+    @Guide(description: "The pinyin romanization with accurate tone marks (ā á ǎ à). Must exactly match the Chinese characters.")
+    let pinyin: String
+    
+    @Guide(description: "The English translation")
+    let english: String
+}
+#endif
+
+// MARK: - Fallback Models (for when FoundationModels is not available)
+
+/// Fallback struct that mirrors WordExplanation for non-AI scenarios
+struct WordExplanationResult: Equatable {
+    let definition: String
+    let partOfSpeech: String
+    let nuances: String
+    let grammarUsage: String
+    let usageContexts: [String]
+    let exampleSentences: [ExampleSentenceResult]
+    let synonyms: [RelatedWordResult]
+    let antonyms: [RelatedWordResult]
+    let commonCollocations: [CollocationResult]
+    let learningTip: String
+    
+    static func == (lhs: WordExplanationResult, rhs: WordExplanationResult) -> Bool {
+        lhs.definition == rhs.definition && lhs.partOfSpeech == rhs.partOfSpeech
+    }
+}
+
+struct ExampleSentenceResult: Identifiable, Equatable {
+    let id = UUID()
+    let chinese: String
+    let pinyin: String
+    let english: String
+    
+    static func == (lhs: ExampleSentenceResult, rhs: ExampleSentenceResult) -> Bool {
+        lhs.chinese == rhs.chinese
+    }
+}
+
+struct RelatedWordResult: Identifiable, Equatable {
+    let id = UUID()
+    let chinese: String
+    let pinyin: String
+    let meaning: String
+    let difference: String
+    
+    static func == (lhs: RelatedWordResult, rhs: RelatedWordResult) -> Bool {
+        lhs.chinese == rhs.chinese
+    }
+}
+
+struct CollocationResult: Identifiable, Equatable {
+    let id = UUID()
+    let chinese: String
+    let pinyin: String
+    let english: String
+    
+    static func == (lhs: CollocationResult, rhs: CollocationResult) -> Bool {
+        lhs.chinese == rhs.chinese
+    }
+}
+
+// MARK: - AI Word Explanation Service
+
+/// Service that uses Apple Intelligence (Foundation Models) to generate detailed
+/// word explanations for Mandarin vocabulary learning
+@Observable
+@MainActor
+final class AIWordExplanationService {
+    
+    static let shared = AIWordExplanationService()
+    
+    /// Cache for generated explanations to avoid repeated API calls
+    private var explanationCache: [String: WordExplanationResult] = [:]
+    
+    /// Whether the device supports Apple Intelligence
+    var isAvailable: Bool {
+        #if canImport(FoundationModels)
+        return checkAvailability()
+        #else
+        return false
+        #endif
+    }
+    
+    /// Reason why AI is unavailable (if applicable)
+    var unavailabilityReason: String? {
+        #if canImport(FoundationModels)
+        return getUnavailabilityReason()
+        #else
+        return "Apple Intelligence is not available on this device"
+        #endif
+    }
+    
+    private init() {}
+    
+    // MARK: - Availability Check
+    
+    #if canImport(FoundationModels)
+    private func checkAvailability() -> Bool {
+        let model = SystemLanguageModel.default
+        switch model.availability {
+        case .available:
+            return true
+        case .unavailable:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+    
+    private func getUnavailabilityReason() -> String? {
+        let model = SystemLanguageModel.default
+        switch model.availability {
+        case .available:
+            return nil
+        case .unavailable(let reason):
+            switch reason {
+            case .deviceNotEligible:
+                return "This device does not support Apple Intelligence"
+            case .appleIntelligenceNotEnabled:
+                return "Apple Intelligence is not enabled. Enable it in Settings > Apple Intelligence & Siri"
+            case .modelNotReady:
+                return "The AI model is still downloading. Please try again later"
+            @unknown default:
+                return "Apple Intelligence is currently unavailable"
+            }
+        @unknown default:
+            return "Apple Intelligence is currently unavailable"
+        }
+    }
+    #endif
+    
+    // MARK: - Generate Explanation
+    
+    /// Concise system instructions to fit within on-device model context limits
+    private var systemInstructions: String {
+        """
+        You are a Mandarin Chinese teacher. Explain Chinese words for English-speaking learners.
+        
+        CRITICAL RULES:
+        1. Example sentences MUST contain the EXACT word being explained - never use synonyms
+        2. Pinyin must have correct tone marks (ā á ǎ à) matching each character exactly
+        3. For multi-character words like "给予", use "给予" in examples, not just "给"
+        """
+    }
+    
+    /// Generate a detailed explanation for a Mandarin word or phrase
+    /// - Parameters:
+    ///   - word: The Chinese word or phrase to explain
+    ///   - pinyin: Optional pinyin for the word (helps with disambiguation)
+    ///   - context: Optional sentence context where the word was encountered
+    /// - Returns: A structured WordExplanationResult with comprehensive information
+    func generateExplanation(
+        for word: String,
+        pinyin: String? = nil,
+        context: String? = nil
+    ) async throws -> WordExplanationResult {
+        // Check cache first
+        let cacheKey = "\(word)_\(pinyin ?? "")_\(context ?? "")"
+        if let cached = explanationCache[cacheKey] {
+            return cached
+        }
+        
+        #if canImport(FoundationModels)
+        guard isAvailable else {
+            throw AIExplanationError.unavailable(reason: unavailabilityReason ?? "Unknown")
+        }
+        
+        // Build a concise prompt to stay within context limits
+        var prompt = "Explain: \(word)"
+        if let pinyin = pinyin, !pinyin.isEmpty {
+            prompt += " (\(pinyin))"
+        }
+        prompt += ". Use \"\(word)\" exactly in all examples."
+        if let context = context, !context.isEmpty {
+            prompt += " Context: \"\(context)\""
+        }
+        
+        // Create session with instructions
+        let session = LanguageModelSession(instructions: systemInstructions)
+        
+        // Generate structured response
+        let response = try await session.respond(to: prompt, generating: WordExplanation.self)
+        let explanation = response.content
+        
+        // Filter example sentences to only include those that contain the exact word
+        let validExamples = explanation.exampleSentences.filter { sentence in
+            sentence.chinese.contains(word)
+        }
+        
+        // Filter collocations to only include those that contain the word
+        let validCollocations = explanation.commonCollocations.filter { collocation in
+            collocation.chinese.contains(word)
+        }
+        
+        // Convert to result type
+        let result = WordExplanationResult(
+            definition: explanation.definition,
+            partOfSpeech: explanation.partOfSpeech,
+            nuances: explanation.nuances,
+            grammarUsage: explanation.grammarUsage,
+            usageContexts: explanation.usageContexts,
+            exampleSentences: validExamples.map {
+                ExampleSentenceResult(chinese: $0.chinese, pinyin: $0.pinyin, english: $0.english)
+            },
+            synonyms: explanation.synonyms.map {
+                RelatedWordResult(chinese: $0.chinese, pinyin: $0.pinyin, meaning: $0.meaning, difference: $0.difference)
+            },
+            antonyms: explanation.antonyms.map {
+                RelatedWordResult(chinese: $0.chinese, pinyin: $0.pinyin, meaning: $0.meaning, difference: $0.difference)
+            },
+            commonCollocations: validCollocations.map {
+                CollocationResult(chinese: $0.chinese, pinyin: $0.pinyin, english: $0.english)
+            },
+            learningTip: explanation.learningTip
+        )
+        
+        // Cache the result
+        explanationCache[cacheKey] = result
+        
+        return result
+        #else
+        throw AIExplanationError.unavailable(reason: "FoundationModels framework not available")
+        #endif
+    }
+    
+    // MARK: - AI Translation
+    
+    /// System instructions for high-quality translation
+    private var translationInstructions: String {
+        """
+        You are an expert translator specializing in English and Mandarin Chinese (Simplified).
+        
+        Your translations should be:
+        1. ACCURATE: Preserve the exact meaning and intent of the source text
+        2. NATURAL: Use idiomatic expressions appropriate for the target language
+        3. CONTEXTUAL: Consider the context and register (formal/informal)
+        4. CULTURAL: Adapt cultural references when necessary for clarity
+        
+        For English to Chinese translations:
+        - Use Simplified Chinese characters (简体中文)
+        - Choose vocabulary appropriate for modern standard Mandarin (普通话)
+        - Maintain the tone and style of the original
+        
+        For Chinese to English translations:
+        - Use natural, fluent English
+        - Preserve nuances and connotations where possible
+        - Clarify ambiguous cultural references if needed
+        
+        Respond with ONLY the translation, no explanations or additional text.
+        """
+    }
+    
+    /// Translate text using Apple Intelligence
+    /// - Parameters:
+    ///   - text: The text to translate
+    ///   - sourceIsChinese: Whether the source text is Chinese (true) or English (false)
+    /// - Returns: The translated text
+    func translate(_ text: String, sourceIsChinese: Bool) async throws -> String {
+        #if canImport(FoundationModels)
+        guard isAvailable else {
+            throw AIExplanationError.unavailable(reason: unavailabilityReason ?? "Unknown")
+        }
+        
+        let direction = sourceIsChinese ? "Chinese to English" : "English to Chinese"
+        let prompt = """
+        Translate the following text from \(direction):
+        
+        \(text)
+        """
+        
+        // Create session with translation instructions
+        let session = LanguageModelSession(instructions: translationInstructions)
+        
+        // Generate translation
+        let response = try await session.respond(to: prompt)
+        return response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        #else
+        throw AIExplanationError.unavailable(reason: "FoundationModels framework not available")
+        #endif
+    }
+    
+    /// Clear the explanation cache
+    func clearCache() {
+        explanationCache.removeAll()
+    }
+    
+    /// Get cached explanation if available
+    func getCachedExplanation(for word: String, pinyin: String? = nil, context: String? = nil) -> WordExplanationResult? {
+        let cacheKey = "\(word)_\(pinyin ?? "")_\(context ?? "")"
+        return explanationCache[cacheKey]
+    }
+    
+    // MARK: - Unified AI Methods (Auto-selects provider based on settings)
+    
+    /// Generate explanation using the configured AI provider (Apple Intelligence or Ollama)
+    /// - Parameters:
+    ///   - word: The Chinese word or phrase to explain
+    ///   - pinyin: Optional pinyin for the word
+    ///   - context: Optional sentence context
+    /// - Returns: A structured WordExplanationResult
+    func generateExplanationWithProvider(
+        for word: String,
+        pinyin: String? = nil,
+        context: String? = nil
+    ) async throws -> WordExplanationResult {
+        let settings = AIModelSettings.shared
+        
+        switch settings.effectiveProvider {
+        case .appleIntelligence:
+            return try await generateExplanation(for: word, pinyin: pinyin, context: context)
+        case .ollama:
+            return try await generateExplanationWithOllama(for: word, pinyin: pinyin, context: context)
+        }
+    }
+    
+    /// Translate text using the configured AI provider
+    /// - Parameters:
+    ///   - text: The text to translate
+    ///   - sourceIsChinese: Whether the source is Chinese
+    /// - Returns: The translated text
+    func translateWithProvider(_ text: String, sourceIsChinese: Bool) async throws -> String {
+        let settings = AIModelSettings.shared
+        
+        switch settings.effectiveProvider {
+        case .appleIntelligence:
+            return try await translate(text, sourceIsChinese: sourceIsChinese)
+        case .ollama:
+            return try await translateWithOllama(text, sourceIsChinese: sourceIsChinese)
+        }
+    }
+    
+    // MARK: - Ollama-Specific Methods
+    
+    /// Generate a word explanation using Ollama
+    private func generateExplanationWithOllama(
+        for word: String,
+        pinyin: String? = nil,
+        context: String? = nil
+    ) async throws -> WordExplanationResult {
+        let settings = AIModelSettings.shared
+        
+        guard OllamaService.shared.isConnected else {
+            throw AIExplanationError.ollamaNotConnected
+        }
+        
+        guard !settings.ollamaModel.isEmpty else {
+            throw AIExplanationError.ollamaNoModelSelected
+        }
+        
+        // Check cache first
+        let cacheKey = "ollama_\(word)_\(pinyin ?? "")_\(context ?? "")"
+        if let cached = explanationCache[cacheKey] {
+            return cached
+        }
+        
+        // Build prompt
+        var prompt = "Explain the Chinese word: \(word)"
+        if let pinyin = pinyin, !pinyin.isEmpty {
+            prompt += " (\(pinyin))"
+        }
+        prompt += ". Use \"\(word)\" exactly in all example sentences."
+        if let context = context, !context.isEmpty {
+            prompt += " Context: \"\(context)\""
+        }
+        
+        // JSON schema for structured output
+        let schema: Ollama.Value = [
+            "type": "object",
+            "properties": [
+                "definition": ["type": "string", "description": "A clear, concise definition in English (1-2 sentences)"],
+                "partOfSpeech": ["type": "string", "description": "The part of speech (noun, verb, adjective, etc.)"],
+                "nuances": ["type": "string", "description": "Cultural or contextual nuances, formality level"],
+                "grammarUsage": ["type": "string", "description": "Grammatical explanation including sentence patterns"],
+                "usageContexts": [
+                    "type": "array",
+                    "items": ["type": "string"],
+                    "description": "1-3 common contexts where this word is used"
+                ],
+                "exampleSentences": [
+                    "type": "array",
+                    "items": [
+                        "type": "object",
+                        "properties": [
+                            "chinese": ["type": "string", "description": "Example sentence containing the EXACT word"],
+                            "pinyin": ["type": "string", "description": "Pinyin with tone marks (ā á ǎ à)"],
+                            "english": ["type": "string", "description": "English translation"]
+                        ],
+                        "required": ["chinese", "pinyin", "english"]
+                    ],
+                    "description": "1-3 example sentences"
+                ],
+                "synonyms": [
+                    "type": "array",
+                    "items": [
+                        "type": "object",
+                        "properties": [
+                            "chinese": ["type": "string"],
+                            "pinyin": ["type": "string"],
+                            "meaning": ["type": "string"],
+                            "difference": ["type": "string", "description": "How it differs from the main word"]
+                        ],
+                        "required": ["chinese", "pinyin", "meaning", "difference"]
+                    ],
+                    "description": "1-2 similar words"
+                ],
+                "antonyms": [
+                    "type": "array",
+                    "items": [
+                        "type": "object",
+                        "properties": [
+                            "chinese": ["type": "string"],
+                            "pinyin": ["type": "string"],
+                            "meaning": ["type": "string"],
+                            "difference": ["type": "string"]
+                        ],
+                        "required": ["chinese", "pinyin", "meaning", "difference"]
+                    ],
+                    "description": "0-2 opposite words if applicable"
+                ],
+                "commonCollocations": [
+                    "type": "array",
+                    "items": [
+                        "type": "object",
+                        "properties": [
+                            "chinese": ["type": "string", "description": "Phrase containing the word"],
+                            "pinyin": ["type": "string"],
+                            "english": ["type": "string"]
+                        ],
+                        "required": ["chinese", "pinyin", "english"]
+                    ],
+                    "description": "1-2 common phrases with this word"
+                ],
+                "learningTip": ["type": "string", "description": "Brief note on difficulty and learning tips"]
+            ],
+            "required": ["definition", "partOfSpeech", "nuances", "grammarUsage", "usageContexts", "exampleSentences", "synonyms", "commonCollocations", "learningTip"]
+        ]
+        
+        let jsonString = try await OllamaService.shared.generateStructured(
+            model: settings.ollamaModel,
+            systemPrompt: ollamaSystemInstructions,
+            userPrompt: prompt,
+            schema: schema,
+            enableThinking: settings.enableThinking
+        )
+        
+        // Parse JSON response
+        guard let data = jsonString.data(using: .utf8) else {
+            throw AIExplanationError.generationFailed("Invalid UTF-8 response")
+        }
+        
+        let response = try JSONDecoder().decode(OllamaWordExplanationResponse.self, from: data)
+        let result = response.toResult(filteringFor: word)
+        
+        // Cache the result
+        explanationCache[cacheKey] = result
+        
+        return result
+    }
+    
+    /// Translate text using Ollama
+    private func translateWithOllama(_ text: String, sourceIsChinese: Bool) async throws -> String {
+        let settings = AIModelSettings.shared
+        
+        guard OllamaService.shared.isConnected else {
+            throw AIExplanationError.ollamaNotConnected
+        }
+        
+        guard !settings.ollamaModel.isEmpty else {
+            throw AIExplanationError.ollamaNoModelSelected
+        }
+        
+        return try await OllamaService.shared.translate(
+            text,
+            sourceIsChinese: sourceIsChinese,
+            model: settings.ollamaModel
+        )
+    }
+    
+    /// System instructions for Ollama word explanation
+    private var ollamaSystemInstructions: String {
+        """
+        You are an expert Mandarin Chinese teacher helping English-speaking learners understand Chinese vocabulary.
+        
+        CRITICAL RULES:
+        1. Example sentences MUST contain the EXACT word being explained - never use synonyms or variations
+        2. Pinyin must have correct tone marks (ā á ǎ à ē é ě è ī í ǐ ì ō ó ǒ ò ū ú ǔ ù ǖ ǘ ǚ ǜ) matching each character exactly
+        3. For multi-character words like "给予", use "给予" in examples, not just "给"
+        4. Provide thoughtful, educational explanations that help learners understand usage patterns
+        5. Consider register (formal/informal), regional variations, and common learner mistakes
+        
+        Take your time to think through each aspect carefully to provide accurate, helpful information.
+        """
+    }
+}
+
+// MARK: - Errors
+
+enum AIExplanationError: LocalizedError {
+    case unavailable(reason: String)
+    case generationFailed(String)
+    case ollamaNotConnected
+    case ollamaNoModelSelected
+    
+    var errorDescription: String? {
+        switch self {
+        case .unavailable(let reason):
+            return "AI unavailable: \(reason)"
+        case .generationFailed(let message):
+            return "Failed to generate explanation: \(message)"
+        case .ollamaNotConnected:
+            return "Ollama server is not connected. Please check that Ollama is running."
+        case .ollamaNoModelSelected:
+            return "No Ollama model selected. Please select a model in Settings."
+        }
+    }
+}
+
+// MARK: - Ollama Word Explanation Response (for JSON decoding)
+
+/// Codable struct for parsing Ollama JSON responses for word explanations
+struct OllamaWordExplanationResponse: Codable {
+    let definition: String
+    let partOfSpeech: String
+    let nuances: String
+    let grammarUsage: String
+    let usageContexts: [String]
+    let exampleSentences: [OllamaExampleSentence]
+    let synonyms: [OllamaRelatedWord]
+    let antonyms: [OllamaRelatedWord]?
+    let commonCollocations: [OllamaCollocation]
+    let learningTip: String
+    
+    struct OllamaExampleSentence: Codable {
+        let chinese: String
+        let pinyin: String
+        let english: String
+    }
+    
+    struct OllamaRelatedWord: Codable {
+        let chinese: String
+        let pinyin: String
+        let meaning: String
+        let difference: String
+    }
+    
+    struct OllamaCollocation: Codable {
+        let chinese: String
+        let pinyin: String
+        let english: String
+    }
+    
+    /// Convert to WordExplanationResult
+    func toResult(filteringFor word: String) -> WordExplanationResult {
+        // Filter example sentences to only include those that contain the exact word
+        let validExamples = exampleSentences.filter { sentence in
+            sentence.chinese.contains(word)
+        }
+        
+        // Filter collocations to only include those that contain the word
+        let validCollocations = commonCollocations.filter { collocation in
+            collocation.chinese.contains(word)
+        }
+        
+        return WordExplanationResult(
+            definition: definition,
+            partOfSpeech: partOfSpeech,
+            nuances: nuances,
+            grammarUsage: grammarUsage,
+            usageContexts: usageContexts,
+            exampleSentences: validExamples.map {
+                ExampleSentenceResult(chinese: $0.chinese, pinyin: $0.pinyin, english: $0.english)
+            },
+            synonyms: synonyms.map {
+                RelatedWordResult(chinese: $0.chinese, pinyin: $0.pinyin, meaning: $0.meaning, difference: $0.difference)
+            },
+            antonyms: (antonyms ?? []).map {
+                RelatedWordResult(chinese: $0.chinese, pinyin: $0.pinyin, meaning: $0.meaning, difference: $0.difference)
+            },
+            commonCollocations: validCollocations.map {
+                CollocationResult(chinese: $0.chinese, pinyin: $0.pinyin, english: $0.english)
+            },
+            learningTip: learningTip
+        )
+    }
+}

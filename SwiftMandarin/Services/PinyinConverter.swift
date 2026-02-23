@@ -107,6 +107,10 @@ enum PinyinConverter {
     
     static func coloredPinyin(_ text: String, includeToneMarks: Bool = true) -> AttributedString {
         let pinyin = convert(text, includeToneMarks: includeToneMarks)
+        return coloredPinyin(fromPinyin: pinyin)
+    }
+
+    static func coloredPinyin(fromPinyin pinyin: String) -> AttributedString {
         let syllables = segment(pinyin)
         
         var attributed = AttributedString()
@@ -120,6 +124,14 @@ enum PinyinConverter {
         }
         
         return attributed
+    }
+
+    static func coloredPinyin(preferred preferredPinyin: String?, fallbackText text: String, includeToneMarks: Bool = true) -> AttributedString {
+        let trimmedPinyin = preferredPinyin?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if trimmedPinyin.isEmpty {
+            return coloredPinyin(text, includeToneMarks: includeToneMarks)
+        }
+        return coloredPinyin(fromPinyin: trimmedPinyin)
     }
 }
 

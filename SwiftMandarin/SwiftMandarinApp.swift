@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppIntents
 
 @main
 struct SwiftMandarinApp: App {
@@ -14,6 +15,12 @@ struct SwiftMandarinApp: App {
     @State private var historyStore = TranslationHistoryStore.shared
     @State private var learningStore = LearningProgressStore.shared
     @State private var activityStore = LearningActivityStore.shared
+    @State private var routeStore = AppRouteStore.shared
+    
+    init() {
+        // Ensures app shortcuts are registered and entity-backed parameters are refreshed.
+        SwiftMandarinShortcutsProvider.updateAppShortcutParameters()
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -22,6 +29,7 @@ struct SwiftMandarinApp: App {
                 .environment(historyStore)
                 .environment(learningStore)
                 .environment(activityStore)
+                .environment(routeStore)
         }
         
         #if os(macOS)
@@ -31,6 +39,7 @@ struct SwiftMandarinApp: App {
                 .environment(historyStore)
                 .environment(learningStore)
                 .environment(activityStore)
+                .environment(routeStore)
         }
         #endif
     }

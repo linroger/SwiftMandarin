@@ -58,11 +58,22 @@ struct CardProgress: Codable, Identifiable {
     }
     
     mutating func recordReview(correct: Bool, quality: ReviewQuality) {
+        let reviewDate = Date()
+        let priorReviewDate = lastReviewDate
+        let previousInterval = max(
+            nextReviewDate.timeIntervalSince(priorReviewDate ?? reviewDate),
+            60 * 60 * 24
+        )
+
         reviewCount += 1
         if correct { correctCount += 1 }
-        lastReviewDate = Date()
+        lastReviewDate = reviewDate
         updateMasteryLevel()
-        calculateNextReview(quality: quality)
+        calculateNextReview(
+            quality: quality,
+            reviewDate: reviewDate,
+            previousInterval: previousInterval
+        )
     }
     
     private mutating func updateMasteryLevel() {
@@ -75,7 +86,11 @@ struct CardProgress: Codable, Identifiable {
         }
     }
     
-    private mutating func calculateNextReview(quality: ReviewQuality) {
+    private mutating func calculateNextReview(
+        quality: ReviewQuality,
+        reviewDate: Date,
+        previousInterval: TimeInterval
+    ) {
         let q = Double(quality.rawValue)
         easeFactor = max(1.3, easeFactor + 0.1 - (5.0 - q) * (0.08 + (5.0 - q) * 0.02))
         
@@ -87,11 +102,10 @@ struct CardProgress: Codable, Identifiable {
             case 1: interval = 60 * 60 * 24 // 1 day
             case 2: interval = 60 * 60 * 24 * 6 // 6 days
             default:
-                let previousInterval = lastReviewDate.map { Date().timeIntervalSince($0) } ?? (60 * 60 * 24)
                 interval = previousInterval * easeFactor
             }
         }
-        nextReviewDate = Date().addingTimeInterval(interval)
+        nextReviewDate = reviewDate.addingTimeInterval(interval)
     }
 }
 
@@ -209,6 +223,7 @@ final class LearningProgressStore {
         if !Calendar.current.isDateInToday(lastResetDate) {
             todayReviewedCount = 0
             UserDefaults.standard.set(Date(), forKey: lastResetDateKey)
+            UserDefaults.standard.set(todayReviewedCount, forKey: todayCountKey)
         }
     }
     

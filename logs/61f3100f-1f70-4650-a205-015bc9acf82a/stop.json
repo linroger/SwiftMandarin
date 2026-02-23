@@ -1,0 +1,11 @@
+[
+  {
+    "session_id": "61f3100f-1f70-4650-a205-015bc9acf82a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/61f3100f-1f70-4650-a205-015bc9acf82a.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Done. I've added both privacy usage descriptions to the `project.pbxproj` in both Debug and Release configurations:\n\n- **`INFOPLIST_KEY_NSCameraUsageDescription`** \u2014 \"SwiftMandarin needs camera access to scan and recognize text from photos for translation.\"\n- **`INFOPLIST_KEY_NSPhotoLibraryUsageDescription`** \u2014 \"SwiftMandarin needs photo library access to select images containing text for translation.\"\n\nSince `GENERATE_INFOPLIST_FILE = YES`, Xcode will automatically include these in the generated Info.plist at build time. Rebuild and run \u2014 the crash should be resolved."
+  }
+]

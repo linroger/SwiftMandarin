@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Ollama
 
 #if os(macOS)
 /// macOS-optimized Settings view with tabbed interface
@@ -17,6 +18,11 @@ struct MacOSSettingsView: View {
             GeneralSettingsTab()
                 .tabItem {
                     Label("General", systemImage: "gear")
+                }
+            
+            AISettingsTab()
+                .tabItem {
+                    Label("AI", systemImage: "cpu")
                 }
             
             TranslationSettingsTab()
@@ -39,7 +45,7 @@ struct MacOSSettingsView: View {
                     Label("Data", systemImage: "externaldrive")
                 }
         }
-        .frame(minWidth: 500, idealWidth: 550, minHeight: 400, idealHeight: 450)
+        .frame(minWidth: 500, idealWidth: 550, minHeight: 400, idealHeight: 500)
     }
 }
 
@@ -92,6 +98,191 @@ struct GeneralSettingsTab: View {
         }
         .formStyle(.grouped)
         .padding()
+    }
+}
+
+// MARK: - AI Settings Tab
+
+struct AISettingsTab: View {
+    @State private var settings = AIModelSettings.shared
+    @State private var ollamaService = OllamaService.shared
+    @State private var isRefreshing: Bool = false
+    
+    var body: some View {
+        Form {
+            // Provider Selection
+            Section {
+                Picker("AI Provider", selection: $settings.provider) {
+                    ForEach(AIProvider.allCases) { provider in
+                        HStack {
+                            Image(systemName: provider.iconName)
+                            Text(provider.displayName)
+                        }
+                        .tag(provider)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+                
+                // Status indicator
+                HStack {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 8, height: 8)
+                    Text(settings.statusMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("AI Provider")
+            } footer: {
+                Text("Choose between Apple Intelligence (on-device) or Ollama (local server with more powerful models).")
+            }
+            
+            // Ollama Configuration
+            if settings.provider == .ollama {
+                Section {
+                    LabeledContent("Server URL") {
+                        TextField("http://localhost:11434", text: $settings.ollamaHost)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 200)
+                    }
+                    
+                    HStack {
+                        Button {
+                            Task {
+                                isRefreshing = true
+                                await settings.refreshConnection()
+                                isRefreshing = false
+                            }
+                        } label: {
+                            Label("Refresh Connection", systemImage: "arrow.clockwise")
+                        }
+                        .disabled(isRefreshing)
+                        
+                        if isRefreshing {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                                .padding(.leading, 4)
+                        }
+                    }
+                } header: {
+                    Text("Ollama Server")
+                }
+                
+                Section {
+                    if ollamaService.availableModels.isEmpty {
+                        if ollamaService.isLoadingModels {
+                            HStack {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                Text("Loading models...")
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else if !ollamaService.isConnected {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .foregroundStyle(.orange)
+                                Text("Not connected to Ollama")
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else {
+                            Text("No models found")
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Picker("Model", selection: $settings.ollamaModel) {
+                            ForEach(ollamaService.availableModels) { model in
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(model.name)
+                                        Text("\(model.parameterSize) • \(model.sizeString)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if model.supportsThinking {
+                                        Image(systemName: "brain")
+                                            .foregroundStyle(.blue)
+                                            .help("Supports reasoning")
+                                    }
+                                }
+                                .tag(model.name)
+                            }
+                        }
+                    }
+                    
+                    Button {
+                        Task {
+                            await ollamaService.refreshModels()
+                        }
+                    } label: {
+                        Label("Refresh Models", systemImage: "arrow.clockwise")
+                    }
+                    .disabled(ollamaService.isLoadingModels || !ollamaService.isConnected)
+                } header: {
+                    Text("Model Selection")
+                } footer: {
+                    Text("Recommended: gpt-oss:20b for best translation and explanation quality.")
+                }
+                
+                Section {
+                    Toggle("Enable Reasoning Mode", isOn: $settings.enableThinking)
+                    
+                    LabeledContent("Context Length") {
+                        Picker("", selection: $settings.contextLength) {
+                            Text("8K").tag(8000)
+                            Text("32K").tag(32000)
+                            Text("64K").tag(64000)
+                            Text("128K").tag(128000)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 200)
+                    }
+                } header: {
+                    Text("Advanced Options")
+                } footer: {
+                    Text("Reasoning mode allows the model to think through complex explanations. 128K context is recommended for gpt-oss 20b.")
+                }
+            }
+            
+            // Apple Intelligence status (when selected)
+            if settings.provider == .appleIntelligence {
+                Section {
+                    if settings.isAppleIntelligenceAvailable {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("Apple Intelligence is ready")
+                        }
+                    } else {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            Text(AIWordExplanationService.shared.unavailabilityReason ?? "Apple Intelligence is not available")
+                        }
+                    }
+                } header: {
+                    Text("Status")
+                } footer: {
+                    Text("Apple Intelligence uses on-device Foundation Models for privacy-focused AI processing.")
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
+        .task {
+            // Check connection and load models on appear
+            await settings.refreshConnection()
+        }
+    }
+    
+    private var statusColor: Color {
+        switch settings.provider {
+        case .appleIntelligence:
+            return settings.isAppleIntelligenceAvailable ? .green : .orange
+        case .ollama:
+            return ollamaService.isConnected ? .green : .red
+        }
     }
 }
 
@@ -159,6 +350,7 @@ struct AppearanceSettingsTab: View {
     @AppStorage("toneColors") private var toneColors: Bool = true
     @AppStorage("wordBorders") private var wordBorders: Bool = true
     @AppStorage("compactMode") private var compactMode: Bool = false
+    @AppStorage("vocabularyDetailUsesInspector") private var vocabularyDetailUsesInspector: Bool = true
     
     var body: some View {
         Form {
@@ -203,6 +395,14 @@ struct AppearanceSettingsTab: View {
                 Toggle("Compact Mode", isOn: $compactMode)
             } header: {
                 Text("Layout")
+            }
+
+            Section {
+                Toggle("Use Inspector for Vocabulary Details", isOn: $vocabularyDetailUsesInspector)
+            } header: {
+                Text("Vocabulary")
+            } footer: {
+                Text("Turn off to use popup details instead of the inspector.")
             }
         }
         .formStyle(.grouped)
@@ -270,8 +470,10 @@ struct DataSettingsTab: View {
     @State private var showingClearVocabularyAlert: Bool = false
     @State private var showingClearHistoryAlert: Bool = false
     @State private var showingResetProgressAlert: Bool = false
-    @State private var showingExportSheet: Bool = false
-    @State private var showingImportSheet: Bool = false
+    @State private var showingImportResult: Bool = false
+    @State private var importResult: ImportResult?
+    @State private var selectedExportFormat: VocabularyExportFormat = .json
+    @State private var showExportSuccess: Bool = false
     
     var body: some View {
         Form {
@@ -295,15 +497,38 @@ struct DataSettingsTab: View {
             }
             
             Section {
-                Button("Export Data...") {
-                    showingExportSheet = true
+                Picker("Export Format", selection: $selectedExportFormat) {
+                    ForEach(VocabularyExportFormat.allCases) { format in
+                        Text(format.rawValue).tag(format)
+                    }
                 }
+                .pickerStyle(.segmented)
                 
-                Button("Import Data...") {
-                    showingImportSheet = true
+                Button {
+                    VocabularyImportExportService.shared.exportToFile(
+                        terms: savedTermsStore.terms,
+                        format: selectedExportFormat
+                    )
+                    showExportSuccess = true
+                } label: {
+                    Label("Export Vocabulary...", systemImage: "square.and.arrow.up")
+                }
+                .disabled(savedTermsStore.terms.isEmpty)
+                
+                Button {
+                    VocabularyImportExportService.shared.importFromFile(into: savedTermsStore) { result in
+                        if let result = result {
+                            importResult = result
+                            showingImportResult = true
+                        }
+                    }
+                } label: {
+                    Label("Import Vocabulary...", systemImage: "square.and.arrow.down")
                 }
             } header: {
-                Text("Backup")
+                Text("Backup & Restore")
+            } footer: {
+                Text("JSON format is recommended for backup. Duplicate words will be skipped during import.")
             }
             
             Section {
@@ -350,6 +575,16 @@ struct DataSettingsTab: View {
             }
         } message: {
             Text("This will reset all learning progress. This action cannot be undone.")
+        }
+        .alert("Import Complete", isPresented: $showingImportResult) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(importResult?.summary ?? "Import completed")
+        }
+        .alert("Export Successful", isPresented: $showExportSuccess) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your vocabulary has been exported successfully.")
         }
     }
 }

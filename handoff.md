@@ -1,8 +1,8 @@
 # Handoff.md - SwiftMandarin iOS Redesign
 
-**Last Updated (UTC):** 2026-02-11T12:47:00Z
+**Last Updated (UTC):** 2026-02-23T09:30:00Z
 **Status:** In Progress
-**Current Focus:** Release documentation, packaging, and branch integration
+**Current Focus:** Photo Translation Feature for Elementary School English Learning
 
 ## 1) Request & Context
 
@@ -39,6 +39,9 @@
 | R7: Vocabulary saving | Save term from popover | Term appears in Vocabulary tab | Code complete |
 | R8: Flashcard learning | Start learning session | Cards display, ratings work | Code complete |
 | R9: iPad sidebar/tab adaptation | Run on iPad | sidebarAdaptable shows sidebar in landscape | Code complete |
+| R10: Photo translation feature | Take photo of English text | OCR recognizes text, shows word-by-word analysis | Code complete |
+| R11: Word-by-word English analysis | Analyze "The cat is sleeping" | Each word shows Chinese translation and POS | Code complete |
+| R12: Grammar point detection | Analyze sentence with grammar | Detects tenses, question forms, etc. | Code complete |
 
 ## 3) Plan & Decomposition
 
@@ -94,6 +97,17 @@ Start with core services and models (shared across platforms), then build iOS-fi
 - [ ] App icon and branding — pending
 - [x] Create comprehensive README.md with installation, usage, architecture, and screenshots — **completed**
 - [x] Build macOS Release app and package distributable DMG installer — **completed**
+
+### Photo Translation Feature (2026-02-23)
+- [x] Create PhotoTextRecognitionService for OCR using Vision framework — **completed**
+- [x] Create EnglishTextAnalyzer for word analysis with NLTagger — **completed**
+- [x] Create GrammarPoint model and knowledge base (15+ grammar points, grades 1-6) — **completed**
+- [x] Create CameraScannerView using VisionKit DataScannerViewController (iOS only) — **completed**
+- [x] Create EnglishRubyTextView for word-by-word display with translations — **completed**
+- [x] Create PhotoTranslateView main interface with camera/photo/text input — **completed**
+- [x] Update ContentView to add new Photo tab — **completed**
+- [x] Fix duplicate FlowLayout declaration — **completed**
+- [x] Build verification — **completed** (build succeeded)
 
 ## 5) Findings, Decisions, Assumptions
 
@@ -165,6 +179,12 @@ Start with core services and models (shared across platforms), then build iOS-fi
 - **Fix:** Added missing .difficult case to all switches
 - **Guardrail:** Use default case or verify all enum cases covered
 
+### Issue 6: Duplicate FlowLayout Declaration (2026-02-23)
+- **Symptom:** Invalid redeclaration of 'FlowLayout' error
+- **Root cause:** FlowLayout struct defined in both TranslateView.swift and EnglishRubyTextView.swift
+- **Fix:** Removed duplicate FlowLayout from EnglishRubyTextView.swift, reusing the one from TranslateView.swift
+- **Guardrail:** Check for existing implementations before creating new helper types
+
 ## 7) Scenario-Focused Resolution Tests
 
 ### Test 1: Full-Screen Translation
@@ -197,6 +217,18 @@ Start with core services and models (shared across platforms), then build iOS-fi
 - **Post-change behavior:** VocabularyView complete with all features
 - **Verdict:** Pending runtime test
 
+### Test 6: Photo Translation Word Analysis (2026-02-23)
+- **Repro steps:** Go to Photo tab → Enter "The cat is sleeping on the sofa" → Tap Analyze
+- **Expected:** Each word shows with Chinese translation and part-of-speech color coding
+- **Post-change behavior:** EnglishRubyTextView displays word chips with translations
+- **Verdict:** Code complete, preview verified
+
+### Test 7: Grammar Point Detection (2026-02-23)
+- **Repro steps:** Analyze sentence "What is your name?"
+- **Expected:** Detects "What疑问句" grammar point for elementary school
+- **Post-change behavior:** GrammarKnowledgeBase finds matching patterns
+- **Verdict:** Code complete, pending runtime test
+
 ## 8) Verification Summary
 
 | Check | Status | Evidence |
@@ -217,6 +249,17 @@ Start with core services and models (shared across platforms), then build iOS-fi
 | iPhone full-screen UI | Pending | Requires device testing |
 | Translation API works | Pending | Requires runtime test |
 | iPad sidebar works | Pending | Requires device testing |
+| PhotoTextRecognitionService | ✅ Complete | Vision framework OCR with accurate recognition level |
+| EnglishTextAnalyzer | ✅ Complete | NLTagger for POS tagging, sentence analysis |
+| GrammarKnowledgeBase | ✅ Complete | 15+ grammar points for grades 1-6 |
+| CameraScannerView | ✅ Complete | VisionKit DataScannerViewController (iOS only) |
+| EnglishRubyTextView | ✅ Complete | Word chips with FlowLayout, preview verified |
+| PhotoTranslateView | ✅ Complete | Full interface with camera/photo/text input |
+| Photo tab added | ✅ Complete | ContentView updated with new tab |
+| SpeechRecognitionService | ✅ Complete | SpeechAnalyzer API for live speech-to-text |
+| LiveSpeechTranslationView | ✅ Complete | Full speech translation popup with recording |
+| Microphone button in TranslateView | ✅ Complete | Red mic button opens speech translation |
+| Info.plist permissions | ✅ Complete | Microphone and speech recognition descriptions |
 
 ## 9) Remaining Work & Next Steps
 
@@ -264,6 +307,19 @@ Start with core services and models (shared across platforms), then build iOS-fi
   - Created branch alias origin/v3.0 pointing to commit e355f7c
   - Published GitHub release v3.0.0 with DMG and checksum assets
 
+- 2026-02-23 09:30: Photo Translation Feature Implementation
+  - Added new feature for elementary school English learning
+  - Created PhotoTextRecognitionService using Vision framework for OCR
+  - Created EnglishTextAnalyzer using NLTagger for word analysis and POS tagging
+  - Created GrammarKnowledgeBase with 15+ grammar points for grades 1-6
+  - Created CameraScannerView using VisionKit DataScannerViewController (iOS only)
+  - Created EnglishRubyTextView for word-by-word display with Chinese translations
+  - Created PhotoTranslateView as main interface with camera, photo picker, text input
+  - Added new "Photo" tab to ContentView for both iOS and macOS
+  - Fixed duplicate FlowLayout declaration issue
+  - Build verified successful
+  - Preview verified for EnglishRubyTextView word chips display
+
 ## Files Created/Modified
 
 ### Models (SwiftMandarin/Models/)
@@ -291,3 +347,116 @@ Start with core services and models (shared across platforms), then build iOS-fi
 
 ### Removed
 - `Item.swift` - Xcode template file (not needed)
+
+### Photo Translation Feature (2026-02-23)
+
+#### New Services
+- `PhotoTextRecognitionService.swift` - Vision framework OCR for image text recognition
+- `EnglishTextAnalyzer.swift` - NLTagger-based English word analysis with POS tagging
+
+#### New Models
+- `GrammarPoint.swift` - Grammar knowledge base with 15+ points for elementary school
+
+#### New Views
+- `PhotoTranslateView.swift` - Main photo translation interface
+- `CameraScannerView.swift` - VisionKit DataScannerViewController wrapper (iOS only)
+- `EnglishRubyTextView.swift` - Word-by-word display with Chinese translations
+
+#### Modified Files
+- `ContentView.swift` - Added new "Photo" tab (AppTab.photo case)
+
+### Bidirectional Photo Translation (2026-02-23 - Session 2)
+
+#### Features Added
+- **Bidirectional Language Detection**: Automatically detects if scanned/input text is English or Chinese
+- **English → Chinese Translation**:
+  - Analyzes English text sentence-by-sentence
+  - Shows word-by-word Chinese translations
+  - Displays grammar points for elementary school learning
+- **Chinese → English Translation**:
+  - Displays Chinese text with pinyin using RubyTextView
+  - Shows full English translation
+  - Allows tapping individual characters for detailed view
+- **Language Detection Badge**: Shows detected language (英文/中文) in UI
+
+#### Files Modified
+- `PhotoTranslateView.swift`:
+  - Added `DetectedLanguage` extension with UI properties (displayName, icon)
+  - Added `cleanedChineseText` state for Chinese text processing
+  - Added `selectedChineseSegment` for Chinese word detail sheet
+  - Updated `processText()` to detect language and route to appropriate processing
+  - Added `detectLanguage()` using NLLanguageRecognizer with CJK character fallback
+  - Added `englishResultsSection` for English → Chinese display
+  - Added `chineseResultsSection` for Chinese → English display using RubyTextView
+  - Added `triggerChineseTranslation()` for full text translation
+  - Added `saveChineseWord()` for saving individual Chinese characters
+  - Updated `saveAllChineseWordsToVocabulary()` to use ChineseTextAnalyzer
+  - Updated `clearAll()` to reset all bidirectional state
+
+#### Build Verification
+- Build succeeded with zero errors
+- All compilation issues resolved (type conflicts, API usage)
+
+### Live Speech Translation Feature (2026-03-19)
+
+#### Features Added
+- **Live Speech-to-Text**: Real-time speech transcription using Apple's new SpeechAnalyzer API (iOS 26+ / macOS 26+)
+- **Cross-Platform Support**: Works on both iOS and macOS
+- **Multi-language Support**: Speech recognition in English, Chinese (Simplified), and Chinese (Traditional)
+- **Live Translation**: Automatic translation of transcribed speech to the target language
+- **Interactive Results**: 
+  - Chinese results displayed with pinyin using RubyTextView
+  - Tap words to see detailed definitions
+  - Save words to vocabulary
+- **Model Management**: Automatic download of speech recognition models for offline use
+- **Permission Handling**: Proper request flow for microphone and speech recognition permissions
+
+#### New Files Created
+
+**Services:**
+- `SpeechRecognitionService.swift` - Complete speech recognition service using SpeechAnalyzer API
+  - SpeechRecognitionLanguage enum for language selection
+  - SpeechRecognitionError for error handling
+  - Model download management with progress tracking
+  - Live audio streaming to transcriber
+  - Volatile (partial) and final result handling
+  - Cross-platform compatible (iOS/macOS)
+
+**Views:**
+- `LiveSpeechTranslationView.swift` - Full-featured speech translation popup
+  - Large microphone button with pulse animation when recording
+  - Language selector with pill-shaped dropdown menu
+  - Live transcript display with Chinese pinyin support
+  - Real-time translation using Apple Translation API
+  - Floating action bar with "Use Original" and "Use Translation" buttons
+  - Word detail sheets (iOS) / popovers (macOS) for vocabulary exploration
+  - Polished UI with gradients, shadows, and animations
+
+**Configuration:**
+- `Info.plist` - Added required privacy descriptions
+  - NSMicrophoneUsageDescription
+  - NSSpeechRecognitionUsageDescription
+  - UIBackgroundModes (audio)
+
+#### Modified Files
+- `TranslateView.swift`:
+  - Added `showLiveSpeechTranslation` state
+  - Added red microphone button (borderedProminent style) to source input actions
+  - Added sheet presentation for LiveSpeechTranslationView (works on both iOS and macOS)
+  - Callbacks to use transcript or translation results
+
+#### Technical Implementation
+- Uses new SpeechAnalyzer API (replaces legacy SFSpeechRecognizer)
+- SpeechTranscriber with volatileResults for real-time feedback
+- AVAudioEngine for microphone input capture
+- Audio format conversion for SpeechAnalyzer compatibility
+- AsyncStream for feeding audio buffers to analyzer
+- Platform-specific adaptations:
+  - iOS: AVAudioSession configuration, sheet with presentationDetents
+  - macOS: No audio session needed, popover for word details, NSWorkspace for Settings
+
+#### Build Verification
+- Build succeeded with zero errors
+- Code issues checked - no errors, only minor Sendable warnings (suppressed with @preconcurrency)
+- Previews verified on macOS showing microphone button and LiveSpeechTranslationView
+

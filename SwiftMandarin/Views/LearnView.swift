@@ -11,7 +11,9 @@ import SwiftUI
 struct LearnView: View {
     @Environment(LearningProgressStore.self) private var learningStore
     @Environment(SavedTermsStore.self) private var savedTermsStore
+    @Environment(AppRouteStore.self) private var routeStore
     
+    @State private var sessionCards: [LearningCard] = []
     @State private var currentCardIndex: Int = 0
     @State private var isFlipped: Bool = false
     @State private var showingStats: Bool = false
@@ -57,7 +59,7 @@ struct LearnView: View {
         }
     }
     
-    private var studyCards: [LearningCard] {
+    private var filteredStudyCards: [LearningCard] {
         let baseCards = allAvailableCards
         
         switch studyMode {
@@ -85,14 +87,14 @@ struct LearnView: View {
     }
     
     private var currentCard: LearningCard? {
-        guard currentCardIndex < studyCards.count else { return nil }
-        return studyCards[currentCardIndex]
+        guard currentCardIndex < sessionCards.count else { return nil }
+        return sessionCards[currentCardIndex]
     }
     
     var body: some View {
         NavigationStack {
             Group {
-                if studyCards.isEmpty {
+                if sessionCards.isEmpty {
                     emptyState
                 } else if let card = currentCard {
                     cardStudyView(card: card)
@@ -147,12 +149,15 @@ struct LearnView: View {
                 LearningStatsSheet()
             }
             .onChange(of: studyMode) { _, _ in
-                currentCardIndex = 0
-                isFlipped = false
+                reloadSessionCards()
             }
             .onChange(of: cardSource) { _, _ in
-                currentCardIndex = 0
-                isFlipped = false
+                reloadSessionCards()
+            }
+            .task(id: routeStore.pendingAction?.id) {
+                if !applyPendingAction(), sessionCards.isEmpty {
+                    reloadSessionCards()
+                }
             }
             // Keyboard navigation works on macOS and iOS/iPadOS with hardware keyboard
             .onKeyPress(.leftArrow) {
@@ -175,25 +180,65 @@ struct LearnView: View {
         .focusable()
     }
     
+    // MARK: - Pending Actions
+
+    @discardableResult
+    private func applyPendingAction() -> Bool {
+        guard let action = routeStore.pendingAction else { return false }
+        switch action.kind {
+        case .startReview(let mode, let source):
+            studyMode = mapStudyMode(mode)
+            cardSource = mapCardSource(source)
+            reloadSessionCards()
+        case .openCameraScanner, .translateScreenshots:
+            break
+        }
+        routeStore.clearPendingAction()
+        return true
+    }
+
+    private func mapStudyMode(_ raw: String) -> StudyMode {
+        switch raw {
+        case "due": return .dueForReview
+        case "new": return .newOnly
+        case "difficult": return .difficult
+        default: return .all
+        }
+    }
+
+    private func mapCardSource(_ raw: String) -> CardSource {
+        switch raw {
+        case "builtin": return .builtin
+        case "vocabulary": return .vocabulary
+        default: return .combined
+        }
+    }
+
+    private func reloadSessionCards() {
+        sessionCards = filteredStudyCards
+        currentCardIndex = 0
+        isFlipped = false
+    }
+
     // MARK: - Keyboard Navigation
     
     private func goToPreviousCard() {
-        guard !studyCards.isEmpty else { return }
+        guard !sessionCards.isEmpty else { return }
         withAnimation {
             isFlipped = false
             if currentCardIndex > 0 {
                 currentCardIndex -= 1
             } else {
-                currentCardIndex = studyCards.count - 1 // Wrap to last card
+                currentCardIndex = sessionCards.count - 1 // Wrap to last card
             }
         }
     }
     
     private func goToNextCard() {
-        guard !studyCards.isEmpty else { return }
+        guard !sessionCards.isEmpty else { return }
         withAnimation {
             isFlipped = false
-            if currentCardIndex < studyCards.count - 1 {
+            if currentCardIndex < sessionCards.count - 1 {
                 currentCardIndex += 1
             } else {
                 currentCardIndex = 0 // Wrap to first card
@@ -275,7 +320,7 @@ struct LearnView: View {
     private var progressHeader: some View {
         VStack(spacing: 8) {
             HStack {
-                Text("\(currentCardIndex + 1) of \(studyCards.count)")
+                Text("\(min(currentCardIndex + 1, sessionCards.count)) of \(sessionCards.count)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 
@@ -286,7 +331,7 @@ struct LearnView: View {
                 }
             }
             
-            ProgressView(value: Double(currentCardIndex), total: Double(studyCards.count))
+            ProgressView(value: Double(min(currentCardIndex + 1, sessionCards.count)), total: Double(max(sessionCards.count, 1)))
                 .tint(.blue)
         }
     }
@@ -295,7 +340,7 @@ struct LearnView: View {
     
     private func reviewButtons(for card: LearningCard) -> some View {
         HStack(spacing: 12) {
-            ForEach([ReviewQuality.blackout, .incorrect, .hard, .good, .easy], id: \.self) { quality in
+            ForEach([ReviewQuality.blackout, .incorrect, .difficult, .hard, .good, .easy], id: \.self) { quality in
                 Button {
                     recordReview(card: card, quality: quality)
                 } label: {
@@ -323,11 +368,10 @@ struct LearnView: View {
         ContentUnavailableView {
             Label("Session Complete!", systemImage: "checkmark.circle")
         } description: {
-            Text("You've reviewed all \(studyCards.count) cards in this session")
+            Text("You've reviewed all \(sessionCards.count) cards in this session")
         } actions: {
             Button("Start Over") {
-                currentCardIndex = 0
-                isFlipped = false
+                reloadSessionCards()
             }
             .buttonStyle(.borderedProminent)
         }
@@ -340,10 +384,10 @@ struct LearnView: View {
         
         withAnimation {
             isFlipped = false
-            if currentCardIndex < studyCards.count - 1 {
+            if currentCardIndex < sessionCards.count - 1 {
                 currentCardIndex += 1
             } else {
-                currentCardIndex = studyCards.count // Trigger completion view
+                currentCardIndex = sessionCards.count // Trigger completion view
             }
         }
     }
@@ -494,6 +538,7 @@ extension MasteryLevel {
 
 struct LearningStatsSheet: View {
     @Environment(LearningProgressStore.self) private var learningStore
+    @Environment(SavedTermsStore.self) private var savedTermsStore
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -503,7 +548,7 @@ struct LearningStatsSheet: View {
                     HStack {
                         Text("Total Cards")
                         Spacer()
-                        Text("\(LearningDeck.cards.count)")
+                        Text("\(LearningDeck.cards.count + savedTermsStore.terms.count)")
                             .foregroundStyle(.secondary)
                     }
                     
@@ -565,4 +610,6 @@ struct LearningStatsSheet: View {
 #Preview {
     LearnView()
         .environment(LearningProgressStore.shared)
+        .environment(SavedTermsStore.shared)
+        .environment(AppRouteStore.shared)
 }

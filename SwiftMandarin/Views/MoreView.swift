@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Ollama
 
 /// More tab containing History, Settings, and About
 struct MoreView: View {
@@ -178,6 +179,23 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section {
+                NavigationLink {
+                    AISettingsDetailView()
+                } label: {
+                    HStack {
+                        Label("AI Provider", systemImage: "cpu")
+                        Spacer()
+                        Text(AIModelSettings.shared.provider.displayName)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("AI")
+            } footer: {
+                Text("Configure Apple Intelligence or Ollama for AI-powered features.")
+            }
+            
+            Section {
                 Picker("Default Direction", selection: $defaultDirection) {
                     ForEach(TranslationDirection.allCases) { direction in
                         Text(direction.label).tag(direction.rawValue)
@@ -250,6 +268,212 @@ struct SettingsView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+    }
+}
+
+// MARK: - AI Settings Detail View (iOS)
+
+struct AISettingsDetailView: View {
+    @State private var settings = AIModelSettings.shared
+    @State private var ollamaService = OllamaService.shared
+    @State private var isRefreshing: Bool = false
+    
+    var body: some View {
+        Form {
+            // Provider Selection
+            Section {
+                ForEach(AIProvider.allCases) { provider in
+                    Button {
+                        settings.provider = provider
+                    } label: {
+                        HStack {
+                            Image(systemName: provider.iconName)
+                                .foregroundStyle(.tint)
+                                .frame(width: 24)
+                            
+                            VStack(alignment: .leading) {
+                                Text(provider.displayName)
+                                    .foregroundStyle(.primary)
+                                Text(provider.description)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            if settings.provider == provider {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.tint)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("AI Provider")
+            }
+            
+            // Status
+            Section {
+                HStack {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 10, height: 10)
+                    Text(settings.statusMessage)
+                        .font(.subheadline)
+                }
+            } header: {
+                Text("Status")
+            }
+            
+            // Ollama Configuration
+            if settings.provider == .ollama {
+                Section {
+                    HStack {
+                        Text("Server URL")
+                        Spacer()
+                        TextField("http://localhost:11434", text: $settings.ollamaHost)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(maxWidth: 180)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    
+                    Button {
+                        Task {
+                            isRefreshing = true
+                            await settings.refreshConnection()
+                            isRefreshing = false
+                        }
+                    } label: {
+                        HStack {
+                            Text("Test Connection")
+                            Spacer()
+                            if isRefreshing {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "arrow.clockwise")
+                            }
+                        }
+                    }
+                    .disabled(isRefreshing)
+                } header: {
+                    Text("Ollama Server")
+                }
+                
+                Section {
+                    if ollamaService.availableModels.isEmpty {
+                        if ollamaService.isLoadingModels {
+                            HStack {
+                                ProgressView()
+                                Text("Loading models...")
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else if !ollamaService.isConnected {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .foregroundStyle(.orange)
+                                Text("Connect to Ollama to see models")
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else {
+                            Text("No models found")
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Picker("Model", selection: $settings.ollamaModel) {
+                            ForEach(ollamaService.availableModels) { model in
+                                VStack(alignment: .leading) {
+                                    Text(model.name)
+                                    Text("\(model.parameterSize) • \(model.sizeString)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .tag(model.name)
+                            }
+                        }
+                        #if os(iOS)
+                        .pickerStyle(.navigationLink)
+                        #endif
+                    }
+                    
+                    Button {
+                        Task {
+                            await ollamaService.refreshModels()
+                        }
+                    } label: {
+                        HStack {
+                            Text("Refresh Models")
+                            Spacer()
+                            Image(systemName: "arrow.clockwise")
+                        }
+                    }
+                    .disabled(ollamaService.isLoadingModels || !ollamaService.isConnected)
+                } header: {
+                    Text("Model")
+                } footer: {
+                    Text("Recommended: gpt-oss:20b for best quality.")
+                }
+                
+                Section {
+                    Toggle("Enable Reasoning", isOn: $settings.enableThinking)
+                    
+                    Picker("Context Length", selection: $settings.contextLength) {
+                        Text("8K tokens").tag(8000)
+                        Text("32K tokens").tag(32000)
+                        Text("64K tokens").tag(64000)
+                        Text("128K tokens").tag(128000)
+                    }
+                } header: {
+                    Text("Advanced")
+                } footer: {
+                    Text("Reasoning mode enables deeper thinking. 128K context is recommended for gpt-oss 20b.")
+                }
+            }
+            
+            // Apple Intelligence info
+            if settings.provider == .appleIntelligence {
+                Section {
+                    if settings.isAppleIntelligenceAvailable {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("Apple Intelligence is ready")
+                        }
+                    } else {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            VStack(alignment: .leading) {
+                                Text("Not Available")
+                                    .fontWeight(.medium)
+                                Text(AIWordExplanationService.shared.unavailabilityReason ?? "Apple Intelligence is not available on this device")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Apple Intelligence")
+                } footer: {
+                    Text("Uses on-device Foundation Models for privacy-focused AI.")
+                }
+            }
+        }
+        .navigationTitle("AI Settings")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task {
+            await settings.refreshConnection()
+        }
+    }
+    
+    private var statusColor: Color {
+        switch settings.provider {
+        case .appleIntelligence:
+            return settings.isAppleIntelligenceAvailable ? .green : .orange
+        case .ollama:
+            return ollamaService.isConnected ? .green : .red
+        }
     }
 }
 
