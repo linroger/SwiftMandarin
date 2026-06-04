@@ -183,6 +183,21 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// A known vision-capable model id for this provider, used when an image
+    /// task (grading, photo cleanup) needs vision but the user's selected model
+    /// is text-only.
+    var defaultVisionModel: String? {
+        switch self {
+        case .openAI: return "gpt-4o"
+        case .anthropic: return "claude-sonnet-4-5"
+        case .qwen: return "qwen-vl-max"
+        case .doubao: return "doubao-1-5-vision-pro-32k-250115"
+        case .zhipu: return "glm-4.5v"
+        case .kimi: return "moonshot-v1-128k-vision-preview"
+        case .deepseek, .minimax, .appleIntelligence, .ollama: return nil
+        }
+    }
+
     /// Keychain account name for this provider's API key.
     var keychainAccount: String { "apikey.\(rawValue)" }
 
@@ -380,6 +395,31 @@ final class AIModelSettings {
         case .anthropic: return "/v1/models"
         case .openAICompatible: return provider.modelsPath
         }
+    }
+
+    /// Heuristic: does this model id look vision-capable (accepts images)?
+    static func isLikelyVisionModel(_ id: String) -> Bool {
+        let l = id.lowercased()
+        if ["vl", "vision", "omni", "qvq", "4v", "glm-4.5v", "pixtral", "llava", "internvl", "minicpm-v", "gemini"]
+            .contains(where: { l.contains($0) }) { return true }
+        // Providers whose flagship chat models are multimodal.
+        if l.hasPrefix("claude-") || l.contains("gpt-4o") || l.contains("gpt-4.1") || l.hasPrefix("o4") || l.hasPrefix("o3") { return true }
+        // Doubao multimodal "seed"/vision families.
+        if l.contains("seed-1-6") || l.contains("seed-1-8") || l.contains("seed-2-") || l.contains("1-5-vision") { return true }
+        return false
+    }
+
+    /// Resolve a vision-capable model for image tasks: the user's selected model
+    /// if it's vision-capable, otherwise a vision model from the live list, then
+    /// the provider's curated default vision model.
+    func visionModel(for provider: AIProvider) -> String? {
+        let selected = selectedModel(for: provider)
+        // Respect the user's selection if it's already a vision model.
+        if Self.isLikelyVisionModel(selected) { return selected }
+        // Otherwise prefer the provider's known-good vision model.
+        if let curated = provider.defaultVisionModel { return curated }
+        // Last resort: any vision-looking model from the live list.
+        return CloudAIService.shared.models(for: provider).map(\.id).first(where: Self.isLikelyVisionModel)
     }
 
     /// The selected model for a provider. Ollama maps to `ollamaModel`;

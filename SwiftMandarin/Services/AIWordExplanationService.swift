@@ -697,7 +697,10 @@ final class AIWordExplanationService {
             )
             return content.trimmingCharacters(in: .whitespacesAndNewlines)
         default:
-            let model = settings.selectedModel(for: provider)
+            // Use a vision model when an image is supplied; text model otherwise.
+            let model = imageData != nil
+                ? (settings.visionModel(for: provider) ?? settings.selectedModel(for: provider))
+                : settings.selectedModel(for: provider)
             guard !settings.apiKey(for: provider).isEmpty, !model.isEmpty else { return raw }
             let content = try await CloudAIService.shared.chat(
                 provider: provider,
@@ -765,7 +768,10 @@ final class AIWordExplanationService {
             )
             json = content
         default:
-            let model = settings.selectedModel(for: provider)
+            // Use a vision model when an image is supplied; text model otherwise.
+            let model = imageData != nil
+                ? (settings.visionModel(for: provider) ?? settings.selectedModel(for: provider))
+                : settings.selectedModel(for: provider)
             guard !settings.apiKey(for: provider).isEmpty, !model.isEmpty else {
                 throw AIExplanationError.unavailable(reason: "No API key/model for \(provider.displayName)")
             }
@@ -813,9 +819,10 @@ final class AIWordExplanationService {
         }
 
         let settings = AIModelSettings.shared
-        let model = settings.selectedModel(for: provider)
-        guard !model.isEmpty else {
-            throw AIExplanationError.unavailable(reason: "No model selected for \(provider.displayName).")
+        // Grading needs a VISION model — the user's selected model may be
+        // text-only (e.g. qwen-plus), which would "see" no pages.
+        guard let model = settings.visionModel(for: provider), !model.isEmpty else {
+            throw AIExplanationError.unavailable(reason: "No vision-capable model available for \(provider.displayName). Choose a vision model (e.g. qwen-vl-max, gpt-4o, claude-sonnet-4-5) in Settings → AI.")
         }
 
         var system = """

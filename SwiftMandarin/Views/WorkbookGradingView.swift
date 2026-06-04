@@ -139,7 +139,8 @@ struct WorkbookGradingView: View {
     @ViewBuilder
     private var providerBanner: some View {
         if let provider = gradingProvider {
-            Label("Grading with \(provider.displayName) · \(aiSettings.selectedModel(for: provider))",
+            let model = aiSettings.visionModel(for: provider) ?? aiSettings.selectedModel(for: provider)
+            Label("Grading with \(provider.displayName) · \(model)",
                   systemImage: "checkmark.seal")
                 .font(.caption)
                 .foregroundStyle(.green)
