@@ -804,11 +804,8 @@ final class AIWordExplanationService {
         answerImages: [Data],
         customInstructions: String?
     ) async throws -> GradingResult {
-        guard !workbookImages.isEmpty else {
+        guard !workbookImages.isEmpty || !answerImages.isEmpty else {
             throw AIExplanationError.generationFailed("Add at least one workbook image.")
-        }
-        guard !answerImages.isEmpty else {
-            throw AIExplanationError.generationFailed("Add at least one answer image.")
         }
 
         guard let provider = Self.gradingProvider() else {
@@ -823,8 +820,9 @@ final class AIWordExplanationService {
 
         var system = """
         You are a meticulous, encouraging teacher grading a student's workbook from photos.
-        You are given images in two groups: first the WORKBOOK pages (the questions/exercises), \
-        then the student's WRITTEN ANSWERS (handwriting).
+        You are given workbook photos. The student's answers may be written/printed DIRECTLY on \
+        the same pages as the questions, OR supplied as SEPARATE answer images that follow the \
+        question pages — automatically determine which layout applies from the images themselves.
         For every question you can read:
         - Identify the question number and the question text.
         - Read the student's handwritten answer.
@@ -842,9 +840,18 @@ final class AIWordExplanationService {
             system += "\n\nAdditional instructions from the user:\n\(custom)"
         }
 
-        let user = "Images 1–\(workbookImages.count) are the WORKBOOK (questions). " +
-            "Images \(workbookImages.count + 1)–\(workbookImages.count + answerImages.count) are the student's WRITTEN ANSWERS. " +
-            "Grade the answers against the workbook."
+        let user: String
+        if answerImages.isEmpty {
+            user = "There \(workbookImages.count == 1 ? "is" : "are") \(workbookImages.count) workbook page image(s); " +
+                "the student's answers are written directly on these pages. Read and grade every answer you can see."
+        } else if workbookImages.isEmpty {
+            user = "There \(answerImages.count == 1 ? "is" : "are") \(answerImages.count) image(s) containing the questions and the student's answers. " +
+                "Read and grade every answer you can see."
+        } else {
+            user = "Images 1–\(workbookImages.count) are the workbook (questions). " +
+                "Images \(workbookImages.count + 1)–\(workbookImages.count + answerImages.count) are the student's answers. " +
+                "Grade the answers against the workbook."
+        }
 
         let allImages = workbookImages + answerImages
         let json = try await CloudAIService.shared.chat(

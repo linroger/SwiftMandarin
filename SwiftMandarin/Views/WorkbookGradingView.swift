@@ -48,7 +48,7 @@ struct WorkbookGradingView: View {
     }
 
     private var canGrade: Bool {
-        !workbookImages.isEmpty && !answerImages.isEmpty && gradingProvider != nil && !isGrading
+        (!workbookImages.isEmpty || !answerImages.isEmpty) && gradingProvider != nil && !isGrading
     }
 
     var body: some View {
@@ -56,8 +56,9 @@ struct WorkbookGradingView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     providerBanner
+                    howItWorksNote
                     uploadSection(
-                        title: "作业题目 · Workbook pages",
+                        title: "作业页面 · Workbook pages",
                         systemImage: "doc.text.image",
                         items: $workbookItems,
                         images: workbookImages,
@@ -65,7 +66,7 @@ struct WorkbookGradingView: View {
                         onClear: { workbookItems = []; workbookImages = [] }
                     )
                     uploadSection(
-                        title: "学生答案 · Written answers",
+                        title: "单独答案（可选）· Separate answers (optional)",
                         systemImage: "pencil.and.scribble",
                         items: $answerItems,
                         images: answerImages,
@@ -100,6 +101,17 @@ struct WorkbookGradingView: View {
     }
 
     // MARK: - Sections
+
+    private var howItWorksNote: some View {
+        Label {
+            Text("Upload the workbook pages. If the answers are written on the pages, just add the pages — the AI detects them automatically. Add separate answer photos only if the answers are on a different sheet.")
+        } icon: {
+            Image(systemName: "wand.and.stars")
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
     @ViewBuilder
     private var providerBanner: some View {
