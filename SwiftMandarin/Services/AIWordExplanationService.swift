@@ -840,6 +840,18 @@ struct ExtractedVocabItem: Codable, Identifiable, Hashable {
     let term: String       // word/phrase in the source language
     let reading: String    // pinyin / pronunciation hint
     let meaning: String    // translation/definition in the other language
+
+    init(term: String, reading: String, meaning: String) {
+        self.term = term; self.reading = reading; self.meaning = meaning
+    }
+
+    // Tolerate models that omit `reading`/`meaning`.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        term = try c.decode(String.self, forKey: .term)
+        reading = (try? c.decode(String.self, forKey: .reading)) ?? ""
+        meaning = (try? c.decode(String.self, forKey: .meaning)) ?? ""
+    }
 }
 
 /// Wrapper matching the `{"items":[…]}` JSON shape models return.
@@ -861,7 +873,23 @@ struct OllamaWordExplanationResponse: Codable {
     let antonyms: [OllamaRelatedWord]?
     let commonCollocations: [OllamaCollocation]
     let learningTip: String
-    
+
+    // Tolerant decoding: cloud models occasionally omit optional sections, so
+    // missing fields default to empty rather than failing the whole response.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        definition = (try? c.decode(String.self, forKey: .definition)) ?? ""
+        partOfSpeech = (try? c.decode(String.self, forKey: .partOfSpeech)) ?? ""
+        nuances = (try? c.decode(String.self, forKey: .nuances)) ?? ""
+        grammarUsage = (try? c.decode(String.self, forKey: .grammarUsage)) ?? ""
+        usageContexts = (try? c.decode([String].self, forKey: .usageContexts)) ?? []
+        exampleSentences = (try? c.decode([OllamaExampleSentence].self, forKey: .exampleSentences)) ?? []
+        synonyms = (try? c.decode([OllamaRelatedWord].self, forKey: .synonyms)) ?? []
+        antonyms = try? c.decode([OllamaRelatedWord].self, forKey: .antonyms)
+        commonCollocations = (try? c.decode([OllamaCollocation].self, forKey: .commonCollocations)) ?? []
+        learningTip = (try? c.decode(String.self, forKey: .learningTip)) ?? ""
+    }
+
     struct OllamaExampleSentence: Codable {
         let chinese: String
         let pinyin: String
