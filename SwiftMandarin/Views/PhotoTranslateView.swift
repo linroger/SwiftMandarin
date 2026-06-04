@@ -10,6 +10,7 @@ import SwiftUI
 import PhotosUI
 import Translation
 import NaturalLanguage
+import UniformTypeIdentifiers
 
 // MARK: - DetectedLanguage Extension for Photo Translation UI
 
@@ -50,6 +51,7 @@ struct PhotoTranslateView: View {
     // Photo picker
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var selectedImageData: Data?
+    @State private var showPhotoFiles: Bool = false
     
     // Camera scanner
     @State private var showCameraScanner: Bool = false
@@ -180,6 +182,16 @@ struct PhotoTranslateView: View {
                 WorkbookGradingView()
                     .environment(savedTermsStore)
             }
+            .fileImporter(isPresented: $showPhotoFiles, allowedContentTypes: [.image], allowsMultipleSelection: false) { result in
+                guard case let .success(urls) = result, let url = urls.first else { return }
+                Task {
+                    let scoped = url.startAccessingSecurityScopedResource()
+                    defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                    guard let data = try? Data(contentsOf: url) else { return }
+                    await MainActor.run { selectedImageData = data }
+                    await processImageData(data)
+                }
+            }
             .task(id: routeStore.pendingAction?.id) {
                 applyPendingRouteAction()
             }
@@ -223,9 +235,19 @@ struct PhotoTranslateView: View {
                 }
                 #endif
                 
-                // Photo picker
+                // Photo picker (Photos library)
                 PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                    Label("选择图片", systemImage: "photo.fill")
+                    Label("照片", systemImage: "photo.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+
+                // File picker (Files app / Finder)
+                Button {
+                    showPhotoFiles = true
+                } label: {
+                    Label("文件", systemImage: "folder")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)

@@ -33,6 +33,8 @@ struct WorkbookGradingView: View {
     @State private var answerImages: [Data] = []
     @State private var isLoadingWorkbook = false
     @State private var isLoadingAnswers = false
+    @State private var showWorkbookFiles = false
+    @State private var showAnswerFiles = false
 
     // Grading
     @State private var customInstructions: String = ""
@@ -63,6 +65,7 @@ struct WorkbookGradingView: View {
                         items: $workbookItems,
                         images: workbookImages,
                         isLoading: isLoadingWorkbook,
+                        onAddFiles: { showWorkbookFiles = true },
                         onClear: { workbookItems = []; workbookImages = [] }
                     )
                     uploadSection(
@@ -71,6 +74,7 @@ struct WorkbookGradingView: View {
                         items: $answerItems,
                         images: answerImages,
                         isLoading: isLoadingAnswers,
+                        onAddFiles: { showAnswerFiles = true },
                         onClear: { answerItems = []; answerImages = [] }
                     )
                     customPromptSection
@@ -92,10 +96,18 @@ struct WorkbookGradingView: View {
                 }
             }
             .onChange(of: workbookItems) { _, items in
-                Task { await loadWorkbookImages(items) }
+                guard !items.isEmpty else { return }
+                Task { await addWorkbookPhotos(items) }
             }
             .onChange(of: answerItems) { _, items in
-                Task { await loadAnswerImages(items) }
+                guard !items.isEmpty else { return }
+                Task { await addAnswerPhotos(items) }
+            }
+            .fileImporter(isPresented: $showWorkbookFiles, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
+                Task { await addWorkbookFiles(result) }
+            }
+            .fileImporter(isPresented: $showAnswerFiles, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
+                Task { await addAnswerFiles(result) }
             }
         }
     }
@@ -142,6 +154,7 @@ struct WorkbookGradingView: View {
         items: Binding<[PhotosPickerItem]>,
         images: [Data],
         isLoading: Bool,
+        onAddFiles: @escaping () -> Void,
         onClear: @escaping () -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -169,25 +182,31 @@ struct WorkbookGradingView: View {
                 }
             }
 
-            PhotosPicker(
-                selection: items,
-                maxSelectionCount: 10,
-                matching: .images
-            ) {
+            if isLoading {
                 HStack {
-                    if isLoading {
-                        ProgressView().controlSize(.small)
-                        Text("加载中…")
-                    } else {
-                        Image(systemName: "plus.rectangle.on.rectangle")
-                        Text(images.isEmpty ? "添加图片" : "更改图片")
-                    }
+                    ProgressView().controlSize(.small)
+                    Text("加载中…").foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
+            } else {
+                HStack(spacing: 10) {
+                    // From the Photos library.
+                    PhotosPicker(selection: items, maxSelectionCount: 10, matching: .images) {
+                        Label("照片 · Photos", systemImage: "photo.on.rectangle")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+
+                    // From files (Files app on iOS, Finder on macOS).
+                    Button(action: onAddFiles) {
+                        Label("文件 · Files", systemImage: "folder")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                }
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-            .disabled(isLoading)
         }
         .padding()
         .background(
@@ -315,29 +334,64 @@ struct WorkbookGradingView: View {
 
     // MARK: - Actions
 
-    private func loadWorkbookImages(_ items: [PhotosPickerItem]) async {
+    private func addWorkbookPhotos(_ items: [PhotosPickerItem]) async {
         await MainActor.run { isLoadingWorkbook = true }
         let datas = await Self.loadDownscaled(items)
         await MainActor.run {
-            workbookImages = datas
+            workbookImages.append(contentsOf: datas)
+            workbookItems = []  // reset so the next pick is detected (onChange guards empty)
             isLoadingWorkbook = false
         }
     }
 
-    private func loadAnswerImages(_ items: [PhotosPickerItem]) async {
+    private func addAnswerPhotos(_ items: [PhotosPickerItem]) async {
         await MainActor.run { isLoadingAnswers = true }
         let datas = await Self.loadDownscaled(items)
         await MainActor.run {
-            answerImages = datas
+            answerImages.append(contentsOf: datas)
+            answerItems = []
             isLoadingAnswers = false
         }
     }
 
-    /// Load each picked item to Data and downscale it for the request.
+    private func addWorkbookFiles(_ result: Result<[URL], Error>) async {
+        guard case let .success(urls) = result, !urls.isEmpty else { return }
+        await MainActor.run { isLoadingWorkbook = true }
+        let datas = await Self.loadDownscaledFiles(urls)
+        await MainActor.run {
+            workbookImages.append(contentsOf: datas)
+            isLoadingWorkbook = false
+        }
+    }
+
+    private func addAnswerFiles(_ result: Result<[URL], Error>) async {
+        guard case let .success(urls) = result, !urls.isEmpty else { return }
+        await MainActor.run { isLoadingAnswers = true }
+        let datas = await Self.loadDownscaledFiles(urls)
+        await MainActor.run {
+            answerImages.append(contentsOf: datas)
+            isLoadingAnswers = false
+        }
+    }
+
+    /// Load each picked Photos item to Data and downscale it for the request.
     private static func loadDownscaled(_ items: [PhotosPickerItem]) async -> [Data] {
         var datas: [Data] = []
         for item in items {
             if let data = try? await item.loadTransferable(type: Data.self) {
+                datas.append(downscaledJPEG(data))
+            }
+        }
+        return datas
+    }
+
+    /// Load each user-selected file URL to Data (security-scoped) and downscale.
+    private static func loadDownscaledFiles(_ urls: [URL]) async -> [Data] {
+        var datas: [Data] = []
+        for url in urls {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            if let data = try? Data(contentsOf: url) {
                 datas.append(downscaledJPEG(data))
             }
         }
