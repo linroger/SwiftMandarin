@@ -66,4 +66,5 @@ Secondary: `CameraScannerView:40` `.text()` no language hint; `VNImageRequestHan
 
 ## 10) Updates
 - 2026-06-04: Created. Full codebase read + 9-agent comprehension workflow; root causes verified; plan set.
-- 2026-06-04: Implemented all five groups. Both platforms build green; detector logic verified 9/9. Status → ready for review/runtime test. Did NOT commit (awaiting user go-ahead).
+- 2026-06-04: Implemented all five groups. Both platforms build green; detector logic verified 9/9. Committed + pushed to origin/april-14-2026-ollama (4981a25).
+- 2026-06-04 (iter 2 — structured output linkage): (1) `TranslateView` AI-translate buttons now fire for ANY available provider (were Apple-Intelligence-only), so cloud/Ollama responses are actually used. (2) Added `AIProvider.supportsJSONResponseFormat`; `CloudAIService` only sends `response_format: json_object` where supported (OpenAI/DeepSeek/Kimi/Qwen) and relies on prompt+tolerant extraction elsewhere — prevents API errors on Doubao/Zhipu/MiniMax/Anthropic. (3) New structured feature: `AIWordExplanationService.extractVocabulary(fromPhotoText:imageData:sourceIsChinese:)` returns typed `ExtractedVocabItem`s; surfaced in `PhotoTranslateView` as an "AI 提取重点词汇" button + list + save-to-vocab. Both platforms build green; structured JSON parsing verified 5/5 (plain/fenced/prose/empty/garbage).

@@ -209,12 +209,17 @@ final class CloudAIService {
         request.httpMethod = "POST"
         applyAuthHeaders(&request, provider: provider, key: key)
 
+        // Only request the strict JSON response_format where the provider
+        // supports it; others still get JSON via the prompt + tolerant parsing.
+        let useResponseFormat = jsonMode && provider.supportsJSONResponseFormat
+
         let body: [String: Any]
         switch provider.apiStyle {
         case .openAICompatible:
             body = Self.openAIBody(
                 model: model, system: system, user: user,
-                imageData: useImage ? imageData : nil, jsonMode: jsonMode, maxTokens: maxTokens
+                imageData: useImage ? imageData : nil,
+                jsonMode: jsonMode, useResponseFormat: useResponseFormat, maxTokens: maxTokens
             )
         case .anthropic:
             body = Self.anthropicBody(
@@ -276,7 +281,7 @@ final class CloudAIService {
 
     private static func openAIBody(
         model: String, system: String, user: String,
-        imageData: Data?, jsonMode: Bool, maxTokens: Int
+        imageData: Data?, jsonMode: Bool, useResponseFormat: Bool, maxTokens: Int
     ) -> [String: Any] {
         var systemPrompt = system
         var userContent: Any = user
@@ -303,7 +308,7 @@ final class CloudAIService {
             "stream": false,
             "max_tokens": maxTokens,
         ]
-        if jsonMode {
+        if useResponseFormat {
             body["response_format"] = ["type": "json_object"]
         }
         return body

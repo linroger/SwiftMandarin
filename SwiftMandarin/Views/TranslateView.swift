@@ -46,6 +46,7 @@ struct TranslateView: View {
     // State for AI translation
     @State private var isAITranslating: Bool = false
     @State private var aiTranslationError: String?
+    @State private var aiSettings = AIModelSettings.shared
     
     // Track last detected direction to reset configuration when input language changes
     @State private var lastDetectedDirection: TranslationDirection?
@@ -369,13 +370,13 @@ struct TranslateView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     
-                    // Apple Intelligence translation button
-                    if AIWordExplanationService.shared.isAvailable {
+                    // AI translation button (Apple Intelligence, Ollama, or cloud provider)
+                    if aiSettings.isAnyProviderAvailable {
                         Button {
                             isInputFocused = false
                             Task { await triggerAITranslation() }
                         } label: {
-                            Label("Translate with Apple Intelligence", systemImage: "apple.intelligence")
+                            Label("Translate with \(aiSettings.effectiveProvider.displayName)", systemImage: aiSettings.effectiveProvider.iconName)
                                 .font(.subheadline)
                                 .frame(maxWidth: .infinity)
                         }
@@ -415,18 +416,18 @@ struct TranslateView: View {
                     .disabled(sharedState.sourceText.isEmpty)
                     .help("Translate with Apple Translation")
                     
-                    // AI translate button
-                    if AIWordExplanationService.shared.isAvailable {
+                    // AI translate button (any configured provider)
+                    if aiSettings.isAnyProviderAvailable {
                         Button {
                             Task { await triggerAITranslation() }
                         } label: {
-                            Image(systemName: "apple.intelligence")
+                            Image(systemName: aiSettings.effectiveProvider.iconName)
                                 .font(.title2)
                                 .foregroundStyle(.blue)
                         }
                         .buttonStyle(.plain)
                         .disabled(sharedState.sourceText.isEmpty)
-                        .help("Translate with Apple Intelligence")
+                        .help("Translate with \(aiSettings.effectiveProvider.displayName)")
                     }
                 }
             }
@@ -543,12 +544,12 @@ struct TranslateView: View {
                             .buttonStyle(.borderedProminent)
                             .controlSize(.large)
                             
-                            if AIWordExplanationService.shared.isAvailable {
+                            if aiSettings.isAnyProviderAvailable {
                                 Button {
                                     isInputFocused = false
                                     Task { await triggerAITranslation() }
                                 } label: {
-                                    Label("Use Apple Intelligence", systemImage: "apple.intelligence")
+                                    Label("Use \(aiSettings.effectiveProvider.displayName)", systemImage: aiSettings.effectiveProvider.iconName)
                                         .font(.subheadline)
                                 }
                                 .buttonStyle(.bordered)

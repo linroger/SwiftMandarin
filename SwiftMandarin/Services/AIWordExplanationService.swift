@@ -712,6 +712,76 @@ final class AIWordExplanationService {
         }
     }
 
+    // MARK: - Structured Vocabulary Extraction (from photo text)
+
+    /// Extract key study vocabulary from a passage as structured items, routed
+    /// through the configured AI provider. For vision-capable cloud providers
+    /// the source image is also supplied. Returns typed items the app can
+    /// render and save — a concrete example of model output linked up to the
+    /// app through structured output.
+    func extractVocabulary(
+        fromPhotoText text: String,
+        imageData: Data? = nil,
+        sourceIsChinese: Bool
+    ) async throws -> [ExtractedVocabItem] {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+
+        let settings = AIModelSettings.shared
+        let provider = settings.effectiveProvider
+
+        let langDesc = sourceIsChinese ? "Chinese (中文)" : "English"
+        let readingNote = sourceIsChinese
+            ? "the Hanyu pinyin with tone marks (ā á ǎ à)"
+            : "a short pronunciation hint (may be an empty string)"
+
+        let system = """
+        You extract the most important vocabulary a language learner should study from a passage.
+        The passage is in \(langDesc). Return ONLY a JSON object of this exact shape:
+        {"items":[{"term":"...","reading":"...","meaning":"..."}]}
+        - "term": the word or short phrase in the source language (\(langDesc)).
+        - "reading": \(readingNote).
+        - "meaning": a concise translation/definition in the OTHER language.
+        Include 5–20 of the most useful items, most important first. JSON only, no commentary.
+        """
+        let user = "Passage:\n\n\(text)"
+
+        let json: String
+        switch provider {
+        case .appleIntelligence:
+            #if canImport(FoundationModels)
+            guard isAvailable else { throw AIExplanationError.unavailable(reason: unavailabilityReason ?? "Unknown") }
+            let session = LanguageModelSession(instructions: system)
+            json = try await session.respond(to: user).content
+            #else
+            throw AIExplanationError.unavailable(reason: "FoundationModels framework not available")
+            #endif
+        case .ollama:
+            guard OllamaService.shared.isConnected, !settings.ollamaModel.isEmpty else {
+                throw AIExplanationError.ollamaNotConnected
+            }
+            let (content, _) = try await OllamaService.shared.chat(
+                model: settings.ollamaModel, systemPrompt: system, userPrompt: user, enableThinking: false
+            )
+            json = content
+        default:
+            let model = settings.selectedModel(for: provider)
+            guard !settings.apiKey(for: provider).isEmpty, !model.isEmpty else {
+                throw AIExplanationError.unavailable(reason: "No API key/model for \(provider.displayName)")
+            }
+            json = try await CloudAIService.shared.chat(
+                provider: provider, model: model, system: system, user: user,
+                imageData: imageData, jsonMode: true, maxTokens: 2048
+            )
+        }
+
+        guard let data = Self.extractJSONObject(from: json) else {
+            throw AIExplanationError.generationFailed("No JSON object found in response")
+        }
+        let decoded = try JSONDecoder().decode(ExtractedVocabResponse.self, from: data)
+        return decoded.items.filter { !$0.term.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
+
     /// Extract the first balanced JSON object from a model response, tolerating
     /// markdown code fences and surrounding prose.
     static func extractJSONObject(from text: String) -> Data? {
@@ -760,6 +830,21 @@ enum AIExplanationError: LocalizedError {
             return "No Ollama model selected. Please select a model in Settings."
         }
     }
+}
+
+// MARK: - Extracted Vocabulary (structured photo output)
+
+/// A single vocabulary item extracted by an AI provider from a passage.
+struct ExtractedVocabItem: Codable, Identifiable, Hashable {
+    var id: String { term }
+    let term: String       // word/phrase in the source language
+    let reading: String    // pinyin / pronunciation hint
+    let meaning: String    // translation/definition in the other language
+}
+
+/// Wrapper matching the `{"items":[…]}` JSON shape models return.
+struct ExtractedVocabResponse: Codable {
+    let items: [ExtractedVocabItem]
 }
 
 // MARK: - Ollama Word Explanation Response (for JSON decoding)

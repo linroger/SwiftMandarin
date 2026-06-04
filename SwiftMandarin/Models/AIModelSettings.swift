@@ -99,6 +99,16 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Whether the OpenAI-style `response_format: {type: json_object}` is
+    /// supported. Providers without it still receive the JSON schema in the
+    /// prompt and are parsed with tolerant extraction.
+    var supportsJSONResponseFormat: Bool {
+        switch self {
+        case .openAI, .deepseek, .kimi, .qwen: return true
+        case .anthropic, .doubao, .zhipu, .minimax, .appleIntelligence, .ollama: return false
+        }
+    }
+
     // MARK: Cloud REST metadata (only meaningful when `isCloud`)
 
     var apiStyle: AIProviderAPIStyle {

@@ -71,6 +71,10 @@ struct PhotoTranslateView: View {
     @State private var showGrammarPoints: Bool = true
     @State private var prefs = AppPreferences.shared
     @State private var aiSettings = AIModelSettings.shared
+
+    // AI structured vocabulary extraction
+    @State private var extractedVocab: [ExtractedVocabItem] = []
+    @State private var isExtractingVocab: Bool = false
     
     /// Check if we have any results to display
     private var hasResults: Bool {
@@ -348,6 +352,85 @@ struct PhotoTranslateView: View {
             } else if detectedLanguage == .chinese {
                 chineseResultsSection
             }
+
+            // AI structured vocabulary extraction (concern B/C — model API
+            // responses linked into the app via structured output).
+            aiVocabExtractButton
+            aiVocabResultsSection
+        }
+    }
+
+    /// Button that asks the configured AI provider for structured key vocabulary.
+    @ViewBuilder
+    private var aiVocabExtractButton: some View {
+        if aiSettings.isAnyProviderAvailable {
+            Button {
+                Task { await extractVocabulary() }
+            } label: {
+                HStack {
+                    if isExtractingVocab { ProgressView().controlSize(.small) }
+                    Label(isExtractingVocab ? "AI 提取中…" : "AI 提取重点词汇",
+                          systemImage: "sparkles.rectangle.stack")
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .disabled(isExtractingVocab || !hasResults)
+        }
+    }
+
+    /// Renders the structured vocabulary items returned by the model.
+    @ViewBuilder
+    private var aiVocabResultsSection: some View {
+        if !extractedVocab.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label("AI 重点词汇", systemImage: "sparkles")
+                        .font(.headline)
+                        .foregroundStyle(.purple)
+                    Spacer()
+                    Text("\(extractedVocab.count) 个词")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(extractedVocab) { item in
+                    VStack(spacing: 4) {
+                        HStack(alignment: .firstTextBaseline) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.term)
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                if !item.reading.isEmpty {
+                                    Text(item.reading)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer()
+                            Text(item.meaning)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.trailing)
+                        }
+                        Divider()
+                    }
+                }
+
+                Button {
+                    saveExtractedVocab()
+                } label: {
+                    Label("保存全部到词汇本", systemImage: "bookmark")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.background)
+                    .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+            )
         }
     }
     
@@ -634,6 +717,7 @@ struct PhotoTranslateView: View {
             analyzedSentences = []
             cleanedChineseText = ""
             chineseTranslation = ""
+            extractedVocab = []
         }
 
         // Determine language first (prefer the OCR-provided detection), using
@@ -863,6 +947,69 @@ struct PhotoTranslateView: View {
         }
     }
     
+    /// Ask the configured AI provider for structured key vocabulary from the
+    /// recognized passage and surface it in the UI.
+    private func extractVocabulary() async {
+        let sourceIsChinese = detectedLanguage.isChinese
+        let text = sourceIsChinese
+            ? cleanedChineseText
+            : analyzedSentences.map { $0.text }.joined(separator: " ")
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        await MainActor.run {
+            isExtractingVocab = true
+            errorMessage = nil
+        }
+
+        do {
+            let items = try await AIWordExplanationService.shared.extractVocabulary(
+                fromPhotoText: text,
+                imageData: selectedImageData,
+                sourceIsChinese: sourceIsChinese
+            )
+            await MainActor.run {
+                extractedVocab = items
+                isExtractingVocab = false
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "AI 词汇提取失败: \(error.localizedDescription)"
+                isExtractingVocab = false
+            }
+        }
+    }
+
+    /// Save AI-extracted vocabulary to the vocabulary book (Chinese-keyed).
+    private func saveExtractedVocab() {
+        let sourceIsChinese = detectedLanguage.isChinese
+        for item in extractedVocab {
+            let chinese: String
+            let pinyin: String
+            let definition: String
+            if sourceIsChinese {
+                chinese = item.term
+                pinyin = item.reading.isEmpty ? PinyinConverter.convert(item.term) : item.reading
+                definition = item.meaning
+            } else {
+                // English passage: the Chinese side is the item's meaning.
+                chinese = item.meaning
+                pinyin = PinyinConverter.convert(item.meaning)
+                definition = item.term
+            }
+
+            let trimmed = chinese.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, trimmed.contains(where: { $0.isChineseCharacter }) else { continue }
+            guard !savedTermsStore.contains(chinese: trimmed) else { continue }
+
+            savedTermsStore.add(SavedTerm(
+                chinese: trimmed,
+                pinyin: pinyin,
+                definition: definition,
+                partOfSpeech: "phrase"
+            ))
+        }
+    }
+
     /// Save a single Chinese word to vocabulary
     private func saveChineseWord(_ segment: RubySegment, definition: String) {
         let term = SavedTerm(
@@ -892,6 +1039,8 @@ struct PhotoTranslateView: View {
         isProcessing = false
         isTranslating = false
         translationConfiguration = nil
+        extractedVocab = []
+        isExtractingVocab = false
     }
 }
 
