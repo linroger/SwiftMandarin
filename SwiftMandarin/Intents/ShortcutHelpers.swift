@@ -91,8 +91,8 @@ enum ShortcutHelpers {
     }
 
     private static func aiIsAvailable() -> Bool {
-        // Check if any AI provider is available (Apple Intelligence or Ollama)
-        AIModelSettings.shared.isAppleIntelligenceAvailable || OllamaService.shared.isConnected
+        // Any configured provider: Apple Intelligence, Ollama, or a cloud provider with a key.
+        AIModelSettings.shared.isAnyProviderAvailable
     }
 
     private static func aiTranslate(_ text: String, sourceIsChinese: Bool) async throws -> String {

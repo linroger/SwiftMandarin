@@ -391,12 +391,15 @@ final class AIWordExplanationService {
         context: String? = nil
     ) async throws -> WordExplanationResult {
         let settings = AIModelSettings.shared
-        
-        switch settings.effectiveProvider {
+        let provider = settings.effectiveProvider
+
+        switch provider {
         case .appleIntelligence:
             return try await generateExplanation(for: word, pinyin: pinyin, context: context)
         case .ollama:
             return try await generateExplanationWithOllama(for: word, pinyin: pinyin, context: context)
+        default:
+            return try await generateExplanationWithCloud(provider: provider, for: word, pinyin: pinyin, context: context)
         }
     }
     
@@ -407,12 +410,21 @@ final class AIWordExplanationService {
     /// - Returns: The translated text
     func translateWithProvider(_ text: String, sourceIsChinese: Bool) async throws -> String {
         let settings = AIModelSettings.shared
-        
-        switch settings.effectiveProvider {
+        let provider = settings.effectiveProvider
+
+        switch provider {
         case .appleIntelligence:
             return try await translate(text, sourceIsChinese: sourceIsChinese)
         case .ollama:
             return try await translateWithOllama(text, sourceIsChinese: sourceIsChinese)
+        default:
+            let model = settings.selectedModel(for: provider)
+            guard !settings.apiKey(for: provider).isEmpty else {
+                throw AIExplanationError.unavailable(reason: "No API key for \(provider.displayName)")
+            }
+            return try await CloudAIService.shared.translate(
+                text, sourceIsChinese: sourceIsChinese, provider: provider, model: model
+            )
         }
     }
     
@@ -563,6 +575,154 @@ final class AIWordExplanationService {
         )
     }
     
+    // MARK: - Cloud Provider Methods
+
+    /// Generate a word explanation using a cloud provider (OpenAI/Claude/etc.).
+    private func generateExplanationWithCloud(
+        provider: AIProvider,
+        for word: String,
+        pinyin: String? = nil,
+        context: String? = nil
+    ) async throws -> WordExplanationResult {
+        let settings = AIModelSettings.shared
+        let model = settings.selectedModel(for: provider)
+
+        guard !settings.apiKey(for: provider).isEmpty else {
+            throw AIExplanationError.unavailable(reason: "No API key for \(provider.displayName)")
+        }
+        guard !model.isEmpty else {
+            throw AIExplanationError.unavailable(reason: "No model selected for \(provider.displayName)")
+        }
+
+        let cacheKey = "cloud_\(provider.rawValue)_\(word)_\(pinyin ?? "")_\(context ?? "")"
+        if let cached = explanationCache[cacheKey] { return cached }
+
+        var prompt = "Explain the Chinese word: \(word)"
+        if let pinyin, !pinyin.isEmpty { prompt += " (\(pinyin))" }
+        prompt += ". Use \"\(word)\" exactly in all example sentences."
+        if let context, !context.isEmpty { prompt += " Context: \"\(context)\"" }
+
+        let system = ollamaSystemInstructions + "\n\n" + cloudJSONSchemaInstructions
+
+        let content = try await CloudAIService.shared.chat(
+            provider: provider,
+            model: model,
+            system: system,
+            user: prompt,
+            jsonMode: true,
+            maxTokens: 4096
+        )
+
+        guard let data = Self.extractJSONObject(from: content) else {
+            throw AIExplanationError.generationFailed("No JSON object found in response")
+        }
+
+        let response = try JSONDecoder().decode(OllamaWordExplanationResponse.self, from: data)
+        let result = response.toResult(filteringFor: word)
+        explanationCache[cacheKey] = result
+        return result
+    }
+
+    /// JSON schema description for cloud providers (which use prompt-driven
+    /// JSON rather than the structured-output API Ollama/Apple expose).
+    private var cloudJSONSchemaInstructions: String {
+        """
+        Respond with ONLY a single valid JSON object (no markdown, no commentary) matching this shape:
+        {
+          "definition": "string — clear English definition (1-2 sentences)",
+          "partOfSpeech": "string — noun/verb/adjective/etc.",
+          "nuances": "string — cultural/contextual nuance and formality",
+          "grammarUsage": "string — grammatical explanation and sentence patterns",
+          "usageContexts": ["string", "1-3 common contexts"],
+          "exampleSentences": [{"chinese": "must contain the EXACT word", "pinyin": "tone marks ā á ǎ à", "english": "translation"}],
+          "synonyms": [{"chinese": "", "pinyin": "", "meaning": "", "difference": ""}],
+          "antonyms": [{"chinese": "", "pinyin": "", "meaning": "", "difference": ""}],
+          "commonCollocations": [{"chinese": "phrase containing the word", "pinyin": "", "english": ""}],
+          "learningTip": "string — difficulty and learning tips"
+        }
+        """
+    }
+
+    // MARK: - Photo OCR Cleanup (used by the photo translation pipeline)
+
+    /// Clean up raw OCR text using the configured AI provider. For
+    /// vision-capable cloud providers, the original image is also supplied so
+    /// the model can correct OCR errors against the source. Returns the raw
+    /// text unchanged if no provider is available (safe fallback).
+    func cleanupRecognizedText(
+        _ raw: String,
+        imageData: Data? = nil,
+        hintedLanguage: DetectedLanguage? = nil
+    ) async throws -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return raw }
+
+        let settings = AIModelSettings.shared
+        let provider = settings.effectiveProvider
+
+        let languageNote: String
+        switch hintedLanguage {
+        case .some(.chinese): languageNote = " The source language is Chinese (中文); keep it Chinese."
+        case .some(.english): languageNote = " The source language is English; keep it English."
+        default: languageNote = ""
+        }
+
+        let system = """
+        You are an OCR post-processor. You receive raw text extracted from a photo \
+        (and may also receive the source image). Return ONLY the corrected text exactly \
+        as it appears in the source. Preserve the original language — do NOT translate.\(languageNote) \
+        Fix obvious OCR errors, merge lines that were wrongly split mid-sentence, remove \
+        page noise and artifacts, and keep the original meaning and ordering. \
+        Output plain text only, with no commentary, labels, or quotation marks.
+        """
+        let user = "Raw OCR text:\n\n\(raw)"
+
+        switch provider {
+        case .appleIntelligence:
+            #if canImport(FoundationModels)
+            guard isAvailable else { return raw }
+            let session = LanguageModelSession(instructions: system)
+            let response = try await session.respond(to: user)
+            return response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            #else
+            return raw
+            #endif
+        case .ollama:
+            guard OllamaService.shared.isConnected, !settings.ollamaModel.isEmpty else { return raw }
+            let (content, _) = try await OllamaService.shared.chat(
+                model: settings.ollamaModel,
+                systemPrompt: system,
+                userPrompt: user,
+                enableThinking: false
+            )
+            return content.trimmingCharacters(in: .whitespacesAndNewlines)
+        default:
+            let model = settings.selectedModel(for: provider)
+            guard !settings.apiKey(for: provider).isEmpty, !model.isEmpty else { return raw }
+            let content = try await CloudAIService.shared.chat(
+                provider: provider,
+                model: model,
+                system: system,
+                user: user,
+                imageData: imageData,
+                jsonMode: false,
+                maxTokens: 4096
+            )
+            return content.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+    }
+
+    /// Extract the first balanced JSON object from a model response, tolerating
+    /// markdown code fences and surrounding prose.
+    static func extractJSONObject(from text: String) -> Data? {
+        guard let start = text.firstIndex(of: "{"),
+              let end = text.lastIndex(of: "}"),
+              start < end else {
+            return nil
+        }
+        return String(text[start...end]).data(using: .utf8)
+    }
+
     /// System instructions for Ollama word explanation
     private var ollamaSystemInstructions: String {
         """

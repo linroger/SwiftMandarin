@@ -24,7 +24,7 @@ struct AIWordExplanationView: View {
     
     /// Check if any AI provider is available
     private var isAnyProviderAvailable: Bool {
-        aiSettings.isAppleIntelligenceAvailable || OllamaService.shared.isConnected
+        aiSettings.isAnyProviderAvailable
     }
     
     /// Get the current provider name for display

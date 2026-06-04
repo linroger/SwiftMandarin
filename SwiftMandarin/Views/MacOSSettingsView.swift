@@ -56,9 +56,23 @@ struct GeneralSettingsTab: View {
     @AppStorage("showInMenuBar") private var showInMenuBar: Bool = false
     @AppStorage("showDockIcon") private var showDockIcon: Bool = true
     @AppStorage("globalHotkey") private var globalHotkey: String = "⌘⇧T"
-    
+    @State private var prefs = AppPreferences.shared
+
     var body: some View {
         Form {
+            Section {
+                Picker("I am a…", selection: $prefs.learnerMode) {
+                    ForEach(LearnerMode.allCases) { mode in
+                        Label(mode.displayName, systemImage: mode.iconName).tag(mode)
+                    }
+                }
+                Toggle("Dual-Language Narration", isOn: $prefs.dualNarration)
+            } header: {
+                Text("Learning Mode")
+            } footer: {
+                Text("\(prefs.learnerMode.detail) Dual narration speaks both the word and its translation aloud.")
+            }
+
             Section {
                 Toggle("Launch at Login", isOn: $launchAtLogin)
                 Toggle("Show in Menu Bar", isOn: $showInMenuBar)
@@ -106,8 +120,7 @@ struct GeneralSettingsTab: View {
 struct AISettingsTab: View {
     @State private var settings = AIModelSettings.shared
     @State private var ollamaService = OllamaService.shared
-    @State private var isRefreshing: Bool = false
-    
+
     var body: some View {
         Form {
             // Provider Selection
@@ -121,8 +134,8 @@ struct AISettingsTab: View {
                         .tag(provider)
                     }
                 }
-                .pickerStyle(.radioGroup)
-                
+                .pickerStyle(.menu)
+
                 // Status indicator
                 HStack {
                     Circle()
@@ -135,137 +148,19 @@ struct AISettingsTab: View {
             } header: {
                 Text("AI Provider")
             } footer: {
-                Text("Choose between Apple Intelligence (on-device) or Ollama (local server with more powerful models).")
+                Text("Choose Apple Intelligence (on-device), Ollama (local server), or a cloud provider (OpenAI, Claude, DeepSeek, Doubao, Qwen, Kimi, Zhipu, MiniMax).")
             }
             
-            // Ollama Configuration
-            if settings.provider == .ollama {
-                Section {
-                    LabeledContent("Server URL") {
-                        TextField("http://localhost:11434", text: $settings.ollamaHost)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 200)
-                    }
-                    
-                    HStack {
-                        Button {
-                            Task {
-                                isRefreshing = true
-                                await settings.refreshConnection()
-                                isRefreshing = false
-                            }
-                        } label: {
-                            Label("Refresh Connection", systemImage: "arrow.clockwise")
-                        }
-                        .disabled(isRefreshing)
-                        
-                        if isRefreshing {
-                            ProgressView()
-                                .scaleEffect(0.7)
-                                .padding(.leading, 4)
-                        }
-                    }
-                } header: {
-                    Text("Ollama Server")
-                }
-                
-                Section {
-                    if ollamaService.availableModels.isEmpty {
-                        if ollamaService.isLoadingModels {
-                            HStack {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                Text("Loading models...")
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else if !ollamaService.isConnected {
-                            HStack {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .foregroundStyle(.orange)
-                                Text("Not connected to Ollama")
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else {
-                            Text("No models found")
-                                .foregroundStyle(.secondary)
-                        }
-                    } else {
-                        Picker("Model", selection: $settings.ollamaModel) {
-                            ForEach(ollamaService.availableModels) { model in
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(model.name)
-                                        Text("\(model.parameterSize) • \(model.sizeString)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    if model.supportsThinking {
-                                        Image(systemName: "brain")
-                                            .foregroundStyle(.blue)
-                                            .help("Supports reasoning")
-                                    }
-                                }
-                                .tag(model.name)
-                            }
-                        }
-                    }
-                    
-                    Button {
-                        Task {
-                            await ollamaService.refreshModels()
-                        }
-                    } label: {
-                        Label("Refresh Models", systemImage: "arrow.clockwise")
-                    }
-                    .disabled(ollamaService.isLoadingModels || !ollamaService.isConnected)
-                } header: {
-                    Text("Model Selection")
-                } footer: {
-                    Text("Recommended: gpt-oss:20b for best translation and explanation quality.")
-                }
-                
-                Section {
-                    Toggle("Enable Reasoning Mode", isOn: $settings.enableThinking)
-                    
-                    LabeledContent("Context Length") {
-                        Picker("", selection: $settings.contextLength) {
-                            Text("8K").tag(8000)
-                            Text("32K").tag(32000)
-                            Text("64K").tag(64000)
-                            Text("128K").tag(128000)
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(width: 200)
-                    }
-                } header: {
-                    Text("Advanced Options")
-                } footer: {
-                    Text("Reasoning mode allows the model to think through complex explanations. 128K context is recommended for gpt-oss 20b.")
-                }
-            }
-            
-            // Apple Intelligence status (when selected)
-            if settings.provider == .appleIntelligence {
-                Section {
-                    if settings.isAppleIntelligenceAvailable {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text("Apple Intelligence is ready")
-                        }
-                    } else {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                            Text(AIWordExplanationService.shared.unavailabilityReason ?? "Apple Intelligence is not available")
-                        }
-                    }
-                } header: {
-                    Text("Status")
-                } footer: {
-                    Text("Apple Intelligence uses on-device Foundation Models for privacy-focused AI processing.")
-                }
+            // Provider-specific configuration (API key, model picker, etc.)
+            AIProviderConfigView(settings: settings)
+
+            // Photo AI cleanup (concern C)
+            Section {
+                Toggle("AI Photo Cleanup", isOn: $settings.aiPhotoCleanupEnabled)
+            } header: {
+                Text("Photo Recognition")
+            } footer: {
+                Text("When on, scanned photos are sent to the selected AI provider to fix OCR errors before translation. Vision-capable providers also receive the image.")
             }
         }
         .formStyle(.grouped)
@@ -275,13 +170,15 @@ struct AISettingsTab: View {
             await settings.refreshConnection()
         }
     }
-    
+
     private var statusColor: Color {
         switch settings.provider {
         case .appleIntelligence:
             return settings.isAppleIntelligenceAvailable ? .green : .orange
         case .ollama:
             return ollamaService.isConnected ? .green : .red
+        default:
+            return settings.isAvailable(settings.provider) ? .green : .orange
         }
     }
 }

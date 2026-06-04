@@ -175,6 +175,7 @@ struct WordDetailPopover: View {
     let onDismiss: () -> Void
     
     @Environment(SavedTermsStore.self) private var savedTermsStore
+    @State private var prefs = AppPreferences.shared
     @State private var showCopiedFeedback: Bool = false
     @State private var englishDefinition: String = ""
     @State private var chineseWord: String = ""
@@ -267,15 +268,27 @@ struct WordDetailPopover: View {
             Divider()
             
             // Action buttons
-            HStack(spacing: 16) {
+            HStack(spacing: 12) {
+                // Mandarin narration (always available).
                 Button {
                     SpeechService.speakChinese(chineseWord)
                 } label: {
-                    Label("Speak", systemImage: "speaker.wave.2")
+                    Label("中文", systemImage: "speaker.wave.2")
                 }
                 .buttonStyle(.bordered)
                 .disabled(isLoadingTranslation || chineseWord.isEmpty)
-                
+
+                // English narration (concern D — dual narration).
+                if prefs.dualNarration {
+                    Button {
+                        SpeechService.speakEnglish(englishDefinition)
+                    } label: {
+                        Label("EN", systemImage: "speaker.wave.2")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isLoadingTranslation || englishDefinition.isEmpty)
+                }
+
                 Button {
                     ClipboardService.copy(chineseWord)
                     showCopiedFeedback = true

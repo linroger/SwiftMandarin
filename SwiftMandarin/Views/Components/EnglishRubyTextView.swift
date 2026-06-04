@@ -55,7 +55,8 @@ struct EnglishWordDetailSheet: View {
     let word: AnalyzedEnglishWord
     @Environment(\.dismiss) private var dismiss
     @Environment(SavedTermsStore.self) private var savedTermsStore
-    
+    @State private var prefs = AppPreferences.shared
+
     @State private var isLoading: Bool = false
     @State private var fullTranslation: String = ""
     
@@ -178,25 +179,37 @@ struct EnglishWordDetailSheet: View {
                             .fill(.ultraThinMaterial)
                     )
                     
-                    // Action buttons
+                    // Narration — English always; Mandarin when dual narration is on (concern D).
                     HStack(spacing: 12) {
                         Button {
                             SpeechService.speakEnglish(word.text)
                         } label: {
-                            Label("朗读", systemImage: "speaker.wave.2")
+                            Label("English", systemImage: "speaker.wave.2")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
-                        
-                        Button {
-                            saveToVocabulary()
-                        } label: {
-                            Label(isSaved ? "已保存" : "保存到词汇本", systemImage: isSaved ? "bookmark.fill" : "bookmark")
-                                .frame(maxWidth: .infinity)
+
+                        if prefs.dualNarration {
+                            Button {
+                                SpeechService.speakChinese(chineseTranslation)
+                            } label: {
+                                Label("中文", systemImage: "speaker.wave.2")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(chineseTranslation.isEmpty)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(isSaved || chineseTranslation.isEmpty)
                     }
+
+                    // Save action
+                    Button {
+                        saveToVocabulary()
+                    } label: {
+                        Label(isSaved ? "已保存" : "保存到词汇本", systemImage: isSaved ? "bookmark.fill" : "bookmark")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isSaved || chineseTranslation.isEmpty)
                 }
                 .padding()
             }

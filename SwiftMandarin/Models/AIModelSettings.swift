@@ -2,115 +2,344 @@
 //  AIModelSettings.swift
 //  SwiftMandarin
 //
-//  Manages AI provider settings and preferences for using either
-//  Apple Intelligence (Foundation Models) or local Ollama models.
+//  Manages AI provider settings and preferences. Supports Apple Intelligence
+//  (Foundation Models), local Ollama, and a family of cloud providers
+//  (OpenAI, Anthropic/Claude, Deepseek, Doubao, Qwen, Kimi, Zhipu, Minimax)
+//  reached over their REST APIs. API keys are stored in the Keychain.
 //
 
 import Foundation
 import SwiftUI
 
+// MARK: - Provider API Style
+
+/// The request/response convention a cloud provider uses.
+enum AIProviderAPIStyle {
+    /// OpenAI `/chat/completions` + `/models`, `Authorization: Bearer` auth.
+    case openAICompatible
+    /// Anthropic `/v1/messages` + `/v1/models`, `x-api-key` + `anthropic-version`.
+    case anthropic
+}
+
 // MARK: - AI Provider
 
-/// The AI provider to use for AI-powered features
+/// The AI provider to use for AI-powered features.
 enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case appleIntelligence = "apple"
     case ollama = "ollama"
-    
+    case openAI = "openai"
+    case anthropic = "anthropic"
+    case deepseek = "deepseek"
+    case doubao = "doubao"
+    case qwen = "qwen"
+    case kimi = "kimi"
+    case zhipu = "zhipu"
+    case minimax = "minimax"
+
     var id: String { rawValue }
-    
+
     var displayName: String {
         switch self {
-        case .appleIntelligence:
-            return "Apple Intelligence"
-        case .ollama:
-            return "Ollama (Local)"
+        case .appleIntelligence: return "Apple Intelligence"
+        case .ollama: return "Ollama (Local)"
+        case .openAI: return "OpenAI"
+        case .anthropic: return "Claude (Anthropic)"
+        case .deepseek: return "DeepSeek"
+        case .doubao: return "Doubao 豆包"
+        case .qwen: return "Qwen 通义千问"
+        case .kimi: return "Kimi 月之暗面"
+        case .zhipu: return "Zhipu GLM 智谱"
+        case .minimax: return "MiniMax"
         }
     }
-    
+
     var description: String {
         switch self {
-        case .appleIntelligence:
-            return "On-device AI powered by Apple's Foundation Models"
-        case .ollama:
-            return "Local AI models running via Ollama server"
+        case .appleIntelligence: return "On-device AI powered by Apple's Foundation Models"
+        case .ollama: return "Local AI models running via Ollama server"
+        case .openAI: return "GPT models via the OpenAI API"
+        case .anthropic: return "Claude models via the Anthropic API"
+        case .deepseek: return "DeepSeek chat & reasoning models"
+        case .doubao: return "ByteDance Doubao models via Volcengine Ark"
+        case .qwen: return "Alibaba Qwen models via DashScope"
+        case .kimi: return "Moonshot Kimi models"
+        case .zhipu: return "Zhipu GLM models"
+        case .minimax: return "MiniMax abab models"
         }
     }
-    
+
     var iconName: String {
         switch self {
-        case .appleIntelligence:
-            return "apple.logo"
-        case .ollama:
-            return "server.rack"
+        case .appleIntelligence: return "apple.logo"
+        case .ollama: return "server.rack"
+        case .openAI: return "sparkles"
+        case .anthropic: return "a.circle"
+        case .deepseek: return "magnifyingglass.circle"
+        case .doubao: return "cloud"
+        case .qwen: return "cloud.sun"
+        case .kimi: return "moon.stars"
+        case .zhipu: return "brain"
+        case .minimax: return "bolt.horizontal.circle"
+        }
+    }
+
+    /// Whether this provider is a remote cloud API requiring an API key.
+    var isCloud: Bool {
+        switch self {
+        case .appleIntelligence, .ollama: return false
+        default: return true
+        }
+    }
+
+    /// Whether this provider can accept image input for vision-based tasks.
+    var supportsVision: Bool {
+        switch self {
+        case .openAI, .anthropic, .doubao, .qwen, .kimi, .zhipu: return true
+        case .appleIntelligence, .ollama, .deepseek, .minimax: return false
+        }
+    }
+
+    // MARK: Cloud REST metadata (only meaningful when `isCloud`)
+
+    var apiStyle: AIProviderAPIStyle {
+        switch self {
+        case .anthropic: return .anthropic
+        default: return .openAICompatible
+        }
+    }
+
+    /// Default base URL (without a trailing slash). Paths below are appended.
+    var defaultBaseURL: String {
+        switch self {
+        case .openAI: return "https://api.openai.com/v1"
+        case .anthropic: return "https://api.anthropic.com"
+        case .deepseek: return "https://api.deepseek.com"
+        case .doubao: return "https://ark.cn-beijing.volces.com/api/v3"
+        case .qwen: return "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        case .kimi: return "https://api.moonshot.cn/v1"
+        case .zhipu: return "https://open.bigmodel.cn/api/paas/v4"
+        case .minimax: return "https://api.minimax.chat/v1"
+        case .appleIntelligence, .ollama: return ""
+        }
+    }
+
+    /// Chat-completion path appended to the base URL.
+    var chatPath: String {
+        switch self {
+        case .anthropic: return "/v1/messages"
+        case .minimax: return "/text/chatcompletion_v2"
+        default: return "/chat/completions"
+        }
+    }
+
+    /// Model-list path appended to the base URL, or `nil` when the provider
+    /// has no standard listing endpoint (defaults are used instead).
+    var modelsPath: String? {
+        switch self {
+        case .anthropic: return "/v1/models"
+        case .openAI, .deepseek, .qwen, .kimi: return "/models"
+        case .doubao, .zhipu, .minimax: return nil
+        case .appleIntelligence, .ollama: return nil
+        }
+    }
+
+    /// Curated fallback model IDs shown when live listing is unavailable.
+    var defaultModels: [String] {
+        switch self {
+        case .openAI: return ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini", "o4-mini"]
+        case .anthropic: return ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest", "claude-3-opus-latest"]
+        case .deepseek: return ["deepseek-chat", "deepseek-reasoner"]
+        case .doubao: return ["doubao-pro-32k", "doubao-pro-4k", "doubao-lite-32k", "doubao-1.5-vision-pro-32k"]
+        case .qwen: return ["qwen-plus", "qwen-turbo", "qwen-max", "qwen-vl-plus", "qwen-vl-max"]
+        case .kimi: return ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k", "moonshot-v1-8k-vision-preview"]
+        case .zhipu: return ["glm-4-plus", "glm-4-air", "glm-4-flash", "glm-4v-plus", "glm-4v-flash"]
+        case .minimax: return ["abab6.5s-chat", "abab6.5g-chat", "MiniMax-Text-01"]
+        case .appleIntelligence, .ollama: return []
+        }
+    }
+
+    /// Keychain account name for this provider's API key.
+    var keychainAccount: String { "apikey.\(rawValue)" }
+
+    /// URL to obtain an API key, for the settings help link.
+    var apiKeyURL: String? {
+        switch self {
+        case .openAI: return "https://platform.openai.com/api-keys"
+        case .anthropic: return "https://console.anthropic.com/settings/keys"
+        case .deepseek: return "https://platform.deepseek.com/api_keys"
+        case .doubao: return "https://console.volcengine.com/ark"
+        case .qwen: return "https://dashscope.console.aliyun.com/apiKey"
+        case .kimi: return "https://platform.moonshot.cn/console/api-keys"
+        case .zhipu: return "https://open.bigmodel.cn/usercenter/apikeys"
+        case .minimax: return "https://platform.minimaxi.com/user-center/basic-information/interface-key"
+        case .appleIntelligence, .ollama: return nil
         }
     }
 }
 
 // MARK: - AI Model Settings
 
-/// Observable settings for AI model configuration
+/// Observable settings for AI model configuration.
 @Observable
 @MainActor
 final class AIModelSettings {
-    
+
     static let shared = AIModelSettings()
-    
+
     // MARK: - UserDefaults Keys
-    
+
     private enum Keys {
         static let provider = "ai_provider"
         static let ollamaModel = "ollama_model"
         static let ollamaHost = "ollama_host"
         static let enableThinking = "ollama_enable_thinking"
         static let contextLength = "ollama_context_length"
+        static let cloudModels = "cloud_model_selections"   // [providerRaw: modelID]
+        static let cloudBaseURLs = "cloud_base_overrides"   // [providerRaw: baseURL]
+        static let aiPhotoCleanup = "ai_photo_cleanup_enabled"
     }
-    
+
     // MARK: - Properties
-    
-    /// The currently selected AI provider
+
+    /// The currently selected AI provider.
     var provider: AIProvider {
-        didSet {
-            UserDefaults.standard.set(provider.rawValue, forKey: Keys.provider)
-        }
+        didSet { UserDefaults.standard.set(provider.rawValue, forKey: Keys.provider) }
     }
-    
-    /// The selected Ollama model name
+
+    /// The selected Ollama model name.
     var ollamaModel: String {
-        didSet {
-            UserDefaults.standard.set(ollamaModel, forKey: Keys.ollamaModel)
-        }
+        didSet { UserDefaults.standard.set(ollamaModel, forKey: Keys.ollamaModel) }
     }
-    
-    /// The Ollama server host URL
+
+    /// The Ollama server host URL.
     var ollamaHost: String {
         didSet {
             UserDefaults.standard.set(ollamaHost, forKey: Keys.ollamaHost)
             updateOllamaServiceHost()
         }
     }
-    
-    /// Whether to enable thinking/reasoning mode for Ollama models
+
+    /// Whether to enable thinking/reasoning mode for Ollama models.
     var enableThinking: Bool {
-        didSet {
-            UserDefaults.standard.set(enableThinking, forKey: Keys.enableThinking)
-        }
+        didSet { UserDefaults.standard.set(enableThinking, forKey: Keys.enableThinking) }
     }
-    
-    /// Context length for Ollama models (in tokens)
+
+    /// Context length for Ollama models (in tokens).
     var contextLength: Int {
-        didSet {
-            UserDefaults.standard.set(contextLength, forKey: Keys.contextLength)
+        didSet { UserDefaults.standard.set(contextLength, forKey: Keys.contextLength) }
+    }
+
+    /// When enabled, uploaded photos are passed through the selected AI
+    /// provider for OCR cleanup/structuring before downstream processing.
+    var aiPhotoCleanupEnabled: Bool {
+        didSet { UserDefaults.standard.set(aiPhotoCleanupEnabled, forKey: Keys.aiPhotoCleanup) }
+    }
+
+    /// Per-provider selected cloud model IDs.
+    private(set) var cloudModelSelections: [String: String] {
+        didSet { persistDictionary(cloudModelSelections, key: Keys.cloudModels) }
+    }
+
+    /// Per-provider base URL overrides (empty entry → use provider default).
+    private(set) var cloudBaseURLOverrides: [String: String] {
+        didSet { persistDictionary(cloudBaseURLOverrides, key: Keys.cloudBaseURLs) }
+    }
+
+    /// In-memory mirror of Keychain API keys so SwiftUI reacts to changes.
+    /// Loaded from the Keychain at init; writes go through to the Keychain.
+    private(set) var apiKeys: [String: String] = [:]
+
+    // MARK: - Initialization
+
+    private init() {
+        let savedProvider = UserDefaults.standard.string(forKey: Keys.provider) ?? AIProvider.appleIntelligence.rawValue
+        self.provider = AIProvider(rawValue: savedProvider) ?? .appleIntelligence
+
+        self.ollamaModel = UserDefaults.standard.string(forKey: Keys.ollamaModel) ?? "gpt-oss:20b"
+        self.ollamaHost = UserDefaults.standard.string(forKey: Keys.ollamaHost) ?? "http://localhost:11434"
+        self.enableThinking = UserDefaults.standard.object(forKey: Keys.enableThinking) as? Bool ?? true
+        self.contextLength = UserDefaults.standard.object(forKey: Keys.contextLength) as? Int ?? 128000
+        self.aiPhotoCleanupEnabled = UserDefaults.standard.object(forKey: Keys.aiPhotoCleanup) as? Bool ?? false
+
+        self.cloudModelSelections = AIModelSettings.loadDictionary(key: Keys.cloudModels)
+        self.cloudBaseURLOverrides = AIModelSettings.loadDictionary(key: Keys.cloudBaseURLs)
+
+        // Load API keys from Keychain into the observable mirror.
+        var keys: [String: String] = [:]
+        for p in AIProvider.allCases where p.isCloud {
+            if let value = KeychainHelper.get(account: p.keychainAccount), !value.isEmpty {
+                keys[p.rawValue] = value
+            }
+        }
+        self.apiKeys = keys
+
+        updateOllamaServiceHost()
+    }
+
+    // MARK: - Per-Provider Accessors
+
+    /// The API key for a cloud provider (empty string when none).
+    func apiKey(for provider: AIProvider) -> String {
+        apiKeys[provider.rawValue] ?? ""
+    }
+
+    /// Store or clear a cloud provider's API key (Keychain + observable mirror).
+    func setAPIKey(_ value: String, for provider: AIProvider) {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        KeychainHelper.set(trimmed, account: provider.keychainAccount)
+        if trimmed.isEmpty {
+            apiKeys.removeValue(forKey: provider.rawValue)
+        } else {
+            apiKeys[provider.rawValue] = trimmed
         }
     }
-    
-    // MARK: - Computed Properties
-    
-    /// Whether Ollama is selected and available
-    var isOllamaActive: Bool {
-        provider == .ollama && OllamaService.shared.isConnected
+
+    /// The effective base URL for a cloud provider (override or default).
+    func baseURL(for provider: AIProvider) -> String {
+        let override = cloudBaseURLOverrides[provider.rawValue]?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let override, !override.isEmpty { return override }
+        return provider.defaultBaseURL
     }
-    
-    /// Whether Apple Intelligence is available
+
+    func setBaseURLOverride(_ value: String, for provider: AIProvider) {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty || trimmed == provider.defaultBaseURL {
+            cloudBaseURLOverrides.removeValue(forKey: provider.rawValue)
+        } else {
+            cloudBaseURLOverrides[provider.rawValue] = trimmed
+        }
+    }
+
+    /// The selected model for a provider. Ollama maps to `ollamaModel`;
+    /// cloud providers use their per-provider selection (or first default).
+    func selectedModel(for provider: AIProvider) -> String {
+        switch provider {
+        case .ollama:
+            return ollamaModel
+        case .appleIntelligence:
+            return ""
+        default:
+            if let chosen = cloudModelSelections[provider.rawValue], !chosen.isEmpty {
+                return chosen
+            }
+            return provider.defaultModels.first ?? ""
+        }
+    }
+
+    func setSelectedModel(_ model: String, for provider: AIProvider) {
+        switch provider {
+        case .ollama:
+            ollamaModel = model
+        case .appleIntelligence:
+            break
+        default:
+            cloudModelSelections[provider.rawValue] = model
+        }
+    }
+
+    // MARK: - Availability
+
+    /// Whether Apple Intelligence is available.
     var isAppleIntelligenceAvailable: Bool {
         #if canImport(FoundationModels)
         return AIWordExplanationService.shared.isAvailable
@@ -118,40 +347,58 @@ final class AIModelSettings {
         return false
         #endif
     }
-    
-    /// Current effective provider (falls back to available option)
-    var effectiveProvider: AIProvider {
+
+    /// Whether a given provider is usable right now.
+    func isAvailable(_ provider: AIProvider) -> Bool {
         switch provider {
         case .appleIntelligence:
-            return isAppleIntelligenceAvailable ? .appleIntelligence : (OllamaService.shared.isConnected ? .ollama : .appleIntelligence)
+            return isAppleIntelligenceAvailable
         case .ollama:
-            return OllamaService.shared.isConnected ? .ollama : (isAppleIntelligenceAvailable ? .appleIntelligence : .ollama)
+            return OllamaService.shared.isConnected
+        default:
+            return !apiKey(for: provider).isEmpty
         }
     }
-    
-    /// Status message for the current configuration
+
+    /// Whether any provider is available for AI features.
+    var isAnyProviderAvailable: Bool {
+        AIProvider.allCases.contains { isAvailable($0) }
+    }
+
+    /// Current effective provider — the selected one if usable, otherwise the
+    /// first available provider, otherwise the selected one (so errors surface).
+    var effectiveProvider: AIProvider {
+        if isAvailable(provider) { return provider }
+        return AIProvider.allCases.first { isAvailable($0) } ?? provider
+    }
+
+    /// Whether Ollama is selected and available.
+    var isOllamaActive: Bool {
+        provider == .ollama && OllamaService.shared.isConnected
+    }
+
+    /// Status message for the current configuration.
     var statusMessage: String {
         switch provider {
         case .appleIntelligence:
-            if isAppleIntelligenceAvailable {
-                return "Apple Intelligence is ready"
-            } else {
-                return AIWordExplanationService.shared.unavailabilityReason ?? "Apple Intelligence is not available"
-            }
+            return isAppleIntelligenceAvailable
+                ? "Apple Intelligence is ready"
+                : (AIWordExplanationService.shared.unavailabilityReason ?? "Apple Intelligence is not available")
         case .ollama:
             if OllamaService.shared.isConnected {
-                if ollamaModel.isEmpty {
-                    return "Connected - Select a model"
-                } else {
-                    return "Connected to \(ollamaModel)"
-                }
-            } else {
-                return OllamaService.shared.connectionError ?? "Not connected to Ollama"
+                return ollamaModel.isEmpty ? "Connected — select a model" : "Connected to \(ollamaModel)"
             }
+            return OllamaService.shared.connectionError ?? "Not connected to Ollama"
+        default:
+            if apiKey(for: provider).isEmpty {
+                return "Add your \(provider.displayName) API key"
+            }
+            let model = selectedModel(for: provider)
+            return model.isEmpty ? "Ready — select a model" : "Using \(model)"
         }
     }
-    
-    /// Options dictionary for Ollama requests based on current settings
+
+    /// Options dictionary for Ollama requests based on current settings.
     var ollamaOptions: [String: Ollama.Value] {
         [
             "num_ctx": .int(contextLength),
@@ -161,54 +408,61 @@ final class AIModelSettings {
             "num_predict": .int(-1),
         ]
     }
-    
-    // MARK: - Initialization
-    
-    private init() {
-        // Load saved settings
-        let savedProvider = UserDefaults.standard.string(forKey: Keys.provider) ?? AIProvider.appleIntelligence.rawValue
-        self.provider = AIProvider(rawValue: savedProvider) ?? .appleIntelligence
-        
-        self.ollamaModel = UserDefaults.standard.string(forKey: Keys.ollamaModel) ?? "gpt-oss:20b"
-        self.ollamaHost = UserDefaults.standard.string(forKey: Keys.ollamaHost) ?? "http://localhost:11434"
-        self.enableThinking = UserDefaults.standard.object(forKey: Keys.enableThinking) as? Bool ?? true
-        self.contextLength = UserDefaults.standard.object(forKey: Keys.contextLength) as? Int ?? 128000
-        
-        // Initialize Ollama service host
-        updateOllamaServiceHost()
-    }
-    
+
     // MARK: - Methods
-    
-    /// Update the Ollama service host URL
+
     private func updateOllamaServiceHost() {
         if let url = URL(string: ollamaHost) {
             OllamaService.shared.hostURL = url
         }
     }
-    
-    /// Refresh connection and available models
+
+    /// Refresh connection and available models for the active provider.
     func refreshConnection() async {
-        await OllamaService.shared.checkConnection()
-        if OllamaService.shared.isConnected {
-            await OllamaService.shared.refreshModels()
+        switch provider {
+        case .ollama:
+            await OllamaService.shared.checkConnection()
+            if OllamaService.shared.isConnected {
+                await OllamaService.shared.refreshModels()
+            }
+        default:
+            if provider.isCloud {
+                await CloudAIService.shared.refreshModels(for: provider)
+            }
         }
     }
-    
-    /// Select the first available model if none is selected
+
+    /// Select the first available Ollama model if none is selected.
     func selectDefaultModelIfNeeded() {
         if ollamaModel.isEmpty, let firstModel = OllamaService.shared.availableModels.first {
             ollamaModel = firstModel.name
         }
     }
-    
-    /// Reset to default settings
+
+    /// Reset to default settings.
     func resetToDefaults() {
         provider = .appleIntelligence
         ollamaModel = "gpt-oss:20b"
         ollamaHost = "http://localhost:11434"
         enableThinking = true
         contextLength = 128000
+        aiPhotoCleanupEnabled = false
+    }
+
+    // MARK: - Persistence Helpers
+
+    private func persistDictionary(_ dict: [String: String], key: String) {
+        if let data = try? JSONEncoder().encode(dict) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
+
+    private static func loadDictionary(key: String) -> [String: String] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let dict = try? JSONDecoder().decode([String: String].self, from: data) else {
+            return [:]
+        }
+        return dict
     }
 }
 

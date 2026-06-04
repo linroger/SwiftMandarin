@@ -36,8 +36,11 @@ struct CameraScannerView: UIViewControllerRepresentable {
             return placeholder
         }
         
+        // Pass the user's scan-language preference so live camera OCR can read
+        // Chinese (the no-argument `.text()` was locked to system/locale defaults).
+        let languages = AppPreferences.shared.photoScanLanguage.recognitionLanguages
         let scanner = DataScannerViewController(
-            recognizedDataTypes: [.text()],
+            recognizedDataTypes: [.text(languages: languages)],
             qualityLevel: .accurate,
             recognizesMultipleItems: true,
             isHighFrameRateTrackingEnabled: true,
@@ -119,27 +122,15 @@ struct CameraScannerView: UIViewControllerRepresentable {
             parent.recognizedText = cleanedText
         }
         
-        /// Clean OCR text to properly join sentences split by line breaks
+        /// Clean OCR text in a language-aware way: Chinese text has its
+        /// inter-character whitespace removed, English text gets sentence cleanup.
         private func cleanTextForSentences(_ text: String) -> String {
-            var result = text
-            
-            // Replace multiple whitespace/newlines with single space
-            result = result.components(separatedBy: .whitespacesAndNewlines)
-                .filter { !$0.isEmpty }
-                .joined(separator: " ")
-            
-            // Fix hyphenated words split across lines
-            result = result.replacingOccurrences(of: "- ", with: "")
-            
-            // Ensure proper spacing after punctuation
-            result = result.replacingOccurrences(of: "\\.([A-Z])", with: ". $1", options: .regularExpression)
-            result = result.replacingOccurrences(of: "\\?([A-Z])", with: "? $1", options: .regularExpression)
-            result = result.replacingOccurrences(of: "!([A-Z])", with: "! $1", options: .regularExpression)
-            
-            // Clean up multiple spaces
-            result = result.replacingOccurrences(of: "  +", with: " ", options: .regularExpression)
-            
-            return result.trimmingCharacters(in: .whitespacesAndNewlines)
+            let language = ChineseTextAnalyzer.shared.detectLanguageRobust(text)
+            if language.isChinese {
+                return TextRecognitionResult.cleanChineseText([text])
+            } else {
+                return TextRecognitionResult.cleanTextForSentences(text)
+            }
         }
         
         func dataScanner(_ dataScanner: DataScannerViewController, becameUnavailableWithError error: DataScannerViewController.ScanningUnavailable) {

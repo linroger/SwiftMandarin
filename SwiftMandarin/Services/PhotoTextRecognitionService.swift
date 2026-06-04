@@ -2,12 +2,15 @@
 //  PhotoTextRecognitionService.swift
 //  SwiftMandarin
 //
-//  Photo OCR service using Apple Vision framework
-//  Recognizes text in images for translation
+//  Photo OCR service using Apple Vision framework.
+//  Recognizes text in images for translation, with configurable
+//  recognition language so Chinese text is no longer mangled by an
+//  English-first recognizer.
 //
 
 import Foundation
 import Vision
+import ImageIO
 import SwiftUI
 
 #if canImport(UIKit)
@@ -28,47 +31,90 @@ struct RecognizedTextBlock: Identifiable, Sendable {
 struct TextRecognitionResult: Sendable {
     let blocks: [RecognizedTextBlock]
     let fullText: String
-    let cleanedText: String  // Text with line breaks cleaned up for sentence processing
-    let language: String?
-    
+    let cleanedText: String  // Text cleaned for downstream processing (language-aware)
+    let language: DetectedLanguage?
+
     var isEmpty: Bool { blocks.isEmpty }
-    
+
     init(blocks: [RecognizedTextBlock]) {
         self.blocks = blocks
-        self.fullText = blocks.map { $0.text }.joined(separator: "\n")
-        self.cleanedText = TextRecognitionResult.cleanTextForSentences(blocks.map { $0.text }.joined(separator: " "))
-        self.language = nil
+        let texts = blocks.map { $0.text }
+        self.fullText = texts.joined(separator: "\n")
+
+        // Detect language from the raw recognized text, then clean appropriately.
+        let detected = ChineseTextAnalyzer.shared.detectLanguageRobust(texts.joined(separator: "\n"))
+        self.language = blocks.isEmpty ? nil : detected
+
+        if detected.isChinese {
+            self.cleanedText = TextRecognitionResult.cleanChineseText(texts)
+        } else {
+            self.cleanedText = TextRecognitionResult.cleanTextForSentences(texts.joined(separator: " "))
+        }
     }
-    
-    /// Clean OCR text to properly join sentences split by line breaks
-    /// This is important for textbook scanning where sentences may span multiple lines
-    private static func cleanTextForSentences(_ text: String) -> String {
+
+    /// Clean English OCR text: join sentences split by line breaks, fix
+    /// hyphenation, normalize spacing around punctuation.
+    static func cleanTextForSentences(_ text: String) -> String {
         var result = text
-        
-        // Replace multiple whitespace/newlines with single space
-        result = result.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-        
-        // Fix common OCR issues where sentences are split by line breaks
-        // Pattern: lowercase letter followed by newline/space followed by lowercase letter (likely mid-sentence)
-        // Keep line breaks after sentence-ending punctuation
-        
-        // First, normalize all whitespace to single spaces
+
+        // Normalize all whitespace to single spaces.
         result = result.components(separatedBy: .whitespacesAndNewlines)
             .filter { !$0.isEmpty }
             .joined(separator: " ")
-        
-        // Fix hyphenated words split across lines (e.g., "com- municate" -> "communicate")
+
+        // Fix hyphenated words split across lines (e.g., "com- municate").
         result = result.replacingOccurrences(of: "- ", with: "")
-        
-        // Ensure proper spacing after punctuation
+
+        // Ensure proper spacing after sentence punctuation.
         result = result.replacingOccurrences(of: "\\.([A-Z])", with: ". $1", options: .regularExpression)
         result = result.replacingOccurrences(of: "\\?([A-Z])", with: "? $1", options: .regularExpression)
         result = result.replacingOccurrences(of: "!([A-Z])", with: "! $1", options: .regularExpression)
-        
-        // Clean up multiple spaces
+
+        // Clean up multiple spaces.
         result = result.replacingOccurrences(of: "  +", with: " ", options: .regularExpression)
-        
+
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Clean Chinese OCR text: Chinese has no inter-word spaces, so remove the
+    /// spurious whitespace OCR inserts between Han characters while preserving
+    /// spaces around embedded Latin words/numbers.
+    static func cleanChineseText(_ blocks: [String]) -> String {
+        let joined = blocks.joined(separator: "\n")
+        let despaced = removeWhitespaceBetweenCJK(joined)
+        // Collapse any remaining whitespace runs (between Latin tokens) to one space.
+        let collapsed = despaced.replacingOccurrences(of: "[ \\t\\n]+", with: " ", options: .regularExpression)
+        return collapsed.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Remove whitespace runs that sit between two Han characters.
+    private static func removeWhitespaceBetweenCJK(_ s: String) -> String {
+        let chars = Array(s)
+        var out: [Character] = []
+        out.reserveCapacity(chars.count)
+        var i = 0
+        while i < chars.count {
+            let c = chars[i]
+            if c == " " || c == "\t" || c == "\n" || c == "\r" {
+                // Consume the whole whitespace run.
+                var j = i
+                while j < chars.count, chars[j] == " " || chars[j] == "\t" || chars[j] == "\n" || chars[j] == "\r" {
+                    j += 1
+                }
+                let prev = out.last
+                let next = j < chars.count ? chars[j] : nil
+                if let prev, let next, prev.isChineseCharacter, next.isChineseCharacter {
+                    // Drop whitespace entirely between Han characters.
+                } else {
+                    out.append(" ")
+                }
+                i = j
+            } else {
+                out.append(c)
+                i += 1
+            }
+        }
+        return String(out)
     }
 }
 
@@ -78,7 +124,7 @@ enum RecognitionError: LocalizedError {
     case recognitionFailed(String)
     case noTextFound
     case unsupportedPlatform
-    
+
     var errorDescription: String? {
         switch self {
         case .invalidImage:
@@ -97,32 +143,41 @@ enum RecognitionError: LocalizedError {
 @Observable
 @MainActor
 final class PhotoTextRecognitionService {
-    
+
     static let shared = PhotoTextRecognitionService()
-    
+
     /// Current recognition state
     var isProcessing: Bool = false
     var lastError: String?
     var lastResult: TextRecognitionResult?
-    
+
     private init() {}
-    
+
     // MARK: - Public Methods
-    
-    /// Recognize text in a CGImage
-    func recognizeText(in cgImage: CGImage) async throws -> TextRecognitionResult {
+
+    /// Recognize text in a CGImage with a configurable scan language.
+    func recognizeText(
+        in cgImage: CGImage,
+        scanLanguage: PhotoScanLanguage = .auto,
+        orientation: CGImagePropertyOrientation = .up
+    ) async throws -> TextRecognitionResult {
         isProcessing = true
         lastError = nil
-        
+
         defer { isProcessing = false }
-        
+
         do {
-            let blocks = try await performRecognition(cgImage: cgImage)
-            
+            let blocks = try await performRecognition(
+                cgImage: cgImage,
+                languages: scanLanguage.recognitionLanguages,
+                useLanguageCorrection: scanLanguage.usesLanguageCorrection,
+                orientation: orientation
+            )
+
             if blocks.isEmpty {
                 throw RecognitionError.noTextFound
             }
-            
+
             let result = TextRecognitionResult(blocks: blocks)
             lastResult = result
             return result
@@ -131,29 +186,34 @@ final class PhotoTextRecognitionService {
             throw error
         }
     }
-    
+
     #if canImport(UIKit)
-    /// Recognize text in a UIImage
-    func recognizeText(in image: UIImage) async throws -> TextRecognitionResult {
+    /// Recognize text in a UIImage, honoring its orientation.
+    func recognizeText(in image: UIImage, scanLanguage: PhotoScanLanguage = .auto) async throws -> TextRecognitionResult {
         guard let cgImage = image.cgImage else {
             throw RecognitionError.invalidImage
         }
-        return try await recognizeText(in: cgImage)
+        return try await recognizeText(
+            in: cgImage,
+            scanLanguage: scanLanguage,
+            orientation: CGImagePropertyOrientation(image.imageOrientation)
+        )
     }
     #endif
-    
+
     #if canImport(AppKit)
-    /// Recognize text in an NSImage
-    func recognizeText(in image: NSImage) async throws -> TextRecognitionResult {
+    /// Recognize text in an NSImage.
+    func recognizeText(in image: NSImage, scanLanguage: PhotoScanLanguage = .auto) async throws -> TextRecognitionResult {
         guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             throw RecognitionError.invalidImage
         }
-        return try await recognizeText(in: cgImage)
+        return try await recognizeText(in: cgImage, scanLanguage: scanLanguage, orientation: .up)
     }
     #endif
-    
-    /// Recognize text from image data
-    func recognizeText(from data: Data) async throws -> TextRecognitionResult {
+
+    /// Recognize text from image data, honoring embedded EXIF orientation.
+    func recognizeText(from data: Data, scanLanguage: PhotoScanLanguage = .auto) async throws -> TextRecognitionResult {
+        let orientation = PhotoTextRecognitionService.orientation(from: data)
         #if canImport(UIKit)
         guard let image = UIImage(data: data), let cgImage = image.cgImage else {
             throw RecognitionError.invalidImage
@@ -164,55 +224,61 @@ final class PhotoTextRecognitionService {
             throw RecognitionError.invalidImage
         }
         #endif
-        
-        return try await recognizeText(in: cgImage)
+
+        return try await recognizeText(in: cgImage, scanLanguage: scanLanguage, orientation: orientation)
     }
-    
+
     // MARK: - Private Methods
-    
-    private func performRecognition(cgImage: CGImage) async throws -> [RecognizedTextBlock] {
+
+    private func performRecognition(
+        cgImage: CGImage,
+        languages: [String],
+        useLanguageCorrection: Bool,
+        orientation: CGImagePropertyOrientation
+    ) async throws -> [RecognizedTextBlock] {
         try await withCheckedThrowingContinuation { continuation in
             let request = VNRecognizeTextRequest { request, error in
                 if let error = error {
                     continuation.resume(throwing: RecognitionError.recognitionFailed(error.localizedDescription))
                     return
                 }
-                
+
                 guard let observations = request.results as? [VNRecognizedTextObservation] else {
                     continuation.resume(returning: [])
                     return
                 }
-                
+
                 let blocks = observations.compactMap { observation -> RecognizedTextBlock? in
-                    // Get the top candidate for each observation
                     guard let candidate = observation.topCandidates(1).first else { return nil }
-                    
                     return RecognizedTextBlock(
                         text: candidate.string,
                         confidence: candidate.confidence,
                         boundingBox: observation.boundingBox
                     )
                 }
-                
+
                 continuation.resume(returning: blocks)
             }
-            
-            // Configure for accurate recognition
+
+            // Configure for accurate recognition.
             request.recognitionLevel = .accurate
-            
-            // Prioritize English for textbook scanning
-            request.recognitionLanguages = ["en-US", "en-GB", "zh-Hans", "zh-Hant"]
-            
-            // Enable language correction for better accuracy
-            request.usesLanguageCorrection = true
-            
-            // Use revision 3 for best accuracy (iOS 16+)
+
+            // Caller-supplied recognition languages (Chinese-first by default),
+            // so Chinese text is recognized correctly rather than coerced to English.
+            request.recognitionLanguages = languages
+
+            // Language correction is an English model that corrupts Chinese OCR,
+            // so it is enabled only when appropriate for the scan language.
+            request.usesLanguageCorrection = useLanguageCorrection
+
+            // Use revision 3 for best accuracy (iOS 16+ / macOS 13+).
             if #available(iOS 16.0, macOS 13.0, *) {
                 request.revision = VNRecognizeTextRequestRevision3
             }
-            
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            
+
+            // Honor image orientation so rotated photos OCR correctly.
+            let handler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
+
             do {
                 try handler.perform([request])
             } catch {
@@ -220,10 +286,39 @@ final class PhotoTextRecognitionService {
             }
         }
     }
-    
+
+    /// Read EXIF orientation from raw image data.
+    private static func orientation(from data: Data) -> CGImagePropertyOrientation {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let raw = (props[kCGImagePropertyOrientation] as? NSNumber)?.uint32Value,
+              let orientation = CGImagePropertyOrientation(rawValue: raw) else {
+            return .up
+        }
+        return orientation
+    }
+
     /// Clear the last result and error
     func reset() {
         lastResult = nil
         lastError = nil
     }
 }
+
+#if canImport(UIKit)
+private extension CGImagePropertyOrientation {
+    init(_ uiOrientation: UIImage.Orientation) {
+        switch uiOrientation {
+        case .up: self = .up
+        case .upMirrored: self = .upMirrored
+        case .down: self = .down
+        case .downMirrored: self = .downMirrored
+        case .left: self = .left
+        case .leftMirrored: self = .leftMirrored
+        case .right: self = .right
+        case .rightMirrored: self = .rightMirrored
+        @unknown default: self = .up
+        }
+    }
+}
+#endif

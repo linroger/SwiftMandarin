@@ -69,6 +69,8 @@ struct PhotoTranslateView: View {
     
     // Settings
     @State private var showGrammarPoints: Bool = true
+    @State private var prefs = AppPreferences.shared
+    @State private var aiSettings = AIModelSettings.shared
     
     /// Check if we have any results to display
     private var hasResults: Bool {
@@ -102,11 +104,30 @@ struct PhotoTranslateView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
+                        // Scan language override — the user-facing fix for
+                        // "cannot switch languages" in the photo pipeline.
+                        Picker("识别语言 · Scan Language", selection: Binding(
+                            get: { prefs.photoScanLanguage },
+                            set: { prefs.photoScanLanguage = $0 }
+                        )) {
+                            ForEach(PhotoScanLanguage.allCases) { lang in
+                                Label(lang.displayName, systemImage: lang.iconName).tag(lang)
+                            }
+                        }
+
+                        // AI cleanup toggle (concern C).
+                        Toggle("AI 清理识别文字 · AI Cleanup", isOn: Binding(
+                            get: { aiSettings.aiPhotoCleanupEnabled },
+                            set: { aiSettings.aiPhotoCleanupEnabled = $0 }
+                        ))
+
+                        Divider()
+
                         if detectedLanguage == .english {
                             Toggle("显示语法知识点", isOn: $showGrammarPoints)
                             Divider()
                         }
-                        
+
                         Button(role: .destructive) {
                             clearAll()
                         } label: {
@@ -190,7 +211,50 @@ struct PhotoTranslateView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.large)
             }
-            
+
+            // Scan-language selector + re-recognize. Lets the user force
+            // Chinese/English recognition and re-run OCR on the same image.
+            HStack(spacing: 12) {
+                Menu {
+                    Picker("识别语言", selection: Binding(
+                        get: { prefs.photoScanLanguage },
+                        set: { prefs.photoScanLanguage = $0 }
+                    )) {
+                        ForEach(PhotoScanLanguage.allCases) { lang in
+                            Label(lang.displayName, systemImage: lang.iconName).tag(lang)
+                        }
+                    }
+                } label: {
+                    Label("识别语言: \(prefs.photoScanLanguage.displayName)",
+                          systemImage: prefs.photoScanLanguage.iconName)
+                        .font(.caption)
+                }
+                .menuStyle(.borderlessButton)
+
+                Spacer()
+
+                if selectedImageData != nil {
+                    Button {
+                        Task { await reRecognizeCurrentImage() }
+                    } label: {
+                        Label("重新识别", systemImage: "arrow.clockwise")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(isProcessing)
+                }
+
+                if aiSettings.aiPhotoCleanupEnabled {
+                    Label("AI", systemImage: "sparkles")
+                        .font(.caption2)
+                        .foregroundStyle(.purple)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(Color.purple.opacity(0.12)))
+                }
+            }
+
             // Text input
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
@@ -495,26 +559,63 @@ struct PhotoTranslateView: View {
     
     private func loadAndProcessImage(_ item: PhotosPickerItem?) async {
         guard let item = item else { return }
-        
-        isProcessing = true
-        errorMessage = nil
-        
+
+        await MainActor.run {
+            isProcessing = true
+            errorMessage = nil
+        }
+
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else {
                 throw RecognitionError.invalidImage
             }
-            
-            selectedImageData = data
-            let result = try await PhotoTextRecognitionService.shared.recognizeText(from: data)
-            
+            await MainActor.run { selectedImageData = data }
+            await processImageData(data)
+        } catch {
             await MainActor.run {
-                // Show cleaned text (with line breaks removed) for better readability
-                sourceText = result.cleanedText
+                errorMessage = error.localizedDescription
+                isProcessing = false
             }
-            
-            // Process the cleaned text for proper sentence detection
-            await processText(result.cleanedText)
-            
+        }
+    }
+
+    /// Re-run OCR on the most recently selected image using the current scan
+    /// language / AI-cleanup settings. Lets users "switch languages" on the
+    /// same photo without re-picking it.
+    private func reRecognizeCurrentImage() async {
+        guard let data = selectedImageData else { return }
+        await processImageData(data)
+    }
+
+    /// OCR an image's data, optionally run AI cleanup, then analyze/translate.
+    private func processImageData(_ data: Data) async {
+        await MainActor.run {
+            isProcessing = true
+            errorMessage = nil
+        }
+
+        do {
+            let scanLanguage = AppPreferences.shared.photoScanLanguage
+            let result = try await PhotoTextRecognitionService.shared.recognizeText(from: data, scanLanguage: scanLanguage)
+
+            var textToProcess = result.cleanedText
+            var languageHint: DetectedLanguage? = result.language
+
+            // Concern C: route OCR output (and image, for vision-capable
+            // providers) through the selected AI model for cleanup/structuring.
+            if AIModelSettings.shared.aiPhotoCleanupEnabled, AIModelSettings.shared.isAnyProviderAvailable {
+                if let cleaned = try? await AIWordExplanationService.shared.cleanupRecognizedText(
+                    result.fullText,
+                    imageData: data,
+                    hintedLanguage: result.language
+                ), !cleaned.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    textToProcess = cleaned
+                    languageHint = nil  // re-detect on the AI-cleaned text
+                }
+            }
+
+            await MainActor.run { sourceText = textToProcess }
+            await processText(textToProcess, knownLanguage: languageHint)
         } catch {
             await MainActor.run {
                 errorMessage = error.localizedDescription
@@ -523,9 +624,9 @@ struct PhotoTranslateView: View {
         }
     }
     
-    private func processText(_ text: String) async {
+    private func processText(_ text: String, knownLanguage: DetectedLanguage? = nil) async {
         guard !text.isEmpty else { return }
-        
+
         await MainActor.run {
             isProcessing = true
             errorMessage = nil
@@ -534,70 +635,32 @@ struct PhotoTranslateView: View {
             cleanedChineseText = ""
             chineseTranslation = ""
         }
-        
-        // Clean the text first to handle any line breaks from manual input
-        let cleanedText = cleanTextForProcessing(text)
-        
-        // Detect language
-        let language = detectLanguage(cleanedText)
-        
-        await MainActor.run {
-            detectedLanguage = language
-        }
-        
-        if language == .english {
-            // English text - analyze sentences and words
-            let sentences = EnglishTextAnalyzer.shared.analyzeSentences(cleanedText)
+
+        // Determine language first (prefer the OCR-provided detection), using
+        // the robust CJK-ratio-first detector so Chinese is never lost.
+        let language = knownLanguage ?? ChineseTextAnalyzer.shared.detectLanguageRobust(text)
+
+        if language.isChinese {
+            // Chinese: clean with the Chinese-aware cleaner (no English regex).
+            let cleaned = TextRecognitionResult.cleanChineseText([text])
             await MainActor.run {
-                analyzedSentences = sentences
-                isProcessing = false
-            }
-        } else if language == .chinese {
-            // Chinese text - store cleaned text for RubyTextView to analyze
-            await MainActor.run {
-                cleanedChineseText = cleanedText
+                detectedLanguage = .chinese
+                cleanedChineseText = cleaned
                 isProcessing = false
             }
         } else {
-            // Unknown language - try English first
-            let sentences = EnglishTextAnalyzer.shared.analyzeSentences(cleanedText)
+            // English (or other scripts → treated as English): sentence cleanup.
+            let cleaned = cleanTextForProcessing(text)
+            let sentences = EnglishTextAnalyzer.shared.analyzeSentences(cleaned)
             await MainActor.run {
-                analyzedSentences = sentences
                 detectedLanguage = .english
+                analyzedSentences = sentences
                 isProcessing = false
             }
         }
     }
-    
-    /// Detect the primary language of the text
-    private func detectLanguage(_ text: String) -> DetectedLanguage {
-        let recognizer = NLLanguageRecognizer()
-        recognizer.processString(text)
-        
-        guard let dominantLanguage = recognizer.dominantLanguage else {
-            return .unknown
-        }
-        
-        switch dominantLanguage {
-        case .english:
-            return .english
-        case .simplifiedChinese, .traditionalChinese:
-            return .chinese
-        default:
-            // Check if it contains significant Chinese characters
-            let chineseCharCount = text.unicodeScalars.filter { 
-                (0x4E00...0x9FFF).contains($0.value) || // CJK Unified Ideographs
-                (0x3400...0x4DBF).contains($0.value)    // CJK Extension A
-            }.count
-            
-            if chineseCharCount > text.count / 3 {
-                return .chinese
-            }
-            return .english
-        }
-    }
-    
-    /// Clean text for processing - removes line breaks that split sentences
+
+    /// Clean English text for processing - removes line breaks that split sentences
     private func cleanTextForProcessing(_ text: String) -> String {
         var result = text
         

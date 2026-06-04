@@ -56,15 +56,15 @@ final class ChineseTextAnalyzer {
     }
     
     // MARK: - Language Detection
-    
+
     func detectLanguage(_ text: String) -> DetectedLanguage {
         let recognizer = NLLanguageRecognizer()
         recognizer.processString(text)
-        
+
         guard let language = recognizer.dominantLanguage else {
             return .unknown
         }
-        
+
         switch language {
         case .simplifiedChinese, .traditionalChinese:
             return .chinese
@@ -73,6 +73,41 @@ final class ChineseTextAnalyzer {
         default:
             return .other(language.rawValue)
         }
+    }
+
+    /// Robust language detection that counts CJK ideographs first, falling back
+    /// to `NLLanguageRecognizer` only when the script mix is ambiguous.
+    ///
+    /// This is the canonical detector used across the app. It fixes the photo
+    /// pipeline's "stuck on English" symptom: even a handful of Chinese
+    /// characters (which are information-dense) reliably route to Chinese,
+    /// instead of `NLLanguageRecognizer` confidently misclassifying mixed or
+    /// noisy OCR output as English.
+    func detectLanguageRobust(_ text: String) -> DetectedLanguage {
+        var cjk = 0
+        var latin = 0
+        for scalar in text.unicodeScalars {
+            if scalar.isCJKIdeograph {
+                cjk += 1
+            } else if (0x41...0x5A).contains(scalar.value) || (0x61...0x7A).contains(scalar.value) {
+                latin += 1
+            }
+        }
+
+        // No Latin letters and no CJK — defer to NL for other scripts.
+        if cjk == 0 && latin == 0 {
+            return detectLanguage(text)
+        }
+        // Each Chinese character carries roughly a word of meaning, so weight
+        // CJK heavily: presence of CJK at ~1 per 3 Latin letters → Chinese.
+        if cjk > 0 && cjk * 3 >= latin {
+            return .chinese
+        }
+        if latin > cjk * 3 {
+            return .english
+        }
+        // Ambiguous middle ground — consult the statistical recognizer.
+        return detectLanguage(text)
     }
     
     func detectLanguageWithConfidence(_ text: String) -> (language: DetectedLanguage, confidence: Double) {
@@ -168,7 +203,7 @@ enum PartOfSpeech: String {
     }
 }
 
-enum DetectedLanguage: Equatable {
+enum DetectedLanguage: Equatable, Sendable {
     case chinese
     case english
     case other(String)
@@ -178,14 +213,22 @@ enum DetectedLanguage: Equatable {
     var isEnglish: Bool { self == .english }
 }
 
-// MARK: - Character Extension
+// MARK: - CJK Scalar / Character Extensions
+
+extension Unicode.Scalar {
+    /// Whether this scalar is a CJK (Han) ideograph across the common ranges.
+    var isCJKIdeograph: Bool {
+        (0x4E00...0x9FFF).contains(value) ||   // CJK Unified Ideographs
+        (0x3400...0x4DBF).contains(value) ||   // CJK Extension A
+        (0xF900...0xFAFF).contains(value) ||   // CJK Compatibility Ideographs
+        (0x20000...0x2A6DF).contains(value) || // CJK Extension B
+        (0x2A700...0x2EBEF).contains(value)    // CJK Extensions C–F
+    }
+}
 
 extension Character {
     var isChineseCharacter: Bool {
         guard let scalar = unicodeScalars.first else { return false }
-        // CJK Unified Ideographs and Extension A
-        return (0x4E00...0x9FFF).contains(scalar.value) ||
-               (0x3400...0x4DBF).contains(scalar.value) ||
-               (0x20000...0x2A6DF).contains(scalar.value)
+        return scalar.isCJKIdeograph
     }
 }

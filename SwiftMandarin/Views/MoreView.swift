@@ -175,9 +175,23 @@ struct SettingsView: View {
     @AppStorage("translateOnPaste") private var translateOnPaste: Bool = true
     @AppStorage("copyTranslationAutomatically") private var copyTranslationAutomatically: Bool = false
     @AppStorage("saveToHistoryAutomatically") private var saveToHistoryAutomatically: Bool = true
-    
+    @State private var prefs = AppPreferences.shared
+
     var body: some View {
         Form {
+            Section {
+                Picker("I am a…", selection: $prefs.learnerMode) {
+                    ForEach(LearnerMode.allCases) { mode in
+                        Label(mode.displayName, systemImage: mode.iconName).tag(mode)
+                    }
+                }
+                Toggle("Dual-Language Narration", isOn: $prefs.dualNarration)
+            } header: {
+                Text("Learning Mode")
+            } footer: {
+                Text("\(prefs.learnerMode.detail) Dual narration speaks both the word and its translation aloud.")
+            }
+
             Section {
                 NavigationLink {
                     AISettingsDetailView()
@@ -192,7 +206,7 @@ struct SettingsView: View {
             } header: {
                 Text("AI")
             } footer: {
-                Text("Configure Apple Intelligence or Ollama for AI-powered features.")
+                Text("Configure Apple Intelligence, Ollama, or a cloud provider for AI-powered features.")
             }
             
             Section {
@@ -276,8 +290,7 @@ struct SettingsView: View {
 struct AISettingsDetailView: View {
     @State private var settings = AIModelSettings.shared
     @State private var ollamaService = OllamaService.shared
-    @State private var isRefreshing: Bool = false
-    
+
     var body: some View {
         Form {
             // Provider Selection
@@ -325,137 +338,16 @@ struct AISettingsDetailView: View {
                 Text("Status")
             }
             
-            // Ollama Configuration
-            if settings.provider == .ollama {
-                Section {
-                    HStack {
-                        Text("Server URL")
-                        Spacer()
-                        TextField("http://localhost:11434", text: $settings.ollamaHost)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(maxWidth: 180)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    
-                    Button {
-                        Task {
-                            isRefreshing = true
-                            await settings.refreshConnection()
-                            isRefreshing = false
-                        }
-                    } label: {
-                        HStack {
-                            Text("Test Connection")
-                            Spacer()
-                            if isRefreshing {
-                                ProgressView()
-                            } else {
-                                Image(systemName: "arrow.clockwise")
-                            }
-                        }
-                    }
-                    .disabled(isRefreshing)
-                } header: {
-                    Text("Ollama Server")
-                }
-                
-                Section {
-                    if ollamaService.availableModels.isEmpty {
-                        if ollamaService.isLoadingModels {
-                            HStack {
-                                ProgressView()
-                                Text("Loading models...")
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else if !ollamaService.isConnected {
-                            HStack {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .foregroundStyle(.orange)
-                                Text("Connect to Ollama to see models")
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else {
-                            Text("No models found")
-                                .foregroundStyle(.secondary)
-                        }
-                    } else {
-                        Picker("Model", selection: $settings.ollamaModel) {
-                            ForEach(ollamaService.availableModels) { model in
-                                VStack(alignment: .leading) {
-                                    Text(model.name)
-                                    Text("\(model.parameterSize) • \(model.sizeString)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .tag(model.name)
-                            }
-                        }
-                        #if os(iOS)
-                        .pickerStyle(.navigationLink)
-                        #endif
-                    }
-                    
-                    Button {
-                        Task {
-                            await ollamaService.refreshModels()
-                        }
-                    } label: {
-                        HStack {
-                            Text("Refresh Models")
-                            Spacer()
-                            Image(systemName: "arrow.clockwise")
-                        }
-                    }
-                    .disabled(ollamaService.isLoadingModels || !ollamaService.isConnected)
-                } header: {
-                    Text("Model")
-                } footer: {
-                    Text("Recommended: gpt-oss:20b for best quality.")
-                }
-                
-                Section {
-                    Toggle("Enable Reasoning", isOn: $settings.enableThinking)
-                    
-                    Picker("Context Length", selection: $settings.contextLength) {
-                        Text("8K tokens").tag(8000)
-                        Text("32K tokens").tag(32000)
-                        Text("64K tokens").tag(64000)
-                        Text("128K tokens").tag(128000)
-                    }
-                } header: {
-                    Text("Advanced")
-                } footer: {
-                    Text("Reasoning mode enables deeper thinking. 128K context is recommended for gpt-oss 20b.")
-                }
-            }
-            
-            // Apple Intelligence info
-            if settings.provider == .appleIntelligence {
-                Section {
-                    if settings.isAppleIntelligenceAvailable {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text("Apple Intelligence is ready")
-                        }
-                    } else {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                            VStack(alignment: .leading) {
-                                Text("Not Available")
-                                    .fontWeight(.medium)
-                                Text(AIWordExplanationService.shared.unavailabilityReason ?? "Apple Intelligence is not available on this device")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                } header: {
-                    Text("Apple Intelligence")
-                } footer: {
-                    Text("Uses on-device Foundation Models for privacy-focused AI.")
-                }
+            // Provider-specific configuration (API key, model picker, etc.)
+            AIProviderConfigView(settings: settings)
+
+            // Photo AI cleanup (concern C)
+            Section {
+                Toggle("AI Photo Cleanup", isOn: $settings.aiPhotoCleanupEnabled)
+            } header: {
+                Text("Photo Recognition")
+            } footer: {
+                Text("When on, scanned photos are sent to the selected AI provider to fix OCR errors before translation. Vision-capable providers also receive the image.")
             }
         }
         .navigationTitle("AI Settings")
@@ -466,13 +358,15 @@ struct AISettingsDetailView: View {
             await settings.refreshConnection()
         }
     }
-    
+
     private var statusColor: Color {
         switch settings.provider {
         case .appleIntelligence:
             return settings.isAppleIntelligenceAvailable ? .green : .orange
         case .ollama:
             return ollamaService.isConnected ? .green : .red
+        default:
+            return settings.isAvailable(settings.provider) ? .green : .orange
         }
     }
 }
