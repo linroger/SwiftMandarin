@@ -154,10 +154,16 @@ struct AIProviderConfigView: View {
                     .textInputAutocapitalization(.never)
                     #endif
             }
+
+            Picker("API Format", selection: apiStyleBinding(for: provider)) {
+                Text("Default (\(defaultStyleLabel(provider)))").tag(String?.none)
+                Text("OpenAI-compatible").tag(String?.some("openai"))
+                Text("Anthropic (e.g. Kimi coding)").tag(String?.some("anthropic"))
+            }
         } header: {
             Text("Endpoint")
         } footer: {
-            Text("Leave as default unless using a proxy or self-hosted gateway.")
+            Text("Leave as default unless using a proxy, self-hosted gateway, or an Anthropic-compatible endpoint (such as a Kimi/Moonshot coding plan — set Base URL to …/anthropic and API Format to Anthropic).")
         }
 
         Section {
@@ -252,6 +258,29 @@ struct AIProviderConfigView: View {
         Binding(
             get: { settings.selectedModel(for: provider) },
             set: { settings.setSelectedModel($0, for: provider) }
+        )
+    }
+
+    private func defaultStyleLabel(_ provider: AIProvider) -> String {
+        provider.apiStyle == .anthropic ? "Anthropic" : "OpenAI"
+    }
+
+    private func apiStyleBinding(for provider: AIProvider) -> Binding<String?> {
+        Binding(
+            get: {
+                switch settings.apiStyleOverride(for: provider) {
+                case .anthropic: return "anthropic"
+                case .openAICompatible: return "openai"
+                case nil: return nil
+                }
+            },
+            set: { raw in
+                switch raw {
+                case "anthropic": settings.setAPIStyleOverride(.anthropic, for: provider)
+                case "openai": settings.setAPIStyleOverride(.openAICompatible, for: provider)
+                default: settings.setAPIStyleOverride(nil, for: provider)
+                }
+            }
         )
     }
 }

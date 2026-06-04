@@ -217,6 +217,7 @@ final class AIModelSettings {
         static let contextLength = "ollama_context_length"
         static let cloudModels = "cloud_model_selections"   // [providerRaw: modelID]
         static let cloudBaseURLs = "cloud_base_overrides"   // [providerRaw: baseURL]
+        static let cloudAPIStyles = "cloud_api_style_overrides" // [providerRaw: "openai"|"anthropic"]
         static let aiPhotoCleanup = "ai_photo_cleanup_enabled"
     }
 
@@ -266,6 +267,13 @@ final class AIModelSettings {
         didSet { persistDictionary(cloudBaseURLOverrides, key: Keys.cloudBaseURLs) }
     }
 
+    /// Per-provider API-format overrides ("openai" / "anthropic"). When absent,
+    /// the provider's built-in style is used. Lets users point a provider at an
+    /// Anthropic-compatible gateway (e.g. a Kimi "coding" endpoint).
+    private(set) var apiStyleOverrides: [String: String] {
+        didSet { persistDictionary(apiStyleOverrides, key: Keys.cloudAPIStyles) }
+    }
+
     /// In-memory mirror of Keychain API keys so SwiftUI reacts to changes.
     /// Loaded from the Keychain at init; writes go through to the Keychain.
     private(set) var apiKeys: [String: String] = [:]
@@ -284,6 +292,7 @@ final class AIModelSettings {
 
         self.cloudModelSelections = AIModelSettings.loadDictionary(key: Keys.cloudModels)
         self.cloudBaseURLOverrides = AIModelSettings.loadDictionary(key: Keys.cloudBaseURLs)
+        self.apiStyleOverrides = AIModelSettings.loadDictionary(key: Keys.cloudAPIStyles)
 
         // Load API keys from Keychain into the observable mirror.
         var keys: [String: String] = [:]
@@ -328,6 +337,44 @@ final class AIModelSettings {
             cloudBaseURLOverrides.removeValue(forKey: provider.rawValue)
         } else {
             cloudBaseURLOverrides[provider.rawValue] = trimmed
+        }
+    }
+
+    /// The API-format override for a provider, or nil when using its default.
+    func apiStyleOverride(for provider: AIProvider) -> AIProviderAPIStyle? {
+        switch apiStyleOverrides[provider.rawValue] {
+        case "anthropic": return .anthropic
+        case "openai": return .openAICompatible
+        default: return nil
+        }
+    }
+
+    func setAPIStyleOverride(_ style: AIProviderAPIStyle?, for provider: AIProvider) {
+        switch style {
+        case .anthropic: apiStyleOverrides[provider.rawValue] = "anthropic"
+        case .openAICompatible: apiStyleOverrides[provider.rawValue] = "openai"
+        case nil: apiStyleOverrides.removeValue(forKey: provider.rawValue)
+        }
+    }
+
+    /// The effective API style for a provider (override or built-in default).
+    func effectiveAPIStyle(for provider: AIProvider) -> AIProviderAPIStyle {
+        apiStyleOverride(for: provider) ?? provider.apiStyle
+    }
+
+    /// Chat path derived from the effective API style.
+    func effectiveChatPath(for provider: AIProvider) -> String {
+        switch effectiveAPIStyle(for: provider) {
+        case .anthropic: return "/v1/messages"
+        case .openAICompatible: return provider == .minimax ? "/text/chatcompletion_v2" : "/chat/completions"
+        }
+    }
+
+    /// Models-list path derived from the effective API style.
+    func effectiveModelsPath(for provider: AIProvider) -> String? {
+        switch effectiveAPIStyle(for: provider) {
+        case .anthropic: return "/v1/models"
+        case .openAICompatible: return provider.modelsPath
         }
     }
 

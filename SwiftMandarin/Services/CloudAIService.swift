@@ -117,7 +117,7 @@ final class CloudAIService {
         }
 
         // Providers without a standard listing endpoint use curated defaults.
-        guard let modelsPath = provider.modelsPath else {
+        guard let modelsPath = settings.effectiveModelsPath(for: provider) else {
             availableModels[provider.rawValue] = provider.defaultModels.map { CloudModelInfo(id: $0) }
             return
         }
@@ -203,7 +203,8 @@ final class CloudAIService {
         guard !key.isEmpty else { throw CloudAIError.missingAPIKey(provider.displayName) }
 
         let base = settings.baseURL(for: provider)
-        guard let url = URL(string: base + provider.chatPath) else { throw CloudAIError.invalidURL }
+        let style = settings.effectiveAPIStyle(for: provider)
+        guard let url = URL(string: base + settings.effectiveChatPath(for: provider)) else { throw CloudAIError.invalidURL }
 
         // Combine the convenience single image with the multi-image array;
         // only send images at all for vision-capable providers.
@@ -219,7 +220,7 @@ final class CloudAIService {
         let useResponseFormat = jsonMode && provider.supportsJSONResponseFormat
 
         let body: [String: Any]
-        switch provider.apiStyle {
+        switch style {
         case .openAICompatible:
             body = Self.openAIBody(
                 model: model, system: system, user: user,
@@ -247,7 +248,7 @@ final class CloudAIService {
         }
 
         let content: String?
-        switch provider.apiStyle {
+        switch style {
         case .openAICompatible: content = Self.parseOpenAIContent(from: data)
         case .anthropic: content = Self.parseAnthropicContent(from: data)
         }
@@ -275,11 +276,14 @@ final class CloudAIService {
 
     private func applyAuthHeaders(_ request: inout URLRequest, provider: AIProvider, key: String) {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        switch provider.apiStyle {
+        switch AIModelSettings.shared.effectiveAPIStyle(for: provider) {
         case .openAICompatible:
             request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         case .anthropic:
+            // Anthropic-style gateways accept x-api-key; also send Bearer so
+            // proxies that expect either header authenticate.
             request.setValue(key, forHTTPHeaderField: "x-api-key")
+            request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
             request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         }
     }
