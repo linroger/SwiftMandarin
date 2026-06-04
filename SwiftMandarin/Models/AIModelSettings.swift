@@ -125,7 +125,9 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .anthropic: return "https://api.anthropic.com"
         case .deepseek: return "https://api.deepseek.com"
         case .doubao: return "https://ark.cn-beijing.volces.com/api/v3"
-        case .qwen: return "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        // International (Singapore) endpoint — works without a workspace ID.
+        // China users can override with https://dashscope.aliyuncs.com/compatible-mode/v1
+        case .qwen: return "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
         case .kimi: return "https://api.moonshot.cn/v1"
         case .zhipu: return "https://open.bigmodel.cn/api/paas/v4"
         case .minimax: return "https://api.minimax.chat/v1"

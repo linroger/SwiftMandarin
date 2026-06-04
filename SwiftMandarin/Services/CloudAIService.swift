@@ -179,7 +179,29 @@ final class CloudAIService {
                 else if let name = obj["name"] as? String { ids.append(name) }
             }
         }
-        return ids.sorted()
+        // Keep only chat/vision-capable LLMs; drop embeddings, rerankers,
+        // image/video/audio/3D generators, OCR-only, captioners, etc.
+        return ids.filter(isChatCapableModel).sorted()
+    }
+
+    /// Keywords that mark a model as NOT a conversational chat/vision LLM.
+    private static let nonChatModelKeywords: [String] = [
+        "embedding", "embed", "rerank", "bge", "gte", "gme",
+        "tts", "asr", "audio", "cosyvoice", "sambert", "speech", "voice",
+        "paraformer", "sensevoice", "whisper", "realtime",
+        "wanx", "wan2", "flux", "seedream", "stable-diffusion", "sdxl",
+        "cogview", "kolors", "image-synthesis", "image-generation", "image-edit",
+        "text2image", "anytext", "virtualmodel", "facechain",
+        "dall-e", "gpt-image", "qwen-image",
+        "seedance", "video", "t2i", "t2v", "i2v", "svd",
+        "seed3d", "hyper3d", "hitem", "captioner", "ocr",
+    ]
+
+    /// Whether a model id looks like a chat/vision-capable LLM (vs. a
+    /// generation/embedding/audio model that this app can't use).
+    static func isChatCapableModel(_ id: String) -> Bool {
+        let lower = id.lowercased()
+        return !nonChatModelKeywords.contains { lower.contains($0) }
     }
 
     // MARK: - Chat
