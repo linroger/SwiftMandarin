@@ -617,7 +617,16 @@ final class AIWordExplanationService {
             throw AIExplanationError.generationFailed("No JSON object found in response")
         }
 
-        let response = try JSONDecoder().decode(OllamaWordExplanationResponse.self, from: data)
+        let response: OllamaWordExplanationResponse
+        if let r = try? JSONDecoder().decode(OllamaWordExplanationResponse.self, from: data) {
+            response = r
+        } else if let repaired = Self.repairJSON(String(data: data, encoding: .utf8) ?? "").data(using: .utf8),
+                  let r = try? JSONDecoder().decode(OllamaWordExplanationResponse.self, from: repaired) {
+            response = r
+        } else {
+            throw AIExplanationError.generationFailed("Could not parse the explanation response.")
+        }
+
         let result = response.toResult(filteringFor: word)
         explanationCache[cacheKey] = result
         return result
@@ -861,20 +870,96 @@ final class AIWordExplanationService {
         }
 
         let allImages = workbookImages + answerImages
-        let json = try await CloudAIService.shared.chat(
-            provider: provider,
-            model: model,
-            system: system,
-            user: user,
-            images: allImages,
-            jsonMode: true,
-            maxTokens: 4096
-        )
 
-        guard let data = Self.extractJSONObject(from: json) else {
-            throw AIExplanationError.generationFailed("The model did not return gradable JSON.")
+        // Some vision models (e.g. qwen-vl-plus) occasionally emit malformed
+        // JSON or fail to read the images. Try up to twice, repairing common
+        // JSON mistakes and preferring a non-empty result.
+        var lastRaw = ""
+        var lastDecoded: GradingResult?
+        for _ in 0..<2 {
+            let json = try await CloudAIService.shared.chat(
+                provider: provider,
+                model: model,
+                system: system,
+                user: user,
+                images: allImages,
+                jsonMode: true,
+                maxTokens: 8192
+            )
+            lastRaw = json
+            if let result = Self.decodeGrading(json) {
+                if !result.questions.isEmpty { return result }
+                lastDecoded = result  // valid but empty — retry once before accepting
+            }
         }
-        return try JSONDecoder().decode(GradingResult.self, from: data)
+        if let lastDecoded { return lastDecoded }
+        throw AIExplanationError.generationFailed(
+            lastRaw.isEmpty
+                ? "The model returned an empty response. Try again or pick a different vision model."
+                : "The model's response couldn't be read as grading data. Try a more capable vision model (e.g. qwen-vl-max or qwen3-vl-plus) in Settings → AI."
+        )
+    }
+
+    /// Decode a grading response, repairing common LLM JSON mistakes if needed.
+    private static func decodeGrading(_ json: String) -> GradingResult? {
+        guard let data = extractJSONObject(from: json) else { return nil }
+        if let result = try? JSONDecoder().decode(GradingResult.self, from: data) { return result }
+        // Retry after a string-aware repair (inserts missing commas, drops trailing ones).
+        let repaired = repairJSON(String(data: data, encoding: .utf8) ?? "")
+        if let rdata = repaired.data(using: .utf8),
+           let result = try? JSONDecoder().decode(GradingResult.self, from: rdata) {
+            return result
+        }
+        return nil
+    }
+
+    /// Repair the most common LLM JSON errors without corrupting string values:
+    /// insert missing commas between adjacent values and remove trailing commas.
+    /// Tracks string/escape state so braces inside text are left untouched.
+    static func repairJSON(_ s: String) -> String {
+        let chars = Array(s)
+        var out: [Character] = []
+        out.reserveCapacity(chars.count)
+        var inString = false
+        var escaped = false
+        var i = 0
+        while i < chars.count {
+            let c = chars[i]
+            out.append(c)
+
+            var valueJustClosed = false
+            if inString {
+                if escaped { escaped = false }
+                else if c == "\\" { escaped = true }
+                else if c == "\"" { inString = false; valueJustClosed = true }
+            } else if c == "\"" {
+                inString = true
+            } else if c == "}" || c == "]" {
+                valueJustClosed = true
+            }
+
+            // A value just ended outside a string. If the next significant char
+            // begins a new value/key with no comma between, insert one. (A key's
+            // closing quote is followed by ':', so it never triggers this.)
+            if valueJustClosed, !inString {
+                var j = i + 1
+                while j < chars.count, chars[j] == " " || chars[j] == "\n" || chars[j] == "\t" || chars[j] == "\r" {
+                    j += 1
+                }
+                if j < chars.count {
+                    let next = chars[j]
+                    if next == "{" || next == "[" || next == "\"" {
+                        out.append(",")
+                    }
+                }
+            }
+            i += 1
+        }
+        var result = String(out)
+        // Remove any trailing commas before a closing brace/bracket.
+        result = result.replacingOccurrences(of: ",\\s*}", with: "}", options: .regularExpression)
+        result = result.replacingOccurrences(of: ",\\s*]", with: "]", options: .regularExpression)
+        return result
     }
 
     /// Extract the first balanced JSON object from a model response, tolerating

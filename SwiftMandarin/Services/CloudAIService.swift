@@ -73,8 +73,10 @@ final class CloudAIService {
 
     private let session: URLSession = {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 60
-        config.timeoutIntervalForResource = 120
+        // Non-streamed responses arrive only after the model finishes, so large
+        // structured/vision generations need a generous timeout.
+        config.timeoutIntervalForRequest = 180
+        config.timeoutIntervalForResource = 300
         config.waitsForConnectivity = true
         return URLSession(configuration: config)
     }()

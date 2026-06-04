@@ -513,43 +513,80 @@ struct WorkbookGradingView: View {
     }
 
     private func saveVocab(for question: GradedQuestion) {
-        guard let vocab = question.vocab else { return }
-        if saveVocabItem(vocab) {
-            savedQuestionIDs.insert(question.id)
+        Task {
+            if await saveVocabItem(vocabItem(for: question)) {
+                await MainActor.run { savedQuestionIDs.insert(question.id) }
+            }
         }
     }
 
     private func saveAllWrongVocab() {
         guard let result else { return }
-        for question in result.wrongQuestions {
-            guard let vocab = question.vocab else { continue }
-            if saveVocabItem(vocab) {
-                savedQuestionIDs.insert(question.id)
+        let questions = result.wrongQuestions
+        Task {
+            for question in questions {
+                if await saveVocabItem(vocabItem(for: question)) {
+                    await MainActor.run { savedQuestionIDs.insert(question.id) }
+                }
             }
         }
     }
 
-    /// Save a vocab item to the (Chinese-keyed) vocabulary store. Returns true
-    /// if it was added or already present.
+    /// The word to save for a wrong answer: the model's vocab item if usable,
+    /// otherwise built from the correct answer so nothing is ever lost.
+    private func vocabItem(for question: GradedQuestion) -> ExtractedVocabItem {
+        if let v = question.vocab {
+            let t = v.term.trimmingCharacters(in: .whitespacesAndNewlines)
+            let m = v.meaning.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !t.isEmpty || !m.isEmpty { return v }
+        }
+        return ExtractedVocabItem(term: question.correctAnswer, reading: "", meaning: "")
+    }
+
+    /// Save a wrong-answer word to the vocabulary store. The store keys on the
+    /// Chinese field, so: use whichever side is Chinese; if neither is, translate
+    /// the English term to Chinese; as a last resort keep the word as-is rather
+    /// than silently dropping it. Returns true when a save was attempted.
     @discardableResult
-    private func saveVocabItem(_ item: ExtractedVocabItem) -> Bool {
-        let termIsChinese = item.term.contains { $0.isChineseCharacter }
-        let chinese = termIsChinese ? item.term : item.meaning
-        let pinyin = termIsChinese
-            ? (item.reading.isEmpty ? PinyinConverter.convert(item.term) : item.reading)
-            : PinyinConverter.convert(item.meaning)
-        let definition = termIsChinese ? item.meaning : item.term
+    private func saveVocabItem(_ item: ExtractedVocabItem) async -> Bool {
+        let term = item.term.trimmingCharacters(in: .whitespacesAndNewlines)
+        let meaning = item.meaning.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty || !meaning.isEmpty else { return false }
 
-        let trimmed = chinese.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, trimmed.contains(where: { $0.isChineseCharacter }) else { return false }
+        let termIsChinese = term.contains { $0.isChineseCharacter }
+        let meaningIsChinese = meaning.contains { $0.isChineseCharacter }
 
-        if !savedTermsStore.contains(chinese: trimmed) {
-            savedTermsStore.add(SavedTerm(
-                chinese: trimmed,
-                pinyin: pinyin,
-                definition: definition,
-                partOfSpeech: "phrase"
-            ))
+        var chinese: String
+        var definition: String
+        if termIsChinese {
+            chinese = term
+            definition = meaning
+        } else if meaningIsChinese {
+            chinese = meaning
+            definition = term
+        } else {
+            // Neither side is Chinese — translate the (English) term to Chinese.
+            let english = term.isEmpty ? meaning : term
+            definition = english
+            if let zh = try? await WordTranslationService.shared.translateToChinese(english),
+               zh.contains(where: { $0.isChineseCharacter }) {
+                chinese = zh
+            } else {
+                chinese = english  // last resort: keep the word rather than drop it
+            }
+        }
+
+        let key = chinese.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else { return false }
+        let pinyin = key.contains(where: { $0.isChineseCharacter })
+            ? (item.reading.isEmpty ? PinyinConverter.convert(key) : item.reading)
+            : ""
+        let def = definition.isEmpty ? key : definition
+
+        await MainActor.run {
+            if !savedTermsStore.contains(chinese: key) {
+                savedTermsStore.add(SavedTerm(chinese: key, pinyin: pinyin, definition: def, partOfSpeech: "phrase"))
+            }
         }
         return true
     }
