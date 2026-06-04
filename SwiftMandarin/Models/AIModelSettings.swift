@@ -154,17 +154,28 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     }
 
     /// Curated fallback model IDs shown when live listing is unavailable.
+    /// These are only a starting hint — use "Refresh Models" to pull the
+    /// provider's current list from its API.
     var defaultModels: [String] {
         switch self {
-        case .openAI: return ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini", "o4-mini"]
-        case .anthropic: return ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest", "claude-3-opus-latest"]
-        case .deepseek: return ["deepseek-chat", "deepseek-reasoner"]
-        case .doubao: return ["doubao-pro-32k", "doubao-pro-4k", "doubao-lite-32k", "doubao-1.5-vision-pro-32k"]
-        case .qwen: return ["qwen-plus", "qwen-turbo", "qwen-max", "qwen-vl-plus", "qwen-vl-max"]
-        case .kimi: return ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k", "moonshot-v1-8k-vision-preview"]
-        case .zhipu: return ["glm-4-plus", "glm-4-air", "glm-4-flash", "glm-4v-plus", "glm-4v-flash"]
-        case .minimax: return ["abab6.5s-chat", "abab6.5g-chat", "MiniMax-Text-01"]
-        case .appleIntelligence, .ollama: return []
+        case .openAI:
+            return ["gpt-4o", "gpt-4.1", "gpt-4.1-mini", "o4-mini", "o3", "gpt-4o-mini"]
+        case .anthropic:
+            return ["claude-sonnet-4-5", "claude-opus-4-1", "claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5"]
+        case .deepseek:
+            return ["deepseek-chat", "deepseek-reasoner"]
+        case .doubao:
+            return ["doubao-1.5-pro-32k", "doubao-1.5-vision-pro-32k", "doubao-1.5-pro-256k", "doubao-1.5-lite-32k"]
+        case .qwen:
+            return ["qwen-plus", "qwen-max", "qwen-turbo", "qwen-vl-max", "qwen-vl-plus", "qwen-max-latest"]
+        case .kimi:
+            return ["kimi-latest", "kimi-k2-0711-preview", "kimi-k2-turbo-preview", "moonshot-v1-128k", "moonshot-v1-auto", "moonshot-v1-128k-vision-preview"]
+        case .zhipu:
+            return ["glm-4.6", "glm-4.5", "glm-4-plus", "glm-4.5v", "glm-4v-plus", "glm-4-flash"]
+        case .minimax:
+            return ["MiniMax-Text-01", "MiniMax-M1", "abab6.5s-chat"]
+        case .appleIntelligence, .ollama:
+            return []
         }
     }
 
