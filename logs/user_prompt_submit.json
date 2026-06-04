@@ -30,5 +30,21 @@
     "permission_mode": "bypassPermissions",
     "hook_event_name": "UserPromptSubmit",
     "prompt": "ok, the app has been updated with additional features. please create a new release with a new packaged dmg with the latest version"
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "read through this app's codebase's swift files recursively and from start to finish."
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "ok, can you add a feature in the photo scan tab for workbook grading, which allows users to upload photos of a workbook, and the written answers, and send both to a vision capable LLM to check the written responses against the workbook, and pass the graded solutions back using structured output and a UI, and a feature to save the wrong answers to the saved vocab list. plan, design, and implement this feature. it should not be a main feature of the app, but it can probably be a feature tucked away in the photos tab, and also allow users to upload multiple images to each of the workbook photos and the written answers, and pass these along to the model provider with a custom system prompt for the LLM to do this task"
   }
 ]

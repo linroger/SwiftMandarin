@@ -136,6 +136,7 @@
 		D73548C56848D9442D2E7BEC /* TranslateView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = TranslateView.swift; path = SwiftMandarin/Views/TranslateView.swift; sourceTree = SOURCE_ROOT; };
 		E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = AIWordExplanationService.swift; path = SwiftMandarin/Services/AIWordExplanationService.swift; sourceTree = SOURCE_ROOT; };
 		F6483332AF11929120E6C690 /* EnglishRubyTextView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = EnglishRubyTextView.swift; path = SwiftMandarin/Views/Components/EnglishRubyTextView.swift; sourceTree = SOURCE_ROOT; };
+		FAE9662D32E35D0E29D92133 /* notification.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = notification.json; path = "logs/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/notification.json"; sourceTree = SOURCE_ROOT; };
 		FC19C54F4E1D4ECADBDF8CEE /* LearnView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = LearnView.swift; path = SwiftMandarin/Views/LearnView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -190,6 +191,7 @@
 				700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */,
 				0FFBB90195B9DE5496868743 /* ShortcutHelpers.swift */,
 				9CBD50B25882A142E9C10FC1 /* VocabularyView.swift */,
+				FAE9662D32E35D0E29D92133 /* notification.json */,
 			);
 			sourceTree = "<group>";
 		};
