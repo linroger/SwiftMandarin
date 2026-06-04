@@ -33,8 +33,10 @@ struct WorkbookGradingView: View {
     @State private var answerImages: [Data] = []
     @State private var isLoadingWorkbook = false
     @State private var isLoadingAnswers = false
-    @State private var showWorkbookFiles = false
-    @State private var showAnswerFiles = false
+    @State private var showFileImporter = false
+    @State private var fileImportTarget: FileImportTarget = .workbook
+
+    private enum FileImportTarget { case workbook, answers }
 
     // Grading
     @State private var customInstructions: String = ""
@@ -65,7 +67,9 @@ struct WorkbookGradingView: View {
                         items: $workbookItems,
                         images: workbookImages,
                         isLoading: isLoadingWorkbook,
-                        onAddFiles: { showWorkbookFiles = true },
+                        onAddFiles: { fileImportTarget = .workbook; showFileImporter = true },
+                        onRemove: { idx in if workbookImages.indices.contains(idx) { workbookImages.remove(at: idx) } },
+                        onDrop: { handleDrop($0, into: .workbook) },
                         onClear: { workbookItems = []; workbookImages = [] }
                     )
                     uploadSection(
@@ -74,7 +78,9 @@ struct WorkbookGradingView: View {
                         items: $answerItems,
                         images: answerImages,
                         isLoading: isLoadingAnswers,
-                        onAddFiles: { showAnswerFiles = true },
+                        onAddFiles: { fileImportTarget = .answers; showFileImporter = true },
+                        onRemove: { idx in if answerImages.indices.contains(idx) { answerImages.remove(at: idx) } },
+                        onDrop: { handleDrop($0, into: .answers) },
                         onClear: { answerItems = []; answerImages = [] }
                     )
                     customPromptSection
@@ -103,11 +109,16 @@ struct WorkbookGradingView: View {
                 guard !items.isEmpty else { return }
                 Task { await addAnswerPhotos(items) }
             }
-            .fileImporter(isPresented: $showWorkbookFiles, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
-                Task { await addWorkbookFiles(result) }
-            }
-            .fileImporter(isPresented: $showAnswerFiles, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
-                Task { await addAnswerFiles(result) }
+            // A single fileImporter routed by `fileImportTarget`. SwiftUI only
+            // honors one fileImporter per view, so both buckets share this one.
+            .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
+                let target = fileImportTarget
+                Task {
+                    switch target {
+                    case .workbook: await addWorkbookFiles(result)
+                    case .answers: await addAnswerFiles(result)
+                    }
+                }
             }
         }
     }
@@ -155,6 +166,8 @@ struct WorkbookGradingView: View {
         images: [Data],
         isLoading: Bool,
         onAddFiles: @escaping () -> Void,
+        onRemove: @escaping (Int) -> Void,
+        onDrop: @escaping ([NSItemProvider]) -> Bool,
         onClear: @escaping () -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -172,11 +185,28 @@ struct WorkbookGradingView: View {
                 }
             }
 
-            if !images.isEmpty {
+            if images.isEmpty {
+                // Empty state doubles as a drag-and-drop target hint.
+                VStack(spacing: 6) {
+                    Image(systemName: "square.and.arrow.down.on.square")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                    Text("拖放图片到此 · Drag & drop images here")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5]))
+                        .foregroundStyle(.quaternary)
+                )
+            } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(Array(images.enumerated()), id: \.offset) { _, data in
-                            thumbnail(data)
+                        ForEach(Array(images.enumerated()), id: \.offset) { index, data in
+                            thumbnail(data, onRemove: { onRemove(index) })
                         }
                     }
                 }
@@ -214,9 +244,11 @@ struct WorkbookGradingView: View {
                 .fill(.background)
                 .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
         )
+        // Accept images dragged from Photos, Finder, Safari, other apps.
+        .onDrop(of: [.image], isTargeted: nil, perform: onDrop)
     }
 
-    private func thumbnail(_ data: Data) -> some View {
+    private func thumbnail(_ data: Data, onRemove: @escaping () -> Void) -> some View {
         Group {
             if let image = imageFromData(data) {
                 image
@@ -230,6 +262,23 @@ struct WorkbookGradingView: View {
         .frame(width: 72, height: 96)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary, lineWidth: 1))
+        // Tap-to-remove button + right-click/long-press context menu.
+        .overlay(alignment: .topTrailing) {
+            Button {
+                onRemove()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.body)
+                    .foregroundStyle(.white, .black.opacity(0.6))
+                    .padding(2)
+            }
+            .buttonStyle(.plain)
+        }
+        .contextMenu {
+            Button(role: .destructive) { onRemove() } label: {
+                Label("移除 · Remove", systemImage: "trash")
+            }
+        }
     }
 
     private var customPromptSection: some View {
@@ -396,6 +445,45 @@ struct WorkbookGradingView: View {
             }
         }
         return datas
+    }
+
+    /// Handle images dragged & dropped onto a bucket (Photos, Finder, Safari, …).
+    private func handleDrop(_ providers: [NSItemProvider], into target: FileImportTarget) -> Bool {
+        let imageProviders = providers.filter { $0.hasItemConformingToTypeIdentifier(UTType.image.identifier) }
+        guard !imageProviders.isEmpty else { return false }
+
+        switch target {
+        case .workbook: isLoadingWorkbook = true
+        case .answers: isLoadingAnswers = true
+        }
+
+        Task {
+            var datas: [Data] = []
+            for provider in imageProviders {
+                if let data = await Self.loadImageData(from: provider) {
+                    datas.append(downscaledJPEG(data))
+                }
+            }
+            await MainActor.run {
+                switch target {
+                case .workbook:
+                    workbookImages.append(contentsOf: datas)
+                    isLoadingWorkbook = false
+                case .answers:
+                    answerImages.append(contentsOf: datas)
+                    isLoadingAnswers = false
+                }
+            }
+        }
+        return true
+    }
+
+    private static func loadImageData(from provider: NSItemProvider) async -> Data? {
+        await withCheckedContinuation { continuation in
+            provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { data, _ in
+                continuation.resume(returning: data)
+            }
+        }
     }
 
     private func grade() async {

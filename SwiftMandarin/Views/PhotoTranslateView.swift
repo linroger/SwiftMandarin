@@ -378,8 +378,30 @@ struct PhotoTranslateView: View {
                 .fill(.background)
                 .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
         )
+        // Drag & drop an image onto the input area to scan it.
+        .onDrop(of: [.image], isTargeted: nil, perform: handlePhotoDrop)
     }
-    
+
+    private func handlePhotoDrop(_ providers: [NSItemProvider]) -> Bool {
+        guard let provider = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.image.identifier) }) else {
+            return false
+        }
+        Task {
+            guard let data = await PhotoTranslateView.loadDroppedImage(provider) else { return }
+            await MainActor.run { selectedImageData = data }
+            await processImageData(data)
+        }
+        return true
+    }
+
+    private static func loadDroppedImage(_ provider: NSItemProvider) async -> Data? {
+        await withCheckedContinuation { continuation in
+            provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { data, _ in
+                continuation.resume(returning: data)
+            }
+        }
+    }
+
     // MARK: - Results Section
     
     private var resultsSection: some View {
