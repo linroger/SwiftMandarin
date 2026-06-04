@@ -173,6 +173,8 @@ final class CloudAIService {
             if let s = item as? String {
                 ids.append(s)
             } else if let obj = item as? [String: Any] {
+                // Skip retired models (e.g. Volcengine Ark marks them "Shutdown").
+                if (obj["status"] as? String) == "Shutdown" { continue }
                 if let id = obj["id"] as? String { ids.append(id) }
                 else if let name = obj["name"] as? String { ids.append(name) }
             }

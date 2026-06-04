@@ -147,8 +147,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     var modelsPath: String? {
         switch self {
         case .anthropic: return "/v1/models"
-        case .openAI, .deepseek, .qwen, .kimi: return "/models"
-        case .doubao, .zhipu, .minimax: return nil
+        case .openAI, .deepseek, .qwen, .kimi, .doubao: return "/models"
+        case .zhipu, .minimax: return nil
         case .appleIntelligence, .ollama: return nil
         }
     }
@@ -165,7 +165,9 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .deepseek:
             return ["deepseek-chat", "deepseek-reasoner"]
         case .doubao:
-            return ["doubao-1.5-pro-32k", "doubao-1.5-vision-pro-32k", "doubao-1.5-pro-256k", "doubao-1.5-lite-32k"]
+            // Ark model IDs use dashes + a date suffix (NOT dots), and must be
+            // activated in the Ark Console (or use an inference endpoint ID, ep-…).
+            return ["doubao-seed-1-6-250615", "doubao-1-5-pro-32k-250115", "doubao-1-5-vision-pro-32k-250115", "doubao-seed-1-6-flash-250828", "doubao-1-5-lite-32k-250115"]
         case .qwen:
             return ["qwen-plus", "qwen-max", "qwen-turbo", "qwen-vl-max", "qwen-vl-plus", "qwen-max-latest"]
         case .kimi:
