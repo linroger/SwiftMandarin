@@ -782,6 +782,87 @@ final class AIWordExplanationService {
         return decoded.items.filter { !$0.term.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 
+    // MARK: - Workbook Grading
+
+    /// The vision-capable, available provider that will be used for grading
+    /// (the effective provider if suitable, otherwise the first available one).
+    static func gradingProvider() -> AIProvider? {
+        let settings = AIModelSettings.shared
+        let effective = settings.effectiveProvider
+        if effective.isCloud, effective.supportsVision, settings.isAvailable(effective) {
+            return effective
+        }
+        return AIProvider.allCases.first { $0.isCloud && $0.supportsVision && settings.isAvailable($0) }
+    }
+
+    /// Grade a student's workbook: send the workbook page images and the
+    /// written-answer images to a vision-capable provider with a grading
+    /// system prompt (plus optional custom instructions) and return a
+    /// structured `GradingResult`.
+    func gradeWorkbook(
+        workbookImages: [Data],
+        answerImages: [Data],
+        customInstructions: String?
+    ) async throws -> GradingResult {
+        guard !workbookImages.isEmpty else {
+            throw AIExplanationError.generationFailed("Add at least one workbook image.")
+        }
+        guard !answerImages.isEmpty else {
+            throw AIExplanationError.generationFailed("Add at least one answer image.")
+        }
+
+        guard let provider = Self.gradingProvider() else {
+            throw AIExplanationError.unavailable(reason: "Workbook grading needs a vision-capable provider with an API key (OpenAI, Claude, Qwen, Doubao, Zhipu, or Kimi). Configure one in Settings → AI.")
+        }
+
+        let settings = AIModelSettings.shared
+        let model = settings.selectedModel(for: provider)
+        guard !model.isEmpty else {
+            throw AIExplanationError.unavailable(reason: "No model selected for \(provider.displayName).")
+        }
+
+        var system = """
+        You are a meticulous, encouraging teacher grading a student's workbook from photos.
+        You are given images in two groups: first the WORKBOOK pages (the questions/exercises), \
+        then the student's WRITTEN ANSWERS (handwriting).
+        For every question you can read:
+        - Identify the question number and the question text.
+        - Read the student's handwritten answer.
+        - Determine the correct answer.
+        - Decide whether the student's answer is correct (accept minor spelling/handwriting variation).
+        - Briefly explain why it is right or wrong.
+        For each WRONG answer, also provide a "vocab" study item with the key term the student should review: \
+        "term" = the word/phrase in the language being studied, "reading" = pinyin with tone marks if the term \
+        is Chinese (otherwise a short pronunciation hint or empty string), "meaning" = a concise translation.
+        Respond with ONLY a JSON object of this exact shape:
+        {"score":"<correct>/<total>","summary":"one or two sentences of overall feedback","questions":[{"questionNumber":"1","question":"...","studentAnswer":"...","correctAnswer":"...","isCorrect":true,"explanation":"...","vocab":{"term":"...","reading":"...","meaning":"..."}}]}
+        Use null for "vocab" on correct answers. JSON only — no commentary, labels, or markdown fences.
+        """
+        if let custom = customInstructions?.trimmingCharacters(in: .whitespacesAndNewlines), !custom.isEmpty {
+            system += "\n\nAdditional instructions from the user:\n\(custom)"
+        }
+
+        let user = "Images 1–\(workbookImages.count) are the WORKBOOK (questions). " +
+            "Images \(workbookImages.count + 1)–\(workbookImages.count + answerImages.count) are the student's WRITTEN ANSWERS. " +
+            "Grade the answers against the workbook."
+
+        let allImages = workbookImages + answerImages
+        let json = try await CloudAIService.shared.chat(
+            provider: provider,
+            model: model,
+            system: system,
+            user: user,
+            images: allImages,
+            jsonMode: true,
+            maxTokens: 4096
+        )
+
+        guard let data = Self.extractJSONObject(from: json) else {
+            throw AIExplanationError.generationFailed("The model did not return gradable JSON.")
+        }
+        return try JSONDecoder().decode(GradingResult.self, from: data)
+    }
+
     /// Extract the first balanced JSON object from a model response, tolerating
     /// markdown code fences and surrounding prose.
     static func extractJSONObject(from text: String) -> Data? {
@@ -857,6 +938,55 @@ struct ExtractedVocabItem: Codable, Identifiable, Hashable {
 /// Wrapper matching the `{"items":[…]}` JSON shape models return.
 struct ExtractedVocabResponse: Codable {
     let items: [ExtractedVocabItem]
+}
+
+// MARK: - Workbook Grading (structured output)
+
+/// One graded question returned by the grading model.
+struct GradedQuestion: Identifiable, Decodable {
+    let id = UUID()
+    let questionNumber: String
+    let question: String
+    let studentAnswer: String
+    let correctAnswer: String
+    let isCorrect: Bool
+    let explanation: String
+    /// Study item for a wrong answer (optional).
+    let vocab: ExtractedVocabItem?
+
+    enum CodingKeys: String, CodingKey {
+        case questionNumber, question, studentAnswer, correctAnswer, isCorrect, explanation, vocab
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        questionNumber = (try? c.decode(String.self, forKey: .questionNumber)) ?? ""
+        question = (try? c.decode(String.self, forKey: .question)) ?? ""
+        studentAnswer = (try? c.decode(String.self, forKey: .studentAnswer)) ?? ""
+        correctAnswer = (try? c.decode(String.self, forKey: .correctAnswer)) ?? ""
+        isCorrect = (try? c.decode(Bool.self, forKey: .isCorrect)) ?? false
+        explanation = (try? c.decode(String.self, forKey: .explanation)) ?? ""
+        vocab = try? c.decode(ExtractedVocabItem.self, forKey: .vocab)
+    }
+}
+
+/// Full grading result for an uploaded workbook + answers.
+struct GradingResult: Decodable {
+    let score: String
+    let summary: String
+    let questions: [GradedQuestion]
+
+    enum CodingKeys: String, CodingKey { case score, summary, questions }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        score = (try? c.decode(String.self, forKey: .score)) ?? ""
+        summary = (try? c.decode(String.self, forKey: .summary)) ?? ""
+        questions = (try? c.decode([GradedQuestion].self, forKey: .questions)) ?? []
+    }
+
+    var correctCount: Int { questions.filter { $0.isCorrect }.count }
+    var wrongQuestions: [GradedQuestion] { questions.filter { !$0.isCorrect } }
 }
 
 // MARK: - Ollama Word Explanation Response (for JSON decoding)

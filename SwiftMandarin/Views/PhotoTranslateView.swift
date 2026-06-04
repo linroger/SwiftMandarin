@@ -75,6 +75,9 @@ struct PhotoTranslateView: View {
     // AI structured vocabulary extraction
     @State private var extractedVocab: [ExtractedVocabItem] = []
     @State private var isExtractingVocab: Bool = false
+
+    // Workbook grading (tucked-away feature)
+    @State private var showWorkbookGrading: Bool = false
     
     /// Check if we have any results to display
     private var hasResults: Bool {
@@ -127,6 +130,15 @@ struct PhotoTranslateView: View {
 
                         Divider()
 
+                        // Tucked-away workbook grading feature.
+                        Button {
+                            showWorkbookGrading = true
+                        } label: {
+                            Label("作业批改 · Grade Workbook", systemImage: "checkmark.rectangle.stack")
+                        }
+
+                        Divider()
+
                         if detectedLanguage == .english {
                             Toggle("显示语法知识点", isOn: $showGrammarPoints)
                             Divider()
@@ -163,6 +175,10 @@ struct PhotoTranslateView: View {
             .sheet(isPresented: $showScreenshotTranslation) {
                 TranslatedScreenshotOverlayView()
                     .environment(ScreenshotTranslationStore.shared)
+            }
+            .sheet(isPresented: $showWorkbookGrading) {
+                WorkbookGradingView()
+                    .environment(savedTermsStore)
             }
             .task(id: routeStore.pendingAction?.id) {
                 applyPendingRouteAction()

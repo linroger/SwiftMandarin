@@ -184,7 +184,8 @@ final class CloudAIService {
 
     /// Send a chat request and return the assistant's text content.
     /// - Parameters:
-    ///   - imageData: optional image for vision-capable providers/models.
+    ///   - imageData: optional single image for vision-capable providers.
+    ///   - images: optional multiple images (combined with `imageData`).
     ///   - jsonMode: request a JSON object response where supported.
     func chat(
         provider: AIProvider,
@@ -192,6 +193,7 @@ final class CloudAIService {
         system: String,
         user: String,
         imageData: Data? = nil,
+        images: [Data] = [],
         jsonMode: Bool = false,
         maxTokens: Int = 4096
     ) async throws -> String {
@@ -203,7 +205,10 @@ final class CloudAIService {
         let base = settings.baseURL(for: provider)
         guard let url = URL(string: base + provider.chatPath) else { throw CloudAIError.invalidURL }
 
-        let useImage = imageData != nil && provider.supportsVision
+        // Combine the convenience single image with the multi-image array;
+        // only send images at all for vision-capable providers.
+        let combinedImages = (imageData.map { [$0] } ?? []) + images
+        let imagesToSend = provider.supportsVision ? combinedImages : []
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -218,13 +223,13 @@ final class CloudAIService {
         case .openAICompatible:
             body = Self.openAIBody(
                 model: model, system: system, user: user,
-                imageData: useImage ? imageData : nil,
+                images: imagesToSend,
                 jsonMode: jsonMode, useResponseFormat: useResponseFormat, maxTokens: maxTokens
             )
         case .anthropic:
             body = Self.anthropicBody(
                 model: model, system: system, user: user,
-                imageData: useImage ? imageData : nil, maxTokens: maxTokens
+                images: imagesToSend, maxTokens: maxTokens
             )
         }
 
@@ -281,7 +286,7 @@ final class CloudAIService {
 
     private static func openAIBody(
         model: String, system: String, user: String,
-        imageData: Data?, jsonMode: Bool, useResponseFormat: Bool, maxTokens: Int
+        images: [Data], jsonMode: Bool, useResponseFormat: Bool, maxTokens: Int
     ) -> [String: Any] {
         var systemPrompt = system
         var userContent: Any = user
@@ -290,12 +295,13 @@ final class CloudAIService {
             systemPrompt += "\n\nRespond with a single valid JSON object."
         }
 
-        if let imageData {
-            let dataURL = "data:\(mediaType(for: imageData));base64,\(imageData.base64EncodedString())"
-            userContent = [
-                ["type": "text", "text": user],
-                ["type": "image_url", "image_url": ["url": dataURL]],
-            ]
+        if !images.isEmpty {
+            var parts: [[String: Any]] = [["type": "text", "text": user]]
+            for image in images {
+                let dataURL = "data:\(mediaType(for: image));base64,\(image.base64EncodedString())"
+                parts.append(["type": "image_url", "image_url": ["url": dataURL]])
+            }
+            userContent = parts
         }
 
         var body: [String: Any] = [
@@ -316,16 +322,16 @@ final class CloudAIService {
 
     private static func anthropicBody(
         model: String, system: String, user: String,
-        imageData: Data?, maxTokens: Int
+        images: [Data], maxTokens: Int
     ) -> [String: Any] {
         var userContent: [[String: Any]] = [["type": "text", "text": user]]
-        if let imageData {
+        for image in images {
             userContent.append([
                 "type": "image",
                 "source": [
                     "type": "base64",
-                    "media_type": mediaType(for: imageData),
-                    "data": imageData.base64EncodedString(),
+                    "media_type": mediaType(for: image),
+                    "data": image.base64EncodedString(),
                 ],
             ])
         }
