@@ -292,5 +292,300 @@
     "last_assistant_message": "commit and push",
     "background_tasks": [],
     "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a54035706f671dda4",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-a54035706f671dda4.jsonl",
+    "last_assistant_message": "i added a real key, now refresh the models",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aa0fb7105d4960fd0",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-aa0fb7105d4960fd0.jsonl",
+    "last_assistant_message": "I'll generate a natural next-message suggestion based on the conversation.\n\nThe user just learned their key is rejected and I added the API-format override. The most likely natural next step is for them to provide the correct endpoint or a new key to verify.\n\nSuggestion:\n\nuse https://api.moonshot.ai/anthropic with anthropic format and test it",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a1489533625931c19",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-a1489533625931c19.jsonl",
+    "last_assistant_message": "I activated doubao-seed-1-6, test it again",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a851e7b650cbc6cb5",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-a851e7b650cbc6cb5.jsonl",
+    "last_assistant_message": "i activated doubao-seed-1-6, verify it works",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ad25af8f1be0b0ebe",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-ad25af8f1be0b0ebe.jsonl",
+    "last_assistant_message": "yes, run the grading test with a real image",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a07d9d64d3e836c71",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-a07d9d64d3e836c71.jsonl",
+    "last_assistant_message": "yes add the combined workbook toggle",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a2cc71718bc4d14c8",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-a2cc71718bc4d14c8.jsonl",
+    "last_assistant_message": "add the auto-retry for providers without strict JSON mode",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ad84b65b042d7d686",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-ad84b65b042d7d686.jsonl",
+    "last_assistant_message": "build and run the app",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a70834ca001c8fd0a",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-a70834ca001c8fd0a.jsonl",
+    "last_assistant_message": "build and run it on my mac",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ac3ae53238205bada",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-ac3ae53238205bada.jsonl",
+    "last_assistant_message": "name the new model qwen3-vl-plus instead since its better",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a77cd7513ece93848",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-a77cd7513ece93848.jsonl",
+    "last_assistant_message": "set my qwen model to qwen-plus and verify grading works",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ac72f43c75db8f7cf",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-ac72f43c75db8f7cf.jsonl",
+    "last_assistant_message": "<analysis>\nLet me chronologically work through this lengthy conversation to capture all technical details, decisions, and user feedback.\n\n**Initial context:** The session started with `/effort ultracode` enabled and a request to \"read through this app's codebase's swift files recursively.\" The app is SwiftMandarinShortcuts \u2014 a macOS/iOS/visionOS (26.2 deploy targets) SwiftUI Mandarin\u2194English translation/learning app, 54 Swift files (~16.7K lines), on branch `april-14-2026-ollama` (later switched to `jun-4-2026-workbook-grader`).\n\n**User's evolving requests (multiple messages while I worked):**\n1. Fix photo OCR gibberish + can't switch languages (stuck on English, can't read Mandarin)\n2. Expand AI providers (OpenAI, Claude, Deepseek, Doubao, Qwen, Kimi, Zhipu, Minimax) with API-fetched models\n3. Deep AI integration (photo AI cleanup toggle)\n4. Make the app bilingual (dual narration, learner-mode toggle)\n\nI ran a comprehension Workflow (9 agents), then implemented all 4 concerns across ~17 files. Key root cause for OCR: `PhotoTextRecognitionService.swift:204` hardcoded `recognitionLanguages = [\"en-US\",\"en-GB\",...]` English-first + `usesLanguageCorrection=true`. Found a critical latent bug: sandboxed app lacked `com.apple.security.network.client` entitlement.\n\nI built foundations: `KeychainHelper.swift`, `AppPreferences.swift` (LearnerMode, PhotoScanLanguage), `CloudAIService.swift` (URLSession, OpenAI-compatible + Anthropic), extended `AIProvider` enum to 10 providers, `AIProviderConfigView.swift`. Verified with builds (macOS + iOS) and standalone Swift logic tests.\n\nThen user said \"commit and push to git\" \u2014 pushed several commits. Then \"keep iterating... make sure model API responses are properly linked up through structured output\" \u2014 I fixed TranslateView's Apple-only gating, added per-provider `supportsJSONResponseFormat`, added `extractVocabulary` (structured photo vocab), tolerant decoders.\n\nThen \"add a feature... for workbook grading\" \u2014 built `WorkbookGradingView.swift`, `gradeWorkbook()`, multi-image `CloudAIService.chat`, `GradingResult`/`GradedQuestion` types.\n\n**Provider key debugging (user-provided keys \u2014 these are sensitive secrets the user shared explicitly to debug):**\n- Kimi key `sk-kimi-...` \u2192 401 on all Moonshot endpoints. Added per-provider API-format override (OpenAI/Anthropic).\n- Volcengine Ark key `ark-...` \u2192 valid (200), but account hadn't activated models; fixed Doubao model ID format (dashes+date) and enabled /models.\n- Qwen Singapore key `sk-c8cdbf7b965045178308aa867fb61352`, workspace `ws-tadf5kfijdfuj988`, endpoint `https://ws-tadf5kfijdfuj988.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` \u2192 WORKS. Made Singapore intl endpoint (`https://dashscope-intl.aliyuncs.com/compatible-mode/v1`) the Qwen default, added chat/vision model filter.\n\n**Recent bug fixes:**\n- Files button didn't work (two `.fileImporter` on same view) \u2192 single importer with target enum; added image remove + drag-and-drop.\n- Grading 0/0 \"no pages\" \u2192 selected model was `qwen-plus` (text). Added `isLikelyVisionModel`, `visionModel(for:)`, `defaultVisionModel`. Verified qwen-plus\u21920, qwen-vl-max\u21925/6.\n- \"Data couldn't be read\" \u2192 `qwen-vl-plus` emits malformed JSON. Added `repairJSON` (string-aware), retry, max_tokens 8192.\n- Vocab save buttons don't work \u2192 silent guard failure when meaning not Chinese. Made `saveVocabItem` async with translation fallback.\n- AI explanation timeout \u2192 bumped timeouts 60\u2192180s.\n\nThe last action was committing/pushing `bfeeb6c`. The conversation ends there.\n\nLet me note all user messages verbatim and the security-relevant fact that the user explicitly shared API keys for debugging (I tested them via read-only curl, which is the same request the app makes \u2014 defensible diagnostics the user requested).\n\nKey file paths, function signatures, and code patterns need to be captured precisely for continuation.\n</analysis>\n\n<summary>\n\n1. Primary Request and Intent:\n   The user made a series of escalating requests on the SwiftMandarinShortcuts app (a macOS/iOS/visionOS 26.2 SwiftUI Mandarin\u2194English translation/learning app):\n   - **(A)** Fix the photo OCR feature: \"often produces gibberish, and cannot switch languages, so i think it is stuck on detecting english, and can't read mandarin.\"\n   - **(B)** Expand AI model providers to include \"OpenAI, Claude, Deepseek, Doubao, Qwen, Kimi, Zhipu, Minimax, etc. make sure to pull the available models from each provider via API.\"\n   - **(C)** Deep AI integration: a settings toggle so an uploaded photo is \"sent to an AI model for processing and text cleanup, and the cleaned up text or structured output should be returned to the app.\"\n   - **(D)** Make the app fully bilingual (English-learners-of-Mandarin AND Mandarin-learners-of-English), with English+Mandarin dual narration of selected words, and \"a toggle in the settings menu that switches the app from being english-user centric to being mandarin-user centric.\"\n   - \"commit and push to git\" (explicit authorization).\n   - \"keep iterating and improving. make sure the model API responses are properly linked up to the app through structured output.\"\n   - Add a **Workbook Grading** feature in the Photo tab: upload photos of a workbook + written answers, send both to a vision-capable LLM to grade, return graded solutions via structured output + UI, save wrong answers to vocab list, allow multiple images per bucket, custom system prompt.\n   - Test provided API keys (Kimi, Volcengine/Ark, Qwen).\n   - \"make the singapore endpoint the default endpoint. add a per-provider filter so the picker only shows chat/vision-capable models\" + test grading on provided workbook images.\n   - Make workbook grading auto-detect whether answers are on the pages or separate sheets (\"better yet, have the model automatically figure it out\").\n   - \"allow the photos to be uploaded as files, not just from the photos app.\"\n   - Fix bugs: Files button broken for workbook pages, no way to remove uploaded images, no drag-and-drop, grading 0/0 \"no pages\", decode error, save-vocab buttons don't work, AI explanation timeout.\n\n2. Key Technical Concepts:\n   - SwiftUI on macOS/iOS 26.2, Swift 5 language mode, Xcode 26.3\n   - `@Observable @MainActor` singletons over UserDefaults JSON persistence\n   - App sandbox entitlements: `com.apple.security.network.client` (added \u2014 required for ALL outbound networking), `com.apple.security.files.user-selected.read-only` (added for file import)\n   - Apple Vision `VNRecognizeTextRequest` (recognitionLanguages, usesLanguageCorrection, CGImagePropertyOrientation)\n   - `NLLanguageRecognizer` vs custom CJK-ratio-first detection\n   - Cloud LLM APIs: OpenAI-compatible (`/chat/completions`, `/models`, Bearer) vs Anthropic (`/v1/messages`, x-api-key); `response_format: json_object`; multi-image vision via `image_url`/base64\n   - Keychain generic password storage\n   - SwiftUI `.fileImporter` (only ONE per view honored), `.onDrop`, `NSItemProvider`, PhotosPicker\n   - `fileSystemSynchronizedGroups` \u2014 new .swift files under SwiftMandarin/ auto-included (no pbxproj edits needed)\n   - ImageIO downscaling (`CGImageSourceCreateThumbnailAtIndex`)\n   - Tolerant/string-aware JSON repair for LLM malformed output\n\n3. Files and Code Sections:\n   - **SwiftMandarin/SwiftMandarin.entitlements** \u2014 added `com.apple.security.network.client` and `com.apple.security.files.user-selected.read-only`. Critical: sandbox blocks networking/file-read without these.\n   - **SwiftMandarin/Services/KeychainHelper.swift** (new) \u2014 `set/get/delete/has(account:)`, service `linroger022.SwiftMandarin.secrets`.\n   - **SwiftMandarin/Models/AppPreferences.swift** (new) \u2014 `LearnerMode` (englishToMandarin/mandarinToEnglish/bilingual, drives `defaultDirection`), `PhotoScanLanguage` (auto/chinese/english/bilingual \u2192 `recognitionLanguages`/`usesLanguageCorrection`), `AppPreferences.shared` (learnerMode, photoScanLanguage, dualNarration).\n   - **SwiftMandarin/Models/AIModelSettings.swift** \u2014 `AIProvider` enum extended to 10 cases with metadata: `displayName`, `iconName`, `isCloud`, `supportsVision`, `supportsJSONResponseFormat`, `apiStyle`, `defaultBaseURL`, `chatPath`, `modelsPath`, `defaultModels`, `defaultVisionModel`, `keychainAccount`, `apiKeyURL`. Qwen `defaultBaseURL` = `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`. Doubao `modelsPath` = \"/models\", defaults use dash+date IDs. Key methods: `apiKey(for:)`/`setAPIKey`, `baseURL(for:)`/`setBaseURLOverride`, `apiStyleOverride`/`setAPIStyleOverride`/`effectiveAPIStyle`/`effectiveChatPath`/`effectiveModelsPath`, `selectedModel(for:)`/`setSelectedModel`, `isLikelyVisionModel(_:)` (static), `visionModel(for:)`, `isAvailable`/`isAnyProviderAvailable`/`effectiveProvider`/`statusMessage`. `import Ollama` at bottom (SourceKit falsely errors \"No such module 'Ollama'\" throughout \u2014 transient, builds fine).\n     ```swift\n     static func isLikelyVisionModel(_ id: String) -> Bool {\n         let l = id.lowercased()\n         if [\"vl\",\"vision\",\"omni\",\"qvq\",\"4v\",\"glm-4.5v\",\"pixtral\",\"llava\",\"internvl\",\"minicpm-v\",\"gemini\"].contains(where:{l.contains($0)}) { return true }\n         if l.hasPrefix(\"claude-\")||l.contains(\"gpt-4o\")||l.contains(\"gpt-4.1\")||l.hasPrefix(\"o4\")||l.hasPrefix(\"o3\") { return true }\n         if l.contains(\"seed-1-6\")||l.contains(\"seed-1-8\")||l.contains(\"seed-2-\")||l.contains(\"1-5-vision\") { return true }\n         return false\n     }\n     func visionModel(for provider: AIProvider) -> String? {\n         let selected = selectedModel(for: provider)\n         if Self.isLikelyVisionModel(selected) { return selected }\n         if let curated = provider.defaultVisionModel { return curated }\n         return CloudAIService.shared.models(for: provider).map(\\.id).first(where: Self.isLikelyVisionModel)\n     }\n     ```\n     `defaultVisionModel`: openAI=gpt-4o, anthropic=claude-sonnet-4-5, qwen=qwen-vl-max, doubao=doubao-1-5-vision-pro-32k-250115, zhipu=glm-4.5v, kimi=moonshot-v1-128k-vision-preview.\n   - **SwiftMandarin/Services/CloudAIService.swift** (new) \u2014 `chat(provider:model:system:user:imageData:images:[Data]:jsonMode:maxTokens:)` (multi-image), `translate`, `refreshModels(for:)`, `models(for:)`, `parseModelIDs` (skips status==\"Shutdown\", filters via `isChatCapableModel` with `nonChatModelKeywords` for embeddings/image-gen/audio/video/3d/ocr). Uses `effectiveAPIStyle`/`effectiveChatPath`. Timeouts bumped to request=180/resource=300. Anthropic auth sends both x-api-key AND Bearer.\n   - **SwiftMandarin/Services/PhotoTextRecognitionService.swift** \u2014 parameterized `recognizeText(...scanLanguage:orientation:)`, Chinese-aware `cleanChineseText`/`removeWhitespaceBetweenCJK`, populates `TextRecognitionResult.language: DetectedLanguage?`, EXIF orientation via `CGImageSourceCopyPropertiesAtIndex`.\n   - **SwiftMandarin/Services/ChineseTextAnalyzer.swift** \u2014 added `detectLanguageRobust` (CJK-ratio-first), `Unicode.Scalar.isCJKIdeograph`, widened CJK ranges, `DetectedLanguage: Sendable`.\n   - **SwiftMandarin/Services/AIWordExplanationService.swift** \u2014 cloud dispatch (`default:` case), `generateExplanationWithCloud` (now with repairJSON fallback), `cleanupRecognizedText(_:imageData:hintedLanguage:)`, `extractVocabulary(fromPhotoText:imageData:sourceIsChinese:)`, `gradeWorkbook(workbookImages:answerImages:customInstructions:)`, `gradingProvider()`, `decodeGrading`, `repairJSON` (string-aware), `extractJSONObject`. Types: `ExtractedVocabItem`, `ExtractedVocabResponse`, `GradedQuestion` (id=UUID, tolerant init), `GradingResult` (tolerant init, `correctCount`/`wrongQuestions`). gradeWorkbook uses `visionModel(for:)`, retries twice, max_tokens 8192, prefers non-empty results.\n     ```swift\n     static func repairJSON(_ s: String) -> String {\n         // string-aware: tracks inString/escaped; after } ] or closing \" (value),\n         // if next significant char is { [ or \" inserts a comma; removes trailing commas\n     }\n     ```\n   - **SwiftMandarin/Views/WorkbookGradingView.swift** (new) \u2014 multi-image grading UI. Single `.fileImporter($showFileImporter)` routed by `fileImportTarget` enum (.workbook/.answers). Photo picking is additive (append + reset items, onChange guards empty). `uploadSection(...onAddFiles:onRemove:onDrop:onClear:)`. Thumbnails have \u2715 button + context menu Remove. `handleDrop(_:into:)` via NSItemProvider `loadDataRepresentation(forTypeIdentifier: UTType.image.identifier)`. `downscaledJPEG` global helper. Answer bucket optional; `canGrade` requires either bucket non-empty. Provider banner shows `aiSettings.visionModel(for:)`. **Most recent edit** \u2014 robust async save:\n     ```swift\n     private func saveVocab(for question: GradedQuestion) {\n         Task { if await saveVocabItem(vocabItem(for: question)) { await MainActor.run { savedQuestionIDs.insert(question.id) } } }\n     }\n     private func vocabItem(for question: GradedQuestion) -> ExtractedVocabItem {\n         if let v = question.vocab { let t=...; let m=...; if !t.isEmpty || !m.isEmpty { return v } }\n         return ExtractedVocabItem(term: question.correctAnswer, reading: \"\", meaning: \"\")\n     }\n     // saveVocabItem async: handles Chinese on either side; translates English\u2192Chinese via\n     // WordTranslationService.shared.translateToChinese; last resort stores word as-is\n     ```\n   - **SwiftMandarin/Views/PhotoTranslateView.swift** \u2014 scan-language menu, AI cleanup toggle, re-recognize, `processImageData` (AI cleanup hook), Workbook Grading entry in toolbar Menu + `.sheet`, Files button + `.fileImporter($showPhotoFiles)`, drag-and-drop via `handlePhotoDrop`. Has `saveExtractedVocab` (NOT yet made robust \u2014 same Chinese-guard issue as grading had).\n   - **SwiftMandarin/Views/MacOSSettingsView.swift / MoreView.swift** \u2014 use shared `AIProviderConfigView`, learner-mode + dual-narration sections, photo-cleanup toggle, generalized `statusColor` switches (`default:` cloud).\n   - **SwiftMandarin/Views/Components/AIProviderConfigView.swift** (new) \u2014 shared provider config: API key SecureField, Base URL, **API Format picker** (Default/OpenAI-compatible/Anthropic via `apiStyleBinding`), model picker, Refresh Models.\n   - **SwiftMandarin/Views/Components/RubyTextView.swift / EnglishRubyTextView.swift** \u2014 dual narration (\u4e2d\u6587 + EN buttons) gated by `prefs.dualNarration`.\n   - **SwiftMandarin/Views/TranslateView.swift** \u2014 AI-translate buttons now use `aiSettings.isAnyProviderAvailable`/`effectiveProvider` (was Apple-only).\n   - **handoff.md** \u2014 updated with full plan/progress.\n   - Memory files written: `build-and-project-structure.md`, `ai-provider-architecture.md`, `MEMORY.md`.\n\n4. Errors and fixes:\n   - SwiftUI cross-file SourceKit errors (\"Cannot find type X in scope\", \"No such module 'Ollama'\") \u2014 false positives; xcodebuild always succeeded. Ignored.\n   - `ReferenceWritableKeyPath` on a struct + \"unable to type-check in reasonable time\" \u2014 replaced keypath helpers with simple per-picker loaders.\n   - Two `.fileImporter` on same view \u2192 only last honored (answers worked, workbook didn't). **User feedback: \"the upload files button doesnt fucking work for the workbook pages... what the fuck are you doing?\"** Fixed with single importer + `fileImportTarget` enum. Apologized.\n   - **User feedback: \"theres no option to right click or remove uploaded images\"** \u2192 added \u2715 button + context menu.\n   - **User feedback: \"theres no drag and drop to upload photos, wtf\"** \u2192 added `.onDrop` to both grading buckets + photo input.\n   - Grading 0/0 \"no workbook pages provided\" (**user: \"wtf\"**) \u2014 selected model `qwen-plus` is text-only. Root cause: vision is per-MODEL not per-provider. Fixed with `visionModel(for:)`. Verified: qwen-plus\u21920 items, qwen-vl-max\u21925/6.\n   - \"The data couldn't be read because it isn't in the correct format\" \u2014 `qwen-vl-plus` emits malformed JSON (missing comma at char 12208). Fixed with `repairJSON` + retry + max_tokens 8192. Verified qwen-vl-plus malformed, qwen-vl-max/qwen3-vl-plus valid.\n   - Kimi `sk-kimi-` key \u2192 401 everywhere (reseller key, not direct Moonshot). Added API-format override. Cannot fix invalid key.\n   - Ark key valid but models not activated; Doubao IDs were dotted (wrong) \u2192 fixed to dash+date format.\n   - **User: \"the \u4fdd\u5b58 and \u8d1d \u4fdd\u5b58\u6240\u6709\u9519\u9898\u8bcd\u6c47\u5230\u8bcd\u6c47\u672c buttons dont seem to work\"** \u2192 vocab save silently failed when meaning not Chinese. Fixed with async robust save + translation fallback.\n   - AI explanation \"Could not generate explanation \u2014 The request timed out\" \u2192 bumped timeouts 60\u2192180s + added repairJSON to cloud explanation decode.\n\n5. Problem Solving:\n   Diagnosed all provider auth issues via read-only curl (same request the app makes \u2014 the user explicitly shared keys to debug). Confirmed Qwen Singapore works end-to-end including grading real workbook photos (14/20, 18/24, 5/6 with various vision models). Established that vision capability is model-level not provider-level. Established `qwen-vl-plus` is flaky (sometimes empty, sometimes malformed JSON) while `qwen-vl-max`/`qwen3-vl-plus` reliable. Workbook images extracted from session transcript JSONL (`.../0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl`) since image-cache was cleaned.\n\n6. All user messages:\n   - \"read through this app's codebase's swift files recursively and from start to finish.\"\n   - \"fix various issues with the app, for instance, the photo upload feature often produces gibberish, and cannot switch languages... please also expand the available model providers to include OpenAI, Claude, Deepseek, Doubao, Qwen, Kimi, Zhipu, Minimax, etc. make sure to pull the available models from each provider via API. Also, make sure the AI features are deeply integrated... maybe for the photo feature, if an AI toggle is switched on in the settings menu, then the uploaded photo will be sent to an AI model for processing and text cleanup...\"\n   - \"also, the app is currently targetted for english speakers learning mandarin, but I want it to be bilingual... the narration feature should perhaps include english narration, as well as mandarin narration... maybe there should be a toggle in the settings menu that switches the app from being english-user centric to being mandarin-user centric, with all of the app's features adapting accordingly.\"\n   - \"[B[Adddds\" / \"continue\" / \"and commit and push to git\"\n   - \"then keep iterating and improving. make sure the model API responses are properly linked up to the app through structured output\"\n   - \"ok, can you add a feature in the photo scan tab for workbook grading, which allows users to upload photos of a workbook, and the written answers, and send both to a vision capable LLM to check the written responses against the workbook, and pass the graded solutions back using structured output and a UI, and a feature to save the wrong answers to the saved vocab list... allow users to upload multiple images... pass these along to the model provider with a custom system prompt\"\n   - \"kimi authentication failed https://api.moonshot.ai/v1 sk-kimi-26LQvNgczchB2VlJvvEJ8l9hwFkIimQbgEFTvTemNYOOBfQuVC1qZOBAiou8C5Oc [screenshot] also why the super outdate models\"\n   - \"its my kimi code api key\"\n   - \"please test this volcengine api key ark-3bed64a5-b758-44fd-96de-26e5856057d9-a8cfb\"\n   - \"how do i activate the models. walk me through step by step\"\n   - \"here, research how to implement and integrate the alibaba cloud model studio api key for quen. test it. here is my api key. sk-c8cdbf7b965045178308aa867fb61352 [Singapore region instructions] workspace ID ws-tadf5kfijdfuj988 api host: ws-tadf5kfijdfuj988.ap-southeast-1.maas.aliyuncs.com\"\n   - \"make the singapore endpoint the default endpoint. add a per-provider filter so the picker only shows chat/vision-capable models [2 workbook images] here are the workbook images. please test the model api against this.\"\n   - \"yes, or better yet, have the model automatically figure it out\"\n   - \"allow the photos to be uploaded as files, not just from the photos app\"\n   - \"the upload files button doesnt fucking work for the workbook pages. also, theres no option to right click or remove uploaded images. only the upload file for the separate answers works. what the fuck are you doing?\"\n   - \"also, theres no drag and drop to upload photos, wtf\"\n   - \"[Image #5] wtf [screenshot showing 0/0 grading, qwen-plus]\"\n   - \"[Image #6] [screenshot showing qwen-vl-plus, 'The data couldn't be read because it isn't in the correct format']\"\n   - \"the \u4fdd\u5b58 and \u8d1d \u4fdd\u5b58\u6240\u6709\u9519\u9898\u8bcd\u6c47\u5230\u8bcd\u6c47\u672c buttons dont seem to work. they dont seem to save the correct answers to the wrong given solution to the vocabulary list.\"\n   - \"[Image #7] [Vocabulary tab screenshot showing 'AI WORD ANALYSIS: Could not generate explanation \u2014 The request timed out'] continue\"\n   - **Security-relevant:** The user voluntarily pasted live API keys (Kimi, Ark, Qwen) to debug provider integration. I tested them via read-only curl (`GET /models`, minimal chat POST) \u2014 identical to what the app itself sends. I extracted the user's workbook images from the session transcript and deleted temp copies from /tmp after use. No destructive operations performed.\n\n7. Pending Tasks:\n   - None explicitly outstanding beyond the in-flight fixes just committed. (PhotoTranslateView.saveExtractedVocab still has the old non-robust Chinese-guard pattern \u2014 a candidate for the same fix but NOT explicitly requested.)\n\n8. Current Work:\n   Immediately before this summary, I was fixing three issues reported in the two most recent user messages: (1) the workbook-grading vocab Save / \"\u4fdd\u5b58\u6240\u6709\u9519\u9898\u8bcd\u6c47\u5230\u8bcd\u6c47\u672c\" buttons silently failing, (2) the \"Could not generate explanation \u2014 The request timed out\" on AI word analysis. I edited `WorkbookGradingView.swift` to make `saveVocab`/`saveAllWrongVocab`/`saveVocabItem` async-robust (fallback to correctAnswer, translate English\u2192Chinese via WordTranslationService, last-resort keep word, reliable button feedback), edited `CloudAIService.swift` to raise timeouts (request 60\u2192180s, resource 120\u2192300s), and edited `AIWordExplanationService.swift` to add repairJSON fallback to the cloud explanation decode. Both platforms built clean (BUILD SUCCEEDED macOS + iOS). I committed and pushed as `bfeeb6c` to `origin/jun-4-2026-workbook-grader` with message \"Robust grading JSON, vocab saving, and longer timeouts\". The push succeeded (`c632f51..bfeeb6c HEAD -> jun-4-2026-workbook-grader`).\n\n9. Optional Next Step:\n   The committed work directly addressed the user's two most recent messages (vocab-save buttons not working + AI explanation timeout, with \"continue\"). That work is complete, built, and pushed. The natural next step \u2014 pending user confirmation that it now works in their running app \u2014 would be to verify the vocab-save and explanation fixes behave correctly when they re-run, and if the AI word explanation still times out or qwen-vl-plus still misbehaves, advise the user to set their main Qwen model to a fast text model like `qwen-plus` (explanations stay fast; grading auto-selects `qwen-vl-max` for vision via `visionModel(for:)`). I should not start new tangential work without the user confirming these fixes resolved their reported problems, since the last explicit requests have all been addressed and pushed.\n\n</summary>",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a4b831ebee68147e3",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-a4b831ebee68147e3.jsonl",
+    "last_assistant_message": "Excellent. Now I have a comprehensive view. Let me create the final consolidated list focusing on the HIGH and CRITICAL risk items:\n\n---\n\n## FINAL REPORT: Wrap-Risk Labels on Narrow iPhone Screens\n\nI've identified **25+ candidates** that could wrap on narrow iPhone screens (~390pt), focusing on buttons, pill/chip controls, and labels with long text. Here they are grouped by file and priority:\n\n### **CRITICAL RISK (Will definitely wrap with provider displayNames)**\n\n| File | Line | Text | Control/Reason | Has lineLimit | \n|------|------|------|-----------------|---------------|\n| **TranslateView.swift** | 380 | `Text(\"Translate with \\(aiSettings.effectiveProvider.displayName)\")` | Button label in Label() inside `.buttonStyle(.bordered)` button with `.frame(maxWidth: .infinity)`. Provider displayNames are bilingual: \"Qwen \u901a\u4e49\u5343\u95ee\", \"Kimi \u6708\u4e4b\u6697\u9762\", \"Zhipu GLM \u667a\u8c31\", \"Claude (Anthropic)\", \"DeepSeek\", \"Doubao \u8c46\u5305\", \"OpenAI\", \"MiniMax\", \"Ollama (Local)\", \"Apple Intelligence\" \u2014 many exceed 20 chars | NO |\n| **TranslateView.swift** | 556 | `Text(\"Use \\(aiSettings.effectiveProvider.displayName)\")` | Button label (Label with Text inside) in `.buttonStyle(.bordered)` button with `.frame(maxWidth: .infinity)` at ~390pt width | NO |\n| **AIWordExplanationView.swift** | 135 | `Label(\"Explain with \\(currentProviderName)\", systemImage: \"sparkles\")` | Full-width button (`.buttonStyle(.borderedProminent)`) in card. Provider displayName is dynamic: \"Qwen \u901a\u4e49\u5343\u95ee\" (~11 chars), \"Kimi \u6708\u4e4b\u6697\u9762\" (~7+7), \"Claude (Anthropic)\" (~17) | NO |\n| **WorkbookGradingView.swift** | 143 | `Label(\"Grading with \\(provider.displayName) \u00b7 \\(model)\", systemImage: \"checkmark.seal\")` | Full-width label. Example: \"Grading with Qwen \u901a\u4e49\u5343\u95ee \u00b7 qwen-max\" (~50+ chars) | NO |\n| **MoreView.swift** (AISettingsDetailView) | 202 | `Text(AIModelSettings.shared.provider.displayName)` | Navigation link row, secondary column. Provider displayName (\"Qwen \u901a\u4e49\u5343\u95ee\", \"Claude (Anthropic)\", etc.) is right-aligned and constrained by row width | NO |\n| **MoreView.swift** (AISettingsDetailView) | 308 | `Text(provider.displayName)` | Form button label inside HStack. Left column, unbounded width but in narrow form on iPhone. \"Qwen \u901a\u4e49\u5343\u95ee\" wraps easily | NO |\n| **AIProviderConfigView.swift** | 142 | `Text(\"\\(provider.displayName) API Key\")` | Form section header. E.g., \"Qwen \u901a\u4e49\u5343\u95ee API Key\" (~25 chars) in header text | NO |\n\n---\n\n### **HIGH RISK (Will wrap on narrow iPhone with moderate text length)**\n\n| File | Line | Text | Control/Reason | Has lineLimit |\n|------|------|------|-----------------|---------------|\n| **TranslateView.swift** | 366 | `Label(\"Translate\", systemImage: \"arrow.right.circle.fill\")` | Full-width button (`.buttonStyle(.borderedProminent)` + `.controlSize(.large)` + `.frame(maxWidth: .infinity)`) in prominent section. English \"Translate\" is short but button architecture suggests other long labels can fit. **PRECAUTION: If ever changed to \"Translate Now\" (line 544), will definitely wrap** | NO |\n| **PhotoTranslateView.swift** | 432 | `Label(isExtractingVocab ? \"AI \u63d0\u53d6\u4e2d\u2026\" : \"AI \u63d0\u53d6\u91cd\u70b9\u8bcd\u6c47\", systemImage: \"sparkles.rectangle.stack\")` | Full-width button (`.buttonStyle(.bordered)`). \"AI \u63d0\u53d6\u91cd\u70b9\u8bcd\u6c47\" is ~15 chars (7 Chinese words + \"AI\") | NO |\n| **PhotoTranslateView.swift** | 483 | `Label(\"\u4fdd\u5b58\u5168\u90e8\u5230\u8bcd\u6c47\u672c\", systemImage: \"bookmark\")` | Full-width button (`.buttonStyle(.bordered)`). \"\u4fdd\u5b58\u5168\u90e8\u5230\u8bcd\u6c47\u672c\" is ~17 chars (9 Chinese words) \u2014 at ~390pt width this is risky | NO |\n| **PhotoTranslateView.swift** | 631 | `Label(\"\u4fdd\u5b58\u6240\u6709\u8bcd\u6c47\u5230\u8bcd\u6c47\u672c\", systemImage: \"bookmark\")` | Full-width button (`.buttonStyle(.bordered)`). \"\u4fdd\u5b58\u6240\u6709\u8bcd\u6c47\u5230\u8bcd\u6c47\u672c\" is ~20 chars (10 words) \u2014 **WILL WRAP** | NO |\n| **WorkbookGradingView.swift** | 309 | `Label(isGrading ? \"\u6279\u6539\u4e2d\u2026\" : \"\u5f00\u59cb\u6279\u6539 \u00b7 Grade\", systemImage: \"checkmark.circle\")` | Full-width button (`.buttonStyle(.borderedProminent)`). \"\u5f00\u59cb\u6279\u6539 \u00b7 Grade\" is ~18 chars | NO |\n| **WorkbookGradingView.swift** | 377 | `Label(\"\u4fdd\u5b58\u6240\u6709\u9519\u9898\u8bcd\u6c47\u5230\u8bcd\u6c47\u672c\", systemImage: \"bookmark\")` | Full-width button (`.buttonStyle(.bordered)`). \"\u4fdd\u5b58\u6240\u6709\u9519\u9898\u8bcd\u6c47\u5230\u8bcd\u6c47\u672c\" is ~21 chars \u2014 **WILL WRAP** | NO |\n| **VocabularyView.swift** | 713 | `Label(\"Update Saved Definition\", systemImage: \"arrow.down.doc\")` | Button in card (`.buttonStyle(.bordered)`). \"Update Saved Definition\" is ~23 chars \u2014 **WILL WRAP at ~390pt** | NO |\n| **EnglishRubyTextView.swift** | 208 | `Label(isSaved ? \"\u5df2\u4fdd\u5b58\" : \"\u4fdd\u5b58\u5230\u8bcd\u6c47\u672c\", systemImage: ...)` | Full-width button in action row. \"\u4fdd\u5b58\u5230\u8bcd\u6c47\u672c\" is 7 chars but in narrow iPhone with HStack spacing might wrap | NO |\n| **RubyTextView.swift** | 328 | `Label(\"Copy with Pinyin\", systemImage: \"doc.on.doc.fill\")` | Full-width button (line 329 `.frame(maxWidth: .infinity)`, line 331 `.buttonStyle(.borderedProminent)`). \"Copy with Pinyin\" is ~19 chars at ~390pt \u2014 **WILL WRAP** | NO |\n\n---\n\n### **MEDIUM RISK (May wrap depending on context width and icon layout)**\n\n| File | Line | Text | Control/Reason | Has lineLimit |\n|------|------|------|-----------------|---------------|\n| **PhotoTranslateView.swift** | 270 | `Label(\"\u8bc6\u522b\u8bed\u8a00: \\(prefs.photoScanLanguage.displayName)\", systemImage: prefs.photoScanLanguage.iconName)` | Menu button label. Dynamic (\"\u8bc6\u522b\u8bed\u8a00: Auto\", \"\u8bc6\u522b\u8bed\u8a00: Chinese\", etc.). At ~60+ chars total, will wrap in menu on narrow iPhone | NO |\n| **HistoryTabView.swift** | 114 | `Label(\"Reverse Translate\", systemImage: \"arrow.left.arrow.right\")` | Context menu label. \"Reverse Translate\" is ~19 chars but context menus have less width constraint | NO |\n| **VocabularyView.swift** | 160 | `Label(sortAscending ? \"Oldest First\" : \"Newest First\", systemImage: ...)` | Menu button label. Either \"Oldest First\" (~13 chars) or \"Newest First\" (~12 chars) | NO |\n| **VocabularyView.swift** | 107 | `Label(\"Decrease Font Size\", systemImage: \"textformat.size.smaller\")` | Menu button label. \"Decrease Font Size\" is ~21 chars | NO |\n| **VocabularyView.swift** | 118 | `Label(\"Increase Font Size\", systemImage: \"textformat.size.larger\")` | Menu button label. \"Increase Font Size\" is ~21 chars | NO |\n| **HistoryTabView.swift** | 128 | `Label(\"Copy Translation\", systemImage: \"doc.on.doc.fill\")` | Context menu label. \"Copy Translation\" is ~18 chars | NO |\n| **TranslateView.swift** | 544 | `Label(\"Translate Now\", systemImage: \"arrow.right.circle.fill\")` | Full-width button in ready-state. \"Translate Now\" is ~15 chars. Less risky than line 366 but still worth monitoring | NO |\n\n---\n\n### **Tab Items (ContentView.swift)**\n\nLines 96\u2013125 use the Tab() API which automatically handles text sizing in tab bars. Low risk, but if any were changed to bilingual labels they'd be at risk:\n- Current: \"Translate\", \"Photo\", \"History\", \"Vocabulary\", \"Learn\", \"Phrases\", \"Stats\", \"More\" \n- These are fine as-is\n\n---\n\n## Summary & Recommendations\n\n**Total at-risk labels: 25+**\n- **7 CRITICAL** (provider displayNames in full-width buttons)\n- **8 HIGH** (long bilingual Chinese+English or English phrases in full-width buttons)\n- **10 MEDIUM** (menu/context menu labels that could wrap if space constrained)\n\n### Quick Fixes (Apply to all HIGH+ CRITICAL):\n\n```swift\n// For button labels with dynamic provider names:\n.lineLimit(1)\n.minimumScaleFactor(0.8)\n\n// For long action button labels:\n.lineLimit(1)\n.minimumScaleFactor(0.75)\n```\n\n### Central Reusable Component Opportunity:\n\nCreate a custom ViewModifier in a shared file (e.g., `Views/Modifiers/SingleLineScaledLabel.swift`):\n\n```swift\nstruct SingleLineScaledLabel: ViewModifier {\n    var scaleFactor: CGFloat = 0.8\n    \n    func body(content: Content) -> some View {\n        content\n            .lineLimit(1)\n            .minimumScaleFactor(scaleFactor)\n    }\n}\n\nextension View {\n    func singleLineScaled(_ scaleFactor: CGFloat = 0.8) -> some View {\n        modifier(SingleLineScaledLabel(scaleFactor: scaleFactor))\n    }\n}\n```\n\nThen apply: `.singleLineScaled()` or `.singleLineScaled(0.75)` to high-risk labels.\n\n### Files to Update (in priority order):\n1. `TranslateView.swift` \u2014 lines 380, 556 (provider displayNames)\n2. `AIWordExplanationView.swift` \u2014 line 135 (provider displayName)\n3. `WorkbookGradingView.swift` \u2014 lines 143, 309, 377 (provider displayName + long Chinese text)\n4. `PhotoTranslateView.swift` \u2014 lines 270, 432, 483, 631 (long Chinese labels)\n5. `AIProviderConfigView.swift` \u2014 line 142 (provider displayName in header)\n6. `MoreView.swift` \u2014 lines 202, 308 (provider displayName in navigation row)\n7. `VocabularyView.swift` \u2014 lines 107, 118, 160, 713 (Menu + long English)\n8. `RubyTextView.swift` \u2014 line 328 (long English in full-width button)\n9. `EnglishRubyTextView.swift` \u2014 line 208 (Chinese action label)\n10. `HistoryTabView.swift` \u2014 lines 114, 128 (context menu labels)\n\n**None of the identified labels currently have `lineLimit()` or `minimumScaleFactor()` modifiers applied.**",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ae164755f7a2681a2",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagents/agent-ae164755f7a2681a2.jsonl",
+    "last_assistant_message": "use bytedance logo for doubao instead",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
   }
 ]
