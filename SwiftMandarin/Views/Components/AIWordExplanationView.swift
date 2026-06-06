@@ -32,11 +32,6 @@ struct AIWordExplanationView: View {
         aiSettings.effectiveProvider.displayName
     }
     
-    /// Get the icon for the current provider
-    private var currentProviderIcon: String {
-        aiSettings.effectiveProvider.iconName
-    }
-    
     var body: some View {
         Group {
             if !isAnyProviderAvailable {
@@ -126,8 +121,7 @@ struct AIWordExplanationView: View {
             Spacer()
                 .frame(height: 40)
             
-            Image(systemName: currentProviderIcon)
-                .font(.system(size: 36))
+            ProviderIcon(provider: aiSettings.effectiveProvider, size: 40)
                 .foregroundStyle(.blue)
             
             Text("Get a detailed explanation of this word including nuances, grammar usage, examples, and more.")
@@ -139,6 +133,7 @@ struct AIWordExplanationView: View {
                 Task { await generateExplanation() }
             } label: {
                 Label("Explain with \(currentProviderName)", systemImage: "sparkles")
+                    .fitSingleLine()
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -157,7 +152,7 @@ struct AIWordExplanationView: View {
         VStack(alignment: .leading, spacing: 0) {
             // AI badge header
             HStack {
-                Image(systemName: currentProviderIcon)
+                ProviderIcon(provider: aiSettings.effectiveProvider, size: 16)
                     .foregroundStyle(.blue)
                 Text(currentProviderName)
                     .font(.caption)
@@ -480,18 +475,17 @@ struct AIExplainButton: View {
     
     @State private var isAvailable: Bool = true
     
-    private var providerIcon: String {
-        AIModelSettings.shared.effectiveProvider.iconName
+    private var provider: AIProvider {
+        AIModelSettings.shared.effectiveProvider
     }
-    
+
     private var providerName: String {
         AIModelSettings.shared.effectiveProvider.displayName
     }
-    
+
     var body: some View {
         Button(action: onTap) {
-            Image(systemName: providerIcon)
-                .font(.system(size: 14))
+            ProviderIcon(provider: provider, size: 16)
                 .foregroundStyle(isAvailable ? .blue : .secondary)
         }
         .buttonStyle(.plain)

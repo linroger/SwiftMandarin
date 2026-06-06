@@ -140,6 +140,7 @@ struct AIProviderConfigView: View {
             }
         } header: {
             Text("\(provider.displayName) API Key")
+                .fitSingleLine()
         } footer: {
             Text("Stored securely in the Keychain. \(provider.description).")
         }

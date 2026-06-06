@@ -68,6 +68,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// SF Symbol fallback, used only if the brand asset is unavailable.
     var iconName: String {
         switch self {
         case .appleIntelligence: return "apple.logo"
@@ -80,6 +81,21 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .kimi: return "moon.stars"
         case .zhipu: return "brain"
         case .minimax: return "bolt.horizontal.circle"
+        }
+    }
+
+    /// Name of the brand image in `Assets.xcassets` (vector SVG). Render via
+    /// the shared `ProviderIcon` view, which falls back to `iconName` when the
+    /// asset is missing.
+    var brandAssetName: String { "brand-\(rawValue)" }
+
+    /// Whether the brand asset is a single-color glyph that should be tinted to
+    /// the surrounding foreground color (so it adapts to light/dark mode).
+    /// Full-color brand marks render in their original colors instead.
+    var brandAssetIsMonochrome: Bool {
+        switch self {
+        case .appleIntelligence, .openAI, .ollama: return true
+        default: return false
         }
     }
 

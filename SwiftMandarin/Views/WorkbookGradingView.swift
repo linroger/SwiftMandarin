@@ -144,6 +144,7 @@ struct WorkbookGradingView: View {
                   systemImage: "checkmark.seal")
                 .font(.caption)
                 .foregroundStyle(.green)
+                .fitSingleLine()
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             VStack(alignment: .leading, spacing: 6) {
@@ -307,6 +308,7 @@ struct WorkbookGradingView: View {
             Task { await grade() }
         } label: {
             Label(isGrading ? "批改中…" : "开始批改 · Grade", systemImage: "checkmark.circle")
+                .fitSingleLine()
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
@@ -375,6 +377,7 @@ struct WorkbookGradingView: View {
                     saveAllWrongVocab()
                 } label: {
                     Label("保存所有错题词汇到词汇本", systemImage: "bookmark")
+                        .fitSingleLine()
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)

@@ -270,6 +270,7 @@ struct PhotoTranslateView: View {
                     Label("识别语言: \(prefs.photoScanLanguage.displayName)",
                           systemImage: prefs.photoScanLanguage.iconName)
                         .font(.caption)
+                        .fitSingleLine()
                 }
                 .menuStyle(.borderlessButton)
 
@@ -431,6 +432,7 @@ struct PhotoTranslateView: View {
                     if isExtractingVocab { ProgressView().controlSize(.small) }
                     Label(isExtractingVocab ? "AI 提取中…" : "AI 提取重点词汇",
                           systemImage: "sparkles.rectangle.stack")
+                        .fitSingleLine()
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -481,6 +483,7 @@ struct PhotoTranslateView: View {
                     saveExtractedVocab()
                 } label: {
                     Label("保存全部到词汇本", systemImage: "bookmark")
+                        .fitSingleLine()
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -629,6 +632,7 @@ struct PhotoTranslateView: View {
                 }
             } label: {
                 Label("保存所有词汇到词汇本", systemImage: "bookmark")
+                    .fitSingleLine()
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)

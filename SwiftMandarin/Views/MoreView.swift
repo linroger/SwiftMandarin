@@ -201,6 +201,7 @@ struct SettingsView: View {
                         Spacer()
                         Text(AIModelSettings.shared.provider.displayName)
                             .foregroundStyle(.secondary)
+                            .fitSingleLine(0.8)
                     }
                 }
             } header: {
@@ -300,13 +301,14 @@ struct AISettingsDetailView: View {
                         settings.provider = provider
                     } label: {
                         HStack {
-                            Image(systemName: provider.iconName)
+                            ProviderIcon(provider: provider, size: 22)
                                 .foregroundStyle(.tint)
                                 .frame(width: 24)
                             
                             VStack(alignment: .leading) {
                                 Text(provider.displayName)
                                     .foregroundStyle(.primary)
+                                    .fitSingleLine(0.8)
                                 Text(provider.description)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)

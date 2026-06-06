@@ -376,9 +376,14 @@ struct TranslateView: View {
                             isInputFocused = false
                             Task { await triggerAITranslation() }
                         } label: {
-                            Label("Translate with \(aiSettings.effectiveProvider.displayName)", systemImage: aiSettings.effectiveProvider.iconName)
-                                .font(.subheadline)
-                                .frame(maxWidth: .infinity)
+                            Label {
+                                Text("Translate with \(aiSettings.effectiveProvider.displayName)")
+                                    .fitSingleLine()
+                            } icon: {
+                                ProviderIcon(provider: aiSettings.effectiveProvider, size: 18)
+                            }
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.regular)
@@ -421,8 +426,7 @@ struct TranslateView: View {
                         Button {
                             Task { await triggerAITranslation() }
                         } label: {
-                            Image(systemName: aiSettings.effectiveProvider.iconName)
-                                .font(.title2)
+                            ProviderIcon(provider: aiSettings.effectiveProvider, size: 22)
                                 .foregroundStyle(.blue)
                         }
                         .buttonStyle(.plain)
@@ -549,8 +553,13 @@ struct TranslateView: View {
                                     isInputFocused = false
                                     Task { await triggerAITranslation() }
                                 } label: {
-                                    Label("Use \(aiSettings.effectiveProvider.displayName)", systemImage: aiSettings.effectiveProvider.iconName)
-                                        .font(.subheadline)
+                                    Label {
+                                        Text("Use \(aiSettings.effectiveProvider.displayName)")
+                                            .fitSingleLine()
+                                    } icon: {
+                                        ProviderIcon(provider: aiSettings.effectiveProvider, size: 18)
+                                    }
+                                    .font(.subheadline)
                                 }
                                 .buttonStyle(.bordered)
                                 .controlSize(.regular)

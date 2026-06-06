@@ -128,7 +128,7 @@ struct AISettingsTab: View {
                 Picker("AI Provider", selection: $settings.provider) {
                     ForEach(AIProvider.allCases) { provider in
                         HStack {
-                            Image(systemName: provider.iconName)
+                            ProviderIcon(provider: provider, size: 16)
                             Text(provider.displayName)
                         }
                         .tag(provider)

@@ -206,6 +206,7 @@ struct EnglishWordDetailSheet: View {
                         saveToVocabulary()
                     } label: {
                         Label(isSaved ? "已保存" : "保存到词汇本", systemImage: isSaved ? "bookmark.fill" : "bookmark")
+                            .fitSingleLine()
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)

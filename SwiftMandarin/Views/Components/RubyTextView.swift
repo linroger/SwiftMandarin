@@ -326,6 +326,7 @@ struct WordDetailPopover: View {
                 }
             } label: {
                 Label("Copy with Pinyin", systemImage: "doc.on.doc.fill")
+                    .fitSingleLine()
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)

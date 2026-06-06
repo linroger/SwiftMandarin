@@ -711,6 +711,7 @@ struct TermDetailSheet: View {
                             updateTermDefinition()
                         } label: {
                             Label("Update Saved Definition", systemImage: "arrow.down.doc")
+                                .fitSingleLine()
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
