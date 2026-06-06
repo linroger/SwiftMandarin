@@ -16,12 +16,15 @@ struct SwiftMandarinApp: App {
     @State private var learningStore = LearningProgressStore.shared
     @State private var activityStore = LearningActivityStore.shared
     @State private var routeStore = AppRouteStore.shared
-    
+    // Drives the in-app English ⇄ 中文 language switch. Accessing the singleton
+    // here also applies the saved language to Bundle.main before the first view.
+    @State private var localization = LocalizationManager.shared
+
     init() {
         // Ensures app shortcuts are registered and entity-backed parameters are refreshed.
         SwiftMandarinShortcutsProvider.updateAppShortcutParameters()
     }
-    
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -30,8 +33,12 @@ struct SwiftMandarinApp: App {
                 .environment(learningStore)
                 .environment(activityStore)
                 .environment(routeStore)
+                // Switch UI language live: format with the chosen locale and
+                // rebuild the tree so every localized string re-resolves.
+                .environment(\.locale, localization.locale)
+                .id(localization.language)
         }
-        
+
         #if os(macOS)
         Settings {
             MacOSSettingsView()
@@ -40,6 +47,8 @@ struct SwiftMandarinApp: App {
                 .environment(learningStore)
                 .environment(activityStore)
                 .environment(routeStore)
+                .environment(\.locale, localization.locale)
+                .id(localization.language)
         }
         #endif
     }

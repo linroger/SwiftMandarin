@@ -71,6 +71,22 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .more: return "More"
         }
     }
+
+    /// Localized tab title. Using a `LocalizedStringKey` literal (rather than a
+    /// plain `String`) means SwiftUI resolves it through the active language
+    /// bundle, so tab labels switch with the in-app language toggle.
+    var titleKey: LocalizedStringKey {
+        switch self {
+        case .translate: return "Translate"
+        case .photo: return "Photo"
+        case .history: return "History"
+        case .vocabulary: return "Vocabulary"
+        case .learn: return "Learn"
+        case .phrases: return "Phrases"
+        case .stats: return "Stats"
+        case .more: return "More"
+        }
+    }
     
     var icon: String {
         switch self {
@@ -93,35 +109,35 @@ struct iOSContentView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab(AppTab.translate.title, systemImage: AppTab.translate.icon, value: .translate) {
+            Tab(AppTab.translate.titleKey, systemImage: AppTab.translate.icon, value: .translate) {
                 TranslateView()
             }
-            
-            Tab(AppTab.photo.title, systemImage: AppTab.photo.icon, value: .photo) {
+
+            Tab(AppTab.photo.titleKey, systemImage: AppTab.photo.icon, value: .photo) {
                 PhotoTranslateView()
             }
-            
-            Tab(AppTab.history.title, systemImage: AppTab.history.icon, value: .history) {
+
+            Tab(AppTab.history.titleKey, systemImage: AppTab.history.icon, value: .history) {
                 HistoryTabView(selectedTab: $selectedTab)
             }
-            
-            Tab(AppTab.vocabulary.title, systemImage: AppTab.vocabulary.icon, value: .vocabulary) {
+
+            Tab(AppTab.vocabulary.titleKey, systemImage: AppTab.vocabulary.icon, value: .vocabulary) {
                 VocabularyView()
             }
-            
-            Tab(AppTab.learn.title, systemImage: AppTab.learn.icon, value: .learn) {
+
+            Tab(AppTab.learn.titleKey, systemImage: AppTab.learn.icon, value: .learn) {
                 LearnView()
             }
-            
-            Tab(AppTab.phrases.title, systemImage: AppTab.phrases.icon, value: .phrases) {
+
+            Tab(AppTab.phrases.titleKey, systemImage: AppTab.phrases.icon, value: .phrases) {
                 PhrasesView()
             }
-            
-            Tab(AppTab.stats.title, systemImage: AppTab.stats.icon, value: .stats) {
+
+            Tab(AppTab.stats.titleKey, systemImage: AppTab.stats.icon, value: .stats) {
                 StatsView()
             }
-            
-            Tab(AppTab.more.title, systemImage: AppTab.more.icon, value: .more) {
+
+            Tab(AppTab.more.titleKey, systemImage: AppTab.more.icon, value: .more) {
                 MoreView()
             }
         }
@@ -143,7 +159,7 @@ struct MacOSContentView: View {
     var body: some View {
         NavigationSplitView {
             List(macOSTabs, selection: $selectedTab) { tab in
-                Label(tab.title, systemImage: tab.icon)
+                Label(tab.titleKey, systemImage: tab.icon)
                     .tag(tab)
             }
             .navigationTitle("SwiftMandarin")

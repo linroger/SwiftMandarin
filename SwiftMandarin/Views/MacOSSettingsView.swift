@@ -57,9 +57,22 @@ struct GeneralSettingsTab: View {
     @AppStorage("showDockIcon") private var showDockIcon: Bool = true
     @AppStorage("globalHotkey") private var globalHotkey: String = "⌘⇧T"
     @State private var prefs = AppPreferences.shared
+    @State private var localization = LocalizationManager.shared
 
     var body: some View {
         Form {
+            Section {
+                Picker("App Language", selection: $localization.language) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Label(language.displayName, systemImage: language.iconName).tag(language)
+                    }
+                }
+            } header: {
+                Text("Language")
+            } footer: {
+                Text("Switch the entire app between the English and Mandarin versions.")
+            }
+
             Section {
                 Picker("I am a…", selection: $prefs.learnerMode) {
                     ForEach(LearnerMode.allCases) { mode in
