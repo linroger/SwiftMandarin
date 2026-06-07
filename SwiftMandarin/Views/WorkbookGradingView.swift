@@ -162,7 +162,7 @@ struct WorkbookGradingView: View {
     }
 
     private func uploadSection(
-        title: String,
+        title: LocalizedStringKey,
         systemImage: String,
         items: Binding<[PhotosPickerItem]>,
         images: [Data],

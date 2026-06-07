@@ -127,6 +127,29 @@ func L(_ key: String) -> String {
     LocalizationManager.shared.localized(key)
 }
 
+// MARK: - Localized presentation surfaces
+
+extension View {
+    /// Re-applies the in-app UI language to a presented surface (a `.sheet`,
+    /// `.fullScreenCover`, or `.popover`). Such surfaces are hosted in a fresh
+    /// context that does NOT reliably inherit the root window's `\.locale`
+    /// environment, so without this their text stays in the device language
+    /// instead of the user's chosen app language. Apply it to the root view
+    /// inside every presentation closure.
+    func localizedSurface() -> some View {
+        modifier(LocalizedSurfaceModifier())
+    }
+}
+
+private struct LocalizedSurfaceModifier: ViewModifier {
+    @State private var localization = LocalizationManager.shared
+    func body(content: Content) -> some View {
+        content
+            .environment(\.locale, localization.locale)
+            .id(localization.language)
+    }
+}
+
 // MARK: - Runtime bundle override
 
 private var bundleLanguageAssociationKey: UInt8 = 0

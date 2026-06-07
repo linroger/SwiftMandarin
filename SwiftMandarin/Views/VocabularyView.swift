@@ -249,13 +249,16 @@ struct VocabularyView: View {
             #if os(iOS)
             .sheet(item: $selectedTerm) { _ in
                 TermDetailSheet(selectedTerm: $selectedTerm)
+                    .localizedSurface()
             }
             #endif
             .sheet(isPresented: $showingExportSheet) {
                 ExportSheet(terms: savedTermsStore.terms)
+                    .localizedSurface()
             }
             .sheet(item: $aiExplanationTerm) { term in
                 AIExplanationSheet(term: term)
+                    .localizedSurface()
             }
             #if os(iOS)
             .fileImporter(
@@ -443,6 +446,7 @@ struct VocabularyView: View {
                         selectedTerm: $selectedTerm,
                         savedTermsStore: savedTermsStore
                     )
+                    .localizedSurface()
                     .id(term.id)
                     .frame(minWidth: 320, minHeight: 420)
                 }

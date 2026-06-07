@@ -234,6 +234,7 @@ struct LiveSpeechTranslationView: View {
             }
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
+            .localizedSurface()
         }
         #else
         .popover(item: $selectedSegment) { segment in
@@ -257,6 +258,7 @@ struct LiveSpeechTranslationView: View {
                 }
             )
             .frame(minWidth: 300, minHeight: 350)
+            .localizedSurface()
         }
         #endif
     }

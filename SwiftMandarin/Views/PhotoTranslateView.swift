@@ -159,9 +159,11 @@ struct PhotoTranslateView: View {
             }
             .sheet(isPresented: $showCameraScanner) {
                 CameraScannerSheet(capturedText: $capturedText)
+                    .localizedSurface()
             }
             .sheet(item: $selectedEnglishWord) { word in
                 EnglishWordDetailSheet(word: word)
+                    .localizedSurface()
             }
             .sheet(item: $selectedChineseSegment) { segment in
                 WordDetailPopover(
@@ -173,14 +175,17 @@ struct PhotoTranslateView: View {
                     onCopy: { },
                     onDismiss: { selectedChineseSegment = nil }
                 )
+                .localizedSurface()
             }
             .sheet(isPresented: $showScreenshotTranslation) {
                 TranslatedScreenshotOverlayView()
                     .environment(ScreenshotTranslationStore.shared)
+                    .localizedSurface()
             }
             .sheet(isPresented: $showWorkbookGrading) {
                 WorkbookGradingView()
                     .environment(savedTermsStore)
+                    .localizedSurface()
             }
             .fileImporter(isPresented: $showPhotoFiles, allowedContentTypes: [.image], allowsMultipleSelection: false) { result in
                 guard case let .success(urls) = result, let url = urls.first else { return }

@@ -147,6 +147,7 @@ struct LearnView: View {
             }
             .sheet(isPresented: $showingStats) {
                 LearningStatsSheet()
+                    .localizedSurface()
             }
             .onChange(of: studyMode) { _, _ in
                 reloadSessionCards()

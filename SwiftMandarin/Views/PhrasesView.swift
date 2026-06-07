@@ -59,6 +59,7 @@ struct PhrasesView: View {
                 PhraseDetailSheet(phrase: phrase)
                     .presentationDetents([.medium])
                     .presentationDragIndicator(.visible)
+                    .localizedSurface()
             }
         }
     }

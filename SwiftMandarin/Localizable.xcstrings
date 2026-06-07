@@ -6595,6 +6595,40 @@
           }
         }
       }
+    },
+    "作业页面 · Workbook pages" : {
+      "comment" : "Header for an image-upload section in the workbook grader.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workbook pages"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作业页面"
+          }
+        }
+      }
+    },
+    "单独答案（可选）· Separate answers (optional)" : {
+      "comment" : "Header for an image-upload section in the workbook grader.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Separate answers (optional)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单独答案（可选）"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

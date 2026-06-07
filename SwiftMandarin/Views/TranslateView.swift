@@ -180,6 +180,7 @@ struct TranslateView: View {
                 #else
                 .frame(minWidth: 500, minHeight: 600)
                 #endif
+                .localizedSurface()
             }
         }
     }
@@ -817,6 +818,7 @@ struct TranslateView: View {
             }
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
+            .localizedSurface()
         }
         #else
         // Using popover(item:) eliminates race condition on macOS
@@ -841,6 +843,7 @@ struct TranslateView: View {
                 }
             )
             .frame(minWidth: 300, minHeight: 350)
+            .localizedSurface()
         }
         #endif
     }
