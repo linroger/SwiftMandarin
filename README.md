@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="SwiftMandarin/Assets.xcassets/AppIcon.appiconset/mac-512@2x.png" width="128" height="128" alt="SwiftMandarin App Icon" />
+  <img src="SwiftMandarin/Assets.xcassets/AppIcon.appiconset/icon_512x512.png" width="128" height="128" alt="SwiftMandarin App Icon" />
 </p>
 
 <h1 align="center">SwiftMandarin</h1>
@@ -34,11 +34,13 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 ### Why SwiftMandarin?
 
 - **Native Apple Experience**: Built from the ground up with SwiftUI and Apple's Liquid Glass design language
-- **Privacy-First**: All data stays on your device—no accounts, no cloud sync, no tracking
+- **Privacy-First**: Core features run entirely on-device—no accounts, no tracking, no required network
 - **Intelligent Learning**: Spaced repetition algorithm adapts to your learning pace
+- **Optional AI Power**: Bring your own provider—Apple Intelligence (on-device), a local Ollama server, or a cloud model—for word explanations, photo cleanup, and workbook grading
+- **Camera & Photo OCR**: Scan textbooks, signs, and worksheets, then translate and study the text
 - **Beautiful Visualizations**: GitHub-style activity heatmaps and interactive charts track your progress
 - **Cross-Platform**: Seamless experience across iPhone, iPad, and Mac with platform-optimized interfaces
-- **Bilingual Interface**: Full support for English and Simplified Chinese (简体中文)
+- **Switchable Bilingual Interface**: The entire app runs in English or Simplified Chinese (简体中文)—flip it anytime from Settings
 
 ---
 
@@ -63,6 +65,43 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 - **Ruby Text Display**: Pinyin displayed elegantly above Chinese characters
 - **Auto-Translate Options**: Translate automatically as you type or on paste
 - **Text-to-Speech**: Native Chinese pronunciation using Apple's speech synthesis
+
+<br clear="right"/>
+
+### 📷 Photo, Camera & Screenshot Translation
+
+- **Photo Translate**: Pick a photo of a textbook, menu, or sign and SwiftMandarin recognizes and translates the text
+- **Live Camera Scanner**: Point your camera at text for real-time on-device recognition (iOS)
+- **Language-Aware OCR**: Choose Auto, 中文, English, or Both so Chinese characters are never mangled into Latin gibberish
+- **Screenshot Stitching**: Combine multiple screenshots of a long page—overlapping regions are removed automatically—then translate the whole thing
+- **AI Photo Cleanup (Optional)**: Route scanned text through your chosen AI provider to fix OCR errors before translation
+- **Extract Key Vocabulary**: Pull the most useful words out of any scanned passage and save them with one tap
+
+### 🎙️ Voice Translation
+
+- **Live Speech Translation**: Speak and see your words transcribed and translated in real time
+- **Tap-to-Study**: Tap any word in the transcript to open its details and save it
+- **Dual-Language Narration**: Hear both the word and its translation read aloud
+
+### 🤖 AI-Powered Features (Optional, Bring Your Own Provider)
+
+- **Ten Providers, Your Choice**: Apple Intelligence (on-device), a local **Ollama** server, or a cloud model—**OpenAI, Claude, DeepSeek, Doubao, Qwen, Kimi, Zhipu, MiniMax**
+- **Rich Word Explanations**: Generate detailed cards with nuances, grammar usage, example sentences, synonyms, and collocations
+- **Live Model Lists**: Enter your API key and fetch the provider's available models directly from its API
+- **Secure Key Storage**: API keys are stored in the system **Keychain**, never in plain files or the cloud
+- **Learner Mode**: Tell the app whether you're an English speaker learning Mandarin, a Mandarin speaker learning English, or both—defaults adapt accordingly
+- **Entirely Optional**: Leave AI off and every core feature still works fully on-device
+
+### ✅ AI Workbook Grading
+
+<img align="right" src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.11@2x.png" width="400" alt="Workbook Grading Results" />
+
+- **Photo-Based Grading**: Upload photos of a workbook (and answers, if on a separate sheet) and a vision-capable AI grades every question
+- **Per-Question Feedback**: See a ✓/✗ verdict, the correct answer, and a short explanation for each item
+- **Read the Full Sentence Aloud**: Every question shows the complete English sentence with a 🔊 button for pronunciation practice
+- **Mistake-Aware Vocabulary**: Save wrong-answer words straight to your vocabulary list—each saved entry keeps **both** the correct answer and the answer you wrote (✓ correct · ✗ yours)
+- **Custom Instructions**: Add grading notes (e.g. "Grade 3 English vocabulary; be strict about spelling")
+- **Flexible Input**: Add pages from Photos, the Files app/Finder, or drag-and-drop
 
 <br clear="right"/>
 
@@ -147,10 +186,18 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 
 ### ⚙️ Customizable Settings
 
+- **Language & Learning**:
+  - App language toggle (English / 中文)
+  - Learner mode (English→中, 中→English, or bilingual)
+  - Dual-language narration
+- **AI Provider**:
+  - Pick a provider, enter an API key, fetch live model lists, and test the connection
+  - Toggle AI photo cleanup
 - **Translation Preferences**:
   - Auto-translate toggle
   - Translate on paste
   - Default translation direction
+  - Photo scan language (Auto / 中文 / English / Both)
 - **Output Options**:
   - Auto-copy to clipboard
   - History saving toggle
@@ -159,15 +206,17 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
   - Tone color coding
   - Text size adjustment
 - **Data Management**:
+  - Import / export vocabulary (CSV, JSON, TXT)
   - Clear vocabulary
   - Clear history
   - Reset learning progress
 
 ### 🌐 Localization
 
-- **Full Bilingual Support**: Complete interface in English and Simplified Chinese (简体中文)
-- **System Language Detection**: Automatically uses your device's language preference
-- **Native Terminology**: Translations reviewed for accuracy and natural phrasing
+- **Full Bilingual Support**: The complete interface—every tab, screen, sheet, and alert—is available in English and Simplified Chinese (简体中文)
+- **In-App Language Toggle**: Switch the whole app between the English and Mandarin versions anytime from **Settings → Language**, independent of your device language and with no relaunch
+- **Smart Default**: On first launch the app follows your device's language preference
+- **Native Terminology**: Translations were reviewed for accuracy, consistency, and natural phrasing (formal 您, consistent vocabulary, preserved formatting)
 
 ---
 
@@ -184,6 +233,10 @@ Experience SwiftMandarin's full power on your Mac with a spacious sidebar naviga
 <p align="center">
   <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-23%20at%2016.25.12@2x.png" width="45%" alt="macOS - Learn View" />
   <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-11%20at%2004.17.56@2x.png" width="45%" alt="macOS - Phrases View" />
+</p>
+<p align="center">
+  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.05@2x.png" width="45%" alt="macOS - AI Workbook Grading (upload)" />
+  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.11@2x.png" width="45%" alt="macOS - AI Workbook Grading (results with read-aloud)" />
 </p>
 
 ### iPhone
@@ -293,43 +346,71 @@ xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration
 3. Tap any phrase to hear pronunciation
 4. Save useful phrases to your vocabulary for later study
 
+### Scanning Photos & Workbooks
+
+1. Open the **Photo** tab and add an image (Photos, Files/Finder, drag-and-drop, or the live camera scanner)
+2. Pick the scan language if needed, then read and translate the recognized text
+3. For grading, open the **Workbook Grading** tool from the Photo tab's toolbar
+4. Add the workbook pages (and a separate answer sheet only if needed), optionally add custom instructions, then tap **Grade**
+5. Review each question, tap 🔊 to hear the full English sentence, and save wrong-answer words to your vocabulary
+
+> Photo translation and on-device OCR work without AI. AI photo cleanup and workbook grading require an AI provider configured in **Settings → AI**.
+
+### Switching the App Language
+
+1. Open **Settings** (the More tab on iOS, or ⌘, on Mac) and find **Language**
+2. Choose **English** or **中文**—the entire interface switches immediately
+
 ---
 
 ## Technical Details
 
 ### Architecture
 
-- **SwiftUI**: 100% SwiftUI with Liquid Glass design system
+- **SwiftUI**: 100% SwiftUI with Liquid Glass design system, across iOS / iPadOS / macOS / visionOS
 - **Translation**: Apple Translation framework (on-device, privacy-preserving)
-- **Speech**: AVFoundation for text-to-speech
+- **AI (optional)**: A 10-provider abstraction—Apple Foundation Models, Ollama, and OpenAI-compatible / Anthropic cloud APIs via `URLSession`—for explanations, photo cleanup, and grading
+- **OCR**: Vision framework with language-aware recognition (`PhotoTextRecognitionService`)
+- **Speech**: AVFoundation for text-to-speech; Speech framework for live transcription
 - **NLP**: NaturalLanguage framework for Chinese segmentation and lexical analysis
-- **Storage**: UserDefaults + Codable for local persistence
+- **Localization**: String Catalog (`Localizable.xcstrings`) + a `LocalizationManager` that swaps the active `.lproj` bundle for the in-app language toggle
+- **Storage**: UserDefaults + Codable locally; API keys in the system Keychain
+- **App Intents / Shortcuts**: Translate, look up vocabulary, start a review, scan, and more from Siri & Shortcuts
 
 ### File Structure
 
 ```
 SwiftMandarin/
 ├── Views/
-│   ├── TranslateView.swift      # Main translation interface
-│   ├── HistoryTabView.swift     # Translation history
-│   ├── VocabularyView.swift     # Saved words management
-│   ├── LearnView.swift          # Flashcard learning
-│   ├── PhrasesView.swift        # Common phrases
-│   ├── StatsView.swift          # Analytics dashboard
-│   └── MoreView.swift           # Settings (iOS)
+│   ├── TranslateView.swift          # Main translation interface
+│   ├── PhotoTranslateView.swift     # Photo / OCR translation
+│   ├── WorkbookGradingView.swift    # AI workbook grading
+│   ├── HistoryTabView.swift         # Translation history
+│   ├── VocabularyView.swift         # Saved words management
+│   ├── LearnView.swift              # Flashcard learning
+│   ├── PhrasesView.swift            # Common phrases
+│   ├── StatsView.swift              # Analytics dashboard
+│   ├── MacOSSettingsView.swift      # Settings (macOS)
+│   ├── MoreView.swift               # Settings hub (iOS)
+│   └── Components/                  # Camera scanner, live speech, AI cards, etc.
 ├── Models/
-│   ├── SavedTerm.swift          # Vocabulary model
-│   ├── LearningCard.swift       # Flashcard model
-│   ├── LearningActivity.swift   # Activity tracking
-│   └── TranslationHistory.swift # History model
+│   ├── SavedTerm.swift              # Vocabulary model
+│   ├── AIModelSettings.swift        # AI providers & per-provider config
+│   ├── AppPreferences.swift         # Learner mode, scan language, narration
+│   ├── LocalizationManager.swift    # In-app language switch
+│   ├── LearningCard.swift           # Flashcard model
+│   └── TranslationHistory.swift     # History model
 ├── Services/
-│   ├── PinyinConverter.swift    # Pinyin conversion
-│   ├── SpeechService.swift      # Text-to-speech
-│   ├── ChineseTextAnalyzer.swift # NLP analysis
-│   └── ClipboardService.swift   # Clipboard handling
-└── Localization/
-    ├── en.lproj/                # English strings
-    └── zh-Hans.lproj/           # Simplified Chinese strings
+│   ├── CloudAIService.swift         # Cloud AI (OpenAI-compatible + Anthropic)
+│   ├── AIWordExplanationService.swift # Explanations, vocab extraction, grading
+│   ├── PhotoTextRecognitionService.swift # Vision OCR
+│   ├── KeychainHelper.swift         # Secure API-key storage
+│   ├── PinyinConverter.swift        # Pinyin conversion
+│   ├── SpeechService.swift          # Text-to-speech
+│   ├── ChineseTextAnalyzer.swift    # NLP analysis
+│   └── ClipboardService.swift       # Clipboard handling
+├── Intents/                         # App Intents / Siri Shortcuts
+└── Localizable.xcstrings            # English + Simplified Chinese strings
 ```
 
 ---
@@ -339,10 +420,11 @@ SwiftMandarin/
 SwiftMandarin is designed with privacy as a core principle:
 
 - **No Account Required**: Use all features without signing up
-- **Local Storage Only**: All data (vocabulary, history, progress) is stored locally on your device
+- **Local Storage Only**: All your data (vocabulary, history, progress) is stored locally on your device
 - **On-Device Translation**: Apple Translation framework processes text on-device
-- **No Tracking**: No analytics, no telemetry, no third-party SDKs
-- **No Network Required**: Core features work completely offline (after downloading language packs)
+- **No Tracking**: No analytics, no telemetry, no third-party tracking SDKs
+- **Offline Core**: Translation, vocabulary, flashcards, phrases, stats, and on-device OCR work fully offline (after downloading language packs)
+- **AI Is Opt-In**: Cloud AI features are disabled until *you* choose a provider and add a key. Apple Intelligence and Ollama run locally; cloud providers receive only the text or image you submit, and your API keys are stored in the Keychain—never transmitted anywhere except to the provider you configured.
 
 Your learning journey is yours alone.
 
@@ -375,8 +457,10 @@ SwiftMandarin is available under the MIT License. See [LICENSE](LICENSE) for det
 
 ## Acknowledgments
 
-- Apple Translation framework for on-device translation
-- Apple NaturalLanguage framework for Chinese text analysis
+- Apple Translation, Vision, Speech, and NaturalLanguage frameworks
+- Apple Foundation Models for on-device AI
+- [ollama-swift](https://github.com/mattt/ollama-swift) for local model access
+- Optional, user-configured AI providers (OpenAI, Anthropic, DeepSeek, Doubao, Qwen, Kimi, Zhipu, MiniMax)
 - The SwiftUI team for Liquid Glass and modern UI components
 - The open-source community for inspiration and best practices
 
