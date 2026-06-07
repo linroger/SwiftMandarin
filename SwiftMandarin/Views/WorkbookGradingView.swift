@@ -517,7 +517,7 @@ struct WorkbookGradingView: View {
 
     private func saveVocab(for question: GradedQuestion) {
         Task {
-            if await saveVocabItem(vocabItem(for: question)) {
+            if await saveVocabItem(vocabItem(for: question), question: question) {
                 await MainActor.run { savedQuestionIDs.insert(question.id) }
             }
         }
@@ -528,7 +528,7 @@ struct WorkbookGradingView: View {
         let questions = result.wrongQuestions
         Task {
             for question in questions {
-                if await saveVocabItem(vocabItem(for: question)) {
+                if await saveVocabItem(vocabItem(for: question), question: question) {
                     await MainActor.run { savedQuestionIDs.insert(question.id) }
                 }
             }
@@ -549,9 +549,12 @@ struct WorkbookGradingView: View {
     /// Save a wrong-answer word to the vocabulary store. The store keys on the
     /// Chinese field, so: use whichever side is Chinese; if neither is, translate
     /// the English term to Chinese; as a last resort keep the word as-is rather
-    /// than silently dropping it. Returns true when a save was attempted.
+    /// than silently dropping it. When a `question` is given, the correct answer
+    /// and the student's wrong answer are appended to the definition so the saved
+    /// card shows what to learn and what was missed. Returns true when a save
+    /// was attempted.
     @discardableResult
-    private func saveVocabItem(_ item: ExtractedVocabItem) async -> Bool {
+    private func saveVocabItem(_ item: ExtractedVocabItem, question: GradedQuestion? = nil) async -> Bool {
         let term = item.term.trimmingCharacters(in: .whitespacesAndNewlines)
         let meaning = item.meaning.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !term.isEmpty || !meaning.isEmpty else { return false }
@@ -584,11 +587,30 @@ struct WorkbookGradingView: View {
         let pinyin = key.contains(where: { $0.isChineseCharacter })
             ? (item.reading.isEmpty ? PinyinConverter.convert(key) : item.reading)
             : ""
-        let def = definition.isEmpty ? key : definition
+        var def = definition.isEmpty ? key : definition
 
+        // Pair the correct answer with the student's wrong answer so reviewing
+        // this card shows both. Skip the correct answer when it merely repeats
+        // the key/definition to avoid noise.
+        let correct = (question?.correctAnswer ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let wrong = (question?.studentAnswer ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        var notes: [String] = []
+        if !correct.isEmpty,
+           key.caseInsensitiveCompare(correct) != .orderedSame,
+           !def.localizedCaseInsensitiveContains(correct) {
+            notes.append("✓ " + correct)
+        }
+        if !wrong.isEmpty, wrong.caseInsensitiveCompare(correct) != .orderedSame {
+            notes.append("✗ " + wrong)
+        }
+        if !notes.isEmpty {
+            def += "  (" + notes.joined(separator: "  ") + ")"
+        }
+
+        let finalDef = def
         await MainActor.run {
             if !savedTermsStore.contains(chinese: key) {
-                savedTermsStore.add(SavedTerm(chinese: key, pinyin: pinyin, definition: def, partOfSpeech: "phrase"))
+                savedTermsStore.add(SavedTerm(chinese: key, pinyin: pinyin, definition: finalDef, partOfSpeech: "phrase"))
             }
         }
         return true
@@ -621,14 +643,31 @@ private struct GradedQuestionCard: View {
                     }
                 }
                 Spacer()
+                // Fallback read-aloud when the model gave no explicit full
+                // sentence (the dedicated row below carries its own button).
+                if question.fullSentence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                   !question.spokenEnglish.isEmpty {
+                    Button {
+                        SpeechService.speakEnglish(question.spokenEnglish)
+                    } label: {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.body)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(Text("Read sentence aloud"))
+                    .help("Read the full English sentence aloud")
+                }
             }
 
             if !question.studentAnswer.isEmpty {
-                answerRow(label: "你的答案", value: question.studentAnswer,
+                answerRow(label: "Your answer", value: question.studentAnswer,
                           color: question.isCorrect ? .green : .red)
             }
             if !question.isCorrect, !question.correctAnswer.isEmpty {
-                answerRow(label: "正确答案", value: question.correctAnswer, color: .green)
+                answerRow(label: "Correct answer", value: question.correctAnswer, color: .green)
+            }
+            if !question.fullSentence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                fullSentenceRow(question.fullSentence)
             }
             if !question.explanation.isEmpty {
                 Text(question.explanation)
@@ -673,15 +712,38 @@ private struct GradedQuestionCard: View {
         )
     }
 
-    private func answerRow(label: String, value: String, color: Color) -> some View {
+    private func answerRow(label: LocalizedStringKey, value: String, color: Color) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .frame(width: 60, alignment: .leading)
+                .frame(width: 92, alignment: .leading)
+                .fitSingleLine()
             Text(value)
                 .font(.subheadline)
                 .foregroundStyle(color)
+        }
+    }
+
+    /// The complete English sentence with an inline read-aloud button.
+    private func fullSentenceRow(_ sentence: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text("Full sentence")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 92, alignment: .leading)
+                .fitSingleLine()
+            Text(sentence)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+            Spacer(minLength: 4)
+            Button {
+                SpeechService.speakEnglish(sentence)
+            } label: {
+                Image(systemName: "speaker.wave.2")
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(Text("Read sentence aloud"))
         }
     }
 }

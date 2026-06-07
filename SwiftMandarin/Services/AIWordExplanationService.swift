@@ -845,11 +845,15 @@ final class AIWordExplanationService {
         - Determine the correct answer.
         - Decide whether the student's answer is correct (accept minor spelling/handwriting variation).
         - Briefly explain why it is right or wrong.
+        - Provide "fullSentence": the COMPLETE sentence in English. For a fill-in-the-blank, write the \
+        whole sentence with the correct word filled in. For other question types, write the full correct \
+        answer as a natural, complete English sentence. This is read aloud for pronunciation practice, so \
+        make it a clean, speakable English sentence (no question numbers or blanks).
         For each WRONG answer, also provide a "vocab" study item with the key term the student should review: \
         "term" = the word/phrase in the language being studied, "reading" = pinyin with tone marks if the term \
         is Chinese (otherwise a short pronunciation hint or empty string), "meaning" = a concise translation.
         Respond with ONLY a JSON object of this exact shape:
-        {"score":"<correct>/<total>","summary":"one or two sentences of overall feedback","questions":[{"questionNumber":"1","question":"...","studentAnswer":"...","correctAnswer":"...","isCorrect":true,"explanation":"...","vocab":{"term":"...","reading":"...","meaning":"..."}}]}
+        {"score":"<correct>/<total>","summary":"one or two sentences of overall feedback","questions":[{"questionNumber":"1","question":"...","studentAnswer":"...","correctAnswer":"...","isCorrect":true,"fullSentence":"The complete English sentence.","explanation":"...","vocab":{"term":"...","reading":"...","meaning":"..."}}]}
         Use null for "vocab" on correct answers. JSON only — no commentary, labels, or markdown fences.
         """
         if let custom = customInstructions?.trimmingCharacters(in: .whitespacesAndNewlines), !custom.isEmpty {
@@ -1050,11 +1054,14 @@ struct GradedQuestion: Identifiable, Decodable {
     let correctAnswer: String
     let isCorrect: Bool
     let explanation: String
+    /// The complete sentence in English (e.g. a fill-in-the-blank with the
+    /// correct word filled in), for read-aloud pronunciation practice.
+    let fullSentence: String
     /// Study item for a wrong answer (optional).
     let vocab: ExtractedVocabItem?
 
     enum CodingKeys: String, CodingKey {
-        case questionNumber, question, studentAnswer, correctAnswer, isCorrect, explanation, vocab
+        case questionNumber, question, studentAnswer, correctAnswer, isCorrect, explanation, fullSentence, vocab
     }
 
     init(from decoder: Decoder) throws {
@@ -1065,7 +1072,24 @@ struct GradedQuestion: Identifiable, Decodable {
         correctAnswer = (try? c.decode(String.self, forKey: .correctAnswer)) ?? ""
         isCorrect = (try? c.decode(Bool.self, forKey: .isCorrect)) ?? false
         explanation = (try? c.decode(String.self, forKey: .explanation)) ?? ""
+        fullSentence = (try? c.decode(String.self, forKey: .fullSentence)) ?? ""
         vocab = try? c.decode(ExtractedVocabItem.self, forKey: .vocab)
+    }
+
+    /// The text to read aloud in English for this question: the full sentence
+    /// when the model supplied one, otherwise the question with the correct
+    /// answer appended (or whichever of the two is available).
+    var spokenEnglish: String {
+        let sentence = fullSentence.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !sentence.isEmpty { return sentence }
+        let q = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        let a = correctAnswer.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch (q.isEmpty, a.isEmpty) {
+        case (false, false): return "\(q) \(a)"
+        case (true, false): return a
+        case (false, true): return q
+        case (true, true): return ""
+        }
     }
 }
 
