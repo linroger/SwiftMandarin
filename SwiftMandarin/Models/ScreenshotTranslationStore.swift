@@ -299,7 +299,7 @@ final class ScreenshotTranslationStore {
         }
         
         // Create translation session using installed languages
-        let session = try await TranslationSession(
+        let session = TranslationSession(
             installedSource: sourceLanguage,
             target: targetLang
         )

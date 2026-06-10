@@ -74,17 +74,19 @@ enum TranslationDirection: String, CaseIterable, Identifiable, Codable {
         self == .englishToChinese ? .chineseToEnglish : .englishToChinese
     }
     
+    /// Localized language names (resolve through the string catalog so the
+    /// section headers built from them follow the in-app language toggle).
     var sourceLanguageName: String {
         switch self {
-        case .englishToChinese: return "English"
-        case .chineseToEnglish: return "Chinese"
+        case .englishToChinese: return String(localized: "English")
+        case .chineseToEnglish: return String(localized: "Chinese")
         }
     }
-    
+
     var targetLanguageName: String {
         switch self {
-        case .englishToChinese: return "Chinese"
-        case .chineseToEnglish: return "English"
+        case .englishToChinese: return String(localized: "Chinese")
+        case .chineseToEnglish: return String(localized: "English")
         }
     }
     

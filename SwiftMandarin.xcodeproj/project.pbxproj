@@ -7,211 +7,32 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0001AB876357B2E5813A6003 /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		00CFCE68454070639ECB769A /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		018F00BC2D8E1D9F0E728519 /* AIProviderConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2F618B85296DBCDB720481 /* AIProviderConfigView.swift */; };
-		0286C9F0E3750D38345DA315 /* RubyTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A80B488DB4E37D20DCCB61 /* RubyTextView.swift */; };
-		03660EA2D4E0713CFFBD6A2E /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		0676426815E3D011163B8B21 /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		0696C83580F8AA23F3672BB4 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		0811FE50AFB634548F90E257 /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		0A04FBDBBACCC1AD92F3C5DB /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		0D077636678CF2B903AC1845 /* ChineseTextAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B56DB7F19659C529EFE388 /* ChineseTextAnalyzer.swift */; };
-		0E4195A9A45B32A92C14C8E8 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		0F6EC05CA26685567889B744 /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		0F92A448F8F79D2F640332C5 /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		1252450CD7C00882E4CD7552 /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		12B429D0BF6C87BC1F9BDE31 /* ScreenshotTranslationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9629BC994B304BC5247121 /* ScreenshotTranslationStore.swift */; };
-		13522E664E96F61A32B0F16E /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		1408411D745C4648ED43E352 /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		17D3AAFDDF796CC00496D168 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		18BC02181A5CCAC57B670019 /* ShortcutHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FFBB90195B9DE5496868743 /* ShortcutHelpers.swift */; };
-		1BA6F7EBCD8BDFE95A5C5349 /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		1CD5E305E8FC5A4F1C9E9EDA /* TranslateScreenshotsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300F79E5CACAF671096B208C /* TranslateScreenshotsIntent.swift */; };
-		1D647DEB91BE6970851EF862 /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		25AB19DE235C00642F31E573 /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		268779298BAEF7DD0D2C25FE /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		2715DF0222305B76CA3BBBEC /* CloudAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B8DBE204943758E3E15202 /* CloudAIService.swift */; };
-		2740D43558BF67CB65489A37 /* SwiftMandarinShortcutsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95BD6C6E94227FC969E145F7 /* SwiftMandarinShortcutsProvider.swift */; };
-		278FB1A32218BC36BF43102A /* AIWordExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */; };
-		27D81AC425BD18839C50A867 /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		2A44336EA8E10A05CA46432B /* CloudAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B8DBE204943758E3E15202 /* CloudAIService.swift */; };
-		349697AB00DB32CA0EAD23B5 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		3570A1A0DA00224CBDBEA4C5 /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		3831E03277417E481D88BE6D /* AIWordExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */; };
-		3A862258936E41DA5B9265BD /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		3C89E93502CF820087CBF183 /* AIWordExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */; };
-		3CD56845BEF2DBB3374B6B2C /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		47ABCB0002B076A6A64DE115 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		4BCD493FE93E700BD434D652 /* AIWordExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */; };
-		4DAF2B3A1CB5C9980A9304AA /* RubyTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A80B488DB4E37D20DCCB61 /* RubyTextView.swift */; };
-		5140FB54CBA87E243EBC3D4C /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		521896957E8E071E57497BCB /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		5469E6C6DBC1BB8B7A358A92 /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		550A11970C3EA9A10AB01795 /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		55BC37810FBE0CD578C0BF59 /* PhotoTranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B018CE9E6FD56D8DB558525 /* PhotoTranslateView.swift */; };
-		59A77673F2CB1C09BDED071C /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		5AF04DA2755E86291CEAD78A /* AIWordExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */; };
-		5B67A23C86A2A765F37F6D3E /* TranslatedScreenshotOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D27549D7A2793FB9D46B4C06 /* TranslatedScreenshotOverlayView.swift */; };
-		5CC482A480F714150D64AA41 /* AIWordExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */; };
-		6077E37ED781622691A148BC /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		63DB186C39794F41DFA93053 /* LearnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC19C54F4E1D4ECADBDF8CEE /* LearnView.swift */; };
-		64B34A64FDD03116EDC0128F /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		6613D7F2B76C294B409A5004 /* TranslateScreenshotsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300F79E5CACAF671096B208C /* TranslateScreenshotsIntent.swift */; };
-		66654FDBF6BCE00909083A90 /* AIWordExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */; };
-		67A0B1D410F9E839A1B77183 /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		6A9619D7535B187118EBF15D /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		6CC1194F637BAFD98AE0E359 /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		6D4A6F6853D48CE7AD93C91F /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		6DFA93F2C839EB823EBA1080 /* MacOSSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6715691C1F1619564BA23F11 /* MacOSSettingsView.swift */; };
-		737C6CD31FB5964C19F7E617 /* EnglishTextAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4323EE1A82CB3371B1F6D6B9 /* EnglishTextAnalyzer.swift */; };
-		74D60EC2EF7938BCF259061A /* PhotoTranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B018CE9E6FD56D8DB558525 /* PhotoTranslateView.swift */; };
-		753D3A3FE6707FBC7A58AA39 /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		75F028D29976ABA0EE2CD29A /* PhotoTranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B018CE9E6FD56D8DB558525 /* PhotoTranslateView.swift */; };
-		767EFB821CFE01D4FCDEBC9A /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		779236B49B4D2687CC49F94A /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		7967E0D0006E211CA07528E8 /* EnglishRubyTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6483332AF11929120E6C690 /* EnglishRubyTextView.swift */; };
-		79E72D5C96D021BB8707B199 /* PhotoTranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B018CE9E6FD56D8DB558525 /* PhotoTranslateView.swift */; };
-		79FFC7FFF3E4BE45B6E38D09 /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		7A4095BCFB7E6CC711D72F9C /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		7B100CF9E4CF2E56D1596E8D /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		7CE80128B22F3B337E22CB7B /* CloudAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B8DBE204943758E3E15202 /* CloudAIService.swift */; };
-		7CF119DC396C1FF9EEB5650C /* CloudAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B8DBE204943758E3E15202 /* CloudAIService.swift */; };
-		7D93DACEDC0CDA50CAFBFB45 /* EnglishTextAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4323EE1A82CB3371B1F6D6B9 /* EnglishTextAnalyzer.swift */; };
-		7E98069A9B2E882B7E35C99C /* ChineseTextAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B56DB7F19659C529EFE388 /* ChineseTextAnalyzer.swift */; };
-		807F470210A882AA788B3B4A /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		85956548A7D1D5BBAFE5EDDC /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		87F3F16736422CC8F253459E /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		88CCE213A7E449EF487C58F7 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		88FC4550335FCDE766C8721E /* CloudAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B8DBE204943758E3E15202 /* CloudAIService.swift */; };
-		8B6303E65EFABC2D2FDA5EC4 /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		92FBF53C384AB77F9424F608 /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		9362877F0EE0F41F2AFA8C28 /* SpeechRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82CEECAD2C557F9A68777074 /* SpeechRecognitionService.swift */; };
-		958DF5221C8CBBDBF46688AE /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		961C528519660691C050BD41 /* PhotoTranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B018CE9E6FD56D8DB558525 /* PhotoTranslateView.swift */; };
-		99198FCEB1BEDD0297FE24F4 /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		9A4E10CBBCF069F1177CEF51 /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		9D84E692D44389539E62F8A5 /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		9EA329A151638FCC52B7D8A5 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		9FAA3CC394AC0C7D0FDABD93 /* CloudAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B8DBE204943758E3E15202 /* CloudAIService.swift */; };
-		A09A5C59976A555F976C387C /* AppRouteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16C57A119F1DCB3CD5F52BEB /* AppRouteStore.swift */; };
-		A0AB0F48FA46F67E0E77F584 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		A2783C508ADB381393AF198F /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		A287B0ECF0ACFD041F359C5E /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		A375FEFDDB194084E0E3DF69 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		A5B5C2FECC45B636000C7424 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12196F909C270971738F8956 /* MoreView.swift */; };
-		A694DBA877B8A551D3CBD52D /* SpeechRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82CEECAD2C557F9A68777074 /* SpeechRecognitionService.swift */; };
-		A730891B2EAD8E81DBD35EDC /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		A73CF39BCD8DC2DFC6271F3D /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		A76502082F3BA18A00D18A7C /* handoff.md in Resources */ = {isa = PBXBuildFile; fileRef = A76502072F3BA18A00D18A7C /* handoff.md */; };
-		A7BD4CB7B9663867FA4AC715 /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
 		A7F06F562F8D375000B51F21 /* Ollama in Frameworks */ = {isa = PBXBuildFile; productRef = A7F06F552F8D375000B51F21 /* Ollama */; };
-		A851DBB08093CB17FAA84750 /* ScreenshotStitchingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AE48208DEE873345C462B0E /* ScreenshotStitchingService.swift */; };
-		A89F80FB82DBD72B62487559 /* RubyTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A80B488DB4E37D20DCCB61 /* RubyTextView.swift */; };
-		AA5852AB6A402301E3FA9CC5 /* PhotoTranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B018CE9E6FD56D8DB558525 /* PhotoTranslateView.swift */; };
-		AA97699A6378879C330AD8B7 /* AIWordExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */; };
-		AAF91FCA1523328848ED0E49 /* AIProviderConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2F618B85296DBCDB720481 /* AIProviderConfigView.swift */; };
-		ABC39CE92A1BA423DCA0B04F /* TranslateTextIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 813C48E9D5B34DB5E2D05B23 /* TranslateTextIntent.swift */; };
-		ACF766254F08169B4CE51522 /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		AD2C4617BB0961CA3EE02BBF /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		AF3A0C67DD3B923CF1418955 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12196F909C270971738F8956 /* MoreView.swift */; };
-		AFE8E7AE0515F2DC830BDB39 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		B1BEB701AD5604905E562C59 /* MacOSSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6715691C1F1619564BA23F11 /* MacOSSettingsView.swift */; };
-		B5813FD7507A7B137AEC91B7 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12196F909C270971738F8956 /* MoreView.swift */; };
-		B677CF9FA374CC73F01D9D2C /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		B71613F10F91D005B112AB1F /* CloudAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B8DBE204943758E3E15202 /* CloudAIService.swift */; };
-		BB2C7F0CA3CE941E2135895E /* ScreenshotTranslationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9629BC994B304BC5247121 /* ScreenshotTranslationStore.swift */; };
-		BC507D9E15D687F01196375B /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		BD46364EDA3637B854DDFD6F /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		BFC434A907FAF7427BA8BAEA /* OllamaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C063A30DF9D39F2050FD4256 /* OllamaService.swift */; };
-		C0529259C66F8969BCB5F93A /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12196F909C270971738F8956 /* MoreView.swift */; };
-		C186DFD63543A611C9447DCE /* TranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73548C56848D9442D2E7BEC /* TranslateView.swift */; };
-		C3250E415DF6C2C8EAEB7133 /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		C469999A34AB2A8A6E742256 /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		C4B2BC53BE45AD7D0D665D6E /* TranslateScreenshotsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300F79E5CACAF671096B208C /* TranslateScreenshotsIntent.swift */; };
-		C5D5E179806261828FD8FFC9 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		C69EE3149DB68671EF05B967 /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		C987C5362BF01DCAAFD07C5C /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		CC8C89DC545A3F4DCBB63FFD /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		CD877FCF86E1C7169AD643B1 /* MacOSSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6715691C1F1619564BA23F11 /* MacOSSettingsView.swift */; };
-		D21B18D285F1896D77FDCD42 /* PhotoTranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B018CE9E6FD56D8DB558525 /* PhotoTranslateView.swift */; };
-		D2F1892D1F60387C8064BCDD /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		D4DC51238DC5D7FDC094857F /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		DAC435868AE07692310AB0B2 /* WorkbookGradingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */; };
-		DBD6A9603336D70FF66A359F /* PhotoTranslateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B018CE9E6FD56D8DB558525 /* PhotoTranslateView.swift */; };
-		DCFBC15D9A269D6FC9639C47 /* SpeechRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82CEECAD2C557F9A68777074 /* SpeechRecognitionService.swift */; };
-		E00C5E6C8E9301A800A616AD /* EnglishTextAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4323EE1A82CB3371B1F6D6B9 /* EnglishTextAnalyzer.swift */; };
-		E720A8F48F600B7DE68211C0 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		E8114E3B6D561C3EF948E30D /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		E9003442161721B4D6F7F5A8 /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		E9A4EB217BBD5CFEB0C08652 /* SpeechRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82CEECAD2C557F9A68777074 /* SpeechRecognitionService.swift */; };
-		E9EB86EEC86A6E091DBAAD57 /* RubyTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A80B488DB4E37D20DCCB61 /* RubyTextView.swift */; };
-		EA20BDF5CEE9728B815570F4 /* TranslateScreenshotsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300F79E5CACAF671096B208C /* TranslateScreenshotsIntent.swift */; };
-		ED70C1B7DBC8AF1D8FA9E471 /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		EF545CBD0D052085F1C2B93C /* CloudAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B8DBE204943758E3E15202 /* CloudAIService.swift */; };
-		F0149DDEEE7FD3EFF9A6ADE0 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };
-		F1C0CE951D99AA04B9CFB405 /* VocabularyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CBD50B25882A142E9C10FC1 /* VocabularyView.swift */; };
-		F2C1B237526CEA2830FC88F5 /* AIModelSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */; };
-		F3746EEC2BB7E587093BD959 /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		F5D20B471E1931F3742146FB /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		F6CB1C099BB8616F6C2019F0 /* RubyTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A80B488DB4E37D20DCCB61 /* RubyTextView.swift */; };
-		F890836A9246F7AF16034C95 /* LiveSpeechTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */; };
-		F926A7B450A98B9C7E02A895 /* AIWordExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */; };
-		FA55CFE4D493B6486AF4C5B6 /* AIWordExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0CE424F641498140B5E3AC63 /* subagent_stop.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = subagent_stop.json; path = "logs/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/subagent_stop.json"; sourceTree = SOURCE_ROOT; };
-		0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = AIModelSettings.swift; path = SwiftMandarin/Models/AIModelSettings.swift; sourceTree = SOURCE_ROOT; };
-		0F6C556F034C6A2E35C001DD /* archive.md */ = {isa = PBXFileReference; explicitFileType = net.daringfireball.markdown; name = archive.md; path = .remember/archive.md; sourceTree = SOURCE_ROOT; };
-		0FFBB90195B9DE5496868743 /* ShortcutHelpers.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = ShortcutHelpers.swift; path = SwiftMandarin/Intents/ShortcutHelpers.swift; sourceTree = SOURCE_ROOT; };
-		10DBB5EE10E45BC1921EE4A8 /* today-2026-06-04.done.md */ = {isa = PBXFileReference; explicitFileType = net.daringfireball.markdown; name = "today-2026-06-04.done.md"; path = ".remember/today-2026-06-04.done.md"; sourceTree = SOURCE_ROOT; };
-		12196F909C270971738F8956 /* MoreView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = MoreView.swift; path = SwiftMandarin/Views/MoreView.swift; sourceTree = SOURCE_ROOT; };
-		1369C23CA0A6CC580FFBC8D9 /* last-save.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = "last-save.json"; path = ".remember/tmp/last-save.json"; sourceTree = SOURCE_ROOT; };
-		16C57A119F1DCB3CD5F52BEB /* AppRouteStore.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = AppRouteStore.swift; path = SwiftMandarin/Models/AppRouteStore.swift; sourceTree = SOURCE_ROOT; };
-		1AE48208DEE873345C462B0E /* ScreenshotStitchingService.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = ScreenshotStitchingService.swift; path = SwiftMandarin/Services/ScreenshotStitchingService.swift; sourceTree = SOURCE_ROOT; };
-		1B018CE9E6FD56D8DB558525 /* PhotoTranslateView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = PhotoTranslateView.swift; path = SwiftMandarin/Views/PhotoTranslateView.swift; sourceTree = SOURCE_ROOT; };
-		1B2F618B85296DBCDB720481 /* AIProviderConfigView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = AIProviderConfigView.swift; path = SwiftMandarin/Views/Components/AIProviderConfigView.swift; sourceTree = SOURCE_ROOT; };
-		2CD95F78E87EDEEF03D8CDAA /* recent.md */ = {isa = PBXFileReference; explicitFileType = net.daringfireball.markdown; name = recent.md; path = .remember/recent.md; sourceTree = SOURCE_ROOT; };
-		300F79E5CACAF671096B208C /* TranslateScreenshotsIntent.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = TranslateScreenshotsIntent.swift; path = SwiftMandarin/Intents/TranslateScreenshotsIntent.swift; sourceTree = SOURCE_ROOT; };
-		37AB3A4DAB1CF595069EFC3C /* pre_compact.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = pre_compact.json; path = logs/pre_compact.json; sourceTree = SOURCE_ROOT; };
-		3ADBBE7983753D70DD8096B9 /* user_prompt_submit.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = user_prompt_submit.json; path = logs/user_prompt_submit.json; sourceTree = SOURCE_ROOT; };
-		3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = LiveSpeechTranslationView.swift; path = SwiftMandarin/Views/Components/LiveSpeechTranslationView.swift; sourceTree = SOURCE_ROOT; };
-		4323EE1A82CB3371B1F6D6B9 /* EnglishTextAnalyzer.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = EnglishTextAnalyzer.swift; path = SwiftMandarin/Services/EnglishTextAnalyzer.swift; sourceTree = SOURCE_ROOT; };
-		49B8DBE204943758E3E15202 /* CloudAIService.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = CloudAIService.swift; path = SwiftMandarin/Services/CloudAIService.swift; sourceTree = SOURCE_ROOT; };
-		4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = WorkbookGradingView.swift; path = SwiftMandarin/Views/WorkbookGradingView.swift; sourceTree = SOURCE_ROOT; };
-		5B9629BC994B304BC5247121 /* ScreenshotTranslationStore.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = ScreenshotTranslationStore.swift; path = SwiftMandarin/Models/ScreenshotTranslationStore.swift; sourceTree = SOURCE_ROOT; };
-		6715691C1F1619564BA23F11 /* MacOSSettingsView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = MacOSSettingsView.swift; path = SwiftMandarin/Views/MacOSSettingsView.swift; sourceTree = SOURCE_ROOT; };
-		700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = AIWordExplanationView.swift; path = SwiftMandarin/Views/Components/AIWordExplanationView.swift; sourceTree = SOURCE_ROOT; };
-		728BABF87D4D0781A673D362 /* post_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = post_tool_use.json; path = "logs/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/post_tool_use.json"; sourceTree = SOURCE_ROOT; };
-		813C48E9D5B34DB5E2D05B23 /* TranslateTextIntent.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = TranslateTextIntent.swift; path = SwiftMandarin/Intents/TranslateTextIntent.swift; sourceTree = SOURCE_ROOT; };
-		81E63E5DA1E068FC4972541C /* now.md */ = {isa = PBXFileReference; explicitFileType = net.daringfireball.markdown; name = now.md; path = .remember/now.md; sourceTree = SOURCE_ROOT; };
-		82CEECAD2C557F9A68777074 /* SpeechRecognitionService.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = SpeechRecognitionService.swift; path = SwiftMandarin/Services/SpeechRecognitionService.swift; sourceTree = SOURCE_ROOT; };
-		88E71205BBAE1623A2BFB78B /* pre_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = pre_tool_use.json; path = "logs/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/pre_tool_use.json"; sourceTree = SOURCE_ROOT; };
-		8DB3228B2EFE6AE3820B5D36 /* chat.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = chat.json; path = "logs/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/chat.json"; sourceTree = SOURCE_ROOT; };
-		95BD6C6E94227FC969E145F7 /* SwiftMandarinShortcutsProvider.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = SwiftMandarinShortcutsProvider.swift; path = SwiftMandarin/Intents/SwiftMandarinShortcutsProvider.swift; sourceTree = SOURCE_ROOT; };
-		9CBD50B25882A142E9C10FC1 /* VocabularyView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = VocabularyView.swift; path = SwiftMandarin/Views/VocabularyView.swift; sourceTree = SOURCE_ROOT; };
-		9E931850C7801E289DCE9DF4 /* 0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.json"; path = ".claude/data/sessions/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.json"; sourceTree = SOURCE_ROOT; };
 		A76501F52F3B9F5800D18A7C /* SwiftMandarin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftMandarin.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A76502072F3BA18A00D18A7C /* handoff.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = handoff.md; sourceTree = "<group>"; };
-		B7A80B488DB4E37D20DCCB61 /* RubyTextView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = RubyTextView.swift; path = SwiftMandarin/Views/Components/RubyTextView.swift; sourceTree = SOURCE_ROOT; };
-		C063A30DF9D39F2050FD4256 /* OllamaService.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = OllamaService.swift; path = SwiftMandarin/Services/OllamaService.swift; sourceTree = SOURCE_ROOT; };
-		C0B56DB7F19659C529EFE388 /* ChineseTextAnalyzer.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = ChineseTextAnalyzer.swift; path = SwiftMandarin/Services/ChineseTextAnalyzer.swift; sourceTree = SOURCE_ROOT; };
 		C6CFAA409C761EF26DB7CFF4 /* last-ndc.ts */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.typescript; name = "last-ndc.ts"; path = ".remember/tmp/last-ndc.ts"; sourceTree = SOURCE_ROOT; };
-		D0128424DBF3CB23DE4E9B0B /* session_start.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = session_start.json; path = logs/session_start.json; sourceTree = SOURCE_ROOT; };
-		D27549D7A2793FB9D46B4C06 /* TranslatedScreenshotOverlayView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = TranslatedScreenshotOverlayView.swift; path = SwiftMandarin/Views/Components/TranslatedScreenshotOverlayView.swift; sourceTree = SOURCE_ROOT; };
-		D32C3B6E4A13B94AD0BC3170 /* SwiftMandarin.entitlements */ = {isa = PBXFileReference; explicitFileType = text.plist.entitlements; name = SwiftMandarin.entitlements; path = SwiftMandarin/SwiftMandarin.entitlements; sourceTree = SOURCE_ROOT; };
-		D73548C56848D9442D2E7BEC /* TranslateView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = TranslateView.swift; path = SwiftMandarin/Views/TranslateView.swift; sourceTree = SOURCE_ROOT; };
-		E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = AIWordExplanationService.swift; path = SwiftMandarin/Services/AIWordExplanationService.swift; sourceTree = SOURCE_ROOT; };
-		F6483332AF11929120E6C690 /* EnglishRubyTextView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = EnglishRubyTextView.swift; path = SwiftMandarin/Views/Components/EnglishRubyTextView.swift; sourceTree = SOURCE_ROOT; };
-		FAE9662D32E35D0E29D92133 /* notification.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = notification.json; path = "logs/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/notification.json"; sourceTree = SOURCE_ROOT; };
-		FC19C54F4E1D4ECADBDF8CEE /* LearnView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = LearnView.swift; path = SwiftMandarin/Views/LearnView.swift; sourceTree = SOURCE_ROOT; };
-		FCA315278436A72F8C74DE97 /* stop.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = stop.json; path = "logs/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/stop.json"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A7C0FFEE0000000000000001 /* Exceptions for "SwiftMandarin" folder in "SwiftMandarin" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				logs,
+				MandarinKit.md,
+			);
+			target = A76501F42F3B9F5800D18A7C /* SwiftMandarin */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A76501F72F3B9F5800D18A7C /* SwiftMandarin */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A7C0FFEE0000000000000001 /* Exceptions for "SwiftMandarin" folder in "SwiftMandarin" target */,
+			);
 			path = SwiftMandarin;
 			sourceTree = "<group>";
 		};
@@ -235,50 +56,7 @@
 				A76501F72F3B9F5800D18A7C /* SwiftMandarin */,
 				A76501F62F3B9F5800D18A7C /* Products */,
 				A76502072F3BA18A00D18A7C /* handoff.md */,
-				C0B56DB7F19659C529EFE388 /* ChineseTextAnalyzer.swift */,
-				B7A80B488DB4E37D20DCCB61 /* RubyTextView.swift */,
-				4323EE1A82CB3371B1F6D6B9 /* EnglishTextAnalyzer.swift */,
-				D73548C56848D9442D2E7BEC /* TranslateView.swift */,
-				F6483332AF11929120E6C690 /* EnglishRubyTextView.swift */,
-				82CEECAD2C557F9A68777074 /* SpeechRecognitionService.swift */,
-				3B6AD9117C85A3990F2CE175 /* LiveSpeechTranslationView.swift */,
-				D32C3B6E4A13B94AD0BC3170 /* SwiftMandarin.entitlements */,
-				1AE48208DEE873345C462B0E /* ScreenshotStitchingService.swift */,
-				5B9629BC994B304BC5247121 /* ScreenshotTranslationStore.swift */,
-				D27549D7A2793FB9D46B4C06 /* TranslatedScreenshotOverlayView.swift */,
-				300F79E5CACAF671096B208C /* TranslateScreenshotsIntent.swift */,
-				16C57A119F1DCB3CD5F52BEB /* AppRouteStore.swift */,
-				95BD6C6E94227FC969E145F7 /* SwiftMandarinShortcutsProvider.swift */,
-				1B018CE9E6FD56D8DB558525 /* PhotoTranslateView.swift */,
-				813C48E9D5B34DB5E2D05B23 /* TranslateTextIntent.swift */,
-				FC19C54F4E1D4ECADBDF8CEE /* LearnView.swift */,
-				E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */,
-				C063A30DF9D39F2050FD4256 /* OllamaService.swift */,
-				0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */,
-				6715691C1F1619564BA23F11 /* MacOSSettingsView.swift */,
-				12196F909C270971738F8956 /* MoreView.swift */,
-				700961AA3BE6879B2A39E980 /* AIWordExplanationView.swift */,
-				0FFBB90195B9DE5496868743 /* ShortcutHelpers.swift */,
-				9CBD50B25882A142E9C10FC1 /* VocabularyView.swift */,
-				FAE9662D32E35D0E29D92133 /* notification.json */,
-				3ADBBE7983753D70DD8096B9 /* user_prompt_submit.json */,
-				9E931850C7801E289DCE9DF4 /* 0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.json */,
-				88E71205BBAE1623A2BFB78B /* pre_tool_use.json */,
 				C6CFAA409C761EF26DB7CFF4 /* last-ndc.ts */,
-				81E63E5DA1E068FC4972541C /* now.md */,
-				1369C23CA0A6CC580FFBC8D9 /* last-save.json */,
-				728BABF87D4D0781A673D362 /* post_tool_use.json */,
-				FCA315278436A72F8C74DE97 /* stop.json */,
-				8DB3228B2EFE6AE3820B5D36 /* chat.json */,
-				49B8DBE204943758E3E15202 /* CloudAIService.swift */,
-				1B2F618B85296DBCDB720481 /* AIProviderConfigView.swift */,
-				0CE424F641498140B5E3AC63 /* subagent_stop.json */,
-				4C304D16771B555FCC9E9606 /* WorkbookGradingView.swift */,
-				37AB3A4DAB1CF595069EFC3C /* pre_compact.json */,
-				D0128424DBF3CB23DE4E9B0B /* session_start.json */,
-				10DBB5EE10E45BC1921EE4A8 /* today-2026-06-04.done.md */,
-				2CD95F78E87EDEEF03D8CDAA /* recent.md */,
-				0F6C556F034C6A2E35C001DD /* archive.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -359,7 +137,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A76502082F3BA18A00D18A7C /* handoff.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -370,155 +147,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7E98069A9B2E882B7E35C99C /* ChineseTextAnalyzer.swift in Sources */,
-				0D077636678CF2B903AC1845 /* ChineseTextAnalyzer.swift in Sources */,
-				0286C9F0E3750D38345DA315 /* RubyTextView.swift in Sources */,
-				4DAF2B3A1CB5C9980A9304AA /* RubyTextView.swift in Sources */,
-				A89F80FB82DBD72B62487559 /* RubyTextView.swift in Sources */,
-				E9EB86EEC86A6E091DBAAD57 /* RubyTextView.swift in Sources */,
-				7D93DACEDC0CDA50CAFBFB45 /* EnglishTextAnalyzer.swift in Sources */,
-				E00C5E6C8E9301A800A616AD /* EnglishTextAnalyzer.swift in Sources */,
-				ACF766254F08169B4CE51522 /* TranslateView.swift in Sources */,
-				0F6EC05CA26685567889B744 /* TranslateView.swift in Sources */,
-				737C6CD31FB5964C19F7E617 /* EnglishTextAnalyzer.swift in Sources */,
-				7967E0D0006E211CA07528E8 /* EnglishRubyTextView.swift in Sources */,
-				753D3A3FE6707FBC7A58AA39 /* TranslateView.swift in Sources */,
-				A73CF39BCD8DC2DFC6271F3D /* TranslateView.swift in Sources */,
-				1408411D745C4648ED43E352 /* TranslateView.swift in Sources */,
-				807F470210A882AA788B3B4A /* TranslateView.swift in Sources */,
-				F6CB1C099BB8616F6C2019F0 /* RubyTextView.swift in Sources */,
-				9362877F0EE0F41F2AFA8C28 /* SpeechRecognitionService.swift in Sources */,
-				521896957E8E071E57497BCB /* LiveSpeechTranslationView.swift in Sources */,
-				0676426815E3D011163B8B21 /* LiveSpeechTranslationView.swift in Sources */,
-				550A11970C3EA9A10AB01795 /* TranslateView.swift in Sources */,
-				C186DFD63543A611C9447DCE /* TranslateView.swift in Sources */,
-				92FBF53C384AB77F9424F608 /* TranslateView.swift in Sources */,
-				A2783C508ADB381393AF198F /* TranslateView.swift in Sources */,
-				E9A4EB217BBD5CFEB0C08652 /* SpeechRecognitionService.swift in Sources */,
-				DCFBC15D9A269D6FC9639C47 /* SpeechRecognitionService.swift in Sources */,
-				A694DBA877B8A551D3CBD52D /* SpeechRecognitionService.swift in Sources */,
-				1BA6F7EBCD8BDFE95A5C5349 /* TranslateView.swift in Sources */,
-				F3746EEC2BB7E587093BD959 /* LiveSpeechTranslationView.swift in Sources */,
-				25AB19DE235C00642F31E573 /* LiveSpeechTranslationView.swift in Sources */,
-				64B34A64FDD03116EDC0128F /* LiveSpeechTranslationView.swift in Sources */,
-				E9003442161721B4D6F7F5A8 /* LiveSpeechTranslationView.swift in Sources */,
-				ED70C1B7DBC8AF1D8FA9E471 /* LiveSpeechTranslationView.swift in Sources */,
-				F5D20B471E1931F3742146FB /* LiveSpeechTranslationView.swift in Sources */,
-				767EFB821CFE01D4FCDEBC9A /* TranslateView.swift in Sources */,
-				6D4A6F6853D48CE7AD93C91F /* TranslateView.swift in Sources */,
-				6A9619D7535B187118EBF15D /* LiveSpeechTranslationView.swift in Sources */,
-				6077E37ED781622691A148BC /* LiveSpeechTranslationView.swift in Sources */,
-				27D81AC425BD18839C50A867 /* LiveSpeechTranslationView.swift in Sources */,
-				9D84E692D44389539E62F8A5 /* LiveSpeechTranslationView.swift in Sources */,
-				F890836A9246F7AF16034C95 /* LiveSpeechTranslationView.swift in Sources */,
-				E8114E3B6D561C3EF948E30D /* LiveSpeechTranslationView.swift in Sources */,
-				BD46364EDA3637B854DDFD6F /* LiveSpeechTranslationView.swift in Sources */,
-				7A4095BCFB7E6CC711D72F9C /* LiveSpeechTranslationView.swift in Sources */,
-				6CC1194F637BAFD98AE0E359 /* LiveSpeechTranslationView.swift in Sources */,
-				C469999A34AB2A8A6E742256 /* LiveSpeechTranslationView.swift in Sources */,
-				A851DBB08093CB17FAA84750 /* ScreenshotStitchingService.swift in Sources */,
-				BB2C7F0CA3CE941E2135895E /* ScreenshotTranslationStore.swift in Sources */,
-				5B67A23C86A2A765F37F6D3E /* TranslatedScreenshotOverlayView.swift in Sources */,
-				6613D7F2B76C294B409A5004 /* TranslateScreenshotsIntent.swift in Sources */,
-				A09A5C59976A555F976C387C /* AppRouteStore.swift in Sources */,
-				2740D43558BF67CB65489A37 /* SwiftMandarinShortcutsProvider.swift in Sources */,
-				79E72D5C96D021BB8707B199 /* PhotoTranslateView.swift in Sources */,
-				AA5852AB6A402301E3FA9CC5 /* PhotoTranslateView.swift in Sources */,
-				961C528519660691C050BD41 /* PhotoTranslateView.swift in Sources */,
-				ABC39CE92A1BA423DCA0B04F /* TranslateTextIntent.swift in Sources */,
-				1CD5E305E8FC5A4F1C9E9EDA /* TranslateScreenshotsIntent.swift in Sources */,
-				C4B2BC53BE45AD7D0D665D6E /* TranslateScreenshotsIntent.swift in Sources */,
-				12B429D0BF6C87BC1F9BDE31 /* ScreenshotTranslationStore.swift in Sources */,
-				63DB186C39794F41DFA93053 /* LearnView.swift in Sources */,
-				EA20BDF5CEE9728B815570F4 /* TranslateScreenshotsIntent.swift in Sources */,
-				E720A8F48F600B7DE68211C0 /* AIWordExplanationService.swift in Sources */,
-				D4DC51238DC5D7FDC094857F /* AIWordExplanationService.swift in Sources */,
-				47ABCB0002B076A6A64DE115 /* AIWordExplanationService.swift in Sources */,
-				AFE8E7AE0515F2DC830BDB39 /* AIWordExplanationService.swift in Sources */,
-				BC507D9E15D687F01196375B /* AIWordExplanationService.swift in Sources */,
-				CC8C89DC545A3F4DCBB63FFD /* AIWordExplanationService.swift in Sources */,
-				59A77673F2CB1C09BDED071C /* AIWordExplanationService.swift in Sources */,
-				17D3AAFDDF796CC00496D168 /* AIWordExplanationService.swift in Sources */,
-				9EA329A151638FCC52B7D8A5 /* AIWordExplanationService.swift in Sources */,
-				D2F1892D1F60387C8064BCDD /* AIWordExplanationService.swift in Sources */,
-				C5D5E179806261828FD8FFC9 /* AIWordExplanationService.swift in Sources */,
-				BFC434A907FAF7427BA8BAEA /* OllamaService.swift in Sources */,
-				C3250E415DF6C2C8EAEB7133 /* AIModelSettings.swift in Sources */,
-				0E4195A9A45B32A92C14C8E8 /* AIWordExplanationService.swift in Sources */,
-				7B100CF9E4CF2E56D1596E8D /* AIWordExplanationService.swift in Sources */,
-				0696C83580F8AA23F3672BB4 /* AIWordExplanationService.swift in Sources */,
-				268779298BAEF7DD0D2C25FE /* AIWordExplanationService.swift in Sources */,
-				6DFA93F2C839EB823EBA1080 /* MacOSSettingsView.swift in Sources */,
-				B1BEB701AD5604905E562C59 /* MacOSSettingsView.swift in Sources */,
-				CD877FCF86E1C7169AD643B1 /* MacOSSettingsView.swift in Sources */,
-				C0529259C66F8969BCB5F93A /* MoreView.swift in Sources */,
-				AF3A0C67DD3B923CF1418955 /* MoreView.swift in Sources */,
-				A5B5C2FECC45B636000C7424 /* MoreView.swift in Sources */,
-				B5813FD7507A7B137AEC91B7 /* MoreView.swift in Sources */,
-				3C89E93502CF820087CBF183 /* AIWordExplanationView.swift in Sources */,
-				66654FDBF6BCE00909083A90 /* AIWordExplanationView.swift in Sources */,
-				F926A7B450A98B9C7E02A895 /* AIWordExplanationView.swift in Sources */,
-				3831E03277417E481D88BE6D /* AIWordExplanationView.swift in Sources */,
-				FA55CFE4D493B6486AF4C5B6 /* AIWordExplanationView.swift in Sources */,
-				5AF04DA2755E86291CEAD78A /* AIWordExplanationView.swift in Sources */,
-				AA97699A6378879C330AD8B7 /* AIWordExplanationView.swift in Sources */,
-				4BCD493FE93E700BD434D652 /* AIWordExplanationView.swift in Sources */,
-				18BC02181A5CCAC57B670019 /* ShortcutHelpers.swift in Sources */,
-				79FFC7FFF3E4BE45B6E38D09 /* TranslateView.swift in Sources */,
-				278FB1A32218BC36BF43102A /* AIWordExplanationView.swift in Sources */,
-				F1C0CE951D99AA04B9CFB405 /* VocabularyView.swift in Sources */,
-				5CC482A480F714150D64AA41 /* AIWordExplanationView.swift in Sources */,
-				0001AB876357B2E5813A6003 /* AIModelSettings.swift in Sources */,
-				C987C5362BF01DCAAFD07C5C /* AIModelSettings.swift in Sources */,
-				AD2C4617BB0961CA3EE02BBF /* AIModelSettings.swift in Sources */,
-				F2C1B237526CEA2830FC88F5 /* AIModelSettings.swift in Sources */,
-				87F3F16736422CC8F253459E /* AIModelSettings.swift in Sources */,
-				7CF119DC396C1FF9EEB5650C /* CloudAIService.swift in Sources */,
-				EF545CBD0D052085F1C2B93C /* CloudAIService.swift in Sources */,
-				88FC4550335FCDE766C8721E /* CloudAIService.swift in Sources */,
-				2A44336EA8E10A05CA46432B /* CloudAIService.swift in Sources */,
-				7CE80128B22F3B337E22CB7B /* CloudAIService.swift in Sources */,
-				018F00BC2D8E1D9F0E728519 /* AIProviderConfigView.swift in Sources */,
-				AAF91FCA1523328848ED0E49 /* AIProviderConfigView.swift in Sources */,
-				3570A1A0DA00224CBDBEA4C5 /* AIModelSettings.swift in Sources */,
-				0F92A448F8F79D2F640332C5 /* AIModelSettings.swift in Sources */,
-				9FAA3CC394AC0C7D0FDABD93 /* CloudAIService.swift in Sources */,
-				779236B49B4D2687CC49F94A /* AIModelSettings.swift in Sources */,
-				2715DF0222305B76CA3BBBEC /* CloudAIService.swift in Sources */,
-				88CCE213A7E449EF487C58F7 /* AIWordExplanationService.swift in Sources */,
-				F0149DDEEE7FD3EFF9A6ADE0 /* AIWordExplanationService.swift in Sources */,
-				13522E664E96F61A32B0F16E /* AIWordExplanationService.swift in Sources */,
-				DAC435868AE07692310AB0B2 /* WorkbookGradingView.swift in Sources */,
-				3CD56845BEF2DBB3374B6B2C /* WorkbookGradingView.swift in Sources */,
-				0A04FBDBBACCC1AD92F3C5DB /* WorkbookGradingView.swift in Sources */,
-				67A0B1D410F9E839A1B77183 /* WorkbookGradingView.swift in Sources */,
-				1D647DEB91BE6970851EF862 /* WorkbookGradingView.swift in Sources */,
-				A7BD4CB7B9663867FA4AC715 /* WorkbookGradingView.swift in Sources */,
-				9A4E10CBBCF069F1177CEF51 /* WorkbookGradingView.swift in Sources */,
-				85956548A7D1D5BBAFE5EDDC /* WorkbookGradingView.swift in Sources */,
-				D21B18D285F1896D77FDCD42 /* PhotoTranslateView.swift in Sources */,
-				74D60EC2EF7938BCF259061A /* PhotoTranslateView.swift in Sources */,
-				75F028D29976ABA0EE2CD29A /* PhotoTranslateView.swift in Sources */,
-				55BC37810FBE0CD578C0BF59 /* PhotoTranslateView.swift in Sources */,
-				C69EE3149DB68671EF05B967 /* WorkbookGradingView.swift in Sources */,
-				99198FCEB1BEDD0297FE24F4 /* WorkbookGradingView.swift in Sources */,
-				3A862258936E41DA5B9265BD /* WorkbookGradingView.swift in Sources */,
-				5469E6C6DBC1BB8B7A358A92 /* WorkbookGradingView.swift in Sources */,
-				A287B0ECF0ACFD041F359C5E /* WorkbookGradingView.swift in Sources */,
-				DBD6A9603336D70FF66A359F /* PhotoTranslateView.swift in Sources */,
-				5140FB54CBA87E243EBC3D4C /* AIModelSettings.swift in Sources */,
-				1252450CD7C00882E4CD7552 /* AIModelSettings.swift in Sources */,
-				B677CF9FA374CC73F01D9D2C /* AIWordExplanationService.swift in Sources */,
-				A0AB0F48FA46F67E0E77F584 /* AIWordExplanationService.swift in Sources */,
-				03660EA2D4E0713CFFBD6A2E /* AIWordExplanationService.swift in Sources */,
-				0811FE50AFB634548F90E257 /* WorkbookGradingView.swift in Sources */,
-				958DF5221C8CBBDBF46688AE /* AIModelSettings.swift in Sources */,
-				A375FEFDDB194084E0E3DF69 /* AIWordExplanationService.swift in Sources */,
-				00CFCE68454070639ECB769A /* AIWordExplanationService.swift in Sources */,
-				349697AB00DB32CA0EAD23B5 /* AIWordExplanationService.swift in Sources */,
-				8B6303E65EFABC2D2FDA5EC4 /* WorkbookGradingView.swift in Sources */,
-				B71613F10F91D005B112AB1F /* CloudAIService.swift in Sources */,
-				A730891B2EAD8E81DBD35EDC /* AIWordExplanationService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -674,9 +302,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSCameraUsageDescription = "SwiftMandarin needs camera access to scan and recognize text from photos for translation.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SwiftMandarin uses the microphone for live speech translation.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "SwiftMandarin needs photo library access to select images containing text for translation.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "SwiftMandarin transcribes your speech on-device so it can be translated.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -747,9 +375,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSCameraUsageDescription = "SwiftMandarin needs camera access to scan and recognize text from photos for translation.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SwiftMandarin uses the microphone for live speech translation.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "SwiftMandarin needs photo library access to select images containing text for translation.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "SwiftMandarin transcribes your speech on-device so it can be translated.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

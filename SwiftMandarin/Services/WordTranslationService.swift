@@ -34,7 +34,7 @@ final class WordTranslationService {
         }
         
         // Create translation session for Chinese to English using installed languages
-        let session = try await TranslationSession(
+        let session = TranslationSession(
             installedSource: Locale.Language(identifier: "zh-Hans"),
             target: Locale.Language(identifier: "en")
         )
@@ -59,7 +59,7 @@ final class WordTranslationService {
         }
         
         // Create translation session for English to Chinese using installed languages
-        let session = try await TranslationSession(
+        let session = TranslationSession(
             installedSource: Locale.Language(identifier: "en"),
             target: Locale.Language(identifier: "zh-Hans")
         )
@@ -111,7 +111,7 @@ final class WordTranslationService {
         }
         
         // Create translation session using installed languages
-        let session = try await TranslationSession(
+        let session = TranslationSession(
             installedSource: sourceIsChinese ? Locale.Language(identifier: "zh-Hans") : Locale.Language(identifier: "en"),
             target: sourceIsChinese ? Locale.Language(identifier: "en") : Locale.Language(identifier: "zh-Hans")
         )

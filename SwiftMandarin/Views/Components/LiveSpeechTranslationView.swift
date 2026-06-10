@@ -22,7 +22,9 @@ struct LiveSpeechTranslationView: View {
     let onUseTranscript: (String) -> Void
     
     /// Callback when user wants to use the translated text
-    let onUseTranslation: (String) -> Void
+    /// Called with `(transcript, translation)` so the caller can show both
+    /// sides of the spoken translation, not just the result.
+    let onUseTranslation: (String, String) -> Void
     
     // MARK: - State
     
@@ -650,7 +652,7 @@ struct LiveSpeechTranslationView: View {
                 // Use translation button
                 Button {
                     Task { await speechService.stopRecording() }
-                    onUseTranslation(translatedText.isEmpty ? transcript : translatedText)
+                    onUseTranslation(transcript, translatedText.isEmpty ? transcript : translatedText)
                     dismiss()
                 } label: {
                     HStack(spacing: 6) {
@@ -782,7 +784,7 @@ struct LiveSpeechTranslationView: View {
     LiveSpeechTranslationView(
         translationDirection: .englishToChinese,
         onUseTranscript: { _ in },
-        onUseTranslation: { _ in }
+        onUseTranslation: { _, _ in }
     )
     .environment(SavedTermsStore.shared)
 }

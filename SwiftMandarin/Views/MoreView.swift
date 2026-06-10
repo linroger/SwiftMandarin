@@ -168,6 +168,7 @@ struct SettingsView: View {
     @AppStorage("autoTranslate") private var autoTranslate: Bool = false
     @AppStorage("autoSpeak") private var autoSpeak: Bool = false
     @AppStorage("showPinyin") private var showPinyin: Bool = true
+    @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
     @AppStorage("toneColors") private var toneColors: Bool = true
     @AppStorage("defaultDirection") private var defaultDirection: String = TranslationDirection.englishToChinese.rawValue
     @AppStorage("hapticFeedback") private var hapticFeedback: Bool = true
@@ -252,7 +253,14 @@ struct SettingsView: View {
             
             Section {
                 Toggle("Show Pinyin", isOn: $showPinyin)
-                
+
+                Picker("Pinyin Position", selection: $pinyinPosition) {
+                    Text("Above Characters").tag("above")
+                    Text("Below Characters").tag("below")
+                    Text("Inline").tag("inline")
+                }
+                .disabled(!showPinyin)
+
                 Toggle("Tone Colors", isOn: $toneColors)
                     .disabled(!showPinyin)
                 

@@ -59,19 +59,6 @@ enum AppTab: String, CaseIterable, Identifiable {
     
     var id: String { rawValue }
     
-    var title: String {
-        switch self {
-        case .translate: return "Translate"
-        case .photo: return "Photo"
-        case .history: return "History"
-        case .vocabulary: return "Vocabulary"
-        case .learn: return "Learn"
-        case .phrases: return "Phrases"
-        case .stats: return "Stats"
-        case .more: return "More"
-        }
-    }
-
     /// Localized tab title. Using a `LocalizedStringKey` literal (rather than a
     /// plain `String`) means SwiftUI resolves it through the active language
     /// bundle, so tab labels switch with the in-app language toggle.

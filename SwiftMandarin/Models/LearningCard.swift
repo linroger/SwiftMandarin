@@ -172,6 +172,8 @@ final class LearningProgressStore {
     }
     
     func recordReview(cardId: String, quality: ReviewQuality) {
+        // Roll the daily counter over if the app stayed open past midnight.
+        resetDailyCountIfNeeded()
         var cardProgress = getProgress(for: cardId)
         let correct = quality.rawValue >= 3
         cardProgress.recordReview(correct: correct, quality: quality)
@@ -228,17 +230,14 @@ final class LearningProgressStore {
     }
     
     private func load() {
-        if let data = UserDefaults.standard.data(forKey: storageKey),
-           let decoded = try? JSONDecoder().decode([String: CardProgress].self, from: data) {
+        if let decoded = PersistentCodableStore.load([String: CardProgress].self, key: storageKey) {
             progress = decoded
         }
         todayReviewedCount = UserDefaults.standard.integer(forKey: todayCountKey)
     }
-    
+
     private func save() {
-        if let data = try? JSONEncoder().encode(progress) {
-            UserDefaults.standard.set(data, forKey: storageKey)
-        }
+        PersistentCodableStore.save(progress, key: storageKey)
         UserDefaults.standard.set(todayReviewedCount, forKey: todayCountKey)
     }
 }

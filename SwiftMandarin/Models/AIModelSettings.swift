@@ -179,7 +179,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .openAI:
             return ["gpt-4o", "gpt-4.1", "gpt-4.1-mini", "o4-mini", "o3", "gpt-4o-mini"]
         case .anthropic:
-            return ["claude-sonnet-4-5", "claude-opus-4-1", "claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5"]
+            // Newest first — the first entry doubles as the default selection.
+            return ["claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5", "claude-sonnet-4-5", "claude-opus-4-1"]
         case .deepseek:
             return ["deepseek-chat", "deepseek-reasoner"]
         case .doubao:
@@ -205,7 +206,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     var defaultVisionModel: String? {
         switch self {
         case .openAI: return "gpt-4o"
-        case .anthropic: return "claude-sonnet-4-5"
+        case .anthropic: return "claude-sonnet-4-6"
         case .qwen: return "qwen-vl-max"
         case .doubao: return "doubao-1-5-vision-pro-32k-250115"
         case .zhipu: return "glm-4.5v"

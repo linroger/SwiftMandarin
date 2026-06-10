@@ -105,18 +105,15 @@ final class TranslationHistoryStore {
     }
     
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
-        if let decoded = try? JSONDecoder().decode([TranslationHistoryEntry].self, from: data) {
+        if let decoded = PersistentCodableStore.load([TranslationHistoryEntry].self, key: storageKey) {
             entries = decoded
         }
         if entries.count > maxEntries {
             entries = Array(entries.prefix(maxEntries))
         }
     }
-    
+
     private func save() {
-        if let data = try? JSONEncoder().encode(entries) {
-            UserDefaults.standard.set(data, forKey: storageKey)
-        }
+        PersistentCodableStore.save(entries, key: storageKey)
     }
 }

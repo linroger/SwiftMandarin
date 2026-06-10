@@ -278,7 +278,6 @@ final class ScreenshotStitchingService {
         // Calculate the center strip to compare
         let stripStart = Int(CGFloat(width) * (1.0 - configuration.comparisonStripWidthRatio) / 2.0)
         let stripEnd = Int(CGFloat(width) * (1.0 + configuration.comparisonStripWidthRatio) / 2.0)
-        let stripWidth = stripEnd - stripStart
         
         // Get pixel data for both images
         guard let topData = getPixelData(from: topCG),

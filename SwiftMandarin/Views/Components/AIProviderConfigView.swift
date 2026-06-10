@@ -18,6 +18,15 @@ struct AIProviderConfigView: View {
     @State private var cloudService = CloudAIService.shared
     @State private var isRefreshing = false
 
+    /// Result of the cloud "Test Connection" round-trip.
+    private enum ConnectionTestState: Equatable {
+        case idle
+        case testing
+        case success(model: String)
+        case failure(message: String)
+    }
+    @State private var connectionTest: ConnectionTestState = .idle
+
     var body: some View {
         Group {
             switch settings.provider {
@@ -30,6 +39,7 @@ struct AIProviderConfigView: View {
             }
         }
         .task(id: settings.provider) {
+            connectionTest = .idle
             await settings.refreshConnection()
         }
     }
@@ -209,13 +219,85 @@ struct AIProviderConfigView: View {
             }
         }
 
-        if provider.supportsVision {
-            Section {
-                Label("Supports image input (vision) for photo cleanup", systemImage: "photo.badge.checkmark")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        Section {
+            Button {
+                Task { await testConnection(provider) }
+            } label: {
+                HStack {
+                    Label("Test Connection", systemImage: "bolt.horizontal")
+                    if connectionTest == .testing {
+                        Spacer()
+                        ProgressView().controlSize(.small)
+                    }
+                }
+            }
+            .disabled(settings.apiKey(for: provider).isEmpty || connectionTest == .testing)
+
+            switch connectionTest {
+            case .success(let model):
+                Label {
+                    Text("Connected — \(model) responded")
+                } icon: {
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                }
+                .font(.caption)
+            case .failure(let message):
+                Label {
+                    Text(message)
+                } icon: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
+                }
+                .font(.caption)
+            case .idle, .testing:
+                EmptyView()
+            }
+
+            // Capability overview so users learn BEFORE a failed workbook
+            // grading whether this provider can read images.
+            HStack(spacing: 12) {
+                capabilityBadge("Vision", available: provider.supportsVision, icon: "photo")
+                capabilityBadge("JSON mode", available: provider.supportsJSONResponseFormat, icon: "curlybraces")
+            }
+        } header: {
+            Text("Connection & Capabilities")
+        } footer: {
+            if !provider.supportsVision {
+                Text("This provider cannot read images, so photo cleanup against the image and workbook grading will use a different vision-capable provider if one is configured.")
             }
         }
+    }
+
+    /// Send a minimal round-trip request to verify key, endpoint, and model.
+    private func testConnection(_ provider: AIProvider) async {
+        connectionTest = .testing
+        let model = settings.selectedModel(for: provider)
+        do {
+            _ = try await CloudAIService.shared.chat(
+                provider: provider,
+                model: model,
+                system: "You are a connectivity check.",
+                user: "Reply with the single word: OK",
+                maxTokens: 32
+            )
+            connectionTest = .success(model: model)
+        } catch {
+            connectionTest = .failure(message: error.localizedDescription)
+        }
+    }
+
+    private func capabilityBadge(_ titleKey: LocalizedStringKey, available: Bool, icon: String) -> some View {
+        Label {
+            Text(titleKey)
+        } icon: {
+            Image(systemName: available ? "checkmark.circle.fill" : "xmark.circle")
+                .foregroundStyle(available ? .green : .secondary)
+        }
+        .font(.caption)
+        .foregroundStyle(available ? .primary : .secondary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Capsule().fill(available ? Color.green.opacity(0.1) : Color.secondary.opacity(0.08)))
+        .accessibilityLabel(Text(available ? "Supported" : "Not supported"))
     }
 
     // MARK: - Helpers

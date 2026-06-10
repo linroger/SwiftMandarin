@@ -805,11 +805,13 @@ struct TermDetailSheet: View {
             isMastered: term.isMastered
         )
         
-        savedTermsStore.update(updatedTerm)
+        // The term may have been deleted while this sheet was open; in that
+        // case don't pretend the edit succeeded.
+        guard savedTermsStore.update(updatedTerm) else { return }
         selectedTerm = savedTermsStore.term(withID: term.id)
         triggerHaptic()
     }
-    
+
     private func triggerHaptic() {
         #if os(iOS)
         let hapticEnabled = UserDefaults.standard.bool(forKey: "hapticFeedback")
@@ -1071,7 +1073,9 @@ struct TermDetailInspector: View {
             isMastered: term.isMastered
         )
         
-        savedTermsStore.update(updatedTerm)
+        // The term may have been deleted while the inspector was open; in
+        // that case don't pretend the edit succeeded.
+        guard savedTermsStore.update(updatedTerm) else { return }
         selectedTerm = savedTermsStore.term(withID: term.id)
     }
 }

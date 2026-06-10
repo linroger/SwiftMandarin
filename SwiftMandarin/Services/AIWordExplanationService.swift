@@ -656,15 +656,18 @@ final class AIWordExplanationService {
 
     /// Clean up raw OCR text using the configured AI provider. For
     /// vision-capable cloud providers, the original image is also supplied so
-    /// the model can correct OCR errors against the source. Returns the raw
-    /// text unchanged if no provider is available (safe fallback).
+    /// the model can correct OCR errors against the source.
+    ///
+    /// Returns `nil` when cleanup could not run (no usable provider), so
+    /// callers can tell "cleaned" apart from "raw passthrough" and surface
+    /// that to the user. Throws when a provider was reached but failed.
     func cleanupRecognizedText(
         _ raw: String,
         imageData: Data? = nil,
         hintedLanguage: DetectedLanguage? = nil
-    ) async throws -> String {
+    ) async throws -> String? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return raw }
+        guard !trimmed.isEmpty else { return nil }
 
         let settings = AIModelSettings.shared
         let provider = settings.effectiveProvider
@@ -689,15 +692,15 @@ final class AIWordExplanationService {
         switch provider {
         case .appleIntelligence:
             #if canImport(FoundationModels)
-            guard isAvailable else { return raw }
+            guard isAvailable else { return nil }
             let session = LanguageModelSession(instructions: system)
             let response = try await session.respond(to: user)
             return response.content.trimmingCharacters(in: .whitespacesAndNewlines)
             #else
-            return raw
+            return nil
             #endif
         case .ollama:
-            guard OllamaService.shared.isConnected, !settings.ollamaModel.isEmpty else { return raw }
+            guard OllamaService.shared.isConnected, !settings.ollamaModel.isEmpty else { return nil }
             let (content, _) = try await OllamaService.shared.chat(
                 model: settings.ollamaModel,
                 systemPrompt: system,
@@ -710,7 +713,7 @@ final class AIWordExplanationService {
             let model = imageData != nil
                 ? (settings.visionModel(for: provider) ?? settings.selectedModel(for: provider))
                 : settings.selectedModel(for: provider)
-            guard !settings.apiKey(for: provider).isEmpty, !model.isEmpty else { return raw }
+            guard !settings.apiKey(for: provider).isEmpty, !model.isEmpty else { return nil }
             let content = try await CloudAIService.shared.chat(
                 provider: provider,
                 model: model,
@@ -820,18 +823,18 @@ final class AIWordExplanationService {
         customInstructions: String?
     ) async throws -> GradingResult {
         guard !workbookImages.isEmpty || !answerImages.isEmpty else {
-            throw AIExplanationError.generationFailed("Add at least one workbook image.")
+            throw AIExplanationError.generationFailed(String(localized: "Add at least one workbook image."))
         }
 
         guard let provider = Self.gradingProvider() else {
-            throw AIExplanationError.unavailable(reason: "Workbook grading needs a vision-capable provider with an API key (OpenAI, Claude, Qwen, Doubao, Zhipu, or Kimi). Configure one in Settings → AI.")
+            throw AIExplanationError.unavailable(reason: String(localized: "Workbook grading needs a vision-capable provider with an API key (OpenAI, Claude, Qwen, Doubao, Zhipu, or Kimi). Configure one in Settings → AI."))
         }
 
         let settings = AIModelSettings.shared
         // Grading needs a VISION model — the user's selected model may be
         // text-only (e.g. qwen-plus), which would "see" no pages.
         guard let model = settings.visionModel(for: provider), !model.isEmpty else {
-            throw AIExplanationError.unavailable(reason: "No vision-capable model available for \(provider.displayName). Choose a vision model (e.g. qwen-vl-max, gpt-4o, claude-sonnet-4-5) in Settings → AI.")
+            throw AIExplanationError.unavailable(reason: String(localized: "No vision-capable model available for \(provider.displayName). Choose a vision model (e.g. qwen-vl-max, gpt-4o) in Settings → AI."))
         }
 
         var system = """
@@ -896,11 +899,18 @@ final class AIWordExplanationService {
                 lastDecoded = result  // valid but empty — retry once before accepting
             }
         }
-        if let lastDecoded { return lastDecoded }
+        if let lastDecoded, !lastDecoded.questions.isEmpty { return lastDecoded }
+        // A decoded-but-empty result means the model could not read any
+        // questions — surface that instead of silently reporting "0/0".
+        if lastDecoded != nil {
+            throw AIExplanationError.generationFailed(
+                String(localized: "The model could not find any questions in the images — the pages may be blank or unreadable, or the model may lack vision capability. Try clearer photos or a stronger vision model (e.g. qwen-vl-max, gpt-4o) in Settings → AI.")
+            )
+        }
         throw AIExplanationError.generationFailed(
             lastRaw.isEmpty
-                ? "The model returned an empty response. Try again or pick a different vision model."
-                : "The model's response couldn't be read as grading data. Try a more capable vision model (e.g. qwen-vl-max or qwen3-vl-plus) in Settings → AI."
+                ? String(localized: "The model returned an empty response. Try again or pick a different vision model.")
+                : String(localized: "The model's response couldn't be read as grading data. Try a more capable vision model (e.g. qwen-vl-max or qwen-vl-plus) in Settings → AI.")
         )
     }
 

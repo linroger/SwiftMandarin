@@ -9,6 +9,7 @@
 import Foundation
 import AppIntents
 import SwiftUI
+import UniformTypeIdentifiers
 
 #if canImport(UIKit)
 import UIKit
@@ -30,7 +31,7 @@ struct TranslateScreenshotsIntent: AppIntent {
     @Parameter(
         title: "Screenshots",
         description: "One or more screenshots to translate. If multiple images are provided, they will be stitched together with overlapping regions automatically removed.",
-        supportedTypeIdentifiers: ["public.image"]
+        supportedContentTypes: [.image]
     )
     var images: [IntentFile]
     

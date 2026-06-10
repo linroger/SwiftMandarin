@@ -14,6 +14,10 @@ enum PinyinConverter {
     
     static func convert(_ text: String, includeToneMarks: Bool = true) -> String {
         guard !text.isEmpty else { return "" }
+        // Pinyin only applies to Chinese. For non-CJK input (e.g. an English
+        // vocabulary term saved from workbook grading) return empty rather
+        // than echoing the input back as a fake "pinyin" reading.
+        guard text.contains(where: { $0.isChineseCharacter }) else { return "" }
         let transformed = text.applyingTransform(.mandarinToLatin, reverse: false) ?? text
         guard !includeToneMarks else { return transformed }
         return transformed.applyingTransform(.stripDiacritics, reverse: false) ?? transformed

@@ -80,61 +80,66 @@ struct RubyTextView: View {
 }
 
 /// Inline punctuation display (no ruby annotation)
-/// Aligns with the baseline of Chinese characters by adding top padding
-/// to account for the pinyin space above regular RubyWordViews
+/// Aligns with the baseline of Chinese characters by adding a ghost line
+/// matching wherever the pinyin row sits in regular RubyWordViews.
 struct PunctuationView: View {
     let text: String
-    
+
+    @AppStorage("showPinyin") private var showPinyin: Bool = true
+    @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
+
     var body: some View {
         VStack(spacing: 2) {
-            // Empty space to match pinyin height in RubyWordView
-            Text(" ")
-                .font(.caption)
-                .opacity(0)
-            
+            if showPinyin && pinyinPosition == "above" {
+                ghostPinyinLine
+            }
+
             // Punctuation aligned with Chinese characters
             Text(text)
                 .font(.title2)
                 .fontWeight(.medium)
                 .foregroundStyle(.primary)
+
+            if showPinyin && pinyinPosition == "below" {
+                ghostPinyinLine
+            }
         }
         .padding(.vertical, 4)
     }
+
+    /// Empty space matching the pinyin line height in RubyWordView.
+    private var ghostPinyinLine: some View {
+        Text(" ")
+            .font(.caption)
+            .opacity(0)
+    }
 }
 
-/// Individual word with pinyin above the character(s)
+/// Individual word with pinyin rendered around the character(s) according to
+/// the user's Appearance settings (show/hide, above/below/inline, tone colors).
 struct RubyWordView: View {
     let segment: RubySegment
     let action: () -> Void
-    
+
     @State private var isHovered: Bool = false
-    
+
+    @AppStorage("showPinyin") private var showPinyin: Bool = true
+    @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
+    @AppStorage("toneColors") private var toneColors: Bool = true
+
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
-                // Pinyin above
-                Text(segment.pinyin)
-                    .font(.caption)
-                    .foregroundStyle(pinyinColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                
-                // Chinese character(s) below
-                Text(segment.text)
-                    .font(.title2)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
-            }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isHovered ? Color.accentColor.opacity(0.1) : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(segment.partOfSpeech.color.opacity(0.3), lineWidth: 1)
-            )
+            wordLayout
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isHovered ? Color.accentColor.opacity(0.1) : Color.clear)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(segment.partOfSpeech.color.opacity(0.3), lineWidth: 1)
+                )
         }
         .buttonStyle(.plain)
         .onHover { hovering in
@@ -143,7 +148,47 @@ struct RubyWordView: View {
             }
         }
     }
-    
+
+    @ViewBuilder
+    private var wordLayout: some View {
+        if !showPinyin {
+            characterText
+        } else {
+            switch pinyinPosition {
+            case "below":
+                VStack(spacing: 2) {
+                    characterText
+                    pinyinText
+                }
+            case "inline":
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    characterText
+                    pinyinText
+                }
+            default:  // "above"
+                VStack(spacing: 2) {
+                    pinyinText
+                    characterText
+                }
+            }
+        }
+    }
+
+    private var pinyinText: some View {
+        Text(segment.pinyin)
+            .font(.caption)
+            .foregroundStyle(toneColors ? pinyinColor : Color.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+    }
+
+    private var characterText: some View {
+        Text(segment.text)
+            .font(.title2)
+            .fontWeight(.medium)
+            .foregroundStyle(.primary)
+    }
+
     /// Color for pinyin based on tone
     private var pinyinColor: Color {
         // Get the first tone mark to determine color

@@ -160,17 +160,19 @@ struct TranslateView: View {
                             triggerTranslation()
                         }
                     },
-                    onUseTranslation: { translation in
-                        // Set the transcript as source and translation as result
-                        // Detect if the translation is Chinese or English
-                        let translationIsChinese = translation.contains { $0.isChineseCharacter }
-                        if translationIsChinese {
-                            // Translation is Chinese, so source was English
-                            // Keep the translated text
+                    onUseTranslation: { transcript, translation in
+                        // Show both sides so the source text stays in sync
+                        // with what was actually spoken.
+                        let transcriptIsChinese = transcript.contains { $0.isChineseCharacter }
+                        let direction: TranslationDirection = transcriptIsChinese ? .chineseToEnglish : .englishToChinese
+                        preserveCurrentTranslationDuringSourceUpdate {
+                            sharedState.direction = direction
+                            sharedState.sourceText = transcript
                             sharedState.translatedText = translation
-                        } else {
-                            // Translation is English, so source was Chinese
-                            sharedState.translatedText = translation
+                        }
+                        // Spoken translations join history/stats like typed ones.
+                        if transcript != translation {
+                            handleCompletedTranslation(source: transcript, target: translation, direction: direction)
                         }
                     }
                 )
@@ -334,6 +336,8 @@ struct TranslateView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
                 .tint(.red)
+                .accessibilityLabel(Text("Live speech translation"))
+                .help("Speak and translate in real time")
                 
                 Spacer()
                 
@@ -512,10 +516,12 @@ struct TranslateView: View {
                 VStack(spacing: 16) {
                     ProgressView()
                         .controlSize(.large)
-                    Text("Translating with Apple Intelligence...")
+                    Text("Translating with \(aiSettings.effectiveProvider.displayName)…")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text("Using on-device AI for translation")
+                    Text(aiSettings.effectiveProvider.isCloud
+                         ? "Using your configured AI provider"
+                         : "Using on-device AI for translation")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)

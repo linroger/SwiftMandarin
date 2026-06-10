@@ -33,11 +33,22 @@ struct DailyActivity: Codable, Identifiable {
     
     /// The actual date represented by this activity
     var date: Date {
+        DailyActivity.keyFormatter.date(from: dateKey) ?? Date()
+    }
+
+    /// Formatter for the "yyyy-MM-dd" activity keys. Pinned to the POSIX
+    /// locale and the Gregorian calendar so keys never pick up localized
+    /// digits or a non-Gregorian system calendar (which would corrupt the
+    /// heatmap/streak data). The day boundary intentionally follows the
+    /// device's local time zone — a "day" of studying is a local day.
+    static let keyFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.date(from: dateKey) ?? Date()
-    }
-    
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        return formatter
+    }()
+
     init(dateKey: String, wordsLearned: Int = 0, reviewsCompleted: Int = 0, translationsMade: Int = 0, wordsByPartOfSpeech: [String: Int] = [:]) {
         self.dateKey = dateKey
         self.wordsLearned = wordsLearned
@@ -45,11 +56,9 @@ struct DailyActivity: Codable, Identifiable {
         self.translationsMade = translationsMade
         self.wordsByPartOfSpeech = wordsByPartOfSpeech
     }
-    
+
     init(date: Date, wordsLearned: Int = 0, reviewsCompleted: Int = 0, translationsMade: Int = 0, wordsByPartOfSpeech: [String: Int] = [:]) {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        self.dateKey = formatter.string(from: date)
+        self.dateKey = DailyActivity.keyFormatter.string(from: date)
         self.wordsLearned = wordsLearned
         self.reviewsCompleted = reviewsCompleted
         self.translationsMade = translationsMade
@@ -292,9 +301,7 @@ final class LearningActivityStore {
     }
     
     private func dateKey(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
+        DailyActivity.keyFormatter.string(from: date)
     }
     
     private func calculateStreak() -> Int {
@@ -343,16 +350,13 @@ final class LearningActivityStore {
     }
     
     private func loadActivities() {
-        if let data = UserDefaults.standard.data(forKey: userDefaultsKey),
-           let decoded = try? JSONDecoder().decode([String: DailyActivity].self, from: data) {
+        if let decoded = PersistentCodableStore.load([String: DailyActivity].self, key: userDefaultsKey) {
             activities = decoded
         }
         longestStreak = UserDefaults.standard.integer(forKey: "longestStreak")
     }
-    
+
     private func saveActivities() {
-        if let encoded = try? JSONEncoder().encode(activities) {
-            UserDefaults.standard.set(encoded, forKey: userDefaultsKey)
-        }
+        PersistentCodableStore.save(activities, key: userDefaultsKey)
     }
 }

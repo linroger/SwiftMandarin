@@ -461,12 +461,12 @@ struct StatsView: View {
     private var pieChartsRow: some View {
         #if os(iOS)
         let isWideLayout = UIDevice.current.userInterfaceIdiom == .pad
-        #else
-        let isWideLayout = true
-        #endif
-        
         let layout = isWideLayout ? AnyLayout(HStackLayout(spacing: 16)) : AnyLayout(VStackLayout(spacing: 16))
-        
+        #else
+        // macOS is always wide enough for the side-by-side layout.
+        let layout = AnyLayout(HStackLayout(spacing: 16))
+        #endif
+
         return layout {
             masteryPieChart
             partsOfSpeechPieChart

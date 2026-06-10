@@ -14,15 +14,21 @@ struct HistoryTabView: View {
     @Binding var selectedTab: AppTab
     @State private var searchText: String = ""
     @State private var draggedEntry: TranslationHistoryEntry?
-    
+    @State private var directionFilter: TranslationDirection?
+    @State private var showClearConfirmation: Bool = false
+
     private var filteredEntries: [TranslationHistoryEntry] {
-        if searchText.isEmpty {
-            return historyStore.entries
+        var entries = historyStore.entries
+        if let directionFilter {
+            entries = entries.filter { $0.direction == directionFilter }
         }
-        return historyStore.entries.filter { entry in
-            entry.source.localizedCaseInsensitiveContains(searchText) ||
-            entry.target.localizedCaseInsensitiveContains(searchText)
+        if !searchText.isEmpty {
+            entries = entries.filter { entry in
+                entry.source.localizedCaseInsensitiveContains(searchText) ||
+                entry.target.localizedCaseInsensitiveContains(searchText)
+            }
         }
+        return entries
     }
     
     var body: some View {
@@ -33,6 +39,17 @@ struct HistoryTabView: View {
                         Label("No History", systemImage: "clock")
                     } description: {
                         Text("Your translation history will appear here")
+                    }
+                } else if filteredEntries.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Matches", systemImage: "magnifyingglass")
+                    } description: {
+                        Text("No history entries match the current search or filter")
+                    } actions: {
+                        Button("Clear Filter") {
+                            searchText = ""
+                            directionFilter = nil
+                        }
                     }
                 } else {
                     List {
@@ -86,14 +103,43 @@ struct HistoryTabView: View {
                         EditButton()
                     }
                     #endif
+                    ToolbarItem(placement: .secondaryAction) {
+                        Menu {
+                            Picker("Direction", selection: $directionFilter) {
+                                Text("All Directions").tag(TranslationDirection?.none)
+                                ForEach(TranslationDirection.allCases, id: \.self) { direction in
+                                    Text("\(direction.sourceLanguageName) → \(direction.targetLanguageName)")
+                                        .tag(TranslationDirection?.some(direction))
+                                }
+                            }
+                        } label: {
+                            Label("Filter", systemImage: directionFilter == nil
+                                  ? "line.3.horizontal.decrease.circle"
+                                  : "line.3.horizontal.decrease.circle.fill")
+                        }
+                        .accessibilityLabel(Text("Filter by direction"))
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         Button(role: .destructive) {
-                            historyStore.clear()
+                            showClearConfirmation = true
                         } label: {
                             Image(systemName: "trash")
                         }
+                        .accessibilityLabel(Text("Clear all history"))
                     }
                 }
+            }
+            .confirmationDialog(
+                "Clear all translation history?",
+                isPresented: $showClearConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Clear All", role: .destructive) {
+                    historyStore.clear()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This removes every saved translation and cannot be undone.")
             }
         }
     }

@@ -61,19 +61,29 @@ final class SavedTermsStore {
     }
     
     // MARK: - Public Methods
-    
+
+    /// Normalize a term for duplicate comparison: AI/OCR sources can attach
+    /// invisible characters (zero-width space/joiners, BOM) or stray
+    /// whitespace, which would defeat plain string equality.
+    private static func normalizedKey(_ s: String) -> String {
+        String(s.unicodeScalars.filter { ![0x200B, 0x200C, 0x200D, 0xFEFF].contains($0.value) })
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     func add(_ term: SavedTerm) {
-        guard !terms.contains(where: { $0.chinese == term.chinese }) else { return }
+        let key = Self.normalizedKey(term.chinese)
+        guard !terms.contains(where: { Self.normalizedKey($0.chinese) == key }) else { return }
         var newTerm = term
         newTerm.sortOrder = terms.count
         terms.append(newTerm)
         // Track activity with part of speech
         LearningActivityStore.shared.recordWordLearned(partOfSpeech: term.partOfSpeech)
     }
-    
+
     func add(chinese: String, pinyin: String, definition: String, partOfSpeech: String = "") {
-        guard !terms.contains(where: { $0.chinese == chinese }) else { return }
-        
+        let key = Self.normalizedKey(chinese)
+        guard !terms.contains(where: { Self.normalizedKey($0.chinese) == key }) else { return }
+
         let newTerm = SavedTerm(
             chinese: chinese,
             pinyin: pinyin,
@@ -97,7 +107,8 @@ final class SavedTermsStore {
     }
 
     func remove(chinese: String) {
-        terms.removeAll { $0.chinese == chinese }
+        let key = Self.normalizedKey(chinese)
+        terms.removeAll { Self.normalizedKey($0.chinese) == key }
         updateSortOrders()
     }
 
@@ -105,12 +116,17 @@ final class SavedTermsStore {
         terms.first { $0.id == id }
     }
 
-    func update(_ updatedTerm: SavedTerm) {
-        guard let index = terms.firstIndex(where: { $0.id == updatedTerm.id }) else { return }
+    /// Replace a stored term. Returns `false` when the term no longer exists
+    /// (e.g. it was deleted while a detail view held a stale copy), so callers
+    /// can surface the failure instead of silently dropping the edit.
+    @discardableResult
+    func update(_ updatedTerm: SavedTerm) -> Bool {
+        guard let index = terms.firstIndex(where: { $0.id == updatedTerm.id }) else { return false }
 
         var replacement = updatedTerm
         replacement.sortOrder = terms[index].sortOrder
         terms[index] = replacement
+        return true
     }
     
     func move(from source: Int, to destination: Int) {
@@ -119,7 +135,8 @@ final class SavedTermsStore {
     }
     
     func contains(chinese: String) -> Bool {
-        terms.contains { $0.chinese == chinese }
+        let key = Self.normalizedKey(chinese)
+        return terms.contains { Self.normalizedKey($0.chinese) == key }
     }
     
     func clear() {
@@ -152,14 +169,11 @@ final class SavedTermsStore {
     }
     
     private func save() {
-        if let encoded = try? JSONEncoder().encode(terms) {
-            UserDefaults.standard.set(encoded, forKey: saveKey)
-        }
+        PersistentCodableStore.save(terms, key: saveKey)
     }
-    
+
     private func load() {
-        if let data = UserDefaults.standard.data(forKey: saveKey),
-           let decoded = try? JSONDecoder().decode([SavedTerm].self, from: data) {
+        if let decoded = PersistentCodableStore.load([SavedTerm].self, key: saveKey) {
             terms = decoded.sorted { $0.sortOrder < $1.sortOrder }
         }
     }

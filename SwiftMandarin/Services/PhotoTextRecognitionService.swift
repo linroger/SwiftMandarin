@@ -36,13 +36,24 @@ struct TextRecognitionResult: Sendable {
 
     var isEmpty: Bool { blocks.isEmpty }
 
-    init(blocks: [RecognizedTextBlock]) {
+    init(blocks: [RecognizedTextBlock], scanLanguage: PhotoScanLanguage = .auto) {
         self.blocks = blocks
         let texts = blocks.map { $0.text }
         self.fullText = texts.joined(separator: "\n")
 
-        // Detect language from the raw recognized text, then clean appropriately.
-        let detected = ChineseTextAnalyzer.shared.detectLanguageRobust(texts.joined(separator: "\n"))
+        // Honor an explicit user-selected scan language; only auto-detect for
+        // the auto/bilingual modes. Without this, ambiguous OCR output (e.g.
+        // pinyin-heavy text) could override the user's explicit 中文 choice
+        // and route it through the English cleaner.
+        let detected: DetectedLanguage
+        switch scanLanguage {
+        case .chinese:
+            detected = .chinese
+        case .english:
+            detected = .english
+        case .auto, .bilingual:
+            detected = ChineseTextAnalyzer.shared.detectLanguageRobust(texts.joined(separator: "\n"))
+        }
         self.language = blocks.isEmpty ? nil : detected
 
         if detected.isChinese {
@@ -178,7 +189,7 @@ final class PhotoTextRecognitionService {
                 throw RecognitionError.noTextFound
             }
 
-            let result = TextRecognitionResult(blocks: blocks)
+            let result = TextRecognitionResult(blocks: blocks, scanLanguage: scanLanguage)
             lastResult = result
             return result
         } catch {

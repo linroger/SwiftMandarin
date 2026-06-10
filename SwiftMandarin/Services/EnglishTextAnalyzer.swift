@@ -338,64 +338,67 @@ final class EnglishTextAnalyzer {
     
     // MARK: - Grammar Point Detection
     
+    /// Grammar point labels resolve through the string catalog so they follow
+    /// the in-app language toggle (Chinese learners see 中文 explanations,
+    /// English mode shows English ones).
     private func detectGrammarPoints(in sentence: String, words: [AnalyzedEnglishWord]) -> [String] {
         var points: [String] = []
         let lowercased = sentence.lowercased()
-        
+
         // Detect tenses
         if lowercased.contains("ing") && (lowercased.contains("is ") || lowercased.contains("are ") || lowercased.contains("am ")) {
-            points.append("现在进行时 (Present Continuous): be + 动词ing")
+            points.append(String(localized: "Present continuous: be + verb-ing"))
         }
-        
+
         if lowercased.contains("ed") || lowercased.contains("went") || lowercased.contains("was") || lowercased.contains("were") {
-            points.append("一般过去时 (Simple Past): 动词过去式")
+            points.append(String(localized: "Simple past: verb in past form"))
         }
-        
+
         if lowercased.contains("will ") || lowercased.contains("going to") {
-            points.append("一般将来时 (Simple Future): will/be going to + 动词原形")
+            points.append(String(localized: "Simple future: will / be going to + base verb"))
         }
-        
+
         // Detect common structures
         if lowercased.contains("there is") || lowercased.contains("there are") {
-            points.append("There be 句型: 表示\"有\"")
+            points.append(String(localized: "'There be' pattern: expresses existence"))
         }
-        
+
         if lowercased.contains("have to") || lowercased.contains("has to") {
-            points.append("have to: 必须、不得不")
+            points.append(String(localized: "have to: must, to be obliged to"))
         }
-        
+
         if lowercased.contains("would like") || lowercased.contains("want to") {
-            points.append("表达想要: would like to / want to")
+            points.append(String(localized: "Expressing wants: would like to / want to"))
         }
-        
+
         // Detect question patterns
         if lowercased.hasPrefix("what") {
-            points.append("What 疑问句: 询问\"什么\"")
+            points.append(String(localized: "'What' question: asking about a thing"))
         } else if lowercased.hasPrefix("where") {
-            points.append("Where 疑问句: 询问\"哪里\"")
+            points.append(String(localized: "'Where' question: asking about a place"))
         } else if lowercased.hasPrefix("when") {
-            points.append("When 疑问句: 询问\"什么时候\"")
+            points.append(String(localized: "'When' question: asking about a time"))
         } else if lowercased.hasPrefix("how") {
             if lowercased.hasPrefix("how many") {
-                points.append("How many: 询问可数名词数量")
+                points.append(String(localized: "How many: asking about countable quantity"))
             } else if lowercased.hasPrefix("how much") {
-                points.append("How much: 询问不可数名词数量或价格")
+                points.append(String(localized: "How much: asking about uncountable quantity or price"))
             } else if lowercased.hasPrefix("how old") {
-                points.append("How old: 询问年龄")
+                points.append(String(localized: "How old: asking about age"))
             } else {
-                points.append("How 疑问句: 询问\"怎样\"")
+                points.append(String(localized: "'How' question: asking about manner"))
             }
         }
-        
+
         // Detect comparatives and superlatives
         if lowercased.contains("er than") || lowercased.contains("more ") && lowercased.contains(" than") {
-            points.append("比较级: 形容词+er / more + 形容词")
+            points.append(String(localized: "Comparative: adjective + -er / more + adjective"))
         }
-        
+
         if lowercased.contains("the most") || lowercased.contains("est ") {
-            points.append("最高级: the + 形容词+est / the most + 形容词")
+            points.append(String(localized: "Superlative: the + adjective-est / the most + adjective"))
         }
-        
+
         return points
     }
     

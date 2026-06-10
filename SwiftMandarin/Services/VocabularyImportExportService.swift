@@ -196,7 +196,7 @@ final class VocabularyImportExportService {
         var columns: [String] = []
         var current = ""
         var inQuotes = false
-        var chars = Array(line)
+        let chars = Array(line)
         var i = 0
         
         while i < chars.count {
@@ -233,7 +233,7 @@ final class VocabularyImportExportService {
     func importTerms(_ newTerms: [SavedTerm], into store: SavedTermsStore) -> ImportResult {
         var imported = 0
         var skipped = 0
-        var errors: [String] = []
+        let errors: [String] = []
         
         for term in newTerms {
             // Check for duplicates based on Chinese text

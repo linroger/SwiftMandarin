@@ -518,7 +518,7 @@ struct WorkbookGradingView: View {
     private func saveVocab(for question: GradedQuestion) {
         Task {
             if await saveVocabItem(vocabItem(for: question), question: question) {
-                await MainActor.run { savedQuestionIDs.insert(question.id) }
+                await MainActor.run { _ = savedQuestionIDs.insert(question.id) }
             }
         }
     }
@@ -529,7 +529,7 @@ struct WorkbookGradingView: View {
         Task {
             for question in questions {
                 if await saveVocabItem(vocabItem(for: question), question: question) {
-                    await MainActor.run { savedQuestionIDs.insert(question.id) }
+                    await MainActor.run { _ = savedQuestionIDs.insert(question.id) }
                 }
             }
         }

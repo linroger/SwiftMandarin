@@ -9,6 +9,11 @@
 </p>
 
 <p align="center">
+  <a href="README.md">English</a> ·
+  <a href="README.zh-Hans.md">简体中文</a>
+</p>
+
+<p align="center">
   <a href="#features">Features</a> •
   <a href="#screenshots">Screenshots</a> •
   <a href="#installation">Installation</a> •
@@ -75,19 +80,23 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 - **Language-Aware OCR**: Choose Auto, 中文, English, or Both so Chinese characters are never mangled into Latin gibberish
 - **Screenshot Stitching**: Combine multiple screenshots of a long page—overlapping regions are removed automatically—then translate the whole thing
 - **AI Photo Cleanup (Optional)**: Route scanned text through your chosen AI provider to fix OCR errors before translation
+- **Cleanup Transparency**: When AI cleanup runs you see a badge and can flip back to the original OCR text with one tap; if cleanup can't run, the app tells you instead of failing silently
 - **Extract Key Vocabulary**: Pull the most useful words out of any scanned passage and save them with one tap
+- **Counts Toward Your Stats**: Photo translations are saved to History and your daily activity, just like typed ones
 
 ### 🎙️ Voice Translation
 
 - **Live Speech Translation**: Speak and see your words transcribed and translated in real time
 - **Tap-to-Study**: Tap any word in the transcript to open its details and save it
 - **Dual-Language Narration**: Hear both the word and its translation read aloud
+- **Use Both Sides**: Accepting a spoken translation fills in both the transcript and the result on the Translate tab, and records it to History
 
 ### 🤖 AI-Powered Features (Optional, Bring Your Own Provider)
 
 - **Ten Providers, Your Choice**: Apple Intelligence (on-device), a local **Ollama** server, or a cloud model—**OpenAI, Claude, DeepSeek, Doubao, Qwen, Kimi, Zhipu, MiniMax**
 - **Rich Word Explanations**: Generate detailed cards with nuances, grammar usage, example sentences, synonyms, and collocations
 - **Live Model Lists**: Enter your API key and fetch the provider's available models directly from its API
+- **Test Connection & Capability Badges**: One tap verifies your key, endpoint, and model round-trip; badges show whether the provider supports vision (images) and strict JSON mode
 - **Secure Key Storage**: API keys are stored in the system **Keychain**, never in plain files or the cloud
 - **Learner Mode**: Tell the app whether you're an English speaker learning Mandarin, a Mandarin speaker learning English, or both—defaults adapt accordingly
 - **Entirely Optional**: Leave AI off and every core feature still works fully on-device
@@ -98,6 +107,7 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 
 - **Photo-Based Grading**: Upload photos of a workbook (and answers, if on a separate sheet) and a vision-capable AI grades every question
 - **Per-Question Feedback**: See a ✓/✗ verdict, the correct answer, and a short explanation for each item
+- **Honest Errors**: If the model can't read any questions (blank pages, wrong model), you get a clear bilingual error with advice—never a silent "0/0"
 - **Read the Full Sentence Aloud**: Every question shows the complete English sentence with a 🔊 button for pronunciation practice
 - **Mistake-Aware Vocabulary**: Save wrong-answer words straight to your vocabulary list—each saved entry keeps **both** the correct answer and the answer you wrote (✓ correct · ✗ yours)
 - **Custom Instructions**: Add grading notes (e.g. "Grade 3 English vocabulary; be strict about spelling")
@@ -174,15 +184,15 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 
 ### 🕐 Translation History
 
-- **Complete Record**: All translations saved automatically (optional)
-- **Smart Grouping**: Organized by Today, Yesterday, This Week, and Earlier
+- **Complete Record**: Translations from typing, photos, live speech, and Shortcuts are all saved automatically (optional)
+- **Search & Filter**: Full-text search plus a direction filter (EN → 中 / 中 → EN)
 - **Quick Restore**: Tap any history item to restore it to the translator
 - **Powerful Actions**:
   - Restore translation
   - Reverse translate direction
   - Duplicate entry
   - Copy to clipboard
-  - Delete individual items or clear all
+  - Delete individual items, or clear all (with confirmation)
 
 ### ⚙️ Customizable Settings
 
@@ -191,7 +201,8 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
   - Learner mode (English→中, 中→English, or bilingual)
   - Dual-language narration
 - **AI Provider**:
-  - Pick a provider, enter an API key, fetch live model lists, and test the connection
+  - Pick a provider, enter an API key, fetch live model lists, and test the connection end-to-end
+  - See at a glance whether the provider supports vision (images) and JSON mode
   - Toggle AI photo cleanup
 - **Translation Preferences**:
   - Auto-translate toggle
@@ -203,6 +214,7 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
   - History saving toggle
 - **Display Settings**:
   - Show/hide pinyin
+  - Pinyin position: above, below, or inline with the characters
   - Tone color coding
   - Text size adjustment
 - **Data Management**:
@@ -373,8 +385,8 @@ xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration
 - **OCR**: Vision framework with language-aware recognition (`PhotoTextRecognitionService`)
 - **Speech**: AVFoundation for text-to-speech; Speech framework for live transcription
 - **NLP**: NaturalLanguage framework for Chinese segmentation and lexical analysis
-- **Localization**: String Catalog (`Localizable.xcstrings`) + a `LocalizationManager` that swaps the active `.lproj` bundle for the in-app language toggle
-- **Storage**: UserDefaults + Codable locally; API keys in the system Keychain
+- **Localization**: String Catalog (`Localizable.xcstrings`, 600+ keys, fully bilingual) + a `LocalizationManager` that swaps the active `.lproj` bundle for the in-app language toggle
+- **Storage**: UserDefaults + Codable locally, with automatic last-known-good backups so corrupted data never silently wipes your vocabulary, history, or progress; API keys in the system Keychain
 - **App Intents / Shortcuts**: Translate, look up vocabulary, start a review, scan, and more from Siri & Shortcuts
 
 ### File Structure

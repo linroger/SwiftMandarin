@@ -8,6 +8,7 @@
 
 import Foundation
 import Speech
+@preconcurrency import AVFAudio
 @preconcurrency import AVFoundation
 
 /// Errors that can occur during speech recognition
@@ -295,10 +296,10 @@ final class SpeechRecognitionService {
             do {
                 for try await result in transcriber.results {
                     guard let self else { return }
-                    
+
                     // Convert AttributedString to plain String
                     let textContent = String(result.text.characters)
-                    
+
                     await MainActor.run {
                         if result.isFinal {
                             // Final result - append to final transcript
@@ -316,27 +317,41 @@ final class SpeechRecognitionService {
                     }
                 }
             } catch {
+                // A normal stopRecording() cancels this task — that's not a
+                // failure, so don't report it or re-enter teardown.
+                guard let self, !Task.isCancelled else { return }
                 await MainActor.run {
-                    self?.error = .recognitionError(error.localizedDescription)
-                    self?.delegate?.speechRecognitionDidFail(with: error)
+                    self.error = .recognitionError(error.localizedDescription)
+                    self.delegate?.speechRecognitionDidFail(with: error)
                 }
+                // Tear down the mic tap, engine, and audio session — without
+                // this the microphone keeps capturing after a mid-session
+                // recognition failure. The delegate already got didFail, so
+                // suppress the didFinish callback.
+                await self.stopRecording(notifyDelegate: false)
             }
         }
-        
+
         // Install audio tap
         let inputFormat = audioEngine.inputNode.outputFormat(forBus: 0)
         audioEngine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
             guard let self else { return }
-            
+
             Task {
                 await self.processAudioBuffer(buffer)
             }
         }
-        
+
         // Start audio engine
         audioEngine.prepare()
-        try audioEngine.start()
-        
+        do {
+            try audioEngine.start()
+        } catch {
+            // Remove the just-installed tap and unwind everything set up so far.
+            await stopRecording()
+            throw SpeechRecognitionError.audioEngineError(error.localizedDescription)
+        }
+
         isRecording = true
         delegate?.speechRecognitionDidStart()
     }
@@ -371,41 +386,46 @@ final class SpeechRecognitionService {
         inputContinuation.yield(input)
     }
     
-    /// Stop speech recognition
-    func stopRecording() async {
-        guard isRecording else { return }
-        
+    /// Stop speech recognition. Idempotent — safe to call from error paths
+    /// (including partially-completed starts) as well as the normal stop.
+    /// - Parameter notifyDelegate: pass `false` from failure paths so the
+    ///   delegate doesn't receive `didFinish` right after `didFail`.
+    func stopRecording(notifyDelegate: Bool = true) async {
+        let wasRecording = isRecording
+        isRecording = false
+
         // Stop audio engine
         audioEngine?.inputNode.removeTap(onBus: 0)
         audioEngine?.stop()
         audioEngine = nil
-        
+
         // Finish the input stream
         inputContinuation?.finish()
         inputContinuation = nil
-        
+
         // Finalize and wait for remaining results
         do {
             try await analyzer?.finalizeAndFinishThroughEndOfInput()
         } catch {
             print("Error finalizing analyzer: \(error)")
         }
-        
+
         // Cancel recognition task
         recognitionTask?.cancel()
         recognitionTask = nil
-        
+
         // Clean up
         analyzer = nil
         transcriber = nil
         audioConverter = nil
-        
+
         #if os(iOS)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         #endif
-        
-        isRecording = false
-        delegate?.speechRecognitionDidFinish()
+
+        if wasRecording && notifyDelegate {
+            delegate?.speechRecognitionDidFinish()
+        }
     }
     
     /// Toggle recording state

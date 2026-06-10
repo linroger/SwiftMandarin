@@ -70,7 +70,7 @@ enum ShortcutHelpers {
         for attempt in 0...maxRetries {
             do {
                 // Create a fresh session for each attempt
-                let session = try await TranslationSession(
+                let session = TranslationSession(
                     installedSource: direction.sourceLanguage,
                     target: direction.targetLanguage
                 )

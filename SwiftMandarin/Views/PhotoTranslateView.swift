@@ -80,6 +80,20 @@ struct PhotoTranslateView: View {
 
     // Workbook grading (tucked-away feature)
     @State private var showWorkbookGrading: Bool = false
+
+    // AI cleanup transparency: keep the raw OCR text so the user can compare
+    // or revert, and surface a notice when cleanup was skipped or failed.
+    @State private var rawOCRText: String = ""
+    @State private var aiCleanupApplied: Bool = false
+    @State private var cleanupNotice: LocalizedStringKey?
+
+    // In-flight processing tasks, cancelled when superseded so rapid photo
+    // re-selection can't pile up stale work that overwrites newer results.
+    @State private var photoProcessingTask: Task<Void, Never>?
+    @State private var textProcessingTask: Task<Void, Never>?
+
+    // History (translations made here count like the Translate tab's)
+    @AppStorage("saveToHistoryAutomatically") private var saveToHistoryAutomatically: Bool = true
     
     /// Check if we have any results to display
     private var hasResults: Bool {
@@ -92,7 +106,15 @@ struct PhotoTranslateView: View {
                 VStack(spacing: 20) {
                     // Input section
                     inputSection
-                    
+
+                    // AI-cleanup transparency: warn when cleanup was skipped,
+                    // and let the user flip back to the unmodified OCR text.
+                    if let notice = cleanupNotice {
+                        cleanupNoticeBanner(notice)
+                    } else if aiCleanupApplied {
+                        cleanedTextBadge
+                    }
+
                     // Results section - show based on detected language
                     if hasResults {
                         resultsSection
@@ -203,13 +225,19 @@ struct PhotoTranslateView: View {
             .onChange(of: capturedText) { _, newValue in
                 if !newValue.isEmpty {
                     sourceText = newValue
-                    Task {
+                    // Cancel BOTH in-flight pipelines: a photo task finishing
+                    // late must not overwrite this newer camera capture.
+                    photoProcessingTask?.cancel()
+                    textProcessingTask?.cancel()
+                    textProcessingTask = Task {
                         await processText(newValue)
                     }
                 }
             }
             .onChange(of: selectedPhoto) { _, newValue in
-                Task {
+                photoProcessingTask?.cancel()
+                textProcessingTask?.cancel()
+                photoProcessingTask = Task {
                     await loadAndProcessImage(newValue)
                 }
             }
@@ -219,8 +247,64 @@ struct PhotoTranslateView: View {
         }
     }
     
+    // MARK: - AI Cleanup Transparency
+
+    /// Warning banner shown when AI cleanup was requested but didn't run.
+    private func cleanupNoticeBanner(_ notice: LocalizedStringKey) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            Text(notice)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Button {
+                cleanupNotice = nil
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.tertiary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Dismiss"))
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.orange.opacity(0.1)))
+    }
+
+    /// Badge shown when AI cleanup modified the OCR text, with a one-tap
+    /// revert to the original recognition result.
+    private var cleanedTextBadge: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "sparkles")
+                .foregroundStyle(.purple)
+            Text("AI cleaned the scanned text")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Button("Use original text") {
+                revertToRawOCRText()
+            }
+            .font(.caption)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.purple.opacity(0.08)))
+    }
+
+    /// Restore the unmodified OCR text and re-run analysis on it.
+    private func revertToRawOCRText() {
+        guard !rawOCRText.isEmpty else { return }
+        aiCleanupApplied = false
+        sourceText = rawOCRText
+        textProcessingTask?.cancel()
+        textProcessingTask = Task {
+            await processText(rawOCRText)
+        }
+    }
+
     // MARK: - Input Section
-    
+
     private var inputSection: some View {
         VStack(spacing: 16) {
             // Input buttons
@@ -744,40 +828,73 @@ struct PhotoTranslateView: View {
         await MainActor.run {
             isProcessing = true
             errorMessage = nil
+            cleanupNotice = nil
+            aiCleanupApplied = false
         }
 
         do {
             let scanLanguage = AppPreferences.shared.photoScanLanguage
             let result = try await PhotoTextRecognitionService.shared.recognizeText(from: data, scanLanguage: scanLanguage)
+            guard !Task.isCancelled else {  // superseded by a newer photo
+                await MainActor.run { isProcessing = false }
+                return
+            }
 
             var textToProcess = result.cleanedText
             var languageHint: DetectedLanguage? = result.language
+            // The pre-AI-cleanup baseline ("original" for the revert button):
+            // the locally cleaned OCR text — exactly what the user would have
+            // gotten with AI cleanup turned off.
+            await MainActor.run { rawOCRText = result.cleanedText }
 
             // Concern C: route OCR output (and image, for vision-capable
             // providers) through the selected AI model for cleanup/structuring.
-            if AIModelSettings.shared.aiPhotoCleanupEnabled, AIModelSettings.shared.isAnyProviderAvailable {
-                if let cleaned = try? await AIWordExplanationService.shared.cleanupRecognizedText(
-                    result.fullText,
-                    imageData: data,
-                    hintedLanguage: result.language
-                ), !cleaned.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    textToProcess = cleaned
-                    languageHint = nil  // re-detect on the AI-cleaned text
+            // The user is told when cleanup was skipped or failed, instead of
+            // silently falling back to the raw text.
+            if AIModelSettings.shared.aiPhotoCleanupEnabled {
+                do {
+                    if let cleaned = try await AIWordExplanationService.shared.cleanupRecognizedText(
+                        result.fullText,
+                        imageData: data,
+                        hintedLanguage: result.language
+                    ), !cleaned.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        textToProcess = cleaned
+                        languageHint = nil  // re-detect on the AI-cleaned text
+                        await MainActor.run { aiCleanupApplied = true }
+                    } else {
+                        await MainActor.run {
+                            cleanupNotice = "AI cleanup is unavailable — showing the original scanned text"
+                        }
+                    }
+                } catch {
+                    guard !Task.isCancelled else {
+                        await MainActor.run { isProcessing = false }
+                        return
+                    }
+                    await MainActor.run {
+                        cleanupNotice = "AI cleanup failed — showing the original scanned text"
+                    }
                 }
+            }
+            guard !Task.isCancelled else {
+                await MainActor.run { isProcessing = false }
+                return
             }
 
             await MainActor.run { sourceText = textToProcess }
             await processText(textToProcess, knownLanguage: languageHint)
         } catch {
             await MainActor.run {
-                errorMessage = error.localizedDescription
+                if !Task.isCancelled {
+                    errorMessage = error.localizedDescription
+                }
                 isProcessing = false
             }
         }
     }
     
     private func processText(_ text: String, knownLanguage: DetectedLanguage? = nil) async {
-        guard !text.isEmpty else { return }
+        guard !text.isEmpty, !Task.isCancelled else { return }
 
         await MainActor.run {
             isProcessing = true
@@ -792,6 +909,10 @@ struct PhotoTranslateView: View {
         // Determine language first (prefer the OCR-provided detection), using
         // the robust CJK-ratio-first detector so Chinese is never lost.
         let language = knownLanguage ?? ChineseTextAnalyzer.shared.detectLanguageRobust(text)
+        guard !Task.isCancelled else {  // superseded — don't write stale results
+            await MainActor.run { isProcessing = false }
+            return
+        }
 
         if language.isChinese {
             // Chinese: clean with the Chinese-aware cleaner (no English regex).
@@ -862,9 +983,18 @@ struct PhotoTranslateView: View {
             do {
                 // Translate the full text from Chinese to English
                 let translation = try await WordTranslationService.shared.translateToEnglish(cleanedChineseText)
-                
+
                 await MainActor.run {
                     chineseTranslation = translation
+                    // Photo translations count toward history/stats like the
+                    // Translate tab's (respecting the same preference).
+                    if saveToHistoryAutomatically {
+                        TranslationHistoryStore.shared.add(
+                            source: cleanedChineseText,
+                            target: translation,
+                            direction: .chineseToEnglish
+                        )
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -935,6 +1065,20 @@ struct PhotoTranslateView: View {
                     if sentenceIndex < analyzedSentences.count,
                        wordIndex < analyzedSentences[sentenceIndex].words.count {
                         analyzedSentences[sentenceIndex].words[wordIndex].translation = translation
+                    }
+                }
+
+                // One combined history entry for the whole photo translation
+                // (respecting the same preference as the Translate tab).
+                if saveToHistoryAutomatically {
+                    let fullSource = analyzedSentences.map(\.text).joined(separator: " ")
+                    let fullTarget = analyzedSentences.compactMap(\.translation).joined(separator: " ")
+                    if !fullSource.isEmpty, !fullTarget.isEmpty {
+                        TranslationHistoryStore.shared.add(
+                            source: fullSource,
+                            target: fullTarget,
+                            direction: .englishToChinese
+                        )
                     }
                 }
             }
@@ -1094,6 +1238,8 @@ struct PhotoTranslateView: View {
     }
     
     private func clearAll() {
+        photoProcessingTask?.cancel()
+        textProcessingTask?.cancel()
         sourceText = ""
         analyzedSentences = []
         cleanedChineseText = ""
@@ -1110,6 +1256,9 @@ struct PhotoTranslateView: View {
         translationConfiguration = nil
         extractedVocab = []
         isExtractingVocab = false
+        rawOCRText = ""
+        aiCleanupApplied = false
+        cleanupNotice = nil
     }
 }
 
