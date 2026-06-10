@@ -224,5 +224,208 @@
       }
     ],
     "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Pushed. The branch `jun-4-2026-workbook-grader` is fully in sync with the remote \u2014 nothing left to push, working tree clean.\n\nCommits now on remote:\n- `d6830f1` \u2014 Sync session logs, string catalog, and project file (housekeeping)\n- `8343835` \u2014 **Use real AI brand icons and keep iOS labels on one line** (this session's work)\n- `bfeeb6c` \u2014 Robust grading JSON, vocab saving, and longer timeouts (prior)\n\nEverything's pushed and the tree is clean.",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "The app is now fully localized with a working in-app language toggle. Here's what I did:\n\n## What changed\n\n**Runtime language switch** \u2014 `SwiftMandarin/Models/LocalizationManager.swift` (new)\n- An `@Observable @MainActor` singleton (`AppLanguage`: `.english` / `.chinese`) persisted to UserDefaults, defaulting to your device language on first launch.\n- The mechanism: a `Bundle.main` subclass override redirects every localized-string lookup to the selected `.lproj`. Since SwiftUI resolves all `Text(\"\u2026\")` literals through `Bundle.main`, the **entire UI flips language live** \u2014 no relaunch, no device-language change. App-Store-safe (public ObjC runtime only).\n- The app root injects `.environment(\\.locale)` and `.id(language)` so the tree re-resolves on switch.\n\n**The toggle** \u2014 a \"Language\" picker (English / \u4e2d\u6587) at the top of:\n- iOS: **Settings** (More \u2192 Settings)\n- macOS: **Settings \u2192 General**\n\n**Made it actually bilingual** \u2014 `Localizable.xcstrings` is now 100% covered both ways:\n- +206 Chinese translations for English UI strings, +76 English translations for the Chinese-only strings (so English mode no longer leaks Chinese).\n- All format placeholders preserved (positional `%1$lld`/`%2$@` for multi-arg), **0 placeholder errors** across 549 keys, consistent terminology (\u60a8, \u8bcd\u6c47\u672c).\n- Verified compiled: `zh-Hans.lproj` 545 entries, `en.lproj` 83.\n\n**Tab bar fix** \u2014 tab titles were plain `String` (rendered verbatim, wouldn't switch); added `AppTab.titleKey: LocalizedStringKey` + the missing `Photo` key.\n\n**QA** \u2014 ran a 10-batch + consistency-critic review workflow over the whole catalog; I curated its output (e.g. fixed `More\u2192\u66f4\u591a`, `OK\u2192\u786e\u5b9a`, the streak label) and rejected its misguided suggestions (it wanted to \"fix\" the keyboard-shortcut section `\u5feb\u6377\u952e` and flip `\u8bcd\u6c47\u672c\u2192\u8bcd\u6c47`, both of which were already correct).\n\n## Verification\n- macOS + iOS Simulator: **BUILD SUCCEEDED**.\n- Confirmed at the asset level that Chinese-source keys resolve to English in `en.lproj` (`\u4fdd\u5b58\u5230\u8bcd\u6c47\u672c`\u2192`Save to Vocabulary`) and English keys resolve to Chinese in `zh-Hans.lproj`.\n- The one thing I couldn't test here is the live visual toggle in a running simulator (needs GUI interaction). Two intentional notes: switching language resets in-tab navigation (expected for a deliberate action), and compact bilingual labels (e.g. `EN \u2192 \u4e2d`) and brand names are left as-is.\n\n## Git\nCommitted locally as `d6d627f` on `jun-4-2026-workbook-grader` (branch is ahead by 1, **not pushed**). Want me to push it? (The only other uncommitted files are auto-generated session/log telemetry.)",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Pushed. `d6d627f` is now on `origin/jun-4-2026-workbook-grader` \u2014 the branch is in sync (no ahead/behind).\n\nThe full localization + in-app English \u21c4 \u4e2d\u6587 toggle is committed and live on the remote. The only remaining uncommitted files are auto-generated session/log telemetry.",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "All three changes are implemented, built green on both platforms, and committed locally (`7c64c26`).\n\n## 1. Read the full English sentence per question\n- `GradedQuestion` now has a `fullSentence` field, and the grading prompt asks the model to return a clean, speakable complete English sentence for each question (for fill-in-the-blanks, the sentence with the correct word filled in).\n- Each graded card shows a **\"Full sentence\"** row with an inline \ud83d\udd0a button that reads it aloud via `SpeechService.speakEnglish`. If a model ever omits the sentence, a fallback speaker appears in the card header and reads the question + correct answer.\n\n## 2. Where do wrong answers get saved?\nThey're saved to your **Vocabulary list** \u2014 `SavedTermsStore.shared`, which backs the **Vocabulary tab** (\u8bcd\u6c47\u672c) and persists to `UserDefaults` (key `savedTerms`). Each wrong answer becomes a `SavedTerm` (keyed on the Chinese field), saved either per-question via the **\u4fdd\u5b58** button or all at once via **\u4fdd\u5b58\u6240\u6709\u9519\u9898\u8bcd\u6c47\u5230\u8bcd\u6c47\u672c**.\n\n## 3. Correct + wrong answers now both saved\nWhen a wrong-answer vocab item is saved, the entry's definition now appends both answers:\n> `<meaning>  (\u2713 <correct answer>  \u2717 <your wrong answer>)`\n\nSo reviewing the vocab card shows what to learn *and* what was missed. (The correct answer is skipped if it would just repeat the term/definition, to avoid noise.)\n\n**Bonus cleanup:** the card's answer labels (`\u4f60\u7684\u7b54\u6848`/`\u6b63\u786e\u7b54\u6848`) were rendering verbatim and wouldn't switch language \u2014 they're now localized, and I caught that 3 language-toggle strings from the last commit had no Chinese translation (the build auto-extracted them). Catalog is back to full coverage: 557 keys, 0 gaps, 0 placeholder errors.\n\nThe commit is local on `jun-4-2026-workbook-grader` (branch ahead by 1). Want me to push it?",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Pushed. `7c64c26` is now on `origin/jun-4-2026-workbook-grader` and the branch is in sync (no ahead/behind).\n\nThe workbook grader enhancements are live on the remote:\n- \ud83d\udd0a Read the full English sentence per question\n- Wrong answers save to the **Vocabulary tab** (\u8bcd\u6c47\u672c), now with `\u2713 correct \u2717 wrong` paired in each saved entry",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Fixed and committed locally (`35e2b9e`).\n\n## Root cause\nSwiftUI presents `.sheet` / `.fullScreenCover` / `.popover` content in a fresh hosting context that **doesn't inherit the root window's `\\.locale` environment**. So the app language switch reached the main UI (tabs, settings) but never propagated into modal screens like the workbook grader \u2014 they fell back to the device language.\n\n## Fix\n- Added a reusable **`.localizedSurface()`** modifier (`environment(\\.locale)` + `id(language)`) and applied it to the content of **all 16 modal presentations** in the app (workbook grader, camera scanner, word-detail sheets/popovers, screenshot translation, live speech, export, AI explanation, term detail, phrase detail, learning stats). Now every presented screen renders in the chosen language and re-renders if you switch while it's open.\n- The grader also had two section headers (`\u4f5c\u4e1a\u9875\u9762 \u00b7 Workbook pages`, `\u5355\u72ec\u7b54\u6848\uff08\u53ef\u9009\uff09\u00b7 Separate answers (optional)`) that were passed through a `String` parameter \u2014 that renders **verbatim**, so it never localized. Changed the parameter to `LocalizedStringKey` and added their catalog entries. (The grade button's text already localized correctly.)\n\nCatalog: 559 keys, **0 coverage gaps, 0 placeholder errors**; both platforms build green. The handoff and memory now note that any *new* sheet/popover must apply `.localizedSurface()`.\n\nOne caveat: I verified this at the build/catalog level but can't drive the simulator GUI here, so please confirm the grader now shows Chinese in Mandarin mode. Want me to push?",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Both done and pushed \u2014 branch is in sync with origin.\n\n**Pushed:**\n- `35e2b9e` \u2014 the modal/sheet localization fix (workbook grader now localizes)\n- `bd0a24c` \u2014 the README refresh\n\n**README updates** (it was a couple of feature-generations behind):\n- **New feature sections**: Photo/Camera/Screenshot OCR translation, Voice (live speech) translation, the optional 10-provider AI system (Apple Intelligence/Ollama + 8 cloud), and AI Workbook Grading \u2014 including the read-aloud full sentence and mistake-aware vocabulary (\u2713 correct \u00b7 \u2717 yours).\n- **Localization**: now describes the in-app English \u21c4 \u4e2d\u6587 toggle (Settings \u2192 Language), not just system detection.\n- **Settings**: added the Language/AI/learner-mode/scan-language/import-export options.\n- **Privacy**: made accurate \u2014 AI is opt-in, keys live in the Keychain, cloud providers only receive what you submit, and the core stays on-device/offline.\n- **Architecture & File Structure**: added the AI services, Vision OCR, `LocalizationManager`, App Intents, and the String Catalog.\n- **Screenshots**: dropped in the two real Workbook Grading screenshots (the upload view and the graded-results view showing the \ud83d\udd0a read-aloud and \u2713/\u2717 rows) into both the grading section and the macOS gallery.\n- **Fixed** a pre-existing broken app-icon image path (`mac-512@2x.png` \u2192 `icon_512x512.png`). All 19 local image references now resolve.",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
   }
 ]

@@ -1,0 +1,6 @@
+{
+  "session_id": "cf517dd1-c093-4676-a7cd-d0a1bd8b57fc",
+  "prompts": [
+    "please read through this app's codebase recursively, and study it. overhaul this app, find and fix any hidden bugs, issues or errors, integrate this app more closely together, introduce new or missing features, enhance the app's features, functionalities, and UI, update the readmes in both english and mandarin, push to github, and provide a feature rich, ready to ship app with a UI that adheres to apple's HIG."
+  ]
+}

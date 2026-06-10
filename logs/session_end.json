@@ -6,5 +6,13 @@
     "hook_event_name": "SessionEnd",
     "reason": "other",
     "logged_at": "2026-02-24T15:19:31.522849"
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "SessionEnd",
+    "reason": "other",
+    "logged_at": "2026-06-08T17:18:50.042929"
   }
 ]

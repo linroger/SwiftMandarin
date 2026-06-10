@@ -17,6 +17,13 @@
     "[Image #7]",
     "continue",
     "/Users/rogerlin/Downloads/ai-icons update the ai icons with the svgs from this file. thanks. also, some of the label text on the ios version wraps across multiple lines. please make sure they are automatically resized to fit in on a single line, or else clipped or the font size made smaller.",
-    "push to git"
+    "push to git",
+    "please localize the app, and add a toggle in the settings menu to switch between mandarin and english versions. by localize, i mean provide a mandarin version of the app",
+    "push it",
+    "add a feature to read the full sentence in english to this workbook grader for each question. also, where do the wrong answers get saved to? maybe add the correct answers to the wrong given solutions to the vocab list too",
+    "push",
+    "the workbook grading interface is not localized, and is still in english even if the language is set to mandarin",
+    "push and update the readmes",
+    "<task-notification>\n<task-id>b1g1855ca</task-id>\n<tool-use-id>toolu_012qohzTETTkzr25aC3gCt9H</tool-use-id>\n<output-file>/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b1g1855ca.output</output-file>\n<status>killed</status>\n<summary>Background command \"Read model comparison\" was stopped</summary>\n</task-notification>"
   ]
 }
