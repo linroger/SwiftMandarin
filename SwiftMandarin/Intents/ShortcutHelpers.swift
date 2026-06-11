@@ -59,14 +59,22 @@ enum ShortcutHelpers {
         return try await translateWithRetry(text, direction: direction, maxRetries: 2)
     }
     
-    /// Translate with retry logic to handle intermittent TranslationSession failures
+    /// Translate with retry logic to handle intermittent TranslationSession failures.
+    /// Before iOS 26 (no standalone `TranslationSession` API) the configured
+    /// AI provider is used instead, so the shortcut still works.
     private static func translateWithRetry(
         _ text: String,
         direction: TranslationDirection,
         maxRetries: Int
     ) async throws -> (translation: String, usedAI: Bool) {
+        guard #available(iOS 26.0, macOS 26.0, *) else {
+            guard aiIsAvailable() else { throw ShortcutTranslationError.translationFailed }
+            let translation = try await aiTranslate(text, sourceIsChinese: direction == .chineseToEnglish)
+            return (translation, true)
+        }
+
         var lastError: Error?
-        
+
         for attempt in 0...maxRetries {
             do {
                 // Create a fresh session for each attempt
@@ -78,14 +86,14 @@ enum ShortcutHelpers {
                 return (response.targetText, false)
             } catch {
                 lastError = error
-                
+
                 // If not the last attempt, wait briefly before retrying
                 if attempt < maxRetries {
                     try? await Task.sleep(for: .milliseconds(200))
                 }
             }
         }
-        
+
         // All retries failed
         throw lastError ?? ShortcutTranslationError.translationFailed
     }

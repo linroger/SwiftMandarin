@@ -424,7 +424,7 @@ struct FlashcardView: View {
                         Image(systemName: "speaker.wave.2")
                             .font(.title3)
                     }
-                    .buttonStyle(.glass)
+                    .glassButtonStyleCompat()
                 }
             }
             .opacity(isFlipped ? 0 : 1)
@@ -461,7 +461,7 @@ struct FlashcardView: View {
         content()
             .frame(maxWidth: .infinity, maxHeight: 400)
             .padding(24)
-            .glassEffect(in: .rect(cornerRadius: 20))
+            .glassEffectCompat(cornerRadius: 20)
     }
 }
 

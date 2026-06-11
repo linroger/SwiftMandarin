@@ -492,7 +492,9 @@ struct AboutView: View {
             VStack(spacing: 24) {
                 // App icon and name
                 VStack(spacing: 12) {
-                    Image(systemName: "character.book.closed.fill.zh")
+                    // character.book.closed.fill.zh needs iOS 18+; this
+                    // variant exists on every supported OS.
+                    Image(systemName: "character.book.closed.fill")
                         .font(.system(size: 80))
                         .foregroundStyle(.tint)
                     
@@ -514,7 +516,7 @@ struct AboutView: View {
                     Text("About")
                         .font(.headline)
                     
-                    Text("SwiftMandarin is a modern Mandarin Chinese translation and learning app built with SwiftUI for iOS 26. It features real-time translation, vocabulary management, flashcard learning with spaced repetition, and a comprehensive phrase library.")
+                    Text("SwiftMandarin is a modern Mandarin Chinese translation and learning app built with SwiftUI for iOS 17 and later. It features real-time translation, vocabulary management, flashcard learning with spaced repetition, and a comprehensive phrase library.")
                         .font(.body)
                         .foregroundStyle(.secondary)
                 }

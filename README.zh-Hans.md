@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-iOS%20|%20iPadOS%20|%20macOS-blue" alt="平台" />
+  <img src="https://img.shields.io/badge/Platform-iOS%2017%2B%20|%20iPadOS%2017%2B%20|%20macOS-blue" alt="平台" />
   <img src="https://img.shields.io/badge/Swift-6.2-orange" alt="Swift" />
   <img src="https://img.shields.io/badge/SwiftUI-Liquid%20Glass-purple" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="许可证" />
@@ -281,7 +281,7 @@
 **环境要求：**
 - Xcode 26+
 - Swift 6.2+
-- iOS 26.2+ / macOS 26.2+
+- iOS 17.0+ / macOS 26.2+（部署目标）
 
 ```bash
 # 克隆仓库
@@ -363,8 +363,8 @@ xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration
 
 ### 架构
 
-- **SwiftUI**：100% SwiftUI 加 Liquid Glass 设计体系，覆盖 iOS / iPadOS / macOS / visionOS
-- **翻译**：Apple 翻译框架（端上运行，保护隐私）
+- **SwiftUI**：100% SwiftUI，OS 26+ 采用 Liquid Glass 设计体系（iOS 17 起优雅回退到材质效果），覆盖 iOS / iPadOS / macOS / visionOS
+- **翻译**：iOS 18+/macOS 使用 Apple 翻译框架（端上运行，保护隐私）；iOS 17 通过 AI 服务商回退，所有翻译功能依旧可用
 - **AI（可选）**：十服务商统一抽象——Apple Foundation Models、Ollama，以及通过 `URLSession` 访问的 OpenAI 兼容 / Anthropic 云端 API——支撑词语讲解、照片清理与作业批改
 - **OCR**：Vision 框架，支持语言感知识别（`PhotoTextRecognitionService`）
 - **语音**：AVFoundation 文本朗读；Speech 框架实时转写
@@ -430,11 +430,22 @@ SwiftMandarin 以隐私为核心原则：
 
 | 平台 | 最低版本 |
 |--------|----------------|
-| iOS      | 26.2+          |
-| iPadOS   | 26.2+          |
+| iOS      | 17.0+          |
+| iPadOS   | 17.0+          |
 | macOS    | 26.2+          |
 
-**语言包**：要使用翻译功能，请在 系统设置 > 通用 > 语言与地区 > 翻译语言 中下载中英语言包。
+**各 iOS 版本的功能差异** — 应用会自动适配系统能力：
+
+| 功能 | iOS 17 | iOS 18 – 25 | iOS 26+ |
+|---|---|---|---|
+| 翻译（翻译 / 拍照 / 语音页） | 通过你配置的 AI 服务商 | Apple 端上翻译 | Apple 端上翻译 |
+| 点词查询、截图与快捷指令翻译 | 通过 AI 服务商 | 通过 AI 服务商 | Apple 端上翻译 |
+| 实时语音转写 | ✓（SFSpeechRecognizer） | ✓（SFSpeechRecognizer） | ✓（SpeechAnalyzer，全程端上） |
+| Apple Intelligence 服务商 | — | — | ✓ |
+| 云端 AI 服务商、Ollama、OCR、词汇、闪卡、统计、短语 | ✓ | ✓ | ✓ |
+| Liquid Glass 设计 / 自适应边栏标签栏 | 材质效果回退 / 经典标签栏 | 材质效果回退 / ✓ | ✓ / ✓ |
+
+**语言包**（iOS 18+/macOS）：要使用端上翻译，请在 系统设置 > 通用 > 语言与地区 > 翻译语言 中下载中英语言包。iOS 17 请改为在 设置 → AI 中配置 AI 服务商。
 
 ---
 

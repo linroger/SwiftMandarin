@@ -93,8 +93,19 @@ enum AppTab: String, CaseIterable, Identifiable {
 
 struct iOSContentView: View {
     @Binding var selectedTab: AppTab
-    
+
     var body: some View {
+        if #available(iOS 18.0, *) {
+            modernTabView
+        } else {
+            legacyTabView
+        }
+    }
+
+    /// iOS 18+: `Tab` builder with the sidebar-adaptable style (floating tab
+    /// bar that morphs into a sidebar on iPad).
+    @available(iOS 18.0, *)
+    private var modernTabView: some View {
         TabView(selection: $selectedTab) {
             Tab(AppTab.translate.titleKey, systemImage: AppTab.translate.icon, value: .translate) {
                 TranslateView()
@@ -129,6 +140,44 @@ struct iOSContentView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+    }
+
+    /// iOS 17: classic tab bar (extra tabs collect under the system
+    /// "More" item on iPhone).
+    private var legacyTabView: some View {
+        TabView(selection: $selectedTab) {
+            TranslateView()
+                .tabItem { Label(AppTab.translate.titleKey, systemImage: AppTab.translate.icon) }
+                .tag(AppTab.translate)
+
+            PhotoTranslateView()
+                .tabItem { Label(AppTab.photo.titleKey, systemImage: AppTab.photo.icon) }
+                .tag(AppTab.photo)
+
+            HistoryTabView(selectedTab: $selectedTab)
+                .tabItem { Label(AppTab.history.titleKey, systemImage: AppTab.history.icon) }
+                .tag(AppTab.history)
+
+            VocabularyView()
+                .tabItem { Label(AppTab.vocabulary.titleKey, systemImage: AppTab.vocabulary.icon) }
+                .tag(AppTab.vocabulary)
+
+            LearnView()
+                .tabItem { Label(AppTab.learn.titleKey, systemImage: AppTab.learn.icon) }
+                .tag(AppTab.learn)
+
+            PhrasesView()
+                .tabItem { Label(AppTab.phrases.titleKey, systemImage: AppTab.phrases.icon) }
+                .tag(AppTab.phrases)
+
+            StatsView()
+                .tabItem { Label(AppTab.stats.titleKey, systemImage: AppTab.stats.icon) }
+                .tag(AppTab.stats)
+
+            MoreView()
+                .tabItem { Label(AppTab.more.titleKey, systemImage: AppTab.more.icon) }
+                .tag(AppTab.more)
+        }
     }
 }
 

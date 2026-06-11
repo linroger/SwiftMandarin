@@ -11,13 +11,17 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3ADBBE7983753D70DD8096B9 /* user_prompt_submit.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = user_prompt_submit.json; path = logs/user_prompt_submit.json; sourceTree = SOURCE_ROOT; };
+		728BABF87D4D0781A673D362 /* post_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = post_tool_use.json; path = "logs/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc/post_tool_use.json"; sourceTree = SOURCE_ROOT; };
+		88E71205BBAE1623A2BFB78B /* pre_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = pre_tool_use.json; path = "logs/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc/pre_tool_use.json"; sourceTree = SOURCE_ROOT; };
+		931810793F85E43BA3C4D72F /* cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = "cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.json"; path = ".claude/data/sessions/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.json"; sourceTree = SOURCE_ROOT; };
 		A76501F52F3B9F5800D18A7C /* SwiftMandarin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftMandarin.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A76502072F3BA18A00D18A7C /* handoff.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = handoff.md; sourceTree = "<group>"; };
 		C6CFAA409C761EF26DB7CFF4 /* last-ndc.ts */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.typescript; name = "last-ndc.ts"; path = ".remember/tmp/last-ndc.ts"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		A7C0FFEE0000000000000001 /* Exceptions for "SwiftMandarin" folder in "SwiftMandarin" target */ = {
+		A7C0FFEE0000000000000001 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				logs,
@@ -31,7 +35,7 @@
 		A76501F72F3B9F5800D18A7C /* SwiftMandarin */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				A7C0FFEE0000000000000001 /* Exceptions for "SwiftMandarin" folder in "SwiftMandarin" target */,
+				A7C0FFEE0000000000000001 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
 			);
 			path = SwiftMandarin;
 			sourceTree = "<group>";
@@ -57,6 +61,10 @@
 				A76501F62F3B9F5800D18A7C /* Products */,
 				A76502072F3BA18A00D18A7C /* handoff.md */,
 				C6CFAA409C761EF26DB7CFF4 /* last-ndc.ts */,
+				931810793F85E43BA3C4D72F /* cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.json */,
+				3ADBBE7983753D70DD8096B9 /* user_prompt_submit.json */,
+				88E71205BBAE1623A2BFB78B /* pre_tool_use.json */,
+				728BABF87D4D0781A673D362 /* post_tool_use.json */,
 			);
 			sourceTree = "<group>";
 		};
@@ -315,7 +323,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -388,7 +396,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;

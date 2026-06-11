@@ -19,6 +19,7 @@ import FoundationModels
 /// Structured response for a detailed Mandarin word explanation
 /// Uses @Generable for type-safe structured generation from Apple Intelligence
 #if canImport(FoundationModels)
+@available(iOS 26.0, macOS 26.0, *)
 @Generable
 struct WordExplanation {
     @Guide(description: "A clear, concise definition of the word in English (1-2 sentences)")
@@ -52,6 +53,7 @@ struct WordExplanation {
     let learningTip: String
 }
 
+@available(iOS 26.0, macOS 26.0, *)
 @Generable
 struct ExampleSentence {
     @Guide(description: "The example sentence in Chinese characters. CRITICAL: This sentence MUST contain the exact word being explained, not a different word or synonym.")
@@ -64,6 +66,7 @@ struct ExampleSentence {
     let english: String
 }
 
+@available(iOS 26.0, macOS 26.0, *)
 @Generable
 struct RelatedWord {
     @Guide(description: "The related word in Chinese characters")
@@ -79,6 +82,7 @@ struct RelatedWord {
     let difference: String
 }
 
+@available(iOS 26.0, macOS 26.0, *)
 @Generable
 struct Collocation {
     @Guide(description: "The collocation or phrase in Chinese characters. Must contain the word being explained.")
@@ -162,26 +166,31 @@ final class AIWordExplanationService {
     /// Whether the device supports Apple Intelligence
     var isAvailable: Bool {
         #if canImport(FoundationModels)
+        guard #available(iOS 26.0, macOS 26.0, *) else { return false }
         return checkAvailability()
         #else
         return false
         #endif
     }
-    
+
     /// Reason why AI is unavailable (if applicable)
     var unavailabilityReason: String? {
         #if canImport(FoundationModels)
+        guard #available(iOS 26.0, macOS 26.0, *) else {
+            return "Apple Intelligence requires iOS 26 or later"
+        }
         return getUnavailabilityReason()
         #else
         return "Apple Intelligence is not available on this device"
         #endif
     }
-    
+
     private init() {}
-    
+
     // MARK: - Availability Check
-    
+
     #if canImport(FoundationModels)
+    @available(iOS 26.0, macOS 26.0, *)
     private func checkAvailability() -> Bool {
         let model = SystemLanguageModel.default
         switch model.availability {
@@ -194,6 +203,7 @@ final class AIWordExplanationService {
         }
     }
     
+    @available(iOS 26.0, macOS 26.0, *)
     private func getUnavailabilityReason() -> String? {
         let model = SystemLanguageModel.default
         switch model.availability {
@@ -248,10 +258,13 @@ final class AIWordExplanationService {
         }
         
         #if canImport(FoundationModels)
+        guard #available(iOS 26.0, macOS 26.0, *) else {
+            throw AIExplanationError.unavailable(reason: String(localized: "Apple Intelligence requires iOS 26 or later"))
+        }
         guard isAvailable else {
             throw AIExplanationError.unavailable(reason: unavailabilityReason ?? "Unknown")
         }
-        
+
         // Build a concise prompt to stay within context limits
         var prompt = "Explain: \(word)"
         if let pinyin = pinyin, !pinyin.isEmpty {
@@ -344,6 +357,9 @@ final class AIWordExplanationService {
     /// - Returns: The translated text
     func translate(_ text: String, sourceIsChinese: Bool) async throws -> String {
         #if canImport(FoundationModels)
+        guard #available(iOS 26.0, macOS 26.0, *) else {
+            throw AIExplanationError.unavailable(reason: String(localized: "Apple Intelligence requires iOS 26 or later"))
+        }
         guard isAvailable else {
             throw AIExplanationError.unavailable(reason: unavailabilityReason ?? "Unknown")
         }
@@ -410,6 +426,13 @@ final class AIWordExplanationService {
     /// - Returns: The translated text
     func translateWithProvider(_ text: String, sourceIsChinese: Bool) async throws -> String {
         let settings = AIModelSettings.shared
+        // On systems without Apple's Translation API this is the only
+        // translation backend, so fail with actionable guidance.
+        guard settings.isAnyProviderAvailable else {
+            throw AIExplanationError.unavailable(
+                reason: String(localized: "No AI provider is configured. Add one in Settings → AI (or run a local Ollama server).")
+            )
+        }
         let provider = settings.effectiveProvider
 
         switch provider {
@@ -692,7 +715,7 @@ final class AIWordExplanationService {
         switch provider {
         case .appleIntelligence:
             #if canImport(FoundationModels)
-            guard isAvailable else { return nil }
+            guard #available(iOS 26.0, macOS 26.0, *), isAvailable else { return nil }
             let session = LanguageModelSession(instructions: system)
             let response = try await session.respond(to: user)
             return response.content.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -765,7 +788,9 @@ final class AIWordExplanationService {
         switch provider {
         case .appleIntelligence:
             #if canImport(FoundationModels)
-            guard isAvailable else { throw AIExplanationError.unavailable(reason: unavailabilityReason ?? "Unknown") }
+            guard #available(iOS 26.0, macOS 26.0, *), isAvailable else {
+                throw AIExplanationError.unavailable(reason: unavailabilityReason ?? "Unknown")
+            }
             let session = LanguageModelSession(instructions: system)
             json = try await session.respond(to: user).content
             #else

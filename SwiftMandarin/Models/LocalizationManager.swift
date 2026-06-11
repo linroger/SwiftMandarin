@@ -45,10 +45,12 @@ enum AppLanguage: String, CaseIterable, Identifiable, Codable {
     }
 
     /// SF Symbol used next to the option in the language picker.
+    /// (`character.book.closed.fill.zh` requires iOS 18+, so use a symbol
+    /// available on every supported OS.)
     var iconName: String {
         switch self {
         case .english: return "a.circle"
-        case .chinese: return "character.book.closed.fill.zh"
+        case .chinese: return "character.book.closed.fill"
         }
     }
 

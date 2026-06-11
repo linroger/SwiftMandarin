@@ -65,8 +65,9 @@ struct PhotoTranslateView: View {
     // Word detail - Chinese (using RubySegment)
     @State private var selectedChineseSegment: RubySegment?
     
-    // Translation
-    @State private var translationConfiguration: TranslationSession.Configuration?
+    // Translation (box keeps the iOS 18-only configuration type out of the
+    // stored-property layout so the view deploys to iOS 17)
+    @State private var translationConfiguration = TranslationConfigurationBox()
     @State private var isTranslating: Bool = false
     
     // Settings
@@ -91,6 +92,7 @@ struct PhotoTranslateView: View {
     // re-selection can't pile up stale work that overwrites newer results.
     @State private var photoProcessingTask: Task<Void, Never>?
     @State private var textProcessingTask: Task<Void, Never>?
+    @State private var aiFallbackTranslationTask: Task<Void, Never>?
 
     // History (translations made here count like the Translate tab's)
     @AppStorage("saveToHistoryAutomatically") private var saveToHistoryAutomatically: Bool = true
@@ -241,8 +243,14 @@ struct PhotoTranslateView: View {
                     await loadAndProcessImage(newValue)
                 }
             }
-            .translationTask(translationConfiguration) { session in
-                await translateSentences(session: session)
+            .background {
+                // Apple Translation runs on iOS 18+/macOS 15+; on iOS 17 the
+                // sentence translation routes through the AI provider instead.
+                if #available(iOS 18.0, macOS 15.0, *) {
+                    TranslationTaskHost(box: translationConfiguration) { session in
+                        await translateSentences(session: session)
+                    }
+                }
             }
         }
     }
@@ -960,14 +968,77 @@ struct PhotoTranslateView: View {
     /// Trigger English → Chinese translation
     private func triggerTranslation() {
         guard !analyzedSentences.isEmpty else { return }
-        
-        if translationConfiguration == nil {
-            translationConfiguration = TranslationSession.Configuration(
+
+        guard #available(iOS 18.0, macOS 15.0, *) else {
+            // iOS 17: no on-device Translation API — translate the sentences
+            // through the configured AI provider instead.
+            aiFallbackTranslationTask?.cancel()
+            aiFallbackTranslationTask = Task { await translateSentencesWithAIFallback() }
+            return
+        }
+
+        if translationConfiguration.isNil {
+            translationConfiguration.set(
                 source: Locale.Language(identifier: "en"),
                 target: Locale.Language(identifier: "zh-Hans")
             )
         } else {
-            translationConfiguration?.invalidate()
+            translationConfiguration.invalidate()
+        }
+    }
+
+    /// iOS 17 path: per-sentence translation via the AI provider (word-level
+    /// translations are fetched lazily when a word is tapped). One failing
+    /// sentence doesn't abort the rest; an error is shown only when nothing
+    /// could be translated.
+    private func translateSentencesWithAIFallback() async {
+        await MainActor.run { isTranslating = true }
+
+        var lastError: Error?
+        var translatedCount = 0
+
+        let sentenceCount = await MainActor.run { analyzedSentences.count }
+        for i in 0..<sentenceCount {
+            guard !Task.isCancelled else {
+                await MainActor.run { isTranslating = false }
+                return
+            }
+            let sentenceText = await MainActor.run {
+                i < analyzedSentences.count ? analyzedSentences[i].text : nil
+            }
+            guard let text = sentenceText else { continue }
+
+            do {
+                let translation = try await WordTranslationService.shared.translate(text, sourceIsChinese: false)
+                translatedCount += 1
+                await MainActor.run {
+                    if i < analyzedSentences.count {
+                        analyzedSentences[i].translation = translation
+                    }
+                }
+            } catch {
+                lastError = error
+            }
+        }
+
+        await MainActor.run {
+            if translatedCount == 0, let lastError {
+                errorMessage = "翻译失败: \(lastError.localizedDescription)"
+            } else if saveToHistoryAutomatically {
+                // One combined history entry covering whatever succeeded,
+                // same as the Apple-translation path.
+                let translated = analyzedSentences.filter { $0.translation != nil }
+                let fullSource = translated.map(\.text).joined(separator: " ")
+                let fullTarget = translated.compactMap(\.translation).joined(separator: " ")
+                if !fullSource.isEmpty, !fullTarget.isEmpty {
+                    TranslationHistoryStore.shared.add(
+                        source: fullSource,
+                        target: fullTarget,
+                        direction: .englishToChinese
+                    )
+                }
+            }
+            isTranslating = false
         }
     }
     
@@ -1008,6 +1079,7 @@ struct PhotoTranslateView: View {
         }
     }
     
+    @available(iOS 18.0, macOS 15.0, *)
     private func translateSentences(session: TranslationSession) async {
         await MainActor.run {
             isTranslating = true
@@ -1240,6 +1312,7 @@ struct PhotoTranslateView: View {
     private func clearAll() {
         photoProcessingTask?.cancel()
         textProcessingTask?.cancel()
+        aiFallbackTranslationTask?.cancel()
         sourceText = ""
         analyzedSentences = []
         cleanedChineseText = ""
@@ -1253,7 +1326,7 @@ struct PhotoTranslateView: View {
         errorMessage = nil
         isProcessing = false
         isTranslating = false
-        translationConfiguration = nil
+        translationConfiguration.clear()
         extractedVocab = []
         isExtractingVocab = false
         rawOCRText = ""

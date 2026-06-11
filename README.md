@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-iOS%20|%20iPadOS%20|%20macOS-blue" alt="Platform" />
+  <img src="https://img.shields.io/badge/Platform-iOS%2017%2B%20|%20iPadOS%2017%2B%20|%20macOS-blue" alt="Platform" />
   <img src="https://img.shields.io/badge/Swift-6.2-orange" alt="Swift" />
   <img src="https://img.shields.io/badge/SwiftUI-Liquid%20Glass-purple" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
@@ -297,7 +297,7 @@ Download SwiftMandarin from the [App Store](https://apps.apple.com/app/swiftmand
 **Requirements:**
 - Xcode 26+
 - Swift 6.2+
-- iOS 26.2+ / macOS 26.2+
+- iOS 17.0+ / macOS 26.2+ (deployment targets)
 
 ```bash
 # Clone the repository
@@ -379,8 +379,8 @@ xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration
 
 ### Architecture
 
-- **SwiftUI**: 100% SwiftUI with Liquid Glass design system, across iOS / iPadOS / macOS / visionOS
-- **Translation**: Apple Translation framework (on-device, privacy-preserving)
+- **SwiftUI**: 100% SwiftUI with the Liquid Glass design system on OS 26+ (graceful material fallbacks down to iOS 17), across iOS / iPadOS / macOS / visionOS
+- **Translation**: Apple Translation framework (on-device, privacy-preserving) on iOS 18+/macOS, with an AI-provider fallback that keeps every translation feature working on iOS 17
 - **AI (optional)**: A 10-provider abstraction—Apple Foundation Models, Ollama, and OpenAI-compatible / Anthropic cloud APIs via `URLSession`—for explanations, photo cleanup, and grading
 - **OCR**: Vision framework with language-aware recognition (`PhotoTextRecognitionService`)
 - **Speech**: AVFoundation for text-to-speech; Speech framework for live transcription
@@ -446,11 +446,22 @@ Your learning journey is yours alone.
 
 | Platform | Minimum Version |
 |----------|----------------|
-| iOS      | 26.2+          |
-| iPadOS   | 26.2+          |
+| iOS      | 17.0+          |
+| iPadOS   | 17.0+          |
 | macOS    | 26.2+          |
 
-**Language Packs**: For translation to work, download the English-Chinese language pack in System Settings > General > Language & Region > Translation Languages.
+**Feature availability by iOS version** — the app adapts to what each OS release provides:
+
+| Capability | iOS 17 | iOS 18 – 25 | iOS 26+ |
+|---|---|---|---|
+| Translation (Translate / Photo / Live Speech tabs) | Via your configured AI provider | Apple on-device translation | Apple on-device translation |
+| Word-tap lookups, screenshot & Shortcuts translation | Via AI provider | Via AI provider | Apple on-device translation |
+| Live speech transcription | ✓ (SFSpeechRecognizer) | ✓ (SFSpeechRecognizer) | ✓ (SpeechAnalyzer, fully on-device) |
+| Apple Intelligence provider | — | — | ✓ |
+| Cloud AI providers, Ollama, OCR, vocabulary, flashcards, stats, phrases | ✓ | ✓ | ✓ |
+| Liquid Glass design / sidebar-adaptable tab bar | Material fallback / classic tab bar | Material fallback / ✓ | ✓ / ✓ |
+
+**Language Packs** (iOS 18+/macOS): For on-device translation, download the English-Chinese language pack in System Settings > General > Language & Region > Translation Languages. On iOS 17, configure an AI provider in Settings → AI instead.
 
 ---
 

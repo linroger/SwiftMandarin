@@ -28,10 +28,12 @@ struct TranslateScreenshotsIntent: AppIntent {
     
     // MARK: - Parameters
     
+    // No supportedContentTypes filter: the typed variant of this initializer
+    // requires iOS 18 and the legacy one is deprecated on macOS 15+. Image
+    // data is validated at runtime when the screenshots are decoded.
     @Parameter(
         title: "Screenshots",
-        description: "One or more screenshots to translate. If multiple images are provided, they will be stitched together with overlapping regions automatically removed.",
-        supportedContentTypes: [.image]
+        description: "One or more screenshots to translate. If multiple images are provided, they will be stitched together with overlapping regions automatically removed."
     )
     var images: [IntentFile]
     

@@ -283,27 +283,34 @@ final class ScreenshotTranslationStore {
         return result
     }
     
-    /// Translate text using Apple's Translation framework
+    /// Translate text using Apple's Translation framework (iOS 26+/macOS 26+
+    /// for the standalone session API), falling back to the configured AI
+    /// provider on older systems.
     private func translateText(_ text: String) async throws -> String {
-        // Use the same translation approach as elsewhere in the app
-        // This leverages TranslationSession for on-device translation
-        
+        let sourceIsChinese = targetLanguage == .english
+
+        guard #available(iOS 26.0, macOS 26.0, *) else {
+            return try await AIWordExplanationService.shared
+                .translateWithProvider(text, sourceIsChinese: sourceIsChinese)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
         let sourceLanguage: Locale.Language
         let targetLang = targetLanguage.localeLanguage
-        
+
         // Detect source language - if targeting English, source is likely Chinese and vice versa
-        if targetLanguage == .english {
+        if sourceIsChinese {
             sourceLanguage = Locale.Language(identifier: "zh-Hans")
         } else {
             sourceLanguage = Locale.Language(identifier: "en")
         }
-        
+
         // Create translation session using installed languages
         let session = TranslationSession(
             installedSource: sourceLanguage,
             target: targetLang
         )
-        
+
         let response = try await session.translate(text)
         return response.targetText
     }

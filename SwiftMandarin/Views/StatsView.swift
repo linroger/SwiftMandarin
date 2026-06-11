@@ -128,7 +128,7 @@ struct StatsView: View {
                         Spacer()
                     }
                     .padding()
-                    .glassEffect(in: .rect(cornerRadius: 16))
+                    .glassEffectCompat(cornerRadius: 16)
                     
                     // Secondary stats in horizontal row
                     HStack(spacing: 12) {
@@ -174,7 +174,7 @@ struct StatsView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 20)
-                    .glassEffect(in: .rect(cornerRadius: 20))
+                    .glassEffectCompat(cornerRadius: 20)
                     
                     // Secondary stats
                     VStack(spacing: 12) {
@@ -194,7 +194,7 @@ struct StatsView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .glassEffect(in: .rect(cornerRadius: 20))
+                    .glassEffectCompat(cornerRadius: 20)
                 }
                 .padding(.horizontal)
             }
@@ -341,7 +341,7 @@ struct StatsView: View {
                         }
                     }
                 }
-                .glassEffect(in: .capsule)
+                .glassEffectCapsuleCompat()
             }
             .padding(.horizontal)
             
@@ -863,7 +863,7 @@ struct CompactStatCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
-        .glassEffect(in: .rect(cornerRadius: 12))
+        .glassEffectCompat(cornerRadius: 12)
     }
 }
 

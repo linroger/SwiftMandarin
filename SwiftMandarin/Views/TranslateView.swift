@@ -21,7 +21,9 @@ struct TranslateView: View {
     // Use shared state for persistence across tab switches
     private var sharedState: TranslationState { TranslationState.shared }
     
-    @State private var translationConfiguration: TranslationSession.Configuration?
+    // Version-agnostic holder for the Apple Translation configuration so the
+    // view can deploy to iOS 17 (where TranslationSession doesn't exist).
+    @State private var translationConfiguration = TranslationConfigurationBox()
     
     // For word analysis popover - using sheet(item:) pattern to avoid race condition
     // When selectedSegment is set, the sheet automatically shows; when nil, it dismisses
@@ -44,6 +46,7 @@ struct TranslateView: View {
     @State private var isLoadingAdditionalTranslation: Bool = false
     
     // State for AI translation
+    @State private var aiTranslationTask: Task<Void, Never>?
     @State private var isAITranslating: Bool = false
     @State private var aiTranslationError: String?
     @State private var aiSettings = AIModelSettings.shared
@@ -146,8 +149,14 @@ struct TranslateView: View {
                     .disabled(!sharedState.hasContent)
                 }
             }
-            .translationTask(translationConfiguration) { session in
-                await performTranslation(session: session)
+            .background {
+                // Apple Translation runs on iOS 18+/macOS 15+; on iOS 17 the
+                // translate actions route to the configured AI provider.
+                if #available(iOS 18.0, macOS 15.0, *) {
+                    TranslationTaskHost(box: translationConfiguration) { session in
+                        await performTranslation(session: session)
+                    }
+                }
             }
             .sheet(isPresented: $showLiveSpeechTranslation) {
                 LiveSpeechTranslationView(
@@ -200,7 +209,7 @@ struct TranslateView: View {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     preserveCurrentTranslationDuringSourceUpdate {
                         additionalTranslation = ""
-                        translationConfiguration = nil
+                        translationConfiguration.clear()
                         lastDetectedDirection = nil
                         sharedState.translationError = nil
                         aiTranslationError = nil
@@ -219,7 +228,7 @@ struct TranslateView: View {
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.tint)
             }
-            .buttonStyle(.glass)
+            .glassButtonStyleCompat()
             .buttonBorderShape(.circle)
             
             Text(sharedState.direction.targetLanguageName)
@@ -290,7 +299,7 @@ struct TranslateView: View {
 
                     if newValue.isEmpty {
                         // Reset configuration when text is cleared to ensure next translation triggers
-                        translationConfiguration = nil
+                        translationConfiguration.clear()
                         sharedState.translatedText = ""
                         sharedState.translationError = nil
                         additionalTranslation = ""
@@ -379,7 +388,7 @@ struct TranslateView: View {
                     if aiSettings.isAnyProviderAvailable {
                         Button {
                             isInputFocused = false
-                            Task { await triggerAITranslation() }
+                            startAITranslation()
                         } label: {
                             Label {
                                 Text("Translate with \(aiSettings.effectiveProvider.displayName)")
@@ -429,7 +438,7 @@ struct TranslateView: View {
                     // AI translate button (any configured provider)
                     if aiSettings.isAnyProviderAvailable {
                         Button {
-                            Task { await triggerAITranslation() }
+                            startAITranslation()
                         } label: {
                             ProviderIcon(provider: aiSettings.effectiveProvider, size: 22)
                                 .foregroundStyle(.blue)
@@ -558,7 +567,7 @@ struct TranslateView: View {
                             if aiSettings.isAnyProviderAvailable {
                                 Button {
                                     isInputFocused = false
-                                    Task { await triggerAITranslation() }
+                                    startAITranslation()
                                 } label: {
                                     Label {
                                         Text("Use \(aiSettings.effectiveProvider.displayName)")
@@ -874,23 +883,36 @@ struct TranslateView: View {
         // This ensures: EN input → ZH output, ZH input → EN output
         let actualDirection = detectedTranslationDirection
         
+        guard #available(iOS 18.0, macOS 15.0, *) else {
+            // iOS 17: no on-device Translation API — use the AI provider.
+            startAITranslation()
+            return
+        }
+
         // Apple's recommended pattern for triggering translations:
         // - First time: Create a new configuration
         // - When detected direction changes: Create new configuration
         // - Otherwise: Call invalidate() on existing configuration
-        if translationConfiguration == nil || lastDetectedDirection != actualDirection {
+        if translationConfiguration.isNil || lastDetectedDirection != actualDirection {
             // Create new configuration based on detected language
             lastDetectedDirection = actualDirection
-            translationConfiguration = TranslationSession.Configuration(
+            translationConfiguration.set(
                 source: actualDirection.sourceLanguage,
                 target: actualDirection.targetLanguage
             )
         } else {
             // Subsequent translation with same direction - invalidate to re-trigger
-            translationConfiguration?.invalidate()
+            translationConfiguration.invalidate()
         }
     }
     
+    /// Start AI translation, cancelling any in-flight request first so
+    /// rapid taps can't pile up racing tasks.
+    private func startAITranslation() {
+        aiTranslationTask?.cancel()
+        aiTranslationTask = Task { await triggerAITranslation() }
+    }
+
     private func triggerAITranslation() async {
         let sourceSnapshot = sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
         let directionSnapshot = sharedState.direction
@@ -926,6 +948,7 @@ struct TranslateView: View {
         }
     }
     
+    @available(iOS 18.0, macOS 15.0, *)
     private func performTranslation(session: TranslationSession) async {
         let sourceSnapshot = sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
         let directionSnapshot = sharedState.direction
@@ -963,8 +986,9 @@ struct TranslateView: View {
     
     private func clearAll() {
         pendingAutoTranslateTask?.cancel()
+        aiTranslationTask?.cancel()
         // Reset the translation configuration to ensure next translation triggers properly
-        translationConfiguration = nil
+        translationConfiguration.clear()
         lastDetectedDirection = nil
         additionalTranslation = ""
         aiTranslationError = nil

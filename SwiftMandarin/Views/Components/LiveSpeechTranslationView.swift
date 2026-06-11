@@ -34,7 +34,9 @@ struct LiveSpeechTranslationView: View {
     @State private var translatedText = ""
     @State private var isTranslating = false
     @State private var translationError: String?
-    @State private var translationConfiguration: TranslationSession.Configuration?
+    // Version-agnostic holder so the view deploys to iOS 17 (where the
+    // TranslationSession type doesn't exist).
+    @State private var translationConfiguration = TranslationConfigurationBox()
     @State private var selectedLanguage: SpeechRecognitionLanguage = .english
     @State private var showPermissionAlert = false
     @State private var permissionAlertMessage = ""
@@ -174,8 +176,14 @@ struct LiveSpeechTranslationView: View {
                     }
                 }
             }
-            .translationTask(translationConfiguration) { session in
-                await performTranslation(session: session)
+            .background {
+                // Apple Translation on iOS 18+/macOS 15+; iOS 17 falls back
+                // to the configured AI provider in triggerTranslation().
+                if #available(iOS 18.0, macOS 15.0, *) {
+                    TranslationTaskHost(box: translationConfiguration) { session in
+                        await performTranslation(session: session)
+                    }
+                }
             }
             .alert("Permission Required", isPresented: $showPermissionAlert) {
                 Button("Open Settings") {
@@ -726,23 +734,61 @@ struct LiveSpeechTranslationView: View {
         // Create configuration based on detected source language
         let actualDirection: TranslationDirection = sourceIsChinese ? .chineseToEnglish : .englishToChinese
         
+        guard #available(iOS 18.0, macOS 15.0, *) else {
+            // iOS 17: no on-device Translation API — translate the live
+            // transcript through the configured AI provider.
+            translationTask?.cancel()
+            translationTask = Task { await performAIFallbackTranslation(sourceIsChinese: sourceIsChinese) }
+            return
+        }
+
         // Apple's recommended pattern for triggering translations:
         // - First time: Create a new configuration
         // - When detected direction changes: Create new configuration
         // - Otherwise: Call invalidate() on existing configuration
-        if translationConfiguration == nil || lastDetectedDirection != actualDirection {
+        if translationConfiguration.isNil || lastDetectedDirection != actualDirection {
             // Create new configuration based on detected language
             lastDetectedDirection = actualDirection
-            translationConfiguration = TranslationSession.Configuration(
+            translationConfiguration.set(
                 source: actualDirection.sourceLanguage,
                 target: actualDirection.targetLanguage
             )
         } else {
             // Subsequent translation with same direction - invalidate to re-trigger
-            translationConfiguration?.invalidate()
+            translationConfiguration.invalidate()
         }
     }
-    
+
+    /// iOS 17 path: AI-provider translation of the current transcript.
+    private func performAIFallbackTranslation(sourceIsChinese: Bool) async {
+        let sourceSnapshot = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !sourceSnapshot.isEmpty else { return }
+
+        await MainActor.run {
+            isTranslating = true
+            translationError = nil
+        }
+
+        do {
+            let translation = try await AIWordExplanationService.shared
+                .translateWithProvider(sourceSnapshot, sourceIsChinese: sourceIsChinese)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            await MainActor.run {
+                isTranslating = false
+                // Only apply if the transcript hasn't moved on meanwhile.
+                if transcript.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot {
+                    translatedText = translation
+                }
+            }
+        } catch {
+            await MainActor.run {
+                isTranslating = false
+                translationError = "Translation failed: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    @available(iOS 18.0, macOS 15.0, *)
     private func performTranslation(session: TranslationSession) async {
         let sourceSnapshot = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !sourceSnapshot.isEmpty else { return }
@@ -771,7 +817,7 @@ struct LiveSpeechTranslationView: View {
         transcript = ""
         translatedText = ""
         translationError = nil
-        translationConfiguration = nil
+        translationConfiguration.clear()
         lastDetectedDirection = nil
         lastTranslationText = ""
         speechService.clearTranscripts()
