@@ -1064,8 +1064,11 @@ final class AIWordExplanationService {
         // Prioritize questions the student got wrong or that carry vocab — those
         // are the weak spots worth re-drilling — and cap the prompt size.
         let prioritized = bank.sorted { lhs, rhs in
-            func weight(_ q: WorkbookQuestion) -> Int { (q.hasVocab ? 2 : 0) + (q.wasCorrect ? 0 : 1) }
-            return weight(lhs) > weight(rhs)
+            // Inline the weighting: a nested func would be nonisolated and so
+            // couldn't read these main-actor-isolated properties.
+            let lw = (lhs.hasVocab ? 2 : 0) + (lhs.wasCorrect ? 0 : 1)
+            let rw = (rhs.hasVocab ? 2 : 0) + (rhs.wasCorrect ? 0 : 1)
+            return lw > rw
         }.prefix(40)
 
         let source = prioritized.enumerated().map { index, q -> String in
