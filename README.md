@@ -1,185 +1,498 @@
-# SwiftMandarin
+<p align="center">
+  <img src="SwiftMandarin/Assets.xcassets/AppIcon.appiconset/icon_512x512.png" width="128" height="128" alt="SwiftMandarin App Icon" />
+</p>
 
-A modern Apple-platform Mandarin Chinese learning and translation app built with SwiftUI and Apple Translation.
+<h1 align="center">SwiftMandarin</h1>
 
-SwiftMandarin combines translation, pinyin-aware reading support, vocabulary building, and flashcard practice in one app for iPhone, iPad, and Mac.
+<p align="center">
+  <strong>Your Complete Mandarin Chinese Learning Companion</strong>
+</p>
 
-## Highlights
+<p align="center">
+  <a href="README.md">English</a> ·
+  <a href="README.zh-Hans.md">简体中文</a>
+</p>
 
-- Bidirectional translation: English <-> Chinese using Apple's Translation framework.
-- Interactive Chinese output: tap words to see pinyin, part of speech, and per-word translation.
-- Tone-colored pinyin rendering for faster pronunciation recognition.
-- Translation history with restore, reverse-translate, duplicate, reorder, and quick copy actions.
-- Vocabulary manager with search, sorting, details, export, and text-to-speech.
-- Flashcard learning with spaced repetition and mastery tracking.
-- Phrasebook grouped by practical categories (greetings, travel, dining, and more).
-- Cross-platform experience for iOS/iPadOS and macOS, with platform-appropriate navigation.
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#screenshots">Screenshots</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#how-to-use">How to Use</a> •
+  <a href="#privacy">Privacy</a>
+</p>
 
-## Platform Requirements
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-iOS%2017%2B%20|%20iPadOS%2017%2B%20|%20macOS-blue" alt="Platform" />
+  <img src="https://img.shields.io/badge/Swift-6.2-orange" alt="Swift" />
+  <img src="https://img.shields.io/badge/SwiftUI-Liquid%20Glass-purple" alt="SwiftUI" />
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
+</p>
 
-- Xcode: 26+
-- Swift: 6.2+
-- Deployment targets:
-  - iOS 26.2+
-  - macOS 26.2+
-- Apple Translation language packs installed for translation directions you use
+---
 
-## Install
+## Overview
 
-### Option 1: Install via DMG (recommended for Mac users)
+**SwiftMandarin** is a beautifully designed, native Apple app that combines powerful translation, intelligent vocabulary building, and effective flashcard-based learning into one seamless experience. Built entirely with SwiftUI and Apple's Translation framework, it delivers a premium Mandarin Chinese learning experience across iPhone, iPad, and Mac.
 
-1. Download the latest DMG from the [Releases](https://github.com/linroger/SwiftMandarin/releases).
-2. Open `SwiftMandarin-2.0-macOS.dmg`.
-3. Drag `SwiftMandarin.app` into `Applications`.
-4. Launch SwiftMandarin from Applications.
+Whether you're a beginner taking your first steps into Mandarin or an advanced learner looking to expand your vocabulary, SwiftMandarin provides all the tools you need to learn Chinese effectively and enjoyably.
 
-If Gatekeeper warns on first launch, right-click the app, choose **Open**, then confirm.
+### Why SwiftMandarin?
 
-### Option 2: Build and run from source
+- **Native Apple Experience**: Built from the ground up with SwiftUI and Apple's Liquid Glass design language
+- **Privacy-First**: Core features run entirely on-device—no accounts, no tracking, no required network
+- **Intelligent Learning**: Spaced repetition algorithm adapts to your learning pace
+- **Optional AI Power**: Bring your own provider—Apple Intelligence (on-device), a local Ollama server, or a cloud model—for word explanations, photo cleanup, and workbook grading
+- **Camera & Photo OCR**: Scan textbooks, signs, and worksheets, then translate and study the text
+- **Beautiful Visualizations**: GitHub-style activity heatmaps and interactive charts track your progress
+- **Cross-Platform**: Seamless experience across iPhone, iPad, and Mac with platform-optimized interfaces
+- **Switchable Bilingual Interface**: The entire app runs in English or Simplified Chinese (简体中文)—flip it anytime from Settings
 
-```bash
-git clone https://github.com/linroger/SwiftMandarin.git
-cd SwiftMandarin
-open SwiftMandarin.xcodeproj
-```
+---
 
-In Xcode:
-1. Select the `SwiftMandarin` scheme.
-2. Pick a destination (`iPhone`, `iPad`, or `My Mac`).
-3. Build and run.
+## Features
 
-Or build via CLI:
+### 🔤 Intelligent Translation
 
-```bash
-xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration Debug -destination 'platform=macOS' build
-```
+<img align="right" src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-23%20at%2016.24.47@2x.png" width="400" alt="Translation View" />
 
-## How to Use
+- **Bidirectional Translation**: Seamlessly translate between English and Chinese using Apple's on-device Translation framework
+- **Interactive Word Analysis**: Tap any Chinese word to see:
+  - Pinyin pronunciation with tone marks
+  - Part of speech classification
+  - Individual word translation
+  - Quick save, copy, and speak actions
+- **Tone-Colored Pinyin**: Visual tone indicators help you master pronunciation:
+  - 🔴 First tone (high level)
+  - 🟢 Second tone (rising)
+  - 🔵 Third tone (dipping)
+  - 🟣 Fourth tone (falling)
+  - ⚫ Neutral tone
+- **Ruby Text Display**: Pinyin displayed elegantly above Chinese characters
+- **Auto-Translate Options**: Translate automatically as you type or on paste
+- **Text-to-Speech**: Native Chinese pronunciation using Apple's speech synthesis
 
-### 1. Translate
+<br clear="right"/>
 
-- Enter or paste text in the source panel.
-- Toggle direction with the arrow switch (`English -> Chinese` or `Chinese -> English`).
-- Tap **Translate** (or enable auto-translate in settings).
-- Use action buttons to speak, copy, clear, or save translation.
+### 📷 Photo, Camera & Screenshot Translation
 
-### 2. Explore Chinese Output
+- **Photo Translate**: Pick a photo of a textbook, menu, or sign and SwiftMandarin recognizes and translates the text
+- **Live Camera Scanner**: Point your camera at text for real-time on-device recognition (iOS)
+- **Language-Aware OCR**: Choose Auto, 中文, English, or Both so Chinese characters are never mangled into Latin gibberish
+- **Screenshot Stitching**: Combine multiple screenshots of a long page—overlapping regions are removed automatically—then translate the whole thing
+- **AI Photo Cleanup (Optional)**: Route scanned text through your chosen AI provider to fix OCR errors before translation
+- **Cleanup Transparency**: When AI cleanup runs you see a badge and can flip back to the original OCR text with one tap; if cleanup can't run, the app tells you instead of failing silently
+- **Extract Key Vocabulary**: Pull the most useful words out of any scanned passage and save them with one tap
+- **Counts Toward Your Stats**: Photo translations are saved to History and your daily activity, just like typed ones
 
-- In Chinese output mode, words are displayed with pinyin above each segment.
-- Tap any word to open details:
-  - pinyin
-  - part of speech
-  - per-word translation
-  - save/copy/speak actions
+### 🎙️ Voice Translation
 
-### 3. Build Vocabulary
+- **Live Speech Translation**: Speak and see your words transcribed and translated in real time
+- **Tap-to-Study**: Tap any word in the transcript to open its details and save it
+- **Dual-Language Narration**: Hear both the word and its translation read aloud
+- **Use Both Sides**: Accepting a spoken translation fills in both the transcript and the result on the Translate tab, and records it to History
 
-- Save words from Translate, Phrase details, or word popovers.
-- In **Vocabulary**:
-  - search and sort by date/alphabetical/pinyin
-  - open term detail sheets
-  - export terms as CSV, JSON, or plain text
+### 🤖 AI-Powered Features (Optional, Bring Your Own Provider)
 
-### 4. Review History
+- **Ten Providers, Your Choice**: Apple Intelligence (on-device), a local **Ollama** server, or a cloud model—**OpenAI, Claude, DeepSeek, Doubao, Qwen, Kimi, Zhipu, MiniMax**
+- **Rich Word Explanations**: Generate detailed cards with nuances, grammar usage, example sentences, synonyms, and collocations
+- **Live Model Lists**: Enter your API key and fetch the provider's available models directly from its API
+- **Test Connection & Capability Badges**: One tap verifies your key, endpoint, and model round-trip; badges show whether the provider supports vision (images) and strict JSON mode
+- **Secure Key Storage**: API keys are stored in the system **Keychain**, never in plain files or the cloud
+- **Learner Mode**: Tell the app whether you're an English speaker learning Mandarin, a Mandarin speaker learning English, or both—defaults adapt accordingly
+- **Entirely Optional**: Leave AI off and every core feature still works fully on-device
 
-- Open **History** for previous translations.
-- Tap an entry to restore it to Translate.
-- Use swipe/context actions to delete, duplicate, reverse-translate, and copy.
+### ✅ AI Workbook Grading
 
-### 5. Practice with Flashcards
+<img align="right" src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.11@2x.png" width="400" alt="Workbook Grading Results" />
 
-- Open **Learn**.
-- Choose built-in deck, vocabulary deck, or combined deck.
-- Flip cards, rate recall quality, and let spaced repetition schedule reviews.
+- **Photo-Based Grading**: Upload photos of a workbook (and answers, if on a separate sheet) and a vision-capable AI grades every question
+- **Per-Question Feedback**: See a ✓/✗ verdict, the correct answer, and a short explanation for each item
+- **Honest Errors**: If the model can't read any questions (blank pages, wrong model), you get a clear bilingual error with advice—never a silent "0/0"
+- **Read the Full Sentence Aloud**: Every question shows the complete English sentence with a 🔊 button for pronunciation practice
+- **Mistake-Aware Vocabulary**: Save wrong-answer words straight to your vocabulary list—each saved entry keeps **both** the correct answer and the answer you wrote (✓ correct · ✗ yours)
+- **Custom Instructions**: Add grading notes (e.g. "Grade 3 English vocabulary; be strict about spelling")
+- **Flexible Input**: Add pages from Photos, the Files app/Finder, or drag-and-drop
 
-### 6. Use Common Phrases
+<br clear="right"/>
 
-- Browse **Phrases** by category.
-- Search by Chinese, pinyin, or English.
-- Tap a phrase to speak, copy, or save.
+### 📚 Vocabulary Management
 
-### 7. Configure Settings
+- **Smart Saving**: Save words from translations, phrases, or word details with one tap
+- **Flexible Organization**: Sort vocabulary by date added, alphabetical order, or pinyin
+- **Powerful Search**: Find words by Chinese characters, pinyin, or English definition
+- **Rich Word Details**: View complete information for each saved term:
+  - Chinese characters
+  - Pinyin with tones
+  - English definition
+  - Part of speech
+  - Date saved
+- **Export Options**: Share your vocabulary as CSV, JSON, or plain text for backup or use in other apps
 
-- Translation behavior (auto-translate, translate-on-paste, default direction)
-- Output behavior (auto-copy, history)
-- Display preferences (pinyin, tone colors, text size)
-- Data management (clear vocabulary/history/progress)
+### 🧠 Spaced Repetition Learning
 
-## Architecture Overview
+<img align="right" src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-11%20at%2004.17.50@2x.png" width="400" alt="Learn View" />
 
-- `SwiftMandarin/Views/`: feature views (Translate, History, Vocabulary, Learn, Phrases, More)
-- `SwiftMandarin/Services/`: translation-adjacent services (speech, clipboard, pinyin conversion, text analysis)
-- `SwiftMandarin/Models/`: persistent data and stores (`SavedTermsStore`, `TranslationHistoryStore`, `LearningProgressStore`)
+- **Adaptive Algorithm**: SM-2 based spaced repetition schedules reviews at optimal intervals
+- **Multiple Card Sources**:
+  - Built-in deck with common vocabulary
+  - Your saved vocabulary
+  - Combined deck for comprehensive review
+- **Study Modes**:
+  - All Cards: Review everything
+  - Due for Review: Focus on cards scheduled for today
+  - New Cards: Learn vocabulary you haven't seen
+  - Difficult: Practice challenging words
+- **Mastery Tracking**: Five mastery levels from New to Mastered
+- **Keyboard Navigation** (macOS/iPad): Use arrow keys to navigate and spacebar to flip cards
 
-Key implementation details:
-- Shared translation state across tabs (`TranslationState.shared`)
-- Persistence via `UserDefaults` + Codable models
-- Chinese segmentation and lexical tagging via `NaturalLanguage`
-- TTS via `AVFoundation`
+<br clear="right"/>
+
+### 📊 Progress Analytics
+
+<img align="right" src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-23%20at%2016.25.06@2x.png" width="400" alt="Statistics View" />
+
+- **GitHub-Style Activity Heatmap**: Visualize your daily learning activity over the past year
+- **Interactive Donut Charts**:
+  - Mastery Progress: See distribution across learning stages
+  - Vocabulary by Type: Breakdown by part of speech (nouns, verbs, adjectives, etc.)
+  - Tap segments to highlight and see detailed counts
+- **Stacked Bar Charts**: Track words learned daily by part of speech
+- **Key Metrics Dashboard**:
+  - Current and best learning streaks
+  - Total words saved
+  - Cards studied
+  - Reviews completed
+  - Daily averages
+- **Platform-Adaptive Design**: Optimized layouts for iPhone (6 months), iPad, and Mac (full year)
+
+<br clear="right"/>
+
+### 💬 Common Phrases
+
+- **Practical Categories**: Essential phrases organized by situation:
+  - Greetings & Social
+  - Basic Expressions
+  - Travel & Transportation
+  - Dining & Food
+  - Shopping & Bargaining
+  - Directions & Navigation
+  - Emergency & Help
+  - Time & Numbers
+- **Full Phrase Details**: See Chinese, pinyin, and English for each phrase
+- **Quick Actions**: Speak, copy, or save any phrase instantly
+- **Search Functionality**: Find phrases by Chinese, pinyin, or English
+
+### 🕐 Translation History
+
+- **Complete Record**: Translations from typing, photos, live speech, and Shortcuts are all saved automatically (optional)
+- **Search & Filter**: Full-text search plus a direction filter (EN → 中 / 中 → EN)
+- **Quick Restore**: Tap any history item to restore it to the translator
+- **Powerful Actions**:
+  - Restore translation
+  - Reverse translate direction
+  - Duplicate entry
+  - Copy to clipboard
+  - Delete individual items, or clear all (with confirmation)
+
+### ⚙️ Customizable Settings
+
+- **Language & Learning**:
+  - App language toggle (English / 中文)
+  - Learner mode (English→中, 中→English, or bilingual)
+  - Dual-language narration
+- **AI Provider**:
+  - Pick a provider, enter an API key, fetch live model lists, and test the connection end-to-end
+  - See at a glance whether the provider supports vision (images) and JSON mode
+  - Toggle AI photo cleanup
+- **Translation Preferences**:
+  - Auto-translate toggle
+  - Translate on paste
+  - Default translation direction
+  - Photo scan language (Auto / 中文 / English / Both)
+- **Output Options**:
+  - Auto-copy to clipboard
+  - History saving toggle
+- **Display Settings**:
+  - Show/hide pinyin
+  - Pinyin position: above, below, or inline with the characters
+  - Tone color coding
+  - Text size adjustment
+- **Data Management**:
+  - Import / export vocabulary (CSV, JSON, TXT)
+  - Clear vocabulary
+  - Clear history
+  - Reset learning progress
+
+### 🌐 Localization
+
+- **Full Bilingual Support**: The complete interface—every tab, screen, sheet, and alert—is available in English and Simplified Chinese (简体中文)
+- **In-App Language Toggle**: Switch the whole app between the English and Mandarin versions anytime from **Settings → Language**, independent of your device language and with no relaunch
+- **Smart Default**: On first launch the app follows your device's language preference
+- **Native Terminology**: Translations were reviewed for accuracy, consistency, and natural phrasing (formal 您, consistent vocabulary, preserved formatting)
+
+---
 
 ## Screenshots
 
 ### macOS
 
-<p align="center">
-  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-11%20at%2004.17.15@2x.png" width="46%" alt="macOS - Translate view" />
-  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-11%20at%2004.17.44@2x.png" width="46%" alt="macOS - Vocabulary view" />
-</p>
-<p align="center">
-  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-11%20at%2004.17.50@2x.png" width="46%" alt="macOS - Learn view" />
-  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-11%20at%2004.17.56@2x.png" width="46%" alt="macOS - Phrases view" />
-</p>
-
-### iPhone (horizontal gallery)
-
-Swipe/scroll horizontally to browse the iPhone screenshots:
-
-<table>
-  <tr>
-    <td><img src="Screenshots/iOS%20Screenshots/IMG_8529.PNG" width="220" alt="iPhone screenshot 1" /></td>
-    <td><img src="Screenshots/iOS%20Screenshots/IMG_8530.PNG" width="220" alt="iPhone screenshot 2" /></td>
-    <td><img src="Screenshots/iOS%20Screenshots/IMG_8531.PNG" width="220" alt="iPhone screenshot 3" /></td>
-    <td><img src="Screenshots/iOS%20Screenshots/IMG_8532.PNG" width="220" alt="iPhone screenshot 4" /></td>
-    <td><img src="Screenshots/iOS%20Screenshots/IMG_8533.PNG" width="220" alt="iPhone screenshot 5" /></td>
-    <td><img src="Screenshots/iOS%20Screenshots/IMG_8534.PNG" width="220" alt="iPhone screenshot 6" /></td>
-  </tr>
-</table>
-
-### iPadOS
+Experience SwiftMandarin's full power on your Mac with a spacious sidebar navigation and comprehensive data visualizations.
 
 <p align="center">
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0588.PNG" width="46%" alt="iPad screenshot 1" />
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0589.PNG" width="46%" alt="iPad screenshot 2" />
+  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-23%20at%2016.24.47@2x.png" width="45%" alt="macOS - Translate View" />
+  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-23%20at%2016.25.06@2x.png" width="45%" alt="macOS - Statistics View" />
 </p>
 <p align="center">
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0590.PNG" width="46%" alt="iPad screenshot 3" />
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0591.PNG" width="46%" alt="iPad screenshot 4" />
+  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-23%20at%2016.25.12@2x.png" width="45%" alt="macOS - Learn View" />
+  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-11%20at%2004.17.56@2x.png" width="45%" alt="macOS - Phrases View" />
 </p>
 <p align="center">
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0592.PNG" width="46%" alt="iPad screenshot 5" />
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0593.PNG" width="46%" alt="iPad screenshot 6" />
+  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.05@2x.png" width="45%" alt="macOS - AI Workbook Grading (upload)" />
+  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.11@2x.png" width="45%" alt="macOS - AI Workbook Grading (results with read-aloud)" />
+</p>
+
+### iPhone
+
+A mobile-optimized experience with compact layouts and intuitive tab navigation.
+
+<p align="center">
+  <img src="Screenshots/iOS%20Screenshots/IMG_9055.PNG" width="24%" alt="iPhone - Translate" />
+  <img src="Screenshots/iOS%20Screenshots/IMG_9056.PNG" width="24%" alt="iPhone - Statistics" />
+  <img src="Screenshots/iOS%20Screenshots/IMG_9057.PNG" width="24%" alt="iPhone - Learn" />
+  <img src="Screenshots/iOS%20Screenshots/IMG_8532.PNG" width="24%" alt="iPhone - Vocabulary" />
+</p>
+
+### iPad
+
+The best of both worlds—spacious layouts with adaptive sidebar navigation.
+
+<p align="center">
+  <img src="Screenshots/iPadOS%20Screenshots/IMG_0588.PNG" width="45%" alt="iPad - Translate" />
+  <img src="Screenshots/iPadOS%20Screenshots/IMG_0589.PNG" width="45%" alt="iPad - Vocabulary" />
 </p>
 <p align="center">
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0594.PNG" width="46%" alt="iPad screenshot 7" />
+  <img src="Screenshots/iPadOS%20Screenshots/IMG_0590.PNG" width="45%" alt="iPad - Learn" />
+  <img src="Screenshots/iPadOS%20Screenshots/IMG_0591.PNG" width="45%" alt="iPad - Phrases" />
 </p>
 
-## Privacy and Data
+---
 
-- Translation history, vocabulary, and learning progress are stored locally using `UserDefaults`.
-- No custom backend is required for core app functionality.
-- Apple Translation availability and language packs are managed by the system.
+## Installation
 
-## Packaging (Maintainers)
+### App Store (Recommended)
 
-Build and package a macOS DMG:
+Download SwiftMandarin from the [App Store](https://apps.apple.com/app/swiftmandarin) for iPhone, iPad, and Mac.
+
+### macOS DMG Installer
+
+1. Download the latest DMG from [Releases](https://github.com/linroger/SwiftMandarin/releases)
+2. Open `SwiftMandarin-2.0-macOS.dmg`
+3. Drag `SwiftMandarin.app` to your Applications folder
+4. Launch SwiftMandarin from Applications
+
+> **Note**: If macOS Gatekeeper shows a warning, right-click the app, select **Open**, then confirm.
+
+### Build from Source
+
+**Requirements:**
+- Xcode 26+
+- Swift 6.2+
+- iOS 17.0+ / macOS 26.2+ (deployment targets)
 
 ```bash
-xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration Release -destination 'platform=macOS' -derivedDataPath build/DerivedData clean build
+# Clone the repository
+git clone https://github.com/linroger/SwiftMandarin.git
+cd SwiftMandarin
 
-mkdir -p dist/dmg/SwiftMandarin
-cp -R build/DerivedData/Build/Products/Release/SwiftMandarin.app dist/dmg/SwiftMandarin/
-ln -s /Applications dist/dmg/SwiftMandarin/Applications
-
-hdiutil create -volname "SwiftMandarin" -srcfolder dist/dmg/SwiftMandarin -ov -format UDZO dist/SwiftMandarin-2.0-macOS.dmg
+# Open in Xcode
+open SwiftMandarin.xcodeproj
 ```
 
+In Xcode:
+1. Select the `SwiftMandarin` scheme
+2. Choose your target device (iPhone, iPad, or My Mac)
+3. Press ⌘R to build and run
+
+**CLI Build:**
+```bash
+xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration Release -destination 'platform=macOS' build
+```
+
+---
+
+## How to Use
+
+### Getting Started
+
+1. **Launch SwiftMandarin** on your iPhone, iPad, or Mac
+2. **Enter text** in the source panel on the Translate tab
+3. **Tap Translate** or enable auto-translate for instant results
+4. **Tap any Chinese word** to see pinyin, definition, and save options
+
+### Building Your Vocabulary
+
+1. While translating, tap any Chinese word to open details
+2. Tap **Save** to add it to your vocabulary
+3. Access saved words anytime in the **Vocabulary** tab
+4. Use search and sort to find specific words quickly
+
+### Learning with Flashcards
+
+1. Go to the **Learn** tab
+2. Choose your card source (Built-in, Vocabulary, or All)
+3. Select a study mode based on your goals
+4. Tap cards to flip, then rate your recall
+5. The algorithm will schedule optimal review times
+
+### Tracking Progress
+
+1. Visit the **Stats** tab to see your learning analytics
+2. Check your current streak and aim to maintain it
+3. Review the activity heatmap to identify patterns
+4. Tap chart segments for detailed breakdowns
+
+### Using Phrases
+
+1. Open the **Phrases** tab
+2. Browse categories or search for specific phrases
+3. Tap any phrase to hear pronunciation
+4. Save useful phrases to your vocabulary for later study
+
+### Scanning Photos & Workbooks
+
+1. Open the **Photo** tab and add an image (Photos, Files/Finder, drag-and-drop, or the live camera scanner)
+2. Pick the scan language if needed, then read and translate the recognized text
+3. For grading, open the **Workbook Grading** tool from the Photo tab's toolbar
+4. Add the workbook pages (and a separate answer sheet only if needed), optionally add custom instructions, then tap **Grade**
+5. Review each question, tap 🔊 to hear the full English sentence, and save wrong-answer words to your vocabulary
+
+> Photo translation and on-device OCR work without AI. AI photo cleanup and workbook grading require an AI provider configured in **Settings → AI**.
+
+### Switching the App Language
+
+1. Open **Settings** (the More tab on iOS, or ⌘, on Mac) and find **Language**
+2. Choose **English** or **中文**—the entire interface switches immediately
+
+---
+
+## Technical Details
+
+### Architecture
+
+- **SwiftUI**: 100% SwiftUI with the Liquid Glass design system on OS 26+ (graceful material fallbacks down to iOS 17), across iOS / iPadOS / macOS / visionOS
+- **Translation**: Apple Translation framework (on-device, privacy-preserving) on iOS 18+/macOS, with an AI-provider fallback that keeps every translation feature working on iOS 17
+- **AI (optional)**: A 10-provider abstraction—Apple Foundation Models, Ollama, and OpenAI-compatible / Anthropic cloud APIs via `URLSession`—for explanations, photo cleanup, and grading
+- **OCR**: Vision framework with language-aware recognition (`PhotoTextRecognitionService`)
+- **Speech**: AVFoundation for text-to-speech; Speech framework for live transcription
+- **NLP**: NaturalLanguage framework for Chinese segmentation and lexical analysis
+- **Localization**: String Catalog (`Localizable.xcstrings`, 600+ keys, fully bilingual) + a `LocalizationManager` that swaps the active `.lproj` bundle for the in-app language toggle
+- **Storage**: UserDefaults + Codable locally, with automatic last-known-good backups so corrupted data never silently wipes your vocabulary, history, or progress; API keys in the system Keychain
+- **App Intents / Shortcuts**: Translate, look up vocabulary, start a review, scan, and more from Siri & Shortcuts
+
+### File Structure
+
+```
+SwiftMandarin/
+├── Views/
+│   ├── TranslateView.swift          # Main translation interface
+│   ├── PhotoTranslateView.swift     # Photo / OCR translation
+│   ├── WorkbookGradingView.swift    # AI workbook grading
+│   ├── HistoryTabView.swift         # Translation history
+│   ├── VocabularyView.swift         # Saved words management
+│   ├── LearnView.swift              # Flashcard learning
+│   ├── PhrasesView.swift            # Common phrases
+│   ├── StatsView.swift              # Analytics dashboard
+│   ├── MacOSSettingsView.swift      # Settings (macOS)
+│   ├── MoreView.swift               # Settings hub (iOS)
+│   └── Components/                  # Camera scanner, live speech, AI cards, etc.
+├── Models/
+│   ├── SavedTerm.swift              # Vocabulary model
+│   ├── AIModelSettings.swift        # AI providers & per-provider config
+│   ├── AppPreferences.swift         # Learner mode, scan language, narration
+│   ├── LocalizationManager.swift    # In-app language switch
+│   ├── LearningCard.swift           # Flashcard model
+│   └── TranslationHistory.swift     # History model
+├── Services/
+│   ├── CloudAIService.swift         # Cloud AI (OpenAI-compatible + Anthropic)
+│   ├── AIWordExplanationService.swift # Explanations, vocab extraction, grading
+│   ├── PhotoTextRecognitionService.swift # Vision OCR
+│   ├── KeychainHelper.swift         # Secure API-key storage
+│   ├── PinyinConverter.swift        # Pinyin conversion
+│   ├── SpeechService.swift          # Text-to-speech
+│   ├── ChineseTextAnalyzer.swift    # NLP analysis
+│   └── ClipboardService.swift       # Clipboard handling
+├── Intents/                         # App Intents / Siri Shortcuts
+└── Localizable.xcstrings            # English + Simplified Chinese strings
+```
+
+---
+
+## Privacy
+
+SwiftMandarin is designed with privacy as a core principle:
+
+- **No Account Required**: Use all features without signing up
+- **Local Storage Only**: All your data (vocabulary, history, progress) is stored locally on your device
+- **On-Device Translation**: Apple Translation framework processes text on-device
+- **No Tracking**: No analytics, no telemetry, no third-party tracking SDKs
+- **Offline Core**: Translation, vocabulary, flashcards, phrases, stats, and on-device OCR work fully offline (after downloading language packs)
+- **AI Is Opt-In**: Cloud AI features are disabled until *you* choose a provider and add a key. Apple Intelligence and Ollama run locally; cloud providers receive only the text or image you submit, and your API keys are stored in the Keychain—never transmitted anywhere except to the provider you configured.
+
+Your learning journey is yours alone.
+
+---
+
+## Requirements
+
+| Platform | Minimum Version |
+|----------|----------------|
+| iOS      | 17.0+          |
+| iPadOS   | 17.0+          |
+| macOS    | 26.2+          |
+
+**Feature availability by iOS version** — the app adapts to what each OS release provides:
+
+| Capability | iOS 17 | iOS 18 – 25 | iOS 26+ |
+|---|---|---|---|
+| Translation (Translate / Photo / Live Speech tabs) | Via your configured AI provider | Apple on-device translation | Apple on-device translation |
+| Word-tap lookups, screenshot & Shortcuts translation | Via AI provider | Via AI provider | Apple on-device translation |
+| Live speech transcription | ✓ (SFSpeechRecognizer) | ✓ (SFSpeechRecognizer) | ✓ (SpeechAnalyzer, fully on-device) |
+| Apple Intelligence provider | — | — | ✓ |
+| Cloud AI providers, Ollama, OCR, vocabulary, flashcards, stats, phrases | ✓ | ✓ | ✓ |
+| Liquid Glass design / sidebar-adaptable tab bar | Material fallback / classic tab bar | Material fallback / ✓ | ✓ / ✓ |
+
+**Language Packs** (iOS 18+/macOS): For on-device translation, download the English-Chinese language pack in System Settings > General > Language & Region > Translation Languages. On iOS 17, configure an AI provider in Settings → AI instead.
+
+---
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/linroger/SwiftMandarin/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/linroger/SwiftMandarin/discussions)
+
+---
+
+## License
+
+SwiftMandarin is available under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## Acknowledgments
+
+- Apple Translation, Vision, Speech, and NaturalLanguage frameworks
+- Apple Foundation Models for on-device AI
+- [ollama-swift](https://github.com/mattt/ollama-swift) for local model access
+- Optional, user-configured AI providers (OpenAI, Anthropic, DeepSeek, Doubao, Qwen, Kimi, Zhipu, MiniMax)
+- The SwiftUI team for Liquid Glass and modern UI components
+- The open-source community for inspiration and best practices
+
+---
+
+<p align="center">
+  <strong>Learn Mandarin. The Apple Way.</strong>
+</p>
+
+<p align="center">
+  Made with ❤️ using SwiftUI
+</p>

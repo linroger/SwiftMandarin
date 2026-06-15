@@ -4,53 +4,28 @@
 //
 //  Created by Roger Lin on 2/11/26.
 //
+//  The "More" tab: a compact hub that surfaces the most-used controls up top
+//  and routes the rest of Settings into focused, single-purpose screens rather
+//  than one long scrolling form. (Translation history lives in its own tab, so
+//  it is intentionally not duplicated here.)
+//
 
 import SwiftUI
+import Ollama
 
-/// More tab containing History, Settings, and About
+/// More tab — a streamlined settings & about hub.
 struct MoreView: View {
-    @State private var showingHistory: Bool = false
-    @State private var showingSettings: Bool = false
-    @State private var showingAbout: Bool = false
-    
+    @State private var localization = LocalizationManager.shared
+    @State private var prefs = AppPreferences.shared
+    @State private var aiSettings = AIModelSettings.shared
+
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    NavigationLink {
-                        HistoryView()
-                    } label: {
-                        Label("Translation History", systemImage: "clock")
-                    }
-                    
-                    NavigationLink {
-                        SettingsView()
-                    } label: {
-                        Label("Settings", systemImage: "gear")
-                    }
-                }
-                
-                Section {
-                    NavigationLink {
-                        AboutView()
-                    } label: {
-                        Label("About", systemImage: "info.circle")
-                    }
-                    
-                    Link(destination: URL(string: "https://www.apple.com/privacy/")!) {
-                        Label("Privacy Policy", systemImage: "hand.raised")
-                    }
-                }
-                
-                Section {
-                    Link(destination: URL(string: "https://apps.apple.com/app/id123456789?action=write-review")!) {
-                        Label("Rate App", systemImage: "star")
-                    }
-                    
-                    ShareLink(item: URL(string: "https://apps.apple.com/app/id123456789")!) {
-                        Label("Share App", systemImage: "square.and.arrow.up")
-                    }
-                }
+                headerSection
+                quickSetupSection
+                settingsSection
+                aboutSection
             }
             .navigationTitle("More")
             #if os(iOS)
@@ -58,123 +33,165 @@ struct MoreView: View {
             #endif
         }
     }
-}
 
-// MARK: - History View
+    // MARK: - Sections
 
-struct HistoryView: View {
-    @Environment(TranslationHistoryStore.self) private var historyStore
-    @State private var searchText: String = ""
-    
-    private var filteredEntries: [TranslationHistoryEntry] {
-        if searchText.isEmpty {
-            return historyStore.entries
-        }
-        return historyStore.entries.filter { entry in
-            entry.source.localizedCaseInsensitiveContains(searchText) ||
-            entry.target.localizedCaseInsensitiveContains(searchText)
+    private var headerSection: some View {
+        Section {
+            HStack(spacing: 14) {
+                Image(systemName: "character.book.closed.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.tint)
+                    .frame(width: 52, height: 52)
+                    .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("SwiftMandarin")
+                        .font(.headline)
+                    Text("Version 1.0.0")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .padding(.vertical, 4)
         }
     }
-    
-    var body: some View {
-        Group {
-            if historyStore.entries.isEmpty {
-                ContentUnavailableView {
-                    Label("No History", systemImage: "clock")
-                } description: {
-                    Text("Your translation history will appear here")
+
+    private var quickSetupSection: some View {
+        Section {
+            Picker("App Language", selection: $localization.language) {
+                ForEach(AppLanguage.allCases) { language in
+                    Label(language.displayName, systemImage: language.iconName).tag(language)
                 }
-            } else {
-                List {
-                    ForEach(filteredEntries) { entry in
-                        HistoryRow(entry: entry)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    historyStore.remove(entry)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
+            }
+
+            Picker("I am a…", selection: $prefs.learnerMode) {
+                ForEach(LearnerMode.allCases) { mode in
+                    Label(mode.displayName, systemImage: mode.iconName).tag(mode)
+                }
+            }
+        } header: {
+            Text("Quick Setup")
+        }
+    }
+
+    private var settingsSection: some View {
+        Section {
+            NavigationLink {
+                GeneralSettingsView()
+            } label: {
+                Label("General", systemImage: "gearshape")
+            }
+
+            NavigationLink {
+                AISettingsDetailView()
+            } label: {
+                HStack {
+                    Label("AI Provider", systemImage: "cpu")
+                    Spacer()
+                    Text(aiSettings.provider.displayName)
+                        .foregroundStyle(.secondary)
+                        .fitSingleLine(0.8)
+                }
+            }
+
+            NavigationLink {
+                TranslationSettingsView()
+            } label: {
+                Label("Translation", systemImage: "character.bubble")
+            }
+
+            NavigationLink {
+                DisplaySettingsView()
+            } label: {
+                Label("Display & Pinyin", systemImage: "textformat")
+            }
+
+            NavigationLink {
+                DataManagementView()
+            } label: {
+                Label("Manage Data", systemImage: "externaldrive")
+            }
+        } header: {
+            Text("Settings")
+        }
+    }
+
+    private var aboutSection: some View {
+        Section {
+            NavigationLink {
+                AboutView()
+            } label: {
+                Label("About", systemImage: "info.circle")
+            }
+
+            Link(destination: URL(string: "https://www.apple.com/privacy/")!) {
+                Label("Privacy Policy", systemImage: "hand.raised")
+            }
+
+            Link(destination: URL(string: "https://apps.apple.com/app/id123456789?action=write-review")!) {
+                Label("Rate App", systemImage: "star")
+            }
+
+            ShareLink(item: URL(string: "https://apps.apple.com/app/id123456789")!) {
+                Label("Share App", systemImage: "square.and.arrow.up")
+            }
+        } header: {
+            Text("About & Support")
+        }
+    }
+}
+
+// MARK: - General Settings
+
+struct GeneralSettingsView: View {
+    @State private var prefs = AppPreferences.shared
+    @State private var localization = LocalizationManager.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("App Language", selection: $localization.language) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Label(language.displayName, systemImage: language.iconName).tag(language)
                     }
                 }
-                #if os(iOS)
-                .listStyle(.insetGrouped)
-                #endif
+            } header: {
+                Text("Language")
+            } footer: {
+                Text("Switch the entire app between the English and Mandarin versions.")
+            }
+
+            Section {
+                Picker("I am a…", selection: $prefs.learnerMode) {
+                    ForEach(LearnerMode.allCases) { mode in
+                        Label(mode.displayName, systemImage: mode.iconName).tag(mode)
+                    }
+                }
+                Toggle("Dual-Language Narration", isOn: $prefs.dualNarration)
+            } header: {
+                Text("Learning Mode")
+            } footer: {
+                Text("\(prefs.learnerMode.detail) Dual narration speaks both the word and its translation aloud.")
             }
         }
-        .navigationTitle("History")
+        .navigationTitle("General")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
-        .searchable(text: $searchText, prompt: "Search history")
-        .toolbar {
-            if !historyStore.entries.isEmpty {
-                ToolbarItem(placement: .primaryAction) {
-                    Button(role: .destructive) {
-                        historyStore.clear()
-                    } label: {
-                        Image(systemName: "trash")
-                    }
-                }
-            }
-        }
     }
 }
 
-// MARK: - History Row
+// MARK: - Translation Settings
 
-struct HistoryRow: View {
-    let entry: TranslationHistoryEntry
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(entry.direction.sourceLanguageName)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                
-                Image(systemName: "arrow.right")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                
-                Text(entry.direction.targetLanguageName)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                
-                Spacer()
-                
-                Text(entry.date.formatted(date: .abbreviated, time: .shortened))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-            
-            Text(entry.source)
-                .font(.subheadline)
-                .lineLimit(2)
-            
-            Text(entry.target)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-// MARK: - Settings View
-
-struct SettingsView: View {
-    @AppStorage("autoTranslate") private var autoTranslate: Bool = false
-    @AppStorage("autoSpeak") private var autoSpeak: Bool = false
-    @AppStorage("showPinyin") private var showPinyin: Bool = true
-    @AppStorage("toneColors") private var toneColors: Bool = true
+struct TranslationSettingsView: View {
     @AppStorage("defaultDirection") private var defaultDirection: String = TranslationDirection.englishToChinese.rawValue
-    @AppStorage("hapticFeedback") private var hapticFeedback: Bool = true
-    @AppStorage("fontSize") private var fontSize: Double = 1.0
+    @AppStorage("autoTranslate") private var autoTranslate: Bool = false
     @AppStorage("translateOnPaste") private var translateOnPaste: Bool = true
+    @AppStorage("autoSpeak") private var autoSpeak: Bool = false
     @AppStorage("copyTranslationAutomatically") private var copyTranslationAutomatically: Bool = false
     @AppStorage("saveToHistoryAutomatically") private var saveToHistoryAutomatically: Bool = true
-    
+
     var body: some View {
         Form {
             Section {
@@ -183,37 +200,62 @@ struct SettingsView: View {
                         Text(direction.label).tag(direction.rawValue)
                     }
                 }
-                
+
                 Toggle("Auto-Translate While Typing", isOn: $autoTranslate)
-                
+
                 Text("When enabled, translation runs automatically as you type. When disabled, tap the Translate button after entering text.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                
+
                 Toggle("Translate on Paste", isOn: $translateOnPaste)
-                
+
                 Toggle("Auto-Speak Translations", isOn: $autoSpeak)
             } header: {
                 Text("Translation")
             }
-            
+
             Section {
                 Toggle("Copy Translation Automatically", isOn: $copyTranslationAutomatically)
                 Toggle("Save to History Automatically", isOn: $saveToHistoryAutomatically)
             } header: {
                 Text("Output")
             }
-            
+        }
+        .navigationTitle("Translation")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+    }
+}
+
+// MARK: - Display Settings
+
+struct DisplaySettingsView: View {
+    @AppStorage("showPinyin") private var showPinyin: Bool = true
+    @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
+    @AppStorage("toneColors") private var toneColors: Bool = true
+    @AppStorage("fontSize") private var fontSize: Double = 1.0
+    @AppStorage("hapticFeedback") private var hapticFeedback: Bool = true
+
+    var body: some View {
+        Form {
             Section {
                 Toggle("Show Pinyin", isOn: $showPinyin)
-                
+
+                Picker("Pinyin Position", selection: $pinyinPosition) {
+                    Text("Above Characters").tag("above")
+                    Text("Below Characters").tag("below")
+                    Text("Inline").tag("inline")
+                }
+                .disabled(!showPinyin)
+
                 Toggle("Tone Colors", isOn: $toneColors)
                     .disabled(!showPinyin)
-                
+
                 Text("Color-code pinyin based on tones (1st=red, 2nd=orange, 3rd=green, 4th=blue)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                
+
                 VStack(alignment: .leading) {
                     Text("Text Size")
                     Slider(value: $fontSize, in: 0.8...1.4, step: 0.1) {
@@ -229,27 +271,104 @@ struct SettingsView: View {
             } header: {
                 Text("Display")
             }
-            
+
             Section {
                 Toggle("Haptic Feedback", isOn: $hapticFeedback)
             } header: {
                 Text("Feedback")
             }
-            
-            Section {
-                NavigationLink {
-                    DataManagementView()
-                } label: {
-                    Text("Manage Data")
-                }
-            } header: {
-                Text("Data")
-            }
         }
-        .navigationTitle("Settings")
+        .navigationTitle("Display & Pinyin")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+    }
+}
+
+// MARK: - AI Settings Detail View (iOS)
+
+struct AISettingsDetailView: View {
+    @State private var settings = AIModelSettings.shared
+    @State private var ollamaService = OllamaService.shared
+
+    var body: some View {
+        Form {
+            // Provider Selection
+            Section {
+                ForEach(AIProvider.allCases) { provider in
+                    Button {
+                        settings.provider = provider
+                    } label: {
+                        HStack {
+                            ProviderIcon(provider: provider, size: 22)
+                                .foregroundStyle(.tint)
+                                .frame(width: 24)
+
+                            VStack(alignment: .leading) {
+                                Text(provider.displayName)
+                                    .foregroundStyle(.primary)
+                                    .fitSingleLine(0.8)
+                                Text(provider.description)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            if settings.provider == provider {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.tint)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("AI Provider")
+            }
+
+            // Status
+            Section {
+                HStack {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 10, height: 10)
+                    Text(settings.statusMessage)
+                        .font(.subheadline)
+                }
+            } header: {
+                Text("Status")
+            }
+
+            // Provider-specific configuration (API key, model picker, etc.)
+            AIProviderConfigView(settings: settings)
+
+            // Photo AI cleanup (concern C)
+            Section {
+                Toggle("AI Photo Cleanup", isOn: $settings.aiPhotoCleanupEnabled)
+            } header: {
+                Text("Photo Recognition")
+            } footer: {
+                Text("When on, scanned photos are sent to the selected AI provider to fix OCR errors before translation. Vision-capable providers also receive the image.")
+            }
+        }
+        .navigationTitle("AI Settings")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task {
+            await settings.refreshConnection()
+        }
+    }
+
+    private var statusColor: Color {
+        switch settings.provider {
+        case .appleIntelligence:
+            return settings.isAppleIntelligenceAvailable ? .green : .orange
+        case .ollama:
+            return ollamaService.isConnected ? .green : .red
+        default:
+            return settings.isAvailable(settings.provider) ? .green : .orange
+        }
     }
 }
 
@@ -259,11 +378,11 @@ struct DataManagementView: View {
     @Environment(SavedTermsStore.self) private var savedTermsStore
     @Environment(TranslationHistoryStore.self) private var historyStore
     @Environment(LearningProgressStore.self) private var learningStore
-    
+
     @State private var showingClearVocabularyAlert: Bool = false
     @State private var showingClearHistoryAlert: Bool = false
     @State private var showingResetProgressAlert: Bool = false
-    
+
     var body: some View {
         List {
             Section("Statistics") {
@@ -273,14 +392,14 @@ struct DataManagementView: View {
                     Text("\(savedTermsStore.terms.count)")
                         .foregroundStyle(.secondary)
                 }
-                
+
                 HStack {
                     Text("History Entries")
                     Spacer()
                     Text("\(historyStore.entries.count)")
                         .foregroundStyle(.secondary)
                 }
-                
+
                 HStack {
                     Text("Learning Progress")
                     Spacer()
@@ -288,7 +407,7 @@ struct DataManagementView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            
+
             Section("Clear Data") {
                 Button(role: .destructive) {
                     showingClearVocabularyAlert = true
@@ -296,14 +415,14 @@ struct DataManagementView: View {
                     Text("Clear All Vocabulary")
                 }
                 .disabled(savedTermsStore.terms.isEmpty)
-                
+
                 Button(role: .destructive) {
                     showingClearHistoryAlert = true
                 } label: {
                     Text("Clear Translation History")
                 }
                 .disabled(historyStore.entries.isEmpty)
-                
+
                 Button(role: .destructive) {
                     showingResetProgressAlert = true
                 } label: {
@@ -351,40 +470,42 @@ struct AboutView: View {
             VStack(spacing: 24) {
                 // App icon and name
                 VStack(spacing: 12) {
-                    Image(systemName: "character.book.closed.fill.zh")
+                    // character.book.closed.fill.zh needs iOS 18+; this
+                    // variant exists on every supported OS.
+                    Image(systemName: "character.book.closed.fill")
                         .font(.system(size: 80))
                         .foregroundStyle(.tint)
-                    
+
                     Text("SwiftMandarin")
                         .font(.title)
                         .fontWeight(.bold)
-                    
+
                     Text("Version 1.0.0")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.top, 40)
-                
+
                 Divider()
                     .padding(.horizontal)
-                
+
                 // Description
                 VStack(alignment: .leading, spacing: 12) {
                     Text("About")
                         .font(.headline)
-                    
-                    Text("SwiftMandarin is a modern Mandarin Chinese translation and learning app built with SwiftUI for iOS 26. It features real-time translation, vocabulary management, flashcard learning with spaced repetition, and a comprehensive phrase library.")
+
+                    Text("SwiftMandarin is a modern Mandarin Chinese translation and learning app built with SwiftUI for iOS 17 and later. It features real-time translation, vocabulary management, flashcard learning with spaced repetition, and a comprehensive phrase library.")
                         .font(.body)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
-                
+
                 // Features
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Features")
                         .font(.headline)
-                    
+
                     FeatureRow(icon: "character.bubble", title: "Translation", description: "Bidirectional English-Chinese translation with pinyin")
                     FeatureRow(icon: "text.book.closed", title: "Vocabulary", description: "Save and organize words you're learning")
                     FeatureRow(icon: "brain.head.profile", title: "Flashcards", description: "Learn with spaced repetition")
@@ -392,23 +513,23 @@ struct AboutView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
-                
+
                 // Credits
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Credits")
                         .font(.headline)
-                    
+
                     Text("Built with ❤️ using SwiftUI")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    
+
                     Text("Translation powered by Apple Translation API")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
-                
+
                 Spacer(minLength: 40)
             }
         }
@@ -425,19 +546,19 @@ struct FeatureRow: View {
     let icon: String
     let title: String
     let description: String
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.title3)
                 .foregroundStyle(.tint)
                 .frame(width: 30)
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline)
                     .fontWeight(.medium)
-                
+
                 Text(description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -449,10 +570,8 @@ struct FeatureRow: View {
 // MARK: - Preview
 
 #Preview {
-    NavigationStack {
-        MoreView()
-    }
-    .environment(SavedTermsStore.shared)
-    .environment(TranslationHistoryStore.shared)
-    .environment(LearningProgressStore.shared)
+    MoreView()
+        .environment(SavedTermsStore.shared)
+        .environment(TranslationHistoryStore.shared)
+        .environment(LearningProgressStore.shared)
 }

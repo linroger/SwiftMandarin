@@ -35,10 +35,12 @@ enum TranslationDirection: String, CaseIterable, Identifiable, Codable {
         }
     }
     
+    /// Input placeholder, resolved through the string catalog so it follows
+    /// the in-app language toggle (e.g. 中文 UI shows 输入英文…/输入中文…).
     var placeholder: String {
         switch self {
-        case .englishToChinese: return "Enter English text..."
-        case .chineseToEnglish: return "输入中文..."
+        case .englishToChinese: return String(localized: "Enter English text...")
+        case .chineseToEnglish: return String(localized: "输入中文...")
         }
     }
     
@@ -74,17 +76,19 @@ enum TranslationDirection: String, CaseIterable, Identifiable, Codable {
         self == .englishToChinese ? .chineseToEnglish : .englishToChinese
     }
     
+    /// Localized language names (resolve through the string catalog so the
+    /// section headers built from them follow the in-app language toggle).
     var sourceLanguageName: String {
         switch self {
-        case .englishToChinese: return "English"
-        case .chineseToEnglish: return "Chinese"
+        case .englishToChinese: return String(localized: "English")
+        case .chineseToEnglish: return String(localized: "Chinese")
         }
     }
-    
+
     var targetLanguageName: String {
         switch self {
-        case .englishToChinese: return "Chinese"
-        case .chineseToEnglish: return "English"
+        case .englishToChinese: return String(localized: "Chinese")
+        case .chineseToEnglish: return String(localized: "English")
         }
     }
     

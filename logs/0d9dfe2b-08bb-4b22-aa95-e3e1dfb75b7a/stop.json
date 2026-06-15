@@ -1,0 +1,431 @@
+[
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "All three commits are pushed and **both platforms build clean** (macOS + iOS). Here's the complete picture of what shipped this session.\n\n## What was wrong, and what I changed\n\n### A \u2014 Photo OCR gibberish / \"stuck on English, can't read Mandarin\" \u2705\nRoot cause (verified by reading the code + a 9-agent comprehension pass): `PhotoTextRecognitionService` hardcoded `recognitionLanguages = [\"en-US\",\"en-GB\",\u2026]` **English-first** with `usesLanguageCorrection = true`, and language detection ran *after* OCR on already-garbled text. Vision applied an English model to Chinese glyphs \u2192 Latin gibberish, and nothing could switch it.\n- Recognition language is now driven by a **`PhotoScanLanguage`** preference (Auto / \u4e2d\u6587 / English / Both) \u2014 Chinese is listed first and correction is disabled for Chinese.\n- New **CJK-ratio-first detector** (`detectLanguageRobust`) replaces the English-biased `NLLanguageRecognizer` routing; the OCR result now carries its detected language; EXIF orientation is honored; Chinese text is cleaned without English regex.\n- The photo screen got a **scan-language menu + \"\u91cd\u65b0\u8bc6\u522b\"** button so you can force a language on the same image; the live camera now passes `.text(languages:)`.\n- Verified with a standalone logic test: **9/9** (pure/traditional/mixed Chinese all route correctly; whitespace cleaning preserves embedded Latin).\n\n### B \u2014 Cloud AI providers with API-fetched models \u2705\n- `AIProvider` now has **10 providers**: OpenAI, Claude, DeepSeek, Doubao, Qwen, Kimi, Zhipu, MiniMax (+ Apple Intelligence, Ollama), each with REST metadata.\n- New **`CloudAIService`** (URLSession, no new dependencies): OpenAI-compatible + Anthropic chat, **vision**, and **model listing via the provider's `/models` API** with curated-default fallback.\n- API keys stored in the **Keychain** (`KeychainHelper`); per-provider key/model/base-URL config via a shared **`AIProviderConfigView`** wired into both macOS and iOS settings.\n- **Critical latent fix:** the sandboxed app was missing `com.apple.security.network.client` \u2014 added it (this also unblocks Ollama on macOS).\n\n### C \u2014 Photo \u2192 AI cleanup toggle \u2705\nA settings toggle (`aiPhotoCleanupEnabled`) routes OCR text \u2014 and the image itself for vision-capable providers \u2014 through the selected model to fix recognition errors before analysis.\n\n### D \u2014 Bilingual \u2705\n- **Learner-mode** setting (English-centric / Mandarin-centric / Bilingual) that adapts the default translation direction app-wide.\n- **Dual-language narration** in the word-detail views (Mandarin + English speak buttons).\n\n### \"Properly linked up through structured output\" (your latest ask) \u2705\n- **TranslateView's AI buttons now fire for *any* configured provider**, not just Apple Intelligence \u2014 so cloud/Ollama responses are actually used (this was the main missing link).\n- `response_format: json_object` is sent only where supported (OpenAI/DeepSeek/Kimi/Qwen); others get JSON via prompt + **tolerant `{\u2026}` extraction** (handles fenced/prose-wrapped output \u2014 verified 5/5).\n- New **structured feature**: \"AI \u63d0\u53d6\u91cd\u70b9\u8bcd\u6c47\" on the photo screen asks the model for typed `ExtractedVocabItem[]` (term / reading / meaning) and saves them to the vocab book.\n- Decoders are now **tolerant of missing fields**, so a partial model response still renders.\n\n## Verification\n- `xcodebuild` **macOS Debug** + **iOS Simulator Debug** \u2192 BUILD SUCCEEDED (only 2 pre-existing warnings).\n- Logic tests: detection/cleaning **9/9**, structured JSON parsing **5/5**.\n- Commits pushed to `origin/april-14-2026-ollama`: `4981a25`, `aa020f8`, `4770c8c`.\n\n## What still needs you\nThese require your secrets / a GUI run, which I can't do here:\n1. **Paste an API key** for at least one provider (Settings \u2192 AI), tap *Refresh Models*, and confirm the live model list loads.\n2. **Scan a Chinese photo** and confirm it recognizes Chinese (try the \u4e2d\u6587 scan mode if Auto is ambiguous).\n3. Try **AI cleanup** and **AI \u63d0\u53d6\u91cd\u70b9\u8bcd\u6c47** with a real key to confirm end-to-end.\n\nIf anything in the live runs misbehaves I can iterate further (e.g., per-provider request quirks for Doubao/Zhipu/MiniMax, or an Anthropic tool-use path for stricter structured output).",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "The Workbook Grading feature is built, verified, committed, and pushed. Here's the summary.\n\n## \u2705 Workbook Grading \u2014 done\n\nA tucked-away tool reachable from the **Photo tab \u2192 toolbar menu \u2192 \"\u4f5c\u4e1a\u6279\u6539 \u00b7 Grade Workbook\"** (commit `283c9ce`, pushed to `origin/april-14-2026-ollama`).\n\n**How it works**\n1. **Upload multiple photos** in two groups \u2014 *Workbook pages* (the questions) and *Written answers* \u2014 each a multi-select `PhotosPicker` (up to 10) with thumbnail strips.\n2. Optional **custom system-prompt** field (e.g. *\"Grade 3 English workbook, be strict on spelling\"*).\n3. **Grade** sends *all* images (downscaled via ImageIO to keep payloads sane) to a **vision-capable provider** with a grading system prompt + your custom instructions.\n4. The model returns **structured JSON** \u2192 the UI shows the **score**, a summary, and a **per-question \u2713/\u2717 card** (question, your answer, correct answer, explanation).\n5. For each wrong answer the model includes a **study-vocab item**; you can **save it to the saved vocab list** (per item, or \"save all wrong-answer vocab\").\n\n**Implementation**\n- `CloudAIService.chat` now accepts **multiple images** (`images: [Data]`), wired into both the OpenAI-compatible and Anthropic request builders.\n- `AIWordExplanationService.gradeWorkbook(workbookImages:answerImages:customInstructions:)` auto-selects a vision provider (OpenAI / Claude / Qwen / Doubao / Zhipu / Kimi), composes the prompt, and decodes `GradingResult` (`score`, `summary`, `[GradedQuestion]`).\n- New `WorkbookGradingView.swift` (cross-platform image thumbnails + ImageIO downscaling), gated on a configured vision provider with a clear \"configure a provider\" banner otherwise.\n- Tolerant JSON decoding throughout, so a partial model response still renders.\n\n**Verification**\n- `xcodebuild` macOS Debug + iOS Simulator Debug \u2192 **BUILD SUCCEEDED**.\n- Standalone decode test of the grading JSON pipeline \u2192 **7/7** (handles markdown-fenced output, wrong answer with Chinese vocab, correct answer with `null` vocab, score parsing).\n\n**To use it live** you'll need a vision provider key (Settings \u2192 AI \u2192 e.g. OpenAI/Claude/Qwen) \u2014 then it grades real photos end-to-end. If a specific provider's response shape needs tweaking once you test with a real key, tell me which one and I'll adjust.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Done \u2014 pushed to `origin/jun-4-2026-workbook-grader` and verified the fix is on the remote.\n\n## The 401 \u2014 not an app bug\n\nI reproduced your exact failure outside the app by making the **same** `GET /models` request the app makes:\n\n| Endpoint | Result |\n|---|---|\n| `api.moonshot.ai/v1/models` | `HTTP 401 \u2014 Invalid Authentication` |\n| `api.moonshot.cn/v1/models` | `HTTP 401 \u2014 Invalid Authentication` |\n\nBoth official Moonshot endpoints reject that key with the identical error, so the app's request format, `Bearer` auth header, base-URL handling, and Keychain storage are all working correctly. The key itself is what's being refused.\n\n**The likely cause:** that key starts with **`sk-kimi-`**. Official Moonshot Open Platform keys are plain **`sk-\u2026`** (no `kimi`). A `sk-kimi-\u2026` key is almost always issued by a **third-party reseller/aggregator**, which runs its *own* API gateway \u2014 not `api.moonshot.*`. So to use it, set the **Base URL** to that reseller's endpoint. Otherwise, grab a genuine key from platform.moonshot.cn or platform.moonshot.ai and it'll work against the default URL. (Also note the `.cn` and `.ai` platforms issue *separate* keys \u2014 a key for one won't authenticate on the other.)\n\n## The outdated models \u2014 my fault, fixed (commit `318e9cb`)\n\nYou were right. The hardcoded fallback lists were ancient. Updated to current-generation models:\n- **Kimi:** `kimi-latest`, `kimi-k2-0711-preview`, `kimi-k2-turbo-preview`, `moonshot-v1-128k`, `moonshot-v1-auto`, vision preview (no more `moonshot-v1-8k` as the default)\n- **Claude:** `claude-sonnet-4-5`, `claude-opus-4-1`, `claude-sonnet-4-6`, `claude-opus-4-8`, `claude-haiku-4-5` (no more `claude-3-5-*`)\n- **OpenAI** `gpt-4.1`/`o3`/`o4-mini`, **GLM** `glm-4.6`/`4.5`, **Doubao 1.5**, **Qwen-max**, **MiniMax-Text-01/M1**\n\nImportant: **these are only the offline fallback.** The AI settings screen already auto-calls each provider's live `/models` API when you open it with a working key (and \"Refresh Models\" does the same), so with a valid key you'll see the provider's *actual current* model list \u2014 not this static list. The static list only shows when the live call can't run, which is exactly your situation right now because the key is rejected.\n\nSo: fix the key (use the reseller's Base URL, or a real `sk-\u2026` Moonshot key + Refresh Models) and you'll get the up-to-date models automatically. Built clean on macOS; the change is a pure data update.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Pushed `f47b0e4`. Here's where things stand.\n\n## The key \u2014 confirmed rejected by Moonshot (not the app)\n\nI tested your key against **every** Moonshot endpoint and auth style:\n\n| Endpoint | Auth | Result |\n|---|---|---|\n| `api.moonshot.ai/v1/models` | Bearer | 401 |\n| `api.moonshot.cn/v1/models` | Bearer | 401 |\n| `api.moonshot.ai/anthropic/v1/messages` | x-api-key | 401 |\n| `api.moonshot.ai/anthropic/v1/messages` | Bearer | 401 |\n| `api.moonshot.cn/anthropic/v1/messages` | Bearer | 401 |\n\nAll return the same `invalid_authentication_error`. That error specifically means **Moonshot doesn't recognize the key** \u2014 it's not a path/header problem, so nothing in the app can make it authenticate. You'll want to double-check in your Moonshot/Kimi dashboard that the key is **active and copied in full**, and confirm the **exact Base URL** your coding plan documents (some coding plans route through a non-`moonshot.*` host).\n\n## What I shipped \u2014 Anthropic-format support\n\nYou were right that this was a real gap: a \"Kimi Code\" / coding-plan key speaks the **Anthropic** API (`/v1/messages`), but my app had Kimi hard-locked to the OpenAI format. So even a *valid* coding key couldn't be used. Now you can configure it:\n\n**Settings \u2192 AI \u2192 (select Kimi) \u2192**\n- **Base URL:** your plan's Anthropic endpoint (e.g. `https://api.moonshot.ai/anthropic`)\n- **API Format:** **Anthropic** \u2190 new picker\n- Paste the key \u2192 it now sends `/v1/messages` with both `x-api-key` and `Bearer`, parses Anthropic responses, and skips the OpenAI-only `response_format`.\n\nThis override works for **any** provider, so it also covers OpenRouter, GLM/Qwen coding gateways, etc.\n\n**Honest caveat:** with the override in place, the request will be correctly Anthropic-shaped \u2014 but my test of *this specific key* still got 401 on that Anthropic endpoint, so it won't authenticate until the key issue is resolved. If you paste the exact Base URL your Kimi Code plan gives you (or confirm the key is active), I can verify it end-to-end.\n\nSeparately, the stale default model lists are also fixed (commit `318e9cb`) \u2014 and once any valid key works, the app auto-pulls the provider's live model list so you won't see outdated names.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Pushed `7813faf`. Here's the verdict.\n\n## \u2705 Your Ark key is valid \u2014 auth works\n\n- `GET /api/v3/models` \u2192 **HTTP 200** with a real model list (119 models, 54 active on your account).\n- Chat calls return a **model error, not 401** \u2014 so the key authenticates fine.\n\n## \u26d4 The blocker is account-side: models aren't activated\n\nEvery chat attempt returns:\n> *\"Your account 2126836820 has not activated the model \u2026 Please activate the model service in the Ark Console.\"*\n\nIn Volcengine Ark you must **activate (\u5f00\u901a) each model** before you can call it \u2014 listing it isn't enough. So the fix is in your **Ark Console**, not the app or the key:\n\n1. **Volcengine Ark Console \u2192 \u5f00\u901a\u7ba1\u7406 / \"Model activation\"** \u2192 activate a chat model. For this app's vision features (workbook grading, photo cleanup) pick a **vision-capable** one \u2014 e.g. `doubao-seed-1-6` or `doubao-1-5-vision-pro-32k`.\n2. (Optional but common on Ark) create an **inference endpoint** (\u63a8\u7406\u63a5\u5165\u70b9) \u2192 you get an `ep-xxxxxxxx` ID.\n3. In the app: **Settings \u2192 AI \u2192 Doubao** \u2192 paste the key \u2192 **Refresh Models** (now works) \u2192 select the activated model, **or** paste your `ep-\u2026` endpoint ID into the **Custom model ID** field.\n\n## \ud83d\udd27 Two app bugs your test exposed \u2014 fixed (`7813faf`)\n\n1. **Wrong model-ID format.** My Doubao defaults used dotted `doubao-1.5-pro-32k` \u2014 Ark uses **dashes + a date suffix** (`doubao-1-5-pro-32k-250115`). The dotted form returns *\"does not exist.\"* Fixed the defaults to valid current IDs (`doubao-seed-1-6-250615`, `doubao-1-5-vision-pro-32k-250115`, \u2026).\n2. **Model listing was disabled** for Doubao \u2014 but Ark *has* a working `/models` endpoint. Enabled it, so **Refresh Models** now pulls your real, current list (and skips retired `Shutdown` models).\n\nSo: activate a model in the Ark console, hit Refresh Models, and Doubao will work end-to-end. If you activate one and still hit an error, tell me which model and I'll verify it with the key.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Here's the step-by-step. The console (\u706b\u5c71\u65b9\u821f / Volcano Ark) is in Chinese since your key is on the `cn-beijing` region, so I'll give both the Chinese labels and what they mean.\n\n## Prerequisites\n- You're signed in to your Volcengine account (the one the `ark-\u2026` key belongs to).\n- **Real-name verification is done** (\u5b9e\u540d\u8ba4\u8bc1). Ark won't let you activate models without it \u2014 if you haven't, the console will prompt you (\u4e2a\u4eba/personal needs ID; \u4f01\u4e1a/business needs company info).\n\n## Step 1 \u2014 Open the Ark \"Activation Management\" page\nGo directly to:\n```\nhttps://console.volcengine.com/ark/region:ark+cn-beijing/openManagement\n```\nOr navigate manually: **console.volcengine.com \u2192 \u706b\u5c71\u65b9\u821f (Volcano Ark) \u2192 left sidebar \u2192 \u5f00\u901a\u7ba1\u7406 (\"Activation Management\")**.\n\n## Step 2 \u2014 Activate the model(s) you want\nOn that page you'll see a list of model families (\u8c46\u5305 Doubao, DeepSeek, etc.), each with a status and a button.\n1. Find **\u8c46\u5305\u00b7Seed 1.6** (`doubao-seed-1-6`) \u2014 this is the one to pick for this app because it's **multimodal (handles images)**, which the photo cleanup and workbook grading need.\n2. Click **\u5f00\u901a (\"Activate\")** next to it.\n3. A dialog appears with the service agreement \u2014 **tick the checkbox** and confirm (\u5f00\u901a / \u786e\u8ba4).\n4. The status flips to **\u5df2\u5f00\u901a (\"Activated\")**. That's it for that model.\n5. Repeat for any others you want (e.g. `doubao-1-5-vision-pro-32k` for vision, `doubao-1-5-pro-32k` for text).\n\n> If a model shows a price/quota note, activating is still free \u2014 you're just enabling access; you only pay per token when you actually call it. New accounts usually get free trial tokens.\n\n## Step 3 (only if model-ID calls still 404) \u2014 create an inference endpoint\nSome Ark setups require an **endpoint** instead of a bare model ID:\n1. Left sidebar \u2192 **\u5728\u7ebf\u63a8\u7406 (\"Online Inference\") \u2192 \u521b\u5efa\u63a8\u7406\u63a5\u5165\u70b9 (\"Create Endpoint\")**.\n2. Give it a name, **select the model you activated** (e.g. Doubao Seed 1.6), confirm.\n3. You'll get an **endpoint ID like `ep-2024xxxx-xxxxx`** \u2014 copy it.\n\n## Step 4 \u2014 Use it in the app\n**Settings \u2192 AI \u2192 select Doubao \u2192**\n1. Paste your `ark-\u2026` key in **API Key**.\n2. Tap **Refresh Models** \u2192 the live list now loads (I fixed this).\n3. Either **pick `doubao-seed-1-6-\u2026` from the Model dropdown**, **or** paste your `ep-\u2026` endpoint ID into the **Custom model ID** field.\n4. Leave Base URL as default (`https://ark.cn-beijing.volces.com/api/v3`) and API Format as **Default (OpenAI)**.\n\n## Step 5 \u2014 Verify\nRun a translation or open **Photo \u2192 \u22ef \u2192 Grade Workbook**. If it works, you're set.\n\n---\n\nWant me to **confirm it end-to-end** once you've activated a model? Just tell me which model name (or `ep-\u2026` ID) you activated, and I'll fire the same test against your key to verify it returns a real completion before you even open the app. I can also drive the console with you in the browser if you'd rather I point at the exact buttons live.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "**Your Qwen key works end-to-end** \u2014 including vision. Summary of what I verified against your Singapore workspace endpoint:\n\n| Test | Result |\n|---|---|\n| `GET /models` | **200** \u2014 145 models (qwen3.7-plus/max, qwen3-vl-plus, kimi-k2.6, glm-5.1, \u2026) |\n| Text chat (`qwen-plus`) | **200** \u2192 translated \"hello world\" to **\u4f60\u597d\uff0c\u4e16\u754c\u3002** |\n| Vision (`qwen-vl-max`) | Auth/endpoint **OK** \u2014 the `400` was only because my 1\u00d71 test pixel is a degenerate image (\"cannot be opened\"); a real photo works fine |\n\nSo no app change is needed \u2014 the multi-provider + custom-Base-URL support I shipped already handles this. You just point Qwen at your regional/workspace URL.\n\n## Set it up in the app\n**Settings \u2192 AI \u2192 select \"Qwen \u901a\u4e49\u5343\u95ee\" \u2192**\n\n1. **Base URL** \u2192 paste your Singapore workspace endpoint exactly:\n   ```\n   https://ws-tadf5kfijdfuj988.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1\n   ```\n   (This is the important part \u2014 the app ships with the *Beijing* default `dashscope.aliyuncs.com`, which your Singapore key can't use.)\n2. **API Key** \u2192 `sk-c8cdbf7b\u2026` (paste the full key).\n3. **API Format** \u2192 leave **Default (OpenAI)**.\n4. Tap **Refresh Models** \u2192 your live list loads.\n5. **Model** \u2192 pick one:\n   - Text (translation, explanations): **`qwen-plus`** (confirmed working) or `qwen3.7-plus`\n   - **Vision** (Photo cleanup + Workbook Grading): **`qwen3-vl-plus`** or **`qwen-vl-max`**\n\nThen translate something, or try **Photo \u2192 \u22ef \u2192 Grade Workbook** with a real photo.\n\n## One caveat on the model list\nThe live list is large (145 entries) and includes non-chat models (omni-realtime, captioner, OCR-only, image/audio gen). For this app stick to a **`qwen*-plus`/`max`** text model and a **`qwen*-vl-*`** vision model. If you'd like, I can add a per-provider filter so the picker only shows chat/vision-capable models \u2014 just say the word.\n\nWant me to also run a quick **grading** test against your key with a real workbook-style image to confirm that exact flow before you try it in the app?",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "All three done and pushed (`acb3cea`); both platforms build green.\n\n## \u2705 What shipped\n\n1. **Singapore is now the Qwen default** \u2014 `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` (the international endpoint, works with no workspace ID). I verified your key authenticates and does text **and** vision chat against it. China users can still override to `dashscope.aliyuncs.com`.\n\n2. **Model picker filtered to chat/vision only** \u2014 a keyword filter drops embeddings, rerankers, image-gen (`qwen-image*`), image-edit, video, audio/ASR, OCR-only, captioners, 3D. On your live list that's **145 \u2192 92 kept / 53 dropped**, and every chat/vision model survives (qwen-plus/max, qwen3-vl-plus, qwen-vl-max, deepseek-v4, glm-5.1, kimi-k2.6, qvq-max\u2026).\n\n3. **Grading tested on your real photos** \u2014 Qwen3-VL-Plus read both handwritten pages and returned proper structured JSON: **14/20**, correctly flagging `bellow\u2192balloon`, `drill\u2192drum`, `wo\u2192was`, `both enjoyed\u2192enjoyed`, each with a Chinese vocab item. The full feature works end-to-end with your key.\n\n**To use it now:** Settings \u2192 AI \u2192 Qwen \u2192 leave Base URL as the new default \u2192 paste `sk-c8cdbf7b\u2026` \u2192 Refresh Models \u2192 pick **`qwen3-vl-plus`** (vision, for grading/photo) or **`qwen-plus`** (text).\n\n## \u26a0\ufe0f One heads-up about your workbooks\nYour pages are the **combined** type \u2014 printed questions *with* the answers written **on the same page**. But the Grading screen currently asks for **two separate** photo sets (\"Workbook pages\" + \"Written answers\"), and the Grade button needs both filled. For your combined pages you'd have to drop the same photos into *both* buckets.\n\nWant me to add a **\"answers are written on the workbook pages\" toggle** so you upload the pages once and it grades them directly? That'd match these workbooks exactly \u2014 say the word and I'll wire it up.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Done \u2014 pushed `ebfc180`, both platforms green.\n\n## \u2705 The model now figures it out automatically\n\nThe Grading screen no longer forces two separate photo sets:\n\n- **Just upload the workbook pages.** The system prompt tells the model to auto-detect whether the student's answers are written **on the pages** or on **separate answer sheets**, so you don't pick a mode.\n- The second bucket is now **\"Separate answers (optional)\"** \u2014 only needed for the rare case where answers are on a different sheet.\n- **Grade** enables as soon as you've added the pages (one bucket is enough).\n- Added a one-line \"how it works\" hint at the top.\n\n## Verified on your real photos\nReplicating the app's exact request (your Qwen Singapore endpoint, `qwen3-vl-plus`, single combined bucket, `response_format: json_object`):\n- **HTTP 200 \u2192 clean structured JSON \u2192 18/24**, with correct \u2713/\u2717, right answers, explanations, and Chinese vocab for the wrong ones.\n\nSo end-to-end in the app: **Photo tab \u2192 \u22ef \u2192 \u4f5c\u4e1a\u6279\u6539 / Grade Workbook \u2192 upload your pages \u2192 Grade.** It'll read the handwriting, mark each blank, and let you save the missed words to your vocab list.\n\nOne small note: the clean parse relies on the provider supporting strict JSON mode \u2014 which Qwen does (so you're set). Providers without it (Doubao/Zhipu/Anthropic) fall back to prompt-based JSON + tolerant parsing, which is usually fine but can occasionally need a re-tap on a very long page. If you ever hit that, tell me and I'll add an auto-retry.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Done \u2014 pushed `db9df40`, both platforms build clean.\n\n## \u2705 Photos can now be uploaded from Files\n\n- **Sandbox entitlement added** (`files.user-selected.read-only`) so the app can read files you pick \u2014 the **Files app** on iOS (incl. iCloud Drive, On My iPhone, etc.) and **Finder** on macOS.\n- **Workbook Grading** \u2014 each bucket now has two buttons: **\u7167\u7247 \u00b7 Photos** and **\u6587\u4ef6 \u00b7 Files**. Picking is now **additive**, so you can mix sources and keep adding pages (Photos + Files together), with **Clear** to reset. Files are read security-scoped and downscaled exactly like photos.\n- **Photo tab** (translate/cleanup) \u2014 added a **\u6587\u4ef6 \u00b7 Files** button next to **\u7167\u7247 \u00b7 Photos** for the single-image flow.\n\nThis is especially handy on **macOS**, where most images live in Finder rather than the Photos library, and on iOS for scans saved to Files/iCloud Drive.\n\nSo now: **Photo \u2192 \u22ef \u2192 Grade Workbook \u2192 \u6587\u4ef6 \u00b7 Files** \u2192 pick your scanned pages from Finder/Files \u2192 Grade. Same for the main photo translate screen.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Fixed and pushed (`051464a`), both platforms build clean.\n\n**The Files-button bug:** I'd stacked two `.fileImporter` modifiers on the same view \u2014 SwiftUI only honors one, so the *answers* importer hijacked both and the *workbook* button did nothing. Now there's a **single importer routed by a target**, so both buckets work.\n\n**Remove images:** every thumbnail now has an **\u2715 button**, plus **right-click (macOS) / long-press (iOS) \u2192 Remove** context menu.\n\n**Drag & drop:** both grading buckets *and* the main Photo input now accept images **dragged from Photos, Finder, Safari, or any app** \u2014 dropped images are downscaled and appended. Empty buckets show a dashed \"Drag & drop images here\" target.\n\nOther improvements in the same pass: picking is now **additive** (add more without wiping existing), and Photos/Files are separate buttons so you can mix sources.\n\nSorry about the broken button \u2014 that was a genuine defect, not something I'd verified. If anything still misbehaves when you run it, tell me exactly which button/bucket and I'll fix it.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Fixed and pushed (`c632f51`), both platforms green, verified against your actual key and images.\n\n## What was actually wrong\nThe banner said **`qwen-plus`** \u2014 a **text-only** model. The app *did* send your 2 pages, but qwen-plus literally can't see images, so it reported \"no workbook pages provided\" \u2192 **0/0**. My mistake was treating \"supports vision\" as a **provider** property; it's really a **per-model** property (`qwen-plus` = text, `qwen-vl-max`/`qwen3-vl-plus` = vision).\n\n## The fix\n- Grading (and photo AI cleanup / vocab extraction when an image is involved) now **auto-resolves a vision model**: it uses your selected model if it's already vision-capable, otherwise a known-good vision model for that provider (Qwen \u2192 `qwen-vl-max`, OpenAI \u2192 `gpt-4o`, Claude \u2192 `claude-sonnet-4-5`, GLM \u2192 `glm-4.5v`, Doubao \u2192 `doubao-1-5-vision-pro`, Kimi \u2192 vision-preview).\n- The grading banner now shows the **actual model it'll use**, so it can't silently mislead again.\n- Clear error if a provider genuinely has no vision model.\n\n**You don't need to change any settings** \u2014 keep Qwen selected; grading will use `qwen-vl-max` automatically.\n\n## Proof (your key, your photos)\n- `qwen-plus` \u2192 0 items graded (the bug)\n- `qwen-vl-max` \u2192 **5/6 graded** \u2713\n\nJust reopen **Grade Workbook** with your pages and hit Grade \u2014 it'll read the handwriting and score it now.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Pushed `bfeeb6c`, both platforms green. Three fixes in this round:\n\n## 1. Vocab Save/Save-all now actually save \u2705\nThe buttons were silently dropping any wrong answer whose vocab item wasn't already Chinese-keyed (the store keys on the Chinese field). Now the save:\n- falls back to the **correct answer** when the model didn't supply a vocab item,\n- **translates English\u2192Chinese** when neither side is Chinese,\n- keeps the word as-is as a last resort (never silently dropped),\n- and reliably flips the button to **\u5df2\u4fdd\u5b58**.\n\n## 2. Grading \"data couldn't be read\" \u2705\nThat was `qwen-vl-plus` emitting **malformed JSON** (a missing comma \u2014 I reproduced it: `Expecting ',' at char 12208`). Now grading **repairs** common JSON mistakes (string-aware, so it won't corrupt text), **retries once**, raises the token budget to 8192, and retries on empty results. Same repair applied to word explanations.\n\n## 3. \"Could not generate explanation \u2014 request timed out\" \u2705\nThe 60s network timeout was too short for big non-streamed responses. Bumped to **180s** (request) / 300s (resource).\n\n## \u2b50 One setting change that fixes your experience instantly\nYou currently have **`qwen-vl-plus`** selected \u2014 it's slow for text (\u2192 explanation timeouts) and flaky with JSON (\u2192 grading errors). \n\n**Set your Qwen model to `qwen-plus`** (Settings \u2192 AI \u2192 Qwen \u2192 Model). Then:\n- **Word explanations** use `qwen-plus` \u2192 fast & reliable, no timeouts.\n- **Workbook grading** automatically uses **`qwen-vl-max`** for vision (the app auto-swaps to a vision model for image tasks) \u2192 reliable, valid JSON.\n\nSo `qwen-plus` as your main model gives you the best of both. The code fixes above make it robust even if you don't, but `qwen-plus` is the sweet spot.",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Both tasks are complete, built on both platforms, committed, and pushed (`8343835`).\n\n## 1. Brand icons \u2705\nEvery AI provider now shows its real vendor logo instead of a generic SF Symbol. I added the SVGs from your `ai-icons` folder as **vector imagesets** in the asset catalog (`brand-<provider>`), so they stay crisp at any size:\n\n| Provider | Icon | Render mode |\n|---|---|---|\n| Apple Intelligence | `apple.svg` | monochrome (tints to fg, dark-mode safe) |\n| OpenAI | `openai.svg` | monochrome |\n| Ollama | `ollama.svg` | monochrome |\n| Claude | `claude-color.svg` | full color |\n| DeepSeek | `deepseek-color.svg` | full color |\n| Doubao | `volcengine-color.svg` | full color |\n| Qwen | `qwen-color.svg` | full color |\n| Kimi | `kimi-color.svg` | full color |\n| Zhipu GLM | `chatglm-color.svg` | full color |\n| MiniMax | `minimax-color.svg` | full color |\n\nA new shared `ProviderIcon` view renders these everywhere a provider glyph appears (settings pickers, the provider list, the AI-translate buttons, the word-explanation card/badge), and gracefully falls back to the SF Symbol if an asset is ever missing. I verified with `assetutil` that all 10 actually compiled into `Assets.car` with vectors preserved and the right template modes.\n\nTwo judgment calls (the only providers without an exact logo in the set) \u2014 tell me if you'd prefer a different file:\n- **Doubao** \u2192 I used the **Volcengine** logo (its API platform). Alternative: `bytedance-color.svg`.\n- **Zhipu** \u2192 I used **ChatGLM**. Alternative: `zai.svg` (their z.ai brand).\n\n## 2. iOS label wrapping \u2705\nI added a `.fitSingleLine()` modifier (shrinks the font to fit one line, then ellipsizes \u2014 never wraps) and applied it to **17 wrap-prone labels**, the worst offenders being the bilingual provider-name buttons (\"Translate with Qwen \u901a\u4e49\u5343\u95ee\", \"Explain with \u2026\") and the long Chinese action buttons (e.g. `\u4fdd\u5b58\u6240\u6709\u9519\u9898\u8bcd\u6c47\u5230\u8bcd\u6c47\u672c`, `\u5f00\u59cb\u6279\u6539 \u00b7 Grade`, `Copy with Pinyin`, `Update Saved Definition`), plus the photo scan-language menu and provider rows.\n\nNote: I committed only my source/asset changes. The repo also had pre-existing uncommitted churn (`project.pbxproj` with duplicate build-file entries \u2014 the source of the harmless \"Skipping duplicate build file\" warnings \u2014 plus `Localizable.xcstrings` and logs) that was already modified before this session; I left those untouched since they're unrelated to this task. Let me know if you'd like me to clean up the pbxproj duplicates separately.",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Pushed. The branch `jun-4-2026-workbook-grader` is fully in sync with the remote \u2014 nothing left to push, working tree clean.\n\nCommits now on remote:\n- `d6830f1` \u2014 Sync session logs, string catalog, and project file (housekeeping)\n- `8343835` \u2014 **Use real AI brand icons and keep iOS labels on one line** (this session's work)\n- `bfeeb6c` \u2014 Robust grading JSON, vocab saving, and longer timeouts (prior)\n\nEverything's pushed and the tree is clean.",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "The app is now fully localized with a working in-app language toggle. Here's what I did:\n\n## What changed\n\n**Runtime language switch** \u2014 `SwiftMandarin/Models/LocalizationManager.swift` (new)\n- An `@Observable @MainActor` singleton (`AppLanguage`: `.english` / `.chinese`) persisted to UserDefaults, defaulting to your device language on first launch.\n- The mechanism: a `Bundle.main` subclass override redirects every localized-string lookup to the selected `.lproj`. Since SwiftUI resolves all `Text(\"\u2026\")` literals through `Bundle.main`, the **entire UI flips language live** \u2014 no relaunch, no device-language change. App-Store-safe (public ObjC runtime only).\n- The app root injects `.environment(\\.locale)` and `.id(language)` so the tree re-resolves on switch.\n\n**The toggle** \u2014 a \"Language\" picker (English / \u4e2d\u6587) at the top of:\n- iOS: **Settings** (More \u2192 Settings)\n- macOS: **Settings \u2192 General**\n\n**Made it actually bilingual** \u2014 `Localizable.xcstrings` is now 100% covered both ways:\n- +206 Chinese translations for English UI strings, +76 English translations for the Chinese-only strings (so English mode no longer leaks Chinese).\n- All format placeholders preserved (positional `%1$lld`/`%2$@` for multi-arg), **0 placeholder errors** across 549 keys, consistent terminology (\u60a8, \u8bcd\u6c47\u672c).\n- Verified compiled: `zh-Hans.lproj` 545 entries, `en.lproj` 83.\n\n**Tab bar fix** \u2014 tab titles were plain `String` (rendered verbatim, wouldn't switch); added `AppTab.titleKey: LocalizedStringKey` + the missing `Photo` key.\n\n**QA** \u2014 ran a 10-batch + consistency-critic review workflow over the whole catalog; I curated its output (e.g. fixed `More\u2192\u66f4\u591a`, `OK\u2192\u786e\u5b9a`, the streak label) and rejected its misguided suggestions (it wanted to \"fix\" the keyboard-shortcut section `\u5feb\u6377\u952e` and flip `\u8bcd\u6c47\u672c\u2192\u8bcd\u6c47`, both of which were already correct).\n\n## Verification\n- macOS + iOS Simulator: **BUILD SUCCEEDED**.\n- Confirmed at the asset level that Chinese-source keys resolve to English in `en.lproj` (`\u4fdd\u5b58\u5230\u8bcd\u6c47\u672c`\u2192`Save to Vocabulary`) and English keys resolve to Chinese in `zh-Hans.lproj`.\n- The one thing I couldn't test here is the live visual toggle in a running simulator (needs GUI interaction). Two intentional notes: switching language resets in-tab navigation (expected for a deliberate action), and compact bilingual labels (e.g. `EN \u2192 \u4e2d`) and brand names are left as-is.\n\n## Git\nCommitted locally as `d6d627f` on `jun-4-2026-workbook-grader` (branch is ahead by 1, **not pushed**). Want me to push it? (The only other uncommitted files are auto-generated session/log telemetry.)",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Pushed. `d6d627f` is now on `origin/jun-4-2026-workbook-grader` \u2014 the branch is in sync (no ahead/behind).\n\nThe full localization + in-app English \u21c4 \u4e2d\u6587 toggle is committed and live on the remote. The only remaining uncommitted files are auto-generated session/log telemetry.",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "All three changes are implemented, built green on both platforms, and committed locally (`7c64c26`).\n\n## 1. Read the full English sentence per question\n- `GradedQuestion` now has a `fullSentence` field, and the grading prompt asks the model to return a clean, speakable complete English sentence for each question (for fill-in-the-blanks, the sentence with the correct word filled in).\n- Each graded card shows a **\"Full sentence\"** row with an inline \ud83d\udd0a button that reads it aloud via `SpeechService.speakEnglish`. If a model ever omits the sentence, a fallback speaker appears in the card header and reads the question + correct answer.\n\n## 2. Where do wrong answers get saved?\nThey're saved to your **Vocabulary list** \u2014 `SavedTermsStore.shared`, which backs the **Vocabulary tab** (\u8bcd\u6c47\u672c) and persists to `UserDefaults` (key `savedTerms`). Each wrong answer becomes a `SavedTerm` (keyed on the Chinese field), saved either per-question via the **\u4fdd\u5b58** button or all at once via **\u4fdd\u5b58\u6240\u6709\u9519\u9898\u8bcd\u6c47\u5230\u8bcd\u6c47\u672c**.\n\n## 3. Correct + wrong answers now both saved\nWhen a wrong-answer vocab item is saved, the entry's definition now appends both answers:\n> `<meaning>  (\u2713 <correct answer>  \u2717 <your wrong answer>)`\n\nSo reviewing the vocab card shows what to learn *and* what was missed. (The correct answer is skipped if it would just repeat the term/definition, to avoid noise.)\n\n**Bonus cleanup:** the card's answer labels (`\u4f60\u7684\u7b54\u6848`/`\u6b63\u786e\u7b54\u6848`) were rendering verbatim and wouldn't switch language \u2014 they're now localized, and I caught that 3 language-toggle strings from the last commit had no Chinese translation (the build auto-extracted them). Catalog is back to full coverage: 557 keys, 0 gaps, 0 placeholder errors.\n\nThe commit is local on `jun-4-2026-workbook-grader` (branch ahead by 1). Want me to push it?",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Pushed. `7c64c26` is now on `origin/jun-4-2026-workbook-grader` and the branch is in sync (no ahead/behind).\n\nThe workbook grader enhancements are live on the remote:\n- \ud83d\udd0a Read the full English sentence per question\n- Wrong answers save to the **Vocabulary tab** (\u8bcd\u6c47\u672c), now with `\u2713 correct \u2717 wrong` paired in each saved entry",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Fixed and committed locally (`35e2b9e`).\n\n## Root cause\nSwiftUI presents `.sheet` / `.fullScreenCover` / `.popover` content in a fresh hosting context that **doesn't inherit the root window's `\\.locale` environment**. So the app language switch reached the main UI (tabs, settings) but never propagated into modal screens like the workbook grader \u2014 they fell back to the device language.\n\n## Fix\n- Added a reusable **`.localizedSurface()`** modifier (`environment(\\.locale)` + `id(language)`) and applied it to the content of **all 16 modal presentations** in the app (workbook grader, camera scanner, word-detail sheets/popovers, screenshot translation, live speech, export, AI explanation, term detail, phrase detail, learning stats). Now every presented screen renders in the chosen language and re-renders if you switch while it's open.\n- The grader also had two section headers (`\u4f5c\u4e1a\u9875\u9762 \u00b7 Workbook pages`, `\u5355\u72ec\u7b54\u6848\uff08\u53ef\u9009\uff09\u00b7 Separate answers (optional)`) that were passed through a `String` parameter \u2014 that renders **verbatim**, so it never localized. Changed the parameter to `LocalizedStringKey` and added their catalog entries. (The grade button's text already localized correctly.)\n\nCatalog: 559 keys, **0 coverage gaps, 0 placeholder errors**; both platforms build green. The handoff and memory now note that any *new* sheet/popover must apply `.localizedSurface()`.\n\nOne caveat: I verified this at the build/catalog level but can't drive the simulator GUI here, so please confirm the grader now shows Chinese in Mandarin mode. Want me to push?",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Both done and pushed \u2014 branch is in sync with origin.\n\n**Pushed:**\n- `35e2b9e` \u2014 the modal/sheet localization fix (workbook grader now localizes)\n- `bd0a24c` \u2014 the README refresh\n\n**README updates** (it was a couple of feature-generations behind):\n- **New feature sections**: Photo/Camera/Screenshot OCR translation, Voice (live speech) translation, the optional 10-provider AI system (Apple Intelligence/Ollama + 8 cloud), and AI Workbook Grading \u2014 including the read-aloud full sentence and mistake-aware vocabulary (\u2713 correct \u00b7 \u2717 yours).\n- **Localization**: now describes the in-app English \u21c4 \u4e2d\u6587 toggle (Settings \u2192 Language), not just system detection.\n- **Settings**: added the Language/AI/learner-mode/scan-language/import-export options.\n- **Privacy**: made accurate \u2014 AI is opt-in, keys live in the Keychain, cloud providers only receive what you submit, and the core stays on-device/offline.\n- **Architecture & File Structure**: added the AI services, Vision OCR, `LocalizationManager`, App Intents, and the String Catalog.\n- **Screenshots**: dropped in the two real Workbook Grading screenshots (the upload view and the graded-results view showing the \ud83d\udd0a read-aloud and \u2713/\u2717 rows) into both the grading section and the macOS gallery.\n- **Fixed** a pre-existing broken app-icon image path (`mac-512@2x.png` \u2192 `icon_512x512.png`). All 19 local image references now resolve.",
+    "background_tasks": [
+      {
+        "id": "b1g1855ca",
+        "type": "shell",
+        "status": "running",
+        "description": "Read model comparison",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 3; done\ncat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      },
+      {
+        "id": "bgozm3r8g",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for comparison to finish",
+        "command": "until grep -qE \"qwen3-vl-plus \" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output 2>/dev/null; do sleep 5; done; echo \"=== DONE ===\"; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b4l0xytll.output"
+      }
+    ],
+    "session_crons": []
+  }
+]

@@ -1,0 +1,29 @@
+{
+  "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+  "prompts": [
+    "read through this app's codebase's swift files recursively and from start to finish.",
+    "ok, can you add a feature in the photo scan tab for workbook grading, which allows users to upload photos of a workbook, and the written answers, and send both to a vision capable LLM to check the written responses against the workbook, and pass the graded solutions back using structured output and a UI, and a feature to save the wrong answers to the saved vocab list. plan, design, and implement this feature. it should not be a main feature of the app, but it can probably be a feature tucked away in the photos tab, and also allow users to upload multiple images to each of the workbook photos and the written answers, and pass these along to the model provider with a custom system prompt for the LLM to do this task",
+    "kimi authentication failed https://api.moonshot.ai/v1 sk-kimi-26LQvNgczchB2VlJvvEJ8l9hwFkIimQbgEFTvTemNYOOBfQuVC1qZOBAiou8C5Oc[Image #1] also why the super outdate models",
+    "its my kimi code api key",
+    "please test this volcengine api key ark-3bed64a5-b758-44fd-96de-26e5856057d9-a8cfb",
+    "how do i activate the models. walk me through step by step",
+    "here, research how to implement and integrate the alibaba cloud model studio api key for quen. test it. here is my api key. sk-c8cdbf7b965045178308aa867fb61352 Go to the Alibaba Cloud Model Studio console . In the upper-right corner, switch to your target region, such as Singapore. Go to the Dashboard tab, and then in the left-side navigation pane, choose API Key to go to the API key management page. Click Create API Key.\nIn the dialog box, configure the following and click OK:\nWorkspace: Select the default workspace.\nDescription: Enter a description to help you identify this API key later.\nThe full API key is shown only once after creation. Copy and store it securely before closing the dialog box.\nIn the API key list, click the image icon next to an API key to copy the masked key.\nAlibaba Cloud accounts can view all API keys. RAM users can view only the API keys they create.\n2026-02-11_11-56-27\n\nWhen to choose a different workspace\n2. Use an API key\n\nNote\nCoding Plan requires a dedicated API key (format: sk-sp-xxxxx) instead of the general-purpose Model Studio API key (format: sk-xxxxx) described in this topic. To get a Coding Plan API key, see Get your plan-specific API key and base URL.\nMethod 1: Call models from third-party tools\nTo call a model from a tool like Chatbox, provide:\nYour API key\nThe base URL for your API key's region:\nSingapore: https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1. Replace WorkspaceId with your actual workspace ID.\nUS (Virginia): https://dashscope-us.aliyuncs.com/compatible-mode/v1\nChina (Beijing): https://dashscope.aliyuncs.com/compatible-mode/v1\nChina (Hong Kong): https://{WorkspaceId}.cn-hongkong.maas.aliyuncs.com/compatible-mode/v1. Replace WorkspaceId with your actual workspace ID.\nGermany (Frankfurt): https://{WorkspaceId}.eu-central-1.maas.aliyuncs.com/compatible-mode/v1. Replace WorkspaceId with your actual workspace ID.\nThe model name (e.g., qwen-plus)\nConfiguration guides for common tools: Chatbox, Cline, Claude Code, Dify, OpenClaw, Postman, and Qwen Code. workspace ID ws-tadf5kfijdfuj988 api host: ws-tadf5kfijdfuj988.ap-southeast-1.maas.aliyuncs.com",
+    "make the singapore endpoint the default endpoint. add a per-provider\n  filter so the picker only shows chat/vision-capable models[Image #3] [Image #4] here are the workbook images. please test the model api against this.",
+    "yes, or better yet, have the model automatically figure it out",
+    "allow the photos to be uploaded as files, not just ffrom the photos app",
+    "the upload files button doesnt fucking work for the workbook pages. also, theres no option to right click or remove uploaded images. only the upload file for the separate answers works. what the fuck are you doing?",
+    "[Image #5] wtf",
+    "[Image #6]",
+    "[Image #7]",
+    "continue",
+    "/Users/rogerlin/Downloads/ai-icons update the ai icons with the svgs from this file. thanks. also, some of the label text on the ios version wraps across multiple lines. please make sure they are automatically resized to fit in on a single line, or else clipped or the font size made smaller.",
+    "push to git",
+    "please localize the app, and add a toggle in the settings menu to switch between mandarin and english versions. by localize, i mean provide a mandarin version of the app",
+    "push it",
+    "add a feature to read the full sentence in english to this workbook grader for each question. also, where do the wrong answers get saved to? maybe add the correct answers to the wrong given solutions to the vocab list too",
+    "push",
+    "the workbook grading interface is not localized, and is still in english even if the language is set to mandarin",
+    "push and update the readmes",
+    "<task-notification>\n<task-id>b1g1855ca</task-id>\n<tool-use-id>toolu_012qohzTETTkzr25aC3gCt9H</tool-use-id>\n<output-file>/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a/tasks/b1g1855ca.output</output-file>\n<status>killed</status>\n<summary>Background command \"Read model comparison\" was stopped</summary>\n</task-notification>"
+  ]
+}

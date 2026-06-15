@@ -1,293 +1,82 @@
-# Handoff.md - SwiftMandarin iOS Redesign
+# Handoff.md — SwiftMandarin: Bilingual + Multi-Provider AI Overhaul
 
-**Last Updated (UTC):** 2026-02-11T12:47:00Z
-**Status:** In Progress
-**Current Focus:** Release documentation, packaging, and branch integration
+**Last Updated (UTC):** 2026-06-15
+**Status:** In Progress (iter 11 — Photo-tab workbook suite + analytics + More declutter + full audit → EXECPLAN2.md)
+**Current Focus (latest):** Photo-tab workbook expansion — direct camera capture, a review-question **database** (bank), AI **review-question generation**, **grading history** with the original scanned photos, **analytics** integration (graded questions in the contribution heatmap), and a decluttered **More** tab. Plus a 43-agent codebase audit written to `EXECPLAN2.md` (132 findings, 23 confirmed). See Updates iter 11.
+**Prior Focus:** Interface-language-driven tailoring: when the UI is 中文 the user is treated as a native Mandarin speaker learning English (AI explanations written in Mandarin; saved words show ENGLISH as the big headline with Mandarin small; English TTS emphasis) and vice versa for English UI. Full audit + plan: docs/language-direction-audit.md (11-agent parallel map + completeness critic, 2026-06-13).
+**Prior Focus:** Full-app audit + overhaul: 18 verified bug fixes, integration wins (unified history/stats, pinyin position, provider test connection), zero-warning builds, bilingual READMEs — see Updates iter 8 (2026-06-10).
+**Prior Focus:** Full UI localization (English ⇄ 中文) with a runtime in-app language toggle — see Updates iter 5 (2026-06-07).
+**Prior Focus:** Four-part overhaul — (A) fix photo OCR Chinese gibberish/language lock, (B) multi-provider cloud AI with API-fetched model lists, (C) photo→AI cleanup toggle, (D) make the app fully bilingual (dual narration + learner-mode toggle).
 
 ## 1) Request & Context
+- **A — Photo OCR bug:** Photo upload "often produces gibberish," "cannot switch languages," "stuck on detecting English, can't read Mandarin."
+- **B — Provider expansion:** Add OpenAI, Claude (Anthropic), Deepseek, Doubao, Qwen, Kimi, Zhipu, Minimax. Pull each provider's available models via API.
+- **C — Deep AI integration:** A settings toggle that routes an uploaded photo to an AI model for cleanup/structuring, returning cleaned text into the app.
+- **D — Bilingual:** App must serve English-speakers-learning-Mandarin AND Mandarin-speakers-learning-English (and both). Add English narration alongside Mandarin for the selected word, and a settings toggle that flips the app between English-centric and Mandarin-centric, adapting features.
 
-- **User's request:** Rebuild the MandarinKit app as SwiftMandarin - a clean multiplatform Mandarin-English translation app with focus on iOS 26 and iPadOS 26 redesign.
+**Environment:** Xcode 26.3, iOS/macOS/visionOS **26.2** deploy targets, Swift 5 mode, single target `SwiftMandarin`, sandboxed (`ENABLE_APP_SANDBOX=YES`), generated Info.plist. One SPM dep: `ollama-swift 1.8.0`. State = `@Observable @MainActor` singletons over UserDefaults JSON. No Keychain, no network entitlement yet.
 
-- **Key problems identified in previous version:**
-  1. iPhone UI doesn't take up the whole screen - black bars on top/bottom
-  2. Massive waste of space for title/settings area
-  3. Not native-feeling on iOS
-  4. Cross-platform code created messy conditional compilation
+## 2) Verified Root Causes (from full-codebase read + 9-agent comprehension workflow)
+**A (compounding 4-stage failure):**
+1. `PhotoTextRecognitionService.swift:204` — `recognitionLanguages = ["en-US","en-GB","zh-Hans","zh-Hant"]` English-first; `automaticallyDetectsLanguage` never set; no per-call override → genuinely "cannot switch languages."
+2. `:207` — `usesLanguageCorrection = true` unconditionally → English autocorrect mangles Chinese into Latin gibberish.
+3. `:45-72` (+ dup in `PhotoTranslateView:601`, `CameraScannerView:123`) — English-centric cleaner joins with spaces / English punctuation regex → corrupts spaceless Chinese.
+4. `PhotoTranslateView:573-598` — language detection runs AFTER OCR on already-garbled text; non-Chinese falls back to English; `TextRecognitionResult.language` hardwired `nil`.
+Secondary: `CameraScannerView:40` `.text()` no language hint; `VNImageRequestHandler` ignores orientation; `Character.isChineseCharacter` misses ranges.
 
-- **Target devices:**
-  - Primary: iPhone 14 Pro (iOS 26)
-  - Secondary: iPad Pro M4 13 inch (iPadOS 26)
-  - Tertiary: macOS 26
+**B:** `AIProvider` enum has only `.appleIntelligence`/`.ollama`; `AIModelSettings` Ollama-shaped, no API key storage; `OllamaService` (third-party `Ollama.Client`) can't reach cloud (hardcoded `/api/*`, no auth header). Exhaustive switches at `AIModelSettings:124,134`, `AIWordExplanationService:395,411`, `MacOSSettingsView:280`, `MoreView:471`; availability hardcoded in `ShortcutHelpers:95`, `AIWordExplanationView:27`.
 
-- **Operational constraints:**
-  - Single multiplatform target
-  - iOS 26+ / iPadOS 26+ / macOS 26+ minimum deployment
-  - Must use Apple's native Translation Framework
-  - Must follow Apple Human Interface Guidelines (WWDC 2025)
-  - Must adopt Liquid Glass design system
+**C:** Seam = `PhotoTranslateView.loadAndProcessImage` between `recognizeText(from:)` (`:508`) and `sourceText = result.cleanedText` (`:512`). No toggle, no image-capable provider today.
 
-## 2) Requirements → Acceptance Checks (Traceable)
-
-| Requirement | Acceptance Check | Expected Outcome | Evidence |
-|-------------|------------------|------------------|----------|
-| R1: Full-screen UI on iPhone | Launch on iPhone 14 Pro | Content fills entire screen, no black bars | Pending |
-| R2: Compact, space-efficient translate view | Measure UI element sizes | No wasted space on title/settings | Pending |
-| R3: Native iOS feel | Compare with Apple apps | Tab bar, gestures, interactions feel native | Pending |
-| R4: Liquid Glass effects | Enable on iOS 26 | Glass effects render on controls, tab bar | Code complete |
-| R5: Translation works | Translate "Hello" EN→ZH | Returns "你好" with pinyin | Pending runtime test |
-| R6: Tappable Chinese words | Tap word in output | Shows popover with pinyin, definition | Code complete |
-| R7: Vocabulary saving | Save term from popover | Term appears in Vocabulary tab | Code complete |
-| R8: Flashcard learning | Start learning session | Cards display, ratings work | Code complete |
-| R9: iPad sidebar/tab adaptation | Run on iPad | sidebarAdaptable shows sidebar in landscape | Code complete |
+**D:** Narration single-language (`WordDetailPopover:272` Chinese only; `EnglishWordDetailSheet:184` English only). No learner-mode concept; defaults hardcoded English-first (`TranslationDirection`, `TranslationState`).
 
 ## 3) Plan & Decomposition
+**Group 1 — Foundations:** entitlements network.client; `KeychainHelper`; `AppPreferences` (LearnerMode, PhotoScanLanguage, dualNarration); extend `AIProvider` + per-provider metadata + per-provider config/keys in `AIModelSettings` (generalized switches via `default:`); `CloudAIService` (URLSession; OpenAI-compatible + Anthropic; listModels w/ fallback; chat; vision; translate).
+**Group 2 — OCR (A):** robust CJK-ratio-first detector + widened CJK in `ChineseTextAnalyzer`; parameterized recognition + Chinese-aware clean + language populated + orientation in `PhotoTextRecognitionService`; `.text(languages:)` in `CameraScannerView`; scan-language override UI + AI-cleanup hook + Chinese-aware processing in `PhotoTranslateView`.
+**Group 3 — AI routing (B/C):** cloud dispatch + `cleanupRecognizedText` + tolerant JSON in `AIWordExplanationService`; cloud availability in `ShortcutHelpers`, `AIWordExplanationView`.
+**Group 4 — Settings UI (B/C/D):** shared `AIProviderConfigView`; wire into `MacOSSettingsView` + `MoreView`; add learner-mode + photo-cleanup toggles.
+**Group 5 — Narration (D):** dual narration in `WordDetailPopover` + `EnglishWordDetailSheet`.
 
-### Critical Path Narrative
-Start with core services and models (shared across platforms), then build iOS-first UI that maximizes screen usage. The iPhone is the primary target - if it looks great on iPhone, iPad and Mac adaptations are simpler.
+## 4) Requirements → Acceptance Checks
+| Req | Check | Evidence |
+|---|---|---|
+| A | Scan Chinese textbook → Chinese chars recognized, not gibberish; manual 中文/English/Auto switch works | macOS build + manual |
+| B | Settings shows 10 providers; entering key + Refresh lists models from API | build + manual |
+| C | Toggle ON → photo OCR text cleaned by AI before display | build + manual |
+| D | Word detail shows both 朗读中文 + Read English; learner-mode toggle flips defaults | build + manual |
+| All | `xcodebuild` macOS Debug succeeds, zero errors | pending |
 
-### Architecture Decisions
+## 5) Decisions
+- Cloud clients via **URLSession** (no new SPM deps). All Chinese providers are OpenAI-compatible; Anthropic uses `/v1/messages` + `x-api-key`.
+- API keys in **Keychain** (generic password), never UserDefaults.
+- Exhaustive `AIProvider` switches converted to use `default:` (cloud) so future providers don't break compilation.
+- `live model list` falls back to curated `defaultModels` per provider when the `/models` endpoint is absent/blocked.
+- Learner mode adjusts defaults (direction, scan language) and is additive — never removes capability; dual narration always offered when both languages available.
 
-**Navigation Pattern:**
-- iOS: `TabView` with `.tabViewStyle(.sidebarAdaptable)` 
-  - iPhone: Bottom tab bar (5 tabs max)
-  - iPad landscape: Sidebar that morphs from floating tab bar
-  - iPad portrait: Floating tab bar at top
-- macOS: `NavigationSplitView` with sidebar
-
-**Tab Structure (iOS):**
-1. **Translate** - Primary function, default tab
-2. **Vocabulary** - Saved terms
-3. **Learn** - Flashcards with spaced repetition
-4. **Phrases** - Quick phrase collections
-5. **More** - History, Statistics, Settings
-
-**Key iOS 26 Design Principles (from HIG research):**
-1. **Liquid Glass** - Standard components adopt automatically; use sparingly on custom views
-2. **Full-screen content** - Content should extend to edges with proper safe area handling
-3. **Tab bar at bottom** - Quick access to 5 key areas
-4. **No navigation bar titles eating space** - Use inline/large title judiciously
-5. **Scroll edge effects** - Content scrolling under controls gets blur treatment
-
-## 4) To-Do & Progress Ledger
-
-### Completed Tasks
-- [x] Read MandarinKit.md codebase documentation (12,627 lines) — completed
-- [x] Research Apple HIG, Liquid Glass, TabView sidebarAdaptable — completed
-- [x] Explore current SwiftMandarin project — completed; clean template
-- [x] Create Models folder with SavedTerm, LearningCard, TranslationHistory, TranslationDirection — **completed**
-- [x] Create Services folder with PinyinConverter, ChineseTextAnalyzer, SpeechService, ClipboardService — **completed**
-- [x] Implement iOS TabView navigation structure with sidebarAdaptable — **completed**
-- [x] Create TranslateView with full-screen design — **completed**
-- [x] Create VocabularyView with search, sort, export — **completed**
-- [x] Create LearnView with flashcards and spaced repetition — **completed**
-- [x] Create PhrasesView with categories — **completed**
-- [x] Create MoreView with History, Settings, About — **completed**
-- [x] Apply Liquid Glass effects (.glassEffect(), .buttonStyle(.glass)) — **completed**
-- [x] Fix all compilation errors for multiplatform support — **completed**
-- [x] Remove template Item.swift file — **completed**
-
-### Remaining Tasks
-- [ ] Test on iPhone 14 Pro simulator/device — pending
-- [ ] Test on iPad Pro M4 simulator/device — pending
-- [ ] Verify Translation API integration — pending
-- [ ] Polish animations and transitions — pending
-- [ ] App icon and branding — pending
-- [x] Create comprehensive README.md with installation, usage, architecture, and screenshots — **completed**
-- [x] Build macOS Release app and package distributable DMG installer — **completed**
-
-## 5) Findings, Decisions, Assumptions
-
-### Key Findings from Research
-
-**Liquid Glass (iOS 26):**
-- Standard SwiftUI components (TabView, NavigationStack, toolbars) adopt Liquid Glass automatically
-- Use `.glassEffect()` modifier sparingly on custom views
-- Use `.buttonStyle(.glass)` for glass-styled buttons
-- `GlassEffectContainer` for combining multiple glass effects
-
-**TabView sidebarAdaptable:**
-- iOS: Bottom tab bar
-- iPadOS: Top floating tab bar that morphs to sidebar
-- macOS/tvOS: Always shows sidebar
-- Limit to 5 main tabs for tab bar; use TabSection for hierarchy
-
-**Translation Framework:**
-- `TranslationSession` for programmatic translation
-- `LanguageAvailability` to check/download language packs
-- Works offline when language packs downloaded
-
-### Decisions Made
-
-1. **Use TabView not NavigationSplitView for iOS** - Tab bar is more ergonomic for iPhone, puts navigation at thumb reach
-2. **5 tabs: Translate, Vocabulary, Learn, Phrases, More** - Balances functionality with tab bar space
-3. **Settings in sheet, not separate tab** - Common iOS pattern, accessed from More or gear button
-4. **Full-width input/output areas** - No padding waste on translate view
-5. **Pinyin always visible** - Core learning feature, not hidden behind toggle
-6. **Use @Observable macro** - Modern Swift approach instead of ObservableObject for iOS 17+
-7. **Platform conditionals for unavailable APIs** - #if os(iOS) for navigationBarTitleDisplayMode, insetGrouped list style
-
-### Assumptions
-
-1. User has iOS 26+ installed (Liquid Glass requires iOS 26)
-2. Translation language packs can be downloaded on first use
-3. UserDefaults sufficient for data persistence (used for terms, history, progress)
-4. Apple Intelligence/FoundationModels available on target devices
-
-## 6) Issues, Mistakes, Recoveries
-
-### Issue 1: @MainActor + ObservableObject Conflict
-- **Symptom:** Type does not conform to ObservableObject error
-- **Root cause:** @MainActor on class prevents @StateObject initialization
-- **Fix:** Changed to @Observable macro with @State in App
-- **Guardrail:** Use @Observable for iOS 17+ apps
-
-### Issue 2: Duplicate PartOfSpeech.color Extension
-- **Symptom:** Invalid redeclaration of 'color'
-- **Root cause:** Extension in TranslateView duplicated one in ChineseTextAnalyzer
-- **Fix:** Removed duplicate extension from TranslateView.swift
-- **Guardrail:** Check for existing extensions before adding
-
-### Issue 3: macOS Unavailable APIs
-- **Symptom:** 'insetGrouped' is unavailable in macOS, 'navigationBarTitleDisplayMode' unavailable
-- **Root cause:** iOS-specific APIs used without platform checks
-- **Fix:** Added #if os(iOS) conditionals around platform-specific modifiers
-- **Guardrail:** Test build for all platforms during development
-
-### Issue 4: AnalyzedWord Property Name Mismatch
-- **Symptom:** ForEach using \.word but property is .text
-- **Root cause:** Model uses 'text', code referenced 'word'
-- **Fix:** Changed all word.word to word.text
-- **Guardrail:** Match property names between model and usage
-
-### Issue 5: ReviewQuality Switch Not Exhaustive
-- **Symptom:** Switch must be exhaustive error
-- **Root cause:** Enum has 6 cases but switch only handled 5
-- **Fix:** Added missing .difficult case to all switches
-- **Guardrail:** Use default case or verify all enum cases covered
-
-## 7) Scenario-Focused Resolution Tests
-
-### Test 1: Full-Screen Translation
-- **Repro steps:** Launch app on iPhone 14 Pro → Go to Translate tab → Enter text
-- **Expected:** Input field and output area use full width, no black bars
-- **Post-change behavior:** TBD - requires device testing
-- **Verdict:** Pending
-
-### Test 2: Word Tap for Details
-- **Repro steps:** Translate "Hello" to Chinese → Tap "你好" in output
-- **Expected:** Sheet shows pinyin "nǐ hǎo", part of speech, save button
-- **Post-change behavior:** Code complete with WordChip and WordDetailSheet
-- **Verdict:** Pending runtime test
-
-### Test 3: iPad Sidebar Adaptation
-- **Repro steps:** Launch on iPad Pro in landscape → Observe tab bar behavior
-- **Expected:** Tab bar morphs into sidebar
-- **Post-change behavior:** TabView uses .sidebarAdaptable style
-- **Verdict:** Pending device test
-
-### Test 4: Flashcard Learning Session
-- **Repro steps:** Go to Learn tab → Tap card → Review with quality rating
-- **Expected:** Card flips, shows translation, rating buttons work
-- **Post-change behavior:** LearnView complete with FlashcardView and spaced repetition
-- **Verdict:** Pending runtime test
-
-### Test 5: Vocabulary Management
-- **Repro steps:** Save term from translation → Go to Vocabulary → Search/sort/export
-- **Expected:** Term appears, search works, export produces valid output
-- **Post-change behavior:** VocabularyView complete with all features
-- **Verdict:** Pending runtime test
+## 6) Progress Ledger
+- [x] G1 foundations — entitlements `network.client`; `KeychainHelper`; `AppPreferences`; extended `AIProvider` (10 providers) + per-provider keys/models in `AIModelSettings`; `CloudAIService` (URLSession, OpenAI + Anthropic, vision, model listing).
+- [x] G2 OCR (A) — robust CJK-ratio detector + widened CJK in `ChineseTextAnalyzer`; parameterized recognition language + Chinese-aware cleaning + language carried + EXIF orientation in `PhotoTextRecognitionService`; `.text(languages:)` + language-aware cleaning in `CameraScannerView`; scan-language menu + "重新识别" + AI-cleanup hook + Chinese-aware processing in `PhotoTranslateView`.
+- [x] G3 AI routing (B/C) — cloud dispatch + `generateExplanationWithCloud` + `cleanupRecognizedText` + tolerant JSON in `AIWordExplanationService`; `isAnyProviderAvailable` in `ShortcutHelpers` + `AIWordExplanationView`.
+- [x] G4 settings UI (B/C/D) — shared `AIProviderConfigView`; wired into macOS `AISettingsTab` + iOS `AISettingsDetailView`; generalized `statusColor` switches (`default:` cloud); learner-mode + dual-narration sections; AI-photo-cleanup toggles.
+- [x] G5 narration (D) — dual-language narration in `WordDetailPopover` (中文 + EN) and `EnglishWordDetailSheet` (English + 中文).
+- [x] build green — macOS Debug ✅, iOS Simulator Debug ✅ (only 2 pre-existing warnings). Logic check: 9/9 detector+cleaning assertions pass.
 
 ## 8) Verification Summary
+- `xcodebuild -scheme SwiftMandarin -destination 'platform=macOS' -configuration Debug` → **BUILD SUCCEEDED**.
+- `xcodebuild ... -destination 'generic/platform=iOS Simulator' ...` → **BUILD SUCCEEDED**.
+- Standalone Swift check of `detectLanguageRobust` + Chinese whitespace cleaning: **9/9 passed** (pure/traditional/mixed Chinese → chinese; English/English-dominant → english; despacing preserves Latin spaces).
+- Learner-mode → direction wiring confirmed via `TranslateView.applyDefaultDirectionIfNeeded()` reading the `defaultDirection` UserDefaults key updated by `LearnerMode.didSet`.
+- Not yet runtime-tested with a live cloud API key or a real Chinese photo (requires user secrets / GUI). Behavior reasoned + compile-verified.
 
-| Check | Status | Evidence |
-|-------|--------|----------|
-| Build succeeds | ✅ Complete | xcodebuild success |
-| Models created | ✅ Complete | SavedTerm, LearningCard, TranslationHistory, TranslationDirection |
-| Services created | ✅ Complete | PinyinConverter, ChineseTextAnalyzer, SpeechService, ClipboardService |
-| Tab navigation | ✅ Complete | ContentView with TabView sidebarAdaptable |
-| TranslateView | ✅ Complete | Full-screen design with word analysis |
-| VocabularyView | ✅ Complete | Search, sort, export functionality |
-| LearnView | ✅ Complete | Flashcards with glass effect |
-| PhrasesView | ✅ Complete | Categories with 50+ phrases |
-| MoreView | ✅ Complete | History, Settings, About |
-| Liquid Glass | ✅ Complete | .glassEffect(), .buttonStyle(.glass) applied |
-| README documentation | ✅ Complete | README.md with install/run/use + screenshot gallery |
-| macOS release build | ✅ Complete | xcodebuild Release build succeeded on 2026-02-11 |
-| DMG packaging | ✅ Complete | dist/SwiftMandarin-2.0-macOS.dmg + SHA256 generated |
-| iPhone full-screen UI | Pending | Requires device testing |
-| Translation API works | Pending | Requires runtime test |
-| iPad sidebar works | Pending | Requires device testing |
-
-## 9) Remaining Work & Next Steps
-
-**Immediate:**
-1. Run on iPhone 14 Pro simulator to verify full-screen layout
-2. Run on iPad Pro simulator to verify sidebar behavior
-3. Test translation functionality end-to-end
-4. Verify all interactions work as designed
-
-**Follow-up (Future Session):**
-1. Add app icon and branding
-2. Implement AI-enhanced features (FoundationModels)
-3. Add widgets and App Intents
-4. Performance optimization
-5. Accessibility audit
-
-## 10) Updates to This File
-
-- 2026-02-11 00:00: Created handoff.md with comprehensive iOS redesign plan
-  - Documented requirements from previous MandarinKit codebase analysis
-  - Researched HIG, Liquid Glass, sidebarAdaptable TabView
-  - Created 18-step implementation plan
-  - Defined acceptance criteria and test scenarios
-
-- 2026-02-11 12:00: Major implementation update
-  - Created all Models: SavedTerm, TranslationDirection, TranslationHistory, LearningCard
-  - Created all Services: PinyinConverter, ChineseTextAnalyzer, SpeechService, ClipboardService
-  - Implemented all Views: TranslateView, VocabularyView, LearnView, PhrasesView, MoreView
-  - Applied Liquid Glass effects (.glassEffect(), .buttonStyle(.glass))
-  - Fixed 5 build issues (see Issues section)
-  - Build now succeeds for all platforms
-  - Ready for device testing
-
-- 2026-02-11 12:47: Documentation and packaging update
-  - Added README.md with platform requirements, installation steps, feature walkthrough, architecture notes, and screenshot sections for macOS/iOS/iPadOS
-  - Structured iPhone screenshots in a horizontal gallery layout for GitHub viewing
-  - Built Release macOS app using xcodebuild with destination platform=macOS
-  - Packaged distributable installer: dist/SwiftMandarin-2.0-macOS.dmg
-  - Verified DMG mount content includes SwiftMandarin.app and Applications symlink
-  - Generated checksum file: dist/SwiftMandarin-2.0-macOS.dmg.sha256
-
-- 2026-02-11 12:53: GitHub delivery and branch integration
-  - Pushed branch updates to origin/v3.0-claude-cross-platform-ship
-  - Merged v3.0 work into origin/main (merge commit 5f4b6b2)
-  - Created branch alias origin/v3.0 pointing to commit e355f7c
-  - Published GitHub release v3.0.0 with DMG and checksum assets
-
-## Files Created/Modified
-
-### Models (SwiftMandarin/Models/)
-- `TranslationDirection.swift` - EN↔ZH direction enum
-- `SavedTerm.swift` - Vocabulary term model + store
-- `TranslationHistory.swift` - History entry + store
-- `LearningCard.swift` - Flashcard + progress + store
-
-### Services (SwiftMandarin/Services/)
-- `PinyinConverter.swift` - Chinese→pinyin with tone colors
-- `ChineseTextAnalyzer.swift` - Word segmentation, POS tagging
-- `SpeechService.swift` - Text-to-speech
-- `ClipboardService.swift` - Cross-platform clipboard
-
-### Views (SwiftMandarin/Views/)
-- `TranslateView.swift` - Main translation with word analysis
-- `VocabularyView.swift` - Saved terms with search/sort/export
-- `LearnView.swift` - Flashcards with spaced repetition
-- `PhrasesView.swift` - Phrase categories (50+ phrases)
-- `MoreView.swift` - History, Settings, About
-
-### App
-- `SwiftMandarinApp.swift` - App entry with @Observable stores
-- `ContentView.swift` - TabView with sidebarAdaptable
-
-### Removed
-- `Item.swift` - Xcode template file (not needed)
+## 10) Updates
+- 2026-06-15 (iter 11 — Photo-tab workbook suite, analytics, More declutter, full audit): Implemented a cohesive workbook study loop inside the **Photo tab** (entry points in its toolbar `Menu` under a *Workbook* section: Grade Workbook / Review Bank / Grading History) plus an app-wide audit. **New data layer** (`Models/WorkbookBank.swift`): `WorkbookQuestion` (Codable, tolerant `init(from:)`), `WorkbookQuestionBankStore` (`@Observable @MainActor`, content-dedup, newest-first, `PersistentCodableStore` key `workbookQuestionBank`); `GradedSession` + `WorkbookGradingHistoryStore` (key `workbookGradingHistory`); and `WorkbookImageStore` — a **file-backed** image store under `Application Support/WorkbookImages/` (scanned photos are too large for UserDefaults JSON, so only file IDs persist in JSON; deleting a session deletes its photos; all methods nonisolated, called off-main). **Camera capture** (`Views/Components/CameraImagePicker.swift`): `UIImagePickerController(.camera)` wrapper → JPEG `Data` (iOS-only; macOS stub). `WorkbookGradingView` upload sections gained a prominent **拍照 · Camera** button shown only when `CameraImagePicker.isAvailable` (hidden on macOS/Simulator via `cameraAction(for:)` returning nil → `.fullScreenCover`); captured images flow through the existing `downscaledJPEG`. **Grade flow** now snapshots inputs, saves the original scans to disk in a detached Task (off-main), then on MainActor builds a `GradedSession`, `WorkbookGradingHistoryStore.shared.add`, and `LearningActivityStore.shared.recordQuestionsGraded(count)`; results show a *Saved to grading history* note. Per-question **加入题库 · Add to Bank** + results **全部加入题库 · Add all** (uses content-dedup; `isInBank` reflects prior saves). **Bank UI** (`Views/WorkbookQuestionBankView.swift`): filter (All/Workbook/Generated), read-aloud, swipe-delete (filter→store id mapping), clear-all; **Generator** (`ReviewQuestionGeneratorView`): count stepper + subject tag + custom instructions → `AIWordExplanationService.generateReviewQuestions(from:count:customInstructions:)` (new; native/learning-language aware, prioritizes wrong/vocab items, tolerant JSON + repair retry, routes Apple Intelligence/Ollama/cloud text model), generated cards with reveal-answer/read-aloud/save(+all). **History UI** (`Views/WorkbookGradingHistoryView.swift`): session list (score ring, date, photo count) → `GradedSessionDetailView` (score, summary, original photos in a horizontal scroll → `fullScreenCoverCompat` viewer that's `.fullScreenCover` on iOS / `.sheet` on macOS, read-only graded cards, add-all-to-bank); async image load via `Task.detached { WorkbookImageStore.load }` then decode on MainActor (Sendable-safe). **Analytics** (`Models/LearningActivity.swift`): `DailyActivity.questionsGraded` with a **tolerant custom `init(from:)`** (CodingKeys + `decodeIfPresent` defaults) so older saved heatmap payloads don't `keyNotFound`-wipe — directly mitigates audit issue #1; `activityScore += questionsGraded`; `recordQuestionsGraded(_:)` + `totalQuestionsGraded`; `StatsView` per-day heatmap detail shows a graded-questions count and the Overview grid gains a **Questions Graded** tile. **More declutter** (`Views/MoreView.swift` rewritten): compact header + **Quick Setup** (language + learner mode) + Settings split into focused screens (`GeneralSettingsView`/`AISettingsDetailView`/`TranslationSettingsView`/`DisplaySettingsView`/`DataManagementView`) instead of one long form; removed the **redundant** in-More `HistoryView`/`HistoryRow` (the History tab is canonical) — resolves audit quick-win #4. **Localization**: workbook UI uses bilingual literals (`中文 · English`); added 4 catalog keys with `zh-Hans` (`Questions Graded`/`Display & Pinyin`/`Quick Setup`/`About & Support`) via a text-insertion script preserving Xcode's format, re-validated as JSON (625 keys). **Audit → `EXECPLAN2.md`**: a 43-agent workflow (13 subsystem finders → adversarial verification → synthesis) produced **132 findings** (29 high/54 medium/49 low), **23 confirmed**, **6 refuted**, **86 suggestions**, plus architecture/workflow recommendations. Notable confirmed P0s documented (NOT fixed this session — outside the feature scope, risky without runtime tests): history records the UI-toggle direction not the detected one (`TranslateView`), audio tap captures a non-Sendable `AVAudioPCMBuffer` per-buffer Task + converter re-feeds the same buffer, schema-evolution data-loss across all stores, iOS-17 8-tab system-More collision, screenshot-stitch `bytesPerRow` mismatch, CSV multiline round-trip loss, SR scheduling dead code. **Verification**: `xcodebuild` macOS Debug ✅ and iOS-Simulator Debug ✅ — zero errors (both). Then a 2-phase adversarial review workflow over the diff. NOTE: new `.swift` files auto-included via the synchronized file group (no pbxproj edits); `grep -c "in Sources" project.pbxproj` should stay 0. NOTE: the new workbook features are intentionally Photo-tab-only per the request; analytics is the one cross-tab touchpoint (Stats), also per the request.
+- 2026-06-13 (iter 10 — native-language tailoring by interface language): The interface language now doubles as the user's NATIVE language and re-orients the whole app: 中文 UI → native Mandarin speaker learning English (AI explanations written in 简体中文; saved words / phrases / flashcards / popovers show the ENGLISH side as the big headline with the Mandarin gloss small; pinyin hidden — it's a learner aid, not native furniture; TTS leads with English); English UI → the historic English-speaker-learning-Chinese behavior, unchanged. Audit: 11-agent parallel map + completeness critic over all 19.6k lines → docs/language-direction-audit.md (findings incl. critic-caught gaps: Ollama/cloud prompt paths, missing LocalizationManager↔learnerMode link, Chinese-POS stats breakage; plus deliberate rejections — `Text("…")` literals already localize via catalog, CSV column swap would break import round-trips). **Core abstraction:** `LocalizationManager.nativeIsChinese`/`learningIsChinese` + `AppLanguage.persisted` (nonisolated snapshot for App Intents); language toggle now syncs `AppPreferences.learnerMode` (and first-launch learnerMode derives from UI language); `SavedTerm.chineseSide/englishSide/headlineText/glossText/showsPinyin` — sides are CONTENT-DETECTED (`String.containsCJK`, new in ChineseTextAnalyzer.swift) because the `chinese` headword field can hold English (photo/grading flows); `SpeechService.speakAuto` picks the voice by content. **AI explanations (all 3 provider paths):** `ExplanationDirection` (wordIsChinese from content, explainInChinese from UI language, cacheToken so language toggles never serve stale cross-language cache); FoundationModels @Generable structs re-guided direction-neutral (ExampleSentence.sentence/pinyin/translation, RelatedWord.word, Collocation.phrase); Ollama schema + cloud JSON instructions parameterized; decoder accepts new keys with legacy chinese/english fallback; example/collocation word-filtering now checks the right field; `extractVocabulary` meanings in the user's native language; `gradeWorkbook` explanations/summary in native language, fullSentence/vocab term in the learning language (`spokenEnglish`→`spokenSentence`, spoken via speakAuto). **UI:** VocabularyView row/sheet/inspector headline-swap + conditional pinyin + direction-aware translate-fetch (translate(headword, sourceIsChinese: headword.containsCJK)) + alphabetical sort on the visible headword + "headword font size" labels; AIWordExplanationView renders sentence/pinyin-if-any/translation + per-example speakAuto button; LearnView flashcards quiz the learning language on the front (incl. saved-term side mapping); PhrasesView rows/detail flip + localized category headers (LocalizedStringKey(category.name) — keys existed); WordDetailPopover headline/definition/TTS-order/copy flip; EnglishWordDetailSheet inverts for English UI (Chinese headline + pinyin, Mandarin TTS first); TranslateView showEnglishFirst forced in 中文 UI; HistoryTabView rows learning-language-first (entry extension with direction-derived sides); TranslatedScreenshotOverlayView speakAuto. **Storage:** workbook `saveVocabItem` and photo `saveExtractedVocab` now key the saved entry on the LEARNING-language term (was: forced-Chinese headword — backwards for 中文 users and silently DROPPED English-passage items lacking CJK; English terms no longer translated-to-Chinese just to make a key); `ScreenshotTranslationStore.targetLanguage` defaults to the native language (set in init — comprehension aid). **Intents:** SavedTermEntity/PhraseEntity display titles = learning-language side (via AppLanguage.persisted, content-detected); GetRandomPhraseIntent speaks/copies the learning side; GetLearningStatsIntent labels localized (4 new %lld keys); TranslateScreenshotsIntent gained `.appLanguage` default target case. **Guards:** PartOfSpeechCategory.categorize matches Chinese POS labels (名词/动词/形容词/副词/代词/介词/连词/叹词/量词/助词 + traditional variants, compounds checked first) so Mandarin AI output doesn't bucket to "Other" in Stats; TranslationDirection.placeholder localized. **Catalog:** +11 keys with zh-Hans (612 total): Read the full sentence aloud, headword font size ×2, stats ×4, Enter English text…/输入中文… (en), Translate into your native language, screenshots-target description. NOTE (recurring): Xcode re-added ~105 duplicate Sources entries to pbxproj while open — reverted via git checkout; check `grep -c "in Sources" project.pbxproj` (should be 0) before committing. `IPHONEOS_DEPLOYMENT_TARGET` 26.2 → **17.0** (macOS/visionOS stay 26.2); both platforms build with zero errors/warnings. Strategy: compiler-driven (lower target → fix every availability error) + targeted runtime fallbacks, then a 30-agent adversarial review (13 confirmed / 13 refuted) over the diff. **API availability map learned:** `.translationTask` + `TranslationSession.Configuration` = iOS 18/macOS 15; the standalone `TranslationSession(installedSource:target:)` init = **iOS 26/macOS 26** (not 18!); SpeechAnalyzer/SpeechTranscriber/AssetInventory + FoundationModels + Liquid Glass (`.glass`, `.glassEffect`) = 26; `Tab` builder + `.sidebarAdaptable` + typed `supportedContentTypes` @Parameter = 18; SF Symbol `character.book.closed.fill.zh` = 18 (replaced with `character.book.closed.fill`). **Mechanisms:** (1) `Views/Components/CompatModifiers.swift` — `glassEffectCompat/glassEffectCapsuleCompat/glassButtonStyleCompat` (material/.bordered fallbacks) + `TranslationConfigurationBox` (version-counted `Any?` box because iOS-18-only types can't be stored properties at target 17) + `TranslationTaskHost` (@available 18, mounted via `.background { if #available }`, owns `.translationTask`; identity is stable because the availability condition is constant — and a ViewModifier alternative can't compile since its closure type would name `TranslationSession`). (2) TranslateView/PhotoTranslateView/LiveSpeechTranslationView: box + host + `guard #available` in `triggerTranslation()` with AI-provider fallbacks (`startAITranslation()` tracked task; `translateSentencesWithAIFallback()` per-sentence tolerant, partial-history; `performAIFallbackTranslation` reuses debounce task slot) — all fallback tasks cancel-before-replace and in clearAll(). (3) `SpeechRecognitionService` rewritten around a private `SpeechRecognitionEngine` protocol: `ModernSpeechEngine` (@available 26, the old SpeechAnalyzer code) + `LegacySpeechEngine` (SFSpeechRecognizer, cumulative partials → single final on stop with 300 ms endAudio grace, `isFinal`-beats-error rule, on-device preferred but server fallback possible for zh on old hardware — documented). Public API unchanged. (4) Services (`WordTranslationService`, `ScreenshotTranslationStore.translateText`, `ShortcutHelpers.translateWithRetry`) gate on 26 → `translateWithProvider` fallback, which now throws an actionable localized "configure an AI provider" error when nothing is configured. (5) FoundationModels: `@available(26)` on @Generable structs + `guard #available` in all LanguageModelSession paths. (6) ContentView: iOS 18 `Tab`+sidebarAdaptable vs iOS 17 classic `.tabItem`/.tag (8 tabs → system More overflow). (7) `TranslateScreenshotsIntent` images param dropped supportedContentTypes (typed variant is 18-only, legacy variant deprecation-warns on macOS). (8) About screen text/icon updated; 3 new catalog keys (zh-Hans). READMEs: requirements iOS 17+, per-version feature matrix (EN+zh). **iOS-17 user model:** translation features all work via configured AI provider (clear error guiding to Settings → AI otherwise); 18–25 get Apple translation in the three main views but AI fallback for word-taps/screenshot/Shortcuts (standalone session init is 26-only); 26+ unchanged. NOTE: only the iOS 26.3 simulator runtime is installed locally — the port is compile-verified at target 17 but not runtime-tested on an iOS 17 device/simulator. Also: Xcode (open during the session) re-added 4 duplicate Sources entries to the pbxproj; removed again — close Xcode or re-check `grep "in Sources" project.pbxproj` before committing pbxproj changes.
+- 2026-06-10 (iter 8 — full audit + ship-ready overhaul): Ran a 58-agent audit workflow (12 subsystem/dimension finders → 45 adversarial verifications → synthesis): 113 raw findings, 18 confirmed bugs, 27 refuted. **Bug fixes:** (1) `gradeWorkbook` no longer silently returns "0/0" — decoded-but-empty results now throw a localized, actionable error; (2) `cleanupRecognizedText` returns `String?` (nil = no usable provider) and `PhotoTranslateView` shows an orange notice when cleanup was skipped/failed plus a purple "AI cleaned" badge with one-tap **Use original text** revert (raw OCR kept in `rawOCRText`); (3) `SpeechRecognitionService.stopRecording()` made idempotent (`wasRecording` guard) and called from BOTH error paths — recognition-stream failure and `audioEngine.start()` throw — so the mic tap/audio session can no longer leak after a mid-session failure; `!Task.isCancelled` guard prevents normal-stop cancellation from being reported as failure; (4) `TextRecognitionResult` honors an explicit user scan language (中文/English) instead of always re-detecting — auto-detect only for auto/bilingual; (5) PhotoTranslateView onChange Tasks stored + cancel-before-replace + `Task.isCancelled` checks (no more stale-result races on rapid photo swaps); clearAll cancels both; (6) all four UserDefaults JSON stores (terms/history/progress/activity) now load/save via new `Models/PersistentCodableStore.swift` — decode failures are os.log'd, a last-known-good snapshot lives at `<key>.backup`, restore promotes the backup (no more silent data wipes); (7) `DailyActivity` date keys use a cached `en_US_POSIX` + Gregorian formatter (was locale-sensitive → corrupt keys on non-Gregorian/localized-digit locales; local-time day boundary deliberately kept — no data migration needed); `LearningProgressStore.recordReview` rolls the daily counter past midnight; (8) `SavedTermsStore` dedup/contains normalize zero-width chars (U+200B/C/D, FEFF) + trim; `update()` returns Bool, both VocabularyView callers guard on it; (9) `PinyinConverter.convert` returns "" for non-CJK input (English grading vocab no longer shows fake "pinyin" echo); (10) live-speech "Use Translation" now passes (transcript, translation) — TranslateView sets BOTH sides via `preserveCurrentTranslationDuringSourceUpdate` and records history via `handleCompletedTranslation`; (11) TranslateView AI-progress text shows the actual provider (was hardcoded "Apple Intelligence"); mic button got accessibilityLabel + .help; (12) qwen3-vl-plus typo fixed; Anthropic default models reordered newest-first (sonnet-4-6 default, vision default claude-sonnet-4-6); (13) dead code removed: `Item.swift` (SwiftData template), unused `AppTab.title`. **Project-file surgery (the hidden build-breaker):** session hook logs had been committed under `SwiftMandarin/logs/` and a second session folder collided in CpResource ("Multiple commands produce post_tool_use.json") — untracked via `git update-index --force-remove`, moved out, gitignored (`SwiftMandarin/logs/`), AND a `PBXFileSystemSynchronizedBuildFileExceptionSet` (id A7C0FFEE…01) now excludes `logs` + `MandarinKit.md` from the target. Also emptied the Sources phase of 149 duplicate legacy entries (sync group supplies all sources; kills 28 "Skipping duplicate build file" warnings), removed 43 legacy SOURCE_ROOT file refs + their group children, dropped `handoff.md in Resources` (dev log no longer ships in the app bundle); pbxproj 67KB→19KB. **Zero-warning hygiene:** filled `INFOPLIST_KEY_NSMicrophoneUsageDescription`/`NSSpeechRecognitionUsageDescription` (were empty strings — latent iOS crash); removed 5 spurious `try await` on non-throwing `TranslationSession(installedSource:target:)` inits; `supportedContentTypes: [.image]` (+ UniformTypeIdentifiers import) replaces deprecated `supportedTypeIdentifiers`; `@preconcurrency import AVFAudio`; StatsView pieChartsRow per-platform layout (no never-executed branch); `_ =` on Set.insert in WorkbookGradingView; var→let ×3. **Integration/features:** photo translations (both directions) write `TranslationHistoryStore` (gated on `saveToHistoryAutomatically`; add() already records stats activity) — so History + heatmap now count photo & speech work; HistoryTabView gained a direction filter (toolbar menu, EN→中/中→EN), a "No Matches" empty state with Clear Filter, and a clear-all `confirmationDialog`; `AIProviderConfigView` gained per-provider **Test Connection** (tiny round-trip chat, green/red result row) + Vision/JSON-mode capability badges + a footer explaining vision fallback; the dead `pinyinPosition` setting is now real — `RubyWordView` renders above/below/inline and honors `showPinyin`/`toneColors`, `PunctuationView` ghost-aligns correspondingly, and iOS Settings gained the same Picker (was macOS-only); `TranslationDirection.source/targetLanguageName` localize via `String(localized:)` ("English"/"Chinese" keys); EnglishTextAnalyzer's 15 grammar-point strings localized (en keys + zh values, previously hardcoded Chinese); all 6 workbook-grading error strings wrapped in `String(localized:)`. **Catalog:** +47 keys with reviewed zh-Hans values (608 total; script-verified: 0 existing keys altered, 0 placeholder mismatches, 0 alpha keys missing zh-Hans). NOTE: CLI `xcodebuild` does NOT auto-extract new literals into .xcstrings — new user-facing strings must be added to the catalog manually (the +47 were). Catalog was re-sorted by Python's key sort (Xcode may cosmetically re-sort on next GUI save; content verified intact). **Docs:** README.md updated (new features, EN⇄中文 switcher links) + new full `README.zh-Hans.md`. **Verification:** macOS + iOS Simulator Debug builds — BUILD SUCCEEDED, **zero errors, zero warnings** (previously ~15). A second adversarial review workflow (27 agents) ran over the final diff before commit: 9 confirmed / 14 refuted; applied — isProcessing cleared on every cancelled early-return in processImageData + processText cancellation guards; symmetric photo/text task cancellation; `stopRecording(notifyDelegate:)` so didFinish is suppressed after didFail; `remove(chinese:)` uses normalizedKey. Declined (with reasons) — "rawOCRText should be fullText" (cleanedText IS the correct no-AI baseline for revert; comment clarified), init-time redundant save() (pre-existing, harmless), todayReviewedCount backup (ephemeral daily counter), ZWJ-dedup-blocks-legit-variants (intentional OCR-noise prevention); README "100%" softened to "fully bilingual" (6 remaining keys are pure format strings). Audit-refuted claims worth remembering: the "466 missing English translations" claim is FALSE (en is the source language — keys ARE the English), saved terms DO flow into Learn (vocabularyCards derives live from SavedTermsStore), WorkbookGradingView sheet IS `.localizedSurface()`-wrapped.
+- 2026-06-04: Created. Full codebase read + 9-agent comprehension workflow; root causes verified; plan set.
+- 2026-06-04: Implemented all five groups. Both platforms build green; detector logic verified 9/9. Committed + pushed to origin/april-14-2026-ollama (4981a25).
+- 2026-06-04 (iter 3 — Workbook Grading): New tucked-away feature in the Photo tab. `CloudAIService.chat` now accepts multiple images. `AIWordExplanationService.gradeWorkbook(workbookImages:answerImages:customInstructions:)` picks a vision-capable provider, sends all images + a grading system prompt (plus optional custom instructions), and returns a structured `GradingResult` (`score`, `summary`, per-question `GradedQuestion` with correct/incorrect + `vocab` for wrong answers). New `WorkbookGradingView`: two multi-image PhotosPickers (workbook / answers), custom-prompt field, grade button (gated on a vision provider), per-question ✓/✗ cards, and save-wrong-vocab (per-item + all) to the vocab book. Images downscaled via ImageIO. Entry point = Photo tab toolbar menu. Both platforms build green; grading JSON decode verified 7/7.
+- 2026-06-06 (iter 4 — brand icons + single-line labels): Replaced SF-Symbol AI-provider glyphs with real brand marks. Added 10 vector SVG imagesets to `Assets.xcassets` named `brand-<provider.rawValue>` (apple, ollama, openai → monochrome `template-rendering-intent`; anthropic=claude-color, deepseek, doubao=volcengine-color, qwen, kimi, zhipu=chatglm-color, minimax → full-color `original`), each with `preserves-vector-representation`. New `AIProvider.brandAssetName` + `brandAssetIsMonochrome` (in `AIModelSettings.swift`). New shared `ProviderIcon` view (`Views/Components/ProviderIcon.swift`) renders the asset (color marks `.original`, mono marks `.template` so they adopt fg/tint and adapt to light/dark) and falls back to the SF Symbol via `UIImage/NSImage(named:)` existence check. Rewired every provider-icon site: `MacOSSettingsView`, `MoreView` (provider list), `TranslateView` (3 AI buttons), `AIWordExplanationView` (generate button, badge header, quick button) — removed now-dead `currentProviderIcon`/`providerIcon` string props. Verified via `assetutil` that all 10 compiled into `Assets.car` with vectors preserved and correct template modes (apple=template, qwen=original). Second fix: new `.fitSingleLine(_:)` View modifier (`Views/Components/SingleLineFit.swift` = `lineLimit(1)` + `minimumScaleFactor(0.7)` + `truncationMode(.tail)`) applied to 17 wrap-prone iOS labels (bilingual provider-name buttons, long Chinese action buttons like 保存所有错题词汇到词汇本, the photo scan-language menu label, provider list/detail rows, API-key section header) so they shrink-to-fit one line then ellipsize instead of wrapping. Both platforms build green (macOS + iOS Simulator, BUILD SUCCEEDED, 0 errors).
+- 2026-06-07 (iter 7 — fix: modal/sheet surfaces were not localized): User reported the workbook grading interface stayed in English even with the app language set to Mandarin. Root cause: SwiftUI `.sheet`/`.fullScreenCover`/`.popover` content is hosted in a fresh context that does NOT inherit the root window's `\.locale` environment, so the chosen app language never reached presented surfaces. Fix: new `.localizedSurface()` View modifier (`LocalizationManager.swift` = `.environment(\.locale, loc.locale)` + `.id(loc.language)`) applied to the root view inside ALL 16 modal presentation closures (PhotoTranslateView ×5 incl. the workbook grader, TranslateView ×3, VocabularyView ×4, LiveSpeechTranslationView ×2, PhrasesView ×1, LearnView ×1). Also fixed the grader's two `uploadSection` headers, which were passed through a `String` parameter (verbatim, never localized) — the parameter is now `LocalizedStringKey` and the bilingual keys "作业页面 · Workbook pages" / "单独答案（可选）· Separate answers (optional)" were added to the catalog (en/zh split). (The grade button's ternary already resolved to a `LocalizedStringKey` and localized fine.) Catalog: 559 keys, 0 gaps, 0 placeholder errors. Both platforms build green. NOTE for future work: any new sheet/popover must apply `.localizedSurface()` to its content.
+- 2026-06-07 (iter 6 — workbook grader: English read-aloud + richer wrong-answer vocab): Three enhancements to `WorkbookGradingView` / `gradeWorkbook`. (1) **Read the full English sentence per question:** `GradedQuestion` gained a `fullSentence: String` field (tolerant decode, defaults "") plus a `spokenEnglish` computed fallback (full sentence → else question + correct answer). The grading system prompt now asks the model for `fullSentence` (a clean, speakable complete English sentence — fill-in-the-blanks filled in) and the JSON shape includes it. Each `GradedQuestionCard` shows a "Full sentence" row with an inline speaker button (and a fallback speaker in the header when no full sentence was returned) that calls `SpeechService.speakEnglish(...)`. (2) **Where wrong answers are saved:** they go to `SavedTermsStore.shared` (the Vocabulary tab / 词汇本, persisted to UserDefaults key `savedTerms`) via `saveVocabItem`. (3) **Pair correct + wrong in saved vocab:** `saveVocabItem(_:question:)` now appends the correct answer and the student's wrong answer to the saved `definition` as "✓ <correct>  ✗ <wrong>" (skipping the correct answer when it just repeats the key/definition), so the saved card shows both what to learn and what was missed. Also localized the card's answer labels (`你的答案`/`正确答案` were verbatim `Text(String)` → now `LocalizedStringKey` "Your answer"/"Correct answer") and added catalog entries for all new strings (Your answer, Correct answer, Full sentence, Read sentence aloud, + the language-toggle strings App Language/Language/footer that the build auto-extracted from iter 5). Catalog: 557 keys, 0 coverage gaps, 0 placeholder errors. Both platforms build green.
+- 2026-06-07 (iter 5 — full UI localization + in-app language toggle): Made the app a true bilingual product with a runtime English ⇄ 中文 switch. **Mechanism:** new `Models/LocalizationManager.swift` — an `@Observable @MainActor` singleton (`AppLanguage` enum: `.english`/`.chinese`) persisted to UserDefaults, plus a `Bundle` subclass (`LanguageOverrideBundle`, installed once via `object_setClass(Bundle.main, …)`) whose `localizedString(forKey:value:table:)` redirects to the user-selected `.lproj`. This is the standard, App-Store-safe in-app-language technique and means the app's many `Text("…")` string literals (already auto-extracted into `Localizable.xcstrings`) switch language live without a relaunch or device-language change. `SwiftMandarinApp` injects `.environment(\.locale, …)` and keys the root via `.id(localization.language)` so the whole tree re-resolves on switch (note: a language switch resets in-tab navigation state — acceptable for a deliberate, rare action). **Toggle UI:** a "Language" `Picker` (English / 中文) added to iOS `MoreView → SettingsView` and macOS `GeneralSettingsTab`. **Catalog:** completed `Localizable.xcstrings` to 100% bilingual coverage — added 206 Chinese translations for English-source keys, 76 English translations for Chinese-source keys (11 of which were auto-split from bilingual `中文 · English` keys), preserving every format placeholder (`%@`, `%lld`, positional `%1$lld`/`%2$@`, `${token}`, `\n`). All 252 comments and 262 pre-existing Chinese translations preserved unchanged. Compiled `zh-Hans.lproj` grew 262→544 entries, `en.lproj` 7→83 (Chinese-source keys now resolve to English so English mode is clean). **Tab bar fix:** `AppTab` gained a `titleKey: LocalizedStringKey` (tab titles were plain `String` → rendered verbatim and would not switch); `ContentView` tab/sidebar now use it; added missing `Photo` key. **QA:** ran a 10-batch + 1-consistency-critic verification workflow over all 549 catalog entries to catch mistranslations, wrong-language leftovers, and placeholder breakage; corrections applied through a placeholder-safety guard that rejects any change altering the source key's placeholder set. Both platforms build green (macOS + iOS Simulator, BUILD SUCCEEDED).
+- 2026-06-04 (iter 2 — structured output linkage): (1) `TranslateView` AI-translate buttons now fire for ANY available provider (were Apple-Intelligence-only), so cloud/Ollama responses are actually used. (2) Added `AIProvider.supportsJSONResponseFormat`; `CloudAIService` only sends `response_format: json_object` where supported (OpenAI/DeepSeek/Kimi/Qwen) and relies on prompt+tolerant extraction elsewhere — prevents API errors on Doubao/Zhipu/MiniMax/Anthropic. (3) New structured feature: `AIWordExplanationService.extractVocabulary(fromPhotoText:imageData:sourceIsChinese:)` returns typed `ExtractedVocabItem`s; surfaced in `PhotoTranslateView` as an "AI 提取重点词汇" button + list + save-to-vocab. Both platforms build green; structured JSON parsing verified 5/5 (plain/fenced/prose/empty/garbage).

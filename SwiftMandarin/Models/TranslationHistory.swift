@@ -42,9 +42,16 @@ final class TranslationHistoryStore {
     
     private(set) var entries: [TranslationHistoryEntry] = []
     var selectedEntry: TranslationHistoryEntry?
-    
+
     private let storageKey = "translationHistory"
-    private let maxEntries = 100
+
+    private var maxEntries: Int {
+        if let doubleValue = UserDefaults.standard.object(forKey: "maxHistoryEntries") as? Double {
+            return max(1, Int(doubleValue))
+        }
+        let intValue = UserDefaults.standard.integer(forKey: "maxHistoryEntries")
+        return intValue > 0 ? intValue : 100
+    }
     
     private init() {
         load()
@@ -65,6 +72,8 @@ final class TranslationHistoryStore {
         }
         
         save()
+        // Track activity
+        LearningActivityStore.shared.recordTranslationMade()
     }
     
     func remove(_ entry: TranslationHistoryEntry) {
@@ -96,15 +105,15 @@ final class TranslationHistoryStore {
     }
     
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
-        if let decoded = try? JSONDecoder().decode([TranslationHistoryEntry].self, from: data) {
+        if let decoded = PersistentCodableStore.load([TranslationHistoryEntry].self, key: storageKey) {
             entries = decoded
         }
-    }
-    
-    private func save() {
-        if let data = try? JSONEncoder().encode(entries) {
-            UserDefaults.standard.set(data, forKey: storageKey)
+        if entries.count > maxEntries {
+            entries = Array(entries.prefix(maxEntries))
         }
+    }
+
+    private func save() {
+        PersistentCodableStore.save(entries, key: storageKey)
     }
 }

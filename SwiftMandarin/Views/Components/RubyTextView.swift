@@ -27,8 +27,13 @@ struct RubySegment: Identifiable {
     
     /// Check if segment is valid for display (has actual content)
     var isValidForDisplay: Bool {
-        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        text.contains(where: { $0.isChineseCharacter || $0.isLetter })
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    /// Whether this segment is punctuation (should be displayed inline without ruby annotation)
+    var isPunctuation: Bool {
+        partOfSpeech.isPunctuation || 
+        (!text.contains(where: { $0.isChineseCharacter || $0.isLetter }))
     }
 }
 
@@ -50,8 +55,13 @@ struct RubyTextView: View {
     var body: some View {
         FlowLayout(spacing: 4) {
             ForEach(segments.filter { $0.isValidForDisplay }) { segment in
-                RubyWordView(segment: segment) {
-                    onWordTap?(segment)
+                if segment.isPunctuation {
+                    // Display punctuation inline without ruby annotation
+                    PunctuationView(text: segment.text)
+                } else {
+                    RubyWordView(segment: segment) {
+                        onWordTap?(segment)
+                    }
                 }
             }
         }
@@ -69,39 +79,67 @@ struct RubyTextView: View {
     }
 }
 
-/// Individual word with pinyin above the character(s)
+/// Inline punctuation display (no ruby annotation)
+/// Aligns with the baseline of Chinese characters by adding a ghost line
+/// matching wherever the pinyin row sits in regular RubyWordViews.
+struct PunctuationView: View {
+    let text: String
+
+    @AppStorage("showPinyin") private var showPinyin: Bool = true
+    @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
+
+    var body: some View {
+        VStack(spacing: 2) {
+            if showPinyin && pinyinPosition == "above" {
+                ghostPinyinLine
+            }
+
+            // Punctuation aligned with Chinese characters
+            Text(text)
+                .font(.title2)
+                .fontWeight(.medium)
+                .foregroundStyle(.primary)
+
+            if showPinyin && pinyinPosition == "below" {
+                ghostPinyinLine
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    /// Empty space matching the pinyin line height in RubyWordView.
+    private var ghostPinyinLine: some View {
+        Text(" ")
+            .font(.caption)
+            .opacity(0)
+    }
+}
+
+/// Individual word with pinyin rendered around the character(s) according to
+/// the user's Appearance settings (show/hide, above/below/inline, tone colors).
 struct RubyWordView: View {
     let segment: RubySegment
     let action: () -> Void
-    
+
     @State private var isHovered: Bool = false
-    
+
+    @AppStorage("showPinyin") private var showPinyin: Bool = true
+    @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
+    @AppStorage("toneColors") private var toneColors: Bool = true
+
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
-                // Pinyin above
-                Text(segment.pinyin)
-                    .font(.caption)
-                    .foregroundStyle(pinyinColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                
-                // Chinese character(s) below
-                Text(segment.text)
-                    .font(.title2)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
-            }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isHovered ? Color.accentColor.opacity(0.1) : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(segment.partOfSpeech.color.opacity(0.3), lineWidth: 1)
-            )
+            wordLayout
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isHovered ? Color.accentColor.opacity(0.1) : Color.clear)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(segment.partOfSpeech.color.opacity(0.3), lineWidth: 1)
+                )
         }
         .buttonStyle(.plain)
         .onHover { hovering in
@@ -110,7 +148,47 @@ struct RubyWordView: View {
             }
         }
     }
-    
+
+    @ViewBuilder
+    private var wordLayout: some View {
+        if !showPinyin {
+            characterText
+        } else {
+            switch pinyinPosition {
+            case "below":
+                VStack(spacing: 2) {
+                    characterText
+                    pinyinText
+                }
+            case "inline":
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    characterText
+                    pinyinText
+                }
+            default:  // "above"
+                VStack(spacing: 2) {
+                    pinyinText
+                    characterText
+                }
+            }
+        }
+    }
+
+    private var pinyinText: some View {
+        Text(segment.pinyin)
+            .font(.caption)
+            .foregroundStyle(toneColors ? pinyinColor : Color.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+    }
+
+    private var characterText: some View {
+        Text(segment.text)
+            .font(.title2)
+            .fontWeight(.medium)
+            .foregroundStyle(.primary)
+    }
+
     /// Color for pinyin based on tone
     private var pinyinColor: Color {
         // Get the first tone mark to determine color
@@ -132,6 +210,8 @@ struct RubyWordView: View {
 
 /// Detailed popup view for a selected word
 /// Fetches the actual translation of the word using Translation API
+/// Always displays: Chinese word, pinyin, and English definition
+/// Handles both Chinese and English input words
 struct WordDetailPopover: View {
     let segment: RubySegment
     let contextTranslation: String  // Full sentence translation for context
@@ -140,48 +220,81 @@ struct WordDetailPopover: View {
     let onDismiss: () -> Void
     
     @Environment(SavedTermsStore.self) private var savedTermsStore
+    @State private var prefs = AppPreferences.shared
     @State private var showCopiedFeedback: Bool = false
-    @State private var wordTranslation: String = ""
+    @State private var englishDefinition: String = ""
+    @State private var chineseWord: String = ""
+    @State private var pinyinText: String = ""
     @State private var isLoadingTranslation: Bool = true
     @State private var translationError: String?
     
-    private var isSaved: Bool {
-        savedTermsStore.contains(chinese: segment.text)
+    /// Check if the segment text contains Chinese characters
+    private var segmentIsChinese: Bool {
+        segment.text.contains { $0.isChineseCharacter }
     }
-    
+
+    /// The learning-language side leads (中文 UI → English headline, Chinese
+    /// gloss, English narration first; English UI → Chinese headline with
+    /// pinyin, English gloss, Mandarin narration first).
+    private var learningChinese: Bool { LocalizationManager.shared.learningIsChinese }
+
+    /// The learning-language text — what gets the headline, primary
+    /// narration, and the plain Copy button.
+    private var headlineWord: String { learningChinese ? chineseWord : englishDefinition }
+
+    private var isSaved: Bool {
+        savedTermsStore.contains(chinese: chineseWord.isEmpty ? segment.text : chineseWord)
+    }
+
     var body: some View {
         VStack(spacing: 16) {
-            // Large character display
+            // Large display — the learning-language side of the word
             VStack(spacing: 4) {
-                Text(segment.pinyin)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                
-                Text(segment.text)
-                    .font(.system(size: 56, weight: .medium))
-                
-                // Part of speech badge
-                Text(segment.partOfSpeech.displayName)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 3)
-                    .background(
-                        Capsule()
-                            .fill(segment.partOfSpeech.color)
-                    )
+                if isLoadingTranslation {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Loading...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    if learningChinese {
+                        Text(pinyinText)
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+
+                        Text(chineseWord)
+                            .font(.system(size: 56, weight: .medium))
+                    } else {
+                        Text(englishDefinition)
+                            .font(.system(size: 40, weight: .medium))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.4)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    // Part of speech badge
+                    Text(segment.partOfSpeech.displayName)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule()
+                                .fill(segment.partOfSpeech.color)
+                        )
+                }
             }
-            
+
             Divider()
-            
-            // Definition section - shows actual word translation
+
+            // Definition section — the native-language gloss
             VStack(alignment: .leading, spacing: 8) {
                 Text("Definition")
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
-                
+
                 if isLoadingTranslation {
                     HStack(spacing: 8) {
                         ProgressView()
@@ -196,7 +309,7 @@ struct WordDetailPopover: View {
                         Text(error)
                             .font(.caption)
                             .foregroundStyle(.red)
-                        
+
                         // Fallback to context if available
                         if !contextTranslation.isEmpty {
                             Text("Context: \(contextTranslation)")
@@ -206,27 +319,59 @@ struct WordDetailPopover: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
-                    Text(wordTranslation)
+                    Text(learningChinese ? englishDefinition : chineseWord)
                         .font(.body)
                         .fontWeight(.medium)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding(.horizontal)
-            
+
             Divider()
-            
-            // Action buttons
-            HStack(spacing: 16) {
-                Button {
-                    SpeechService.speakChinese(segment.text)
-                } label: {
-                    Label("Speak", systemImage: "speaker.wave.2")
+
+            // Action buttons — learning-language narration first
+            HStack(spacing: 12) {
+                if learningChinese {
+                    Button {
+                        SpeechService.speakChinese(chineseWord)
+                    } label: {
+                        Label("中文", systemImage: "speaker.wave.2")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isLoadingTranslation || chineseWord.isEmpty)
+
+                    // Native-language narration (dual narration).
+                    if prefs.dualNarration {
+                        Button {
+                            SpeechService.speakEnglish(englishDefinition)
+                        } label: {
+                            Label("EN", systemImage: "speaker.wave.2")
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isLoadingTranslation || englishDefinition.isEmpty)
+                    }
+                } else {
+                    Button {
+                        SpeechService.speakEnglish(englishDefinition)
+                    } label: {
+                        Label("EN", systemImage: "speaker.wave.2")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isLoadingTranslation || englishDefinition.isEmpty)
+
+                    if prefs.dualNarration {
+                        Button {
+                            SpeechService.speakChinese(chineseWord)
+                        } label: {
+                            Label("中文", systemImage: "speaker.wave.2")
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isLoadingTranslation || chineseWord.isEmpty)
+                    }
                 }
-                .buttonStyle(.bordered)
-                
+
                 Button {
-                    ClipboardService.copy(segment.text)
+                    ClipboardService.copy(headlineWord)
                     showCopiedFeedback = true
                     onCopy()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -237,30 +382,35 @@ struct WordDetailPopover: View {
                 }
                 .buttonStyle(.bordered)
                 .tint(showCopiedFeedback ? .green : nil)
+                .disabled(isLoadingTranslation || headlineWord.isEmpty)
                 
                 Button {
                     // Pass the word-specific translation when saving
-                    let definition = wordTranslation.isEmpty ? contextTranslation : wordTranslation
+                    let definition = englishDefinition.isEmpty ? contextTranslation : englishDefinition
                     onSave(definition)
                 } label: {
                     Label(isSaved ? "Saved" : "Save", systemImage: isSaved ? "bookmark.fill" : "bookmark")
                 }
                 .buttonStyle(.bordered)
                 .tint(isSaved ? .green : nil)
-                .disabled(isLoadingTranslation)
+                .disabled(isLoadingTranslation || isSaved)
             }
             
-            // Copy with pinyin button
+            // Copy-everything button (pinyin included only when the user is
+            // learning Chinese — it is a learner aid, not native furniture)
             Button {
-                let definition = wordTranslation.isEmpty ? contextTranslation : wordTranslation
-                let fullText = "\(segment.text) (\(segment.pinyin))\n\(definition)"
+                let definition = englishDefinition.isEmpty ? contextTranslation : englishDefinition
+                let fullText = learningChinese
+                    ? "\(chineseWord) (\(pinyinText))\n\(definition)"
+                    : "\(englishDefinition)\n\(chineseWord)"
                 ClipboardService.copy(fullText)
                 showCopiedFeedback = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     showCopiedFeedback = false
                 }
             } label: {
-                Label("Copy with Pinyin", systemImage: "doc.on.doc.fill")
+                Label(learningChinese ? "Copy with Pinyin" : "Copy All", systemImage: "doc.on.doc.fill")
+                    .fitSingleLine()
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -269,28 +419,49 @@ struct WordDetailPopover: View {
         .padding()
         .frame(minWidth: 280)
         .task {
-            await fetchWordTranslation()
+            await fetchWordDetails()
         }
     }
     
-    /// Fetch the translation for this specific word using Translation API
-    private func fetchWordTranslation() async {
+    /// Fetch the translation details for this word
+    /// Always produces: Chinese word, pinyin, and English definition
+    private func fetchWordDetails() async {
         isLoadingTranslation = true
         translationError = nil
         
         do {
-            // Translate the specific word from Chinese to English
-            let translation = try await WordTranslationService.shared.translateToEnglish(segment.text)
+            if segmentIsChinese {
+                // Input is Chinese: use as-is for Chinese, translate to English for definition
+                chineseWord = segment.text
+                pinyinText = segment.pinyin
+                
+                let translation = try await WordTranslationService.shared.translateToEnglish(segment.text)
+                englishDefinition = translation
+            } else {
+                // Input is English: translate to Chinese, get pinyin, use original as definition
+                englishDefinition = segment.text
+                
+                let chineseTranslation = try await WordTranslationService.shared.translateToChinese(segment.text)
+                chineseWord = chineseTranslation
+                pinyinText = PinyinConverter.convert(chineseTranslation)
+            }
             
             await MainActor.run {
-                wordTranslation = translation
                 isLoadingTranslation = false
             }
         } catch {
             await MainActor.run {
-                // If translation fails, use context as fallback
+                // If translation fails, use what we have
                 translationError = "Could not translate word"
-                wordTranslation = contextTranslation
+                if segmentIsChinese {
+                    chineseWord = segment.text
+                    pinyinText = segment.pinyin
+                    englishDefinition = contextTranslation
+                } else {
+                    englishDefinition = segment.text
+                    chineseWord = contextTranslation.isEmpty ? segment.text : contextTranslation
+                    pinyinText = PinyinConverter.convert(chineseWord)
+                }
                 isLoadingTranslation = false
             }
             print("Word translation error for '\(segment.text)': \(error)")

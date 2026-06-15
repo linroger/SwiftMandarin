@@ -13,14 +13,16 @@ struct LearningCard: Identifiable, Hashable, Codable {
     let id: String
     let chinese: String
     let english: String
+    let pinyin: String?
     let exampleSentence: String?
     let tags: [String]
     let notes: String?
     
-    init(chinese: String, english: String, exampleSentence: String? = nil, tags: [String] = [], notes: String? = nil) {
+    init(chinese: String, english: String, pinyin: String? = nil, exampleSentence: String? = nil, tags: [String] = [], notes: String? = nil) {
         self.id = chinese
         self.chinese = chinese
         self.english = english
+        self.pinyin = pinyin
         self.exampleSentence = exampleSentence
         self.tags = tags
         self.notes = notes
@@ -56,11 +58,22 @@ struct CardProgress: Codable, Identifiable {
     }
     
     mutating func recordReview(correct: Bool, quality: ReviewQuality) {
+        let reviewDate = Date()
+        let priorReviewDate = lastReviewDate
+        let previousInterval = max(
+            nextReviewDate.timeIntervalSince(priorReviewDate ?? reviewDate),
+            60 * 60 * 24
+        )
+
         reviewCount += 1
         if correct { correctCount += 1 }
-        lastReviewDate = Date()
+        lastReviewDate = reviewDate
         updateMasteryLevel()
-        calculateNextReview(quality: quality)
+        calculateNextReview(
+            quality: quality,
+            reviewDate: reviewDate,
+            previousInterval: previousInterval
+        )
     }
     
     private mutating func updateMasteryLevel() {
@@ -73,7 +86,11 @@ struct CardProgress: Codable, Identifiable {
         }
     }
     
-    private mutating func calculateNextReview(quality: ReviewQuality) {
+    private mutating func calculateNextReview(
+        quality: ReviewQuality,
+        reviewDate: Date,
+        previousInterval: TimeInterval
+    ) {
         let q = Double(quality.rawValue)
         easeFactor = max(1.3, easeFactor + 0.1 - (5.0 - q) * (0.08 + (5.0 - q) * 0.02))
         
@@ -85,11 +102,10 @@ struct CardProgress: Codable, Identifiable {
             case 1: interval = 60 * 60 * 24 // 1 day
             case 2: interval = 60 * 60 * 24 * 6 // 6 days
             default:
-                let previousInterval = lastReviewDate.map { Date().timeIntervalSince($0) } ?? (60 * 60 * 24)
                 interval = previousInterval * easeFactor
             }
         }
-        nextReviewDate = Date().addingTimeInterval(interval)
+        nextReviewDate = reviewDate.addingTimeInterval(interval)
     }
 }
 
@@ -156,12 +172,16 @@ final class LearningProgressStore {
     }
     
     func recordReview(cardId: String, quality: ReviewQuality) {
+        // Roll the daily counter over if the app stayed open past midnight.
+        resetDailyCountIfNeeded()
         var cardProgress = getProgress(for: cardId)
         let correct = quality.rawValue >= 3
         cardProgress.recordReview(correct: correct, quality: quality)
         progress[cardId] = cardProgress
         todayReviewedCount += 1
         save()
+        // Track activity
+        LearningActivityStore.shared.recordReviewCompleted()
     }
     
     func getCardsForReview(from cards: [LearningCard], limit: Int = 20) -> [LearningCard] {
@@ -205,21 +225,19 @@ final class LearningProgressStore {
         if !Calendar.current.isDateInToday(lastResetDate) {
             todayReviewedCount = 0
             UserDefaults.standard.set(Date(), forKey: lastResetDateKey)
+            UserDefaults.standard.set(todayReviewedCount, forKey: todayCountKey)
         }
     }
     
     private func load() {
-        if let data = UserDefaults.standard.data(forKey: storageKey),
-           let decoded = try? JSONDecoder().decode([String: CardProgress].self, from: data) {
+        if let decoded = PersistentCodableStore.load([String: CardProgress].self, key: storageKey) {
             progress = decoded
         }
         todayReviewedCount = UserDefaults.standard.integer(forKey: todayCountKey)
     }
-    
+
     private func save() {
-        if let data = try? JSONEncoder().encode(progress) {
-            UserDefaults.standard.set(data, forKey: storageKey)
-        }
+        PersistentCodableStore.save(progress, key: storageKey)
         UserDefaults.standard.set(todayReviewedCount, forKey: todayCountKey)
     }
 }

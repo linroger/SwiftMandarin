@@ -1,0 +1,50 @@
+[
+  {
+    "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/e30d565c-61be-40fb-a3bb-2d6db08c185e.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "claude-opus-4-6"
+  },
+  {
+    "session_id": "61f3100f-1f70-4650-a205-015bc9acf82a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin/61f3100f-1f70-4650-a205-015bc9acf82a.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "claude-opus-4-6"
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "claude-opus-4-8[1m]"
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "model": "claude-opus-4-8[1m]"
+  },
+  {
+    "session_id": "0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/0d9dfe2b-08bb-4b22-aa95-e3e1dfb75b7a.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "model": "claude-opus-4-8[1m]"
+  },
+  {
+    "session_id": "cf517dd1-c093-4676-a7cd-d0a1bd8b57fc",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "claude-fable-5[1m]"
+  }
+]

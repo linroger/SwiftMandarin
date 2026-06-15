@@ -14,6 +14,10 @@ enum PinyinConverter {
     
     static func convert(_ text: String, includeToneMarks: Bool = true) -> String {
         guard !text.isEmpty else { return "" }
+        // Pinyin only applies to Chinese. For non-CJK input (e.g. an English
+        // vocabulary term saved from workbook grading) return empty rather
+        // than echoing the input back as a fake "pinyin" reading.
+        guard text.contains(where: { $0.isChineseCharacter }) else { return "" }
         let transformed = text.applyingTransform(.mandarinToLatin, reverse: false) ?? text
         guard !includeToneMarks else { return transformed }
         return transformed.applyingTransform(.stripDiacritics, reverse: false) ?? transformed
@@ -107,6 +111,10 @@ enum PinyinConverter {
     
     static func coloredPinyin(_ text: String, includeToneMarks: Bool = true) -> AttributedString {
         let pinyin = convert(text, includeToneMarks: includeToneMarks)
+        return coloredPinyin(fromPinyin: pinyin)
+    }
+
+    static func coloredPinyin(fromPinyin pinyin: String) -> AttributedString {
         let syllables = segment(pinyin)
         
         var attributed = AttributedString()
@@ -120,6 +128,14 @@ enum PinyinConverter {
         }
         
         return attributed
+    }
+
+    static func coloredPinyin(preferred preferredPinyin: String?, fallbackText text: String, includeToneMarks: Bool = true) -> AttributedString {
+        let trimmedPinyin = preferredPinyin?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if trimmedPinyin.isEmpty {
+            return coloredPinyin(text, includeToneMarks: includeToneMarks)
+        }
+        return coloredPinyin(fromPinyin: trimmedPinyin)
     }
 }
 

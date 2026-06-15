@@ -11,12 +11,14 @@ import SwiftUI
 struct LearnView: View {
     @Environment(LearningProgressStore.self) private var learningStore
     @Environment(SavedTermsStore.self) private var savedTermsStore
+    @Environment(AppRouteStore.self) private var routeStore
     
+    @State private var sessionCards: [LearningCard] = []
     @State private var currentCardIndex: Int = 0
     @State private var isFlipped: Bool = false
     @State private var showingStats: Bool = false
     @State private var studyMode: StudyMode = .all
-    @State private var cardSource: CardSource = .builtin
+    @State private var cardSource: CardSource = .combined
     
     enum CardSource: String, CaseIterable {
         case builtin = "Built-in Deck"
@@ -31,12 +33,15 @@ struct LearnView: View {
         case difficult = "Difficult"
     }
     
-    /// Convert saved terms to learning cards
+    /// Convert saved terms to learning cards. Sides are detected by content
+    /// because the headword field can hold either language depending on the
+    /// learning direction the entry was saved under.
     private var vocabularyCards: [LearningCard] {
         savedTermsStore.terms.map { term in
             LearningCard(
-                chinese: term.chinese,
-                english: term.definition,
+                chinese: term.chineseSide.isEmpty ? term.chinese : term.chineseSide,
+                english: term.englishSide.isEmpty ? term.definition : term.englishSide,
+                pinyin: term.pinyin.isEmpty ? nil : term.pinyin,
                 exampleSentence: nil,
                 tags: ["Vocabulary"],
                 notes: term.partOfSpeech.isEmpty ? nil : term.partOfSpeech
@@ -56,7 +61,7 @@ struct LearnView: View {
         }
     }
     
-    private var studyCards: [LearningCard] {
+    private var filteredStudyCards: [LearningCard] {
         let baseCards = allAvailableCards
         
         switch studyMode {
@@ -84,14 +89,14 @@ struct LearnView: View {
     }
     
     private var currentCard: LearningCard? {
-        guard currentCardIndex < studyCards.count else { return nil }
-        return studyCards[currentCardIndex]
+        guard currentCardIndex < sessionCards.count else { return nil }
+        return sessionCards[currentCardIndex]
     }
     
     var body: some View {
         NavigationStack {
             Group {
-                if studyCards.isEmpty {
+                if sessionCards.isEmpty {
                     emptyState
                 } else if let card = currentCard {
                     cardStudyView(card: card)
@@ -144,15 +149,109 @@ struct LearnView: View {
             }
             .sheet(isPresented: $showingStats) {
                 LearningStatsSheet()
+                    .localizedSurface()
             }
             .onChange(of: studyMode) { _, _ in
-                currentCardIndex = 0
-                isFlipped = false
+                reloadSessionCards()
             }
             .onChange(of: cardSource) { _, _ in
-                currentCardIndex = 0
-                isFlipped = false
+                reloadSessionCards()
             }
+            .task(id: routeStore.pendingAction?.id) {
+                if !applyPendingAction(), sessionCards.isEmpty {
+                    reloadSessionCards()
+                }
+            }
+            // Keyboard navigation works on macOS and iOS/iPadOS with hardware keyboard
+            .onKeyPress(.leftArrow) {
+                goToPreviousCard()
+                return .handled
+            }
+            .onKeyPress(.rightArrow) {
+                goToNextCard()
+                return .handled
+            }
+            .onKeyPress(.space) {
+                flipCard()
+                return .handled
+            }
+            .onKeyPress(.return) {
+                flipCard()
+                return .handled
+            }
+        }
+        .focusable()
+    }
+    
+    // MARK: - Pending Actions
+
+    @discardableResult
+    private func applyPendingAction() -> Bool {
+        guard let action = routeStore.pendingAction else { return false }
+        switch action.kind {
+        case .startReview(let mode, let source):
+            studyMode = mapStudyMode(mode)
+            cardSource = mapCardSource(source)
+            reloadSessionCards()
+        case .openCameraScanner, .translateScreenshots:
+            break
+        }
+        routeStore.clearPendingAction()
+        return true
+    }
+
+    private func mapStudyMode(_ raw: String) -> StudyMode {
+        switch raw {
+        case "due": return .dueForReview
+        case "new": return .newOnly
+        case "difficult": return .difficult
+        default: return .all
+        }
+    }
+
+    private func mapCardSource(_ raw: String) -> CardSource {
+        switch raw {
+        case "builtin": return .builtin
+        case "vocabulary": return .vocabulary
+        default: return .combined
+        }
+    }
+
+    private func reloadSessionCards() {
+        sessionCards = filteredStudyCards
+        currentCardIndex = 0
+        isFlipped = false
+    }
+
+    // MARK: - Keyboard Navigation
+    
+    private func goToPreviousCard() {
+        guard !sessionCards.isEmpty else { return }
+        withAnimation {
+            isFlipped = false
+            if currentCardIndex > 0 {
+                currentCardIndex -= 1
+            } else {
+                currentCardIndex = sessionCards.count - 1 // Wrap to last card
+            }
+        }
+    }
+    
+    private func goToNextCard() {
+        guard !sessionCards.isEmpty else { return }
+        withAnimation {
+            isFlipped = false
+            if currentCardIndex < sessionCards.count - 1 {
+                currentCardIndex += 1
+            } else {
+                currentCardIndex = 0 // Wrap to first card
+            }
+        }
+    }
+    
+    private func flipCard() {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+            isFlipped.toggle()
         }
     }
     
@@ -224,7 +323,7 @@ struct LearnView: View {
     private var progressHeader: some View {
         VStack(spacing: 8) {
             HStack {
-                Text("\(currentCardIndex + 1) of \(studyCards.count)")
+                Text("\(min(currentCardIndex + 1, sessionCards.count)) of \(sessionCards.count)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 
@@ -235,7 +334,7 @@ struct LearnView: View {
                 }
             }
             
-            ProgressView(value: Double(currentCardIndex), total: Double(studyCards.count))
+            ProgressView(value: Double(min(currentCardIndex + 1, sessionCards.count)), total: Double(max(sessionCards.count, 1)))
                 .tint(.blue)
         }
     }
@@ -244,7 +343,7 @@ struct LearnView: View {
     
     private func reviewButtons(for card: LearningCard) -> some View {
         HStack(spacing: 12) {
-            ForEach([ReviewQuality.blackout, .incorrect, .hard, .good, .easy], id: \.self) { quality in
+            ForEach([ReviewQuality.blackout, .incorrect, .difficult, .hard, .good, .easy], id: \.self) { quality in
                 Button {
                     recordReview(card: card, quality: quality)
                 } label: {
@@ -272,11 +371,10 @@ struct LearnView: View {
         ContentUnavailableView {
             Label("Session Complete!", systemImage: "checkmark.circle")
         } description: {
-            Text("You've reviewed all \(studyCards.count) cards in this session")
+            Text("You've reviewed all \(sessionCards.count) cards in this session")
         } actions: {
             Button("Start Over") {
-                currentCardIndex = 0
-                isFlipped = false
+                reloadSessionCards()
             }
             .buttonStyle(.borderedProminent)
         }
@@ -289,10 +387,10 @@ struct LearnView: View {
         
         withAnimation {
             isFlipped = false
-            if currentCardIndex < studyCards.count - 1 {
+            if currentCardIndex < sessionCards.count - 1 {
                 currentCardIndex += 1
             } else {
-                currentCardIndex = studyCards.count // Trigger completion view
+                currentCardIndex = sessionCards.count // Trigger completion view
             }
         }
     }
@@ -303,48 +401,76 @@ struct LearnView: View {
 struct FlashcardView: View {
     let card: LearningCard
     @Binding var isFlipped: Bool
-    
+
+    /// The front of the card quizzes the LEARNING language (中文 UI → English
+    /// front with English narration; English UI → Chinese front with pinyin
+    /// and Mandarin narration). The back reveals the native-language meaning.
+    private var learningChinese: Bool { LocalizationManager.shared.learningIsChinese }
+
     var body: some View {
         ZStack {
-            // Front of card (Chinese)
+            // Front of card — the learning-language side
             cardFace(isFront: true) {
                 VStack(spacing: 16) {
-                    Text(card.chinese)
-                        .font(.system(size: 72, weight: .medium))
-                    
-                    Text(PinyinConverter.coloredPinyin(card.chinese))
-                        .font(.title2)
-                    
+                    if learningChinese {
+                        Text(card.chinese)
+                            .font(.system(size: 72, weight: .medium))
+
+                        // Use stored pinyin if available, otherwise convert
+                        if let pinyin = card.pinyin, !pinyin.isEmpty {
+                            Text(pinyin)
+                                .font(.title2)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(PinyinConverter.coloredPinyin(card.chinese))
+                                .font(.title2)
+                        }
+                    } else {
+                        Text(card.english)
+                            .font(.system(size: 56, weight: .medium))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                            .minimumScaleFactor(0.3)
+                    }
+
                     Button {
-                        SpeechService.speakChinese(card.chinese)
+                        if learningChinese {
+                            SpeechService.speakChinese(card.chinese)
+                        } else {
+                            SpeechService.speakEnglish(card.english)
+                        }
                     } label: {
                         Image(systemName: "speaker.wave.2")
                             .font(.title3)
                     }
-                    .buttonStyle(.glass)
+                    .glassButtonStyleCompat()
                 }
             }
             .opacity(isFlipped ? 0 : 1)
             .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            
-            // Back of card (English)
+
+            // Back of card — the native-language meaning
             cardFace(isFront: false) {
                 VStack(spacing: 16) {
-                    Text(card.english)
+                    Text(learningChinese ? card.english : card.chinese)
                         .font(.title)
                         .fontWeight(.medium)
                         .multilineTextAlignment(.center)
-                    
+
                     if let example = card.exampleSentence {
                         Divider()
-                        
+
                         VStack(spacing: 8) {
                             Text(example)
                                 .font(.body)
-                            
-                            Text(PinyinConverter.convert(example))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+
+                            // Pinyin is a learner aid; native Chinese readers
+                            // don't need it on their own-language side.
+                            if learningChinese {
+                                Text(PinyinConverter.convert(example))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
@@ -358,7 +484,7 @@ struct FlashcardView: View {
         content()
             .frame(maxWidth: .infinity, maxHeight: 400)
             .padding(24)
-            .glassEffect(in: .rect(cornerRadius: 20))
+            .glassEffectCompat(cornerRadius: 20)
     }
 }
 
@@ -436,6 +562,7 @@ extension MasteryLevel {
 
 struct LearningStatsSheet: View {
     @Environment(LearningProgressStore.self) private var learningStore
+    @Environment(SavedTermsStore.self) private var savedTermsStore
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -445,7 +572,7 @@ struct LearningStatsSheet: View {
                     HStack {
                         Text("Total Cards")
                         Spacer()
-                        Text("\(LearningDeck.cards.count)")
+                        Text("\(LearningDeck.cards.count + savedTermsStore.terms.count)")
                             .foregroundStyle(.secondary)
                     }
                     
@@ -507,4 +634,6 @@ struct LearningStatsSheet: View {
 #Preview {
     LearnView()
         .environment(LearningProgressStore.shared)
+        .environment(SavedTermsStore.shared)
+        .environment(AppRouteStore.shared)
 }

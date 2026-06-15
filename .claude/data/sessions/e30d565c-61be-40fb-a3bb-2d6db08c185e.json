@@ -1,0 +1,8 @@
+{
+  "session_id": "e30d565c-61be-40fb-a3bb-2d6db08c185e",
+  "prompts": [
+    "create a new release that includes a packaged .dmg of the latest version of the app for users to download easily, and push it to github",
+    "create a new release that includes a packaged .dmg of the latest version of the app for users to download easily,        \n  and push it to github ",
+    "ok, the app has been updated with additional features. please create a new release with a new packaged dmg with the latest version"
+  ]
+}

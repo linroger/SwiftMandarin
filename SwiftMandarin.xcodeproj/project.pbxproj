@@ -7,17 +7,40 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A76502082F3BA18A00D18A7C /* handoff.md in Resources */ = {isa = PBXBuildFile; fileRef = A76502072F3BA18A00D18A7C /* handoff.md */; };
+		A7F06F562F8D375000B51F21 /* Ollama in Frameworks */ = {isa = PBXBuildFile; productRef = A7F06F552F8D375000B51F21 /* Ollama */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0427A9B0BBAFAF5798E3677B /* session_end.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = session_end.json; path = logs/session_end.json; sourceTree = SOURCE_ROOT; };
+		0CE424F641498140B5E3AC63 /* subagent_stop.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = subagent_stop.json; path = "logs/b5f41151-0aed-461b-8504-2e6443986013/subagent_stop.json"; sourceTree = SOURCE_ROOT; };
+		3ADBBE7983753D70DD8096B9 /* user_prompt_submit.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = user_prompt_submit.json; path = logs/user_prompt_submit.json; sourceTree = SOURCE_ROOT; };
+		487BC7874F5804D4C6E50AFB /* post_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = post_tool_use.json; path = "logs/b5f41151-0aed-461b-8504-2e6443986013/post_tool_use.json"; sourceTree = SOURCE_ROOT; };
+		728BABF87D4D0781A673D362 /* post_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = post_tool_use.json; path = "logs/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc/post_tool_use.json"; sourceTree = SOURCE_ROOT; };
+		88E71205BBAE1623A2BFB78B /* pre_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = pre_tool_use.json; path = "logs/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc/pre_tool_use.json"; sourceTree = SOURCE_ROOT; };
+		931810793F85E43BA3C4D72F /* cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = "cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.json"; path = ".claude/data/sessions/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.json"; sourceTree = SOURCE_ROOT; };
+		99CE0F9F0041752A9ECC6D81 /* pre_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = pre_tool_use.json; path = "logs/b5f41151-0aed-461b-8504-2e6443986013/pre_tool_use.json"; sourceTree = SOURCE_ROOT; };
 		A76501F52F3B9F5800D18A7C /* SwiftMandarin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftMandarin.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A76502072F3BA18A00D18A7C /* handoff.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = handoff.md; sourceTree = "<group>"; };
+		C6CFAA409C761EF26DB7CFF4 /* last-ndc.ts */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.typescript; name = "last-ndc.ts"; path = ".remember/tmp/last-ndc.ts"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A7C0FFEE0000000000000001 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				logs,
+				MandarinKit.md,
+			);
+			target = A76501F42F3B9F5800D18A7C /* SwiftMandarin */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A76501F72F3B9F5800D18A7C /* SwiftMandarin */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A7C0FFEE0000000000000001 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
 			path = SwiftMandarin;
 			sourceTree = "<group>";
 		};
@@ -28,6 +51,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A7F06F562F8D375000B51F21 /* Ollama in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -40,6 +64,15 @@
 				A76501F72F3B9F5800D18A7C /* SwiftMandarin */,
 				A76501F62F3B9F5800D18A7C /* Products */,
 				A76502072F3BA18A00D18A7C /* handoff.md */,
+				C6CFAA409C761EF26DB7CFF4 /* last-ndc.ts */,
+				931810793F85E43BA3C4D72F /* cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.json */,
+				3ADBBE7983753D70DD8096B9 /* user_prompt_submit.json */,
+				88E71205BBAE1623A2BFB78B /* pre_tool_use.json */,
+				728BABF87D4D0781A673D362 /* post_tool_use.json */,
+				487BC7874F5804D4C6E50AFB /* post_tool_use.json */,
+				99CE0F9F0041752A9ECC6D81 /* pre_tool_use.json */,
+				0CE424F641498140B5E3AC63 /* subagent_stop.json */,
+				0427A9B0BBAFAF5798E3677B /* session_end.json */,
 			);
 			sourceTree = "<group>";
 		};
@@ -71,6 +104,7 @@
 			);
 			name = SwiftMandarin;
 			packageProductDependencies = (
+				A7F06F552F8D375000B51F21 /* Ollama */,
 			);
 			productName = SwiftMandarin;
 			productReference = A76501F52F3B9F5800D18A7C /* SwiftMandarin.app */;
@@ -97,9 +131,13 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = A76501EC2F3B9F5800D18A7C;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A7F06F542F8D375000B51F21 /* XCRemoteSwiftPackageReference "ollama-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A76501F62F3B9F5800D18A7C /* Products */;
 			projectDirPath = "";
@@ -115,7 +153,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A76502082F3BA18A00D18A7C /* handoff.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -254,9 +291,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = YES;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_ENTITLEMENTS = SwiftMandarin/SwiftMandarin.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = X8AD8YC886;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
@@ -279,6 +317,10 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSCameraUsageDescription = "SwiftMandarin needs camera access to scan and recognize text from photos for translation.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SwiftMandarin uses the microphone for live speech translation.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "SwiftMandarin needs photo library access to select images containing text for translation.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "SwiftMandarin transcribes your speech on-device so it can be translated.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -289,11 +331,11 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = linroger022.SwiftMandarin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -322,9 +364,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = YES;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_ENTITLEMENTS = SwiftMandarin/SwiftMandarin.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = X8AD8YC886;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
@@ -347,6 +390,10 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSCameraUsageDescription = "SwiftMandarin needs camera access to scan and recognize text from photos for translation.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SwiftMandarin uses the microphone for live speech translation.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "SwiftMandarin needs photo library access to select images containing text for translation.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "SwiftMandarin transcribes your speech on-device so it can be translated.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -357,11 +404,11 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = linroger022.SwiftMandarin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -406,6 +453,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A7F06F542F8D375000B51F21 /* XCRemoteSwiftPackageReference "ollama-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mattt/ollama-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.8.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A7F06F552F8D375000B51F21 /* Ollama */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A7F06F542F8D375000B51F21 /* XCRemoteSwiftPackageReference "ollama-swift" */;
+			productName = Ollama;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A76501ED2F3B9F5800D18A7C /* Project object */;
 }
