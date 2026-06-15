@@ -97,7 +97,10 @@ final class ScreenshotTranslationStore {
     var pendingImages: [NSImage]?
     #endif
     
-    /// Target language for translation
+    /// Target language for translation. Screenshot translation is a
+    /// comprehension aid, so it defaults to the user's NATIVE language (= the
+    /// interface language, set in `init`); an explicit intent parameter can
+    /// still override.
     var targetLanguage: ScreenshotTargetLanguage = .english
     
     // MARK: - Processing State
@@ -148,7 +151,10 @@ final class ScreenshotTranslationStore {
     
     // MARK: - Initialization
     
-    private init() {}
+    private init() {
+        // Default to translating INTO the user's native language.
+        targetLanguage = LocalizationManager.shared.nativeIsChinese ? .chinese : .english
+    }
     
     // MARK: - Public Methods
     

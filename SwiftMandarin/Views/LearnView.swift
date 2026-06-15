@@ -33,12 +33,14 @@ struct LearnView: View {
         case difficult = "Difficult"
     }
     
-    /// Convert saved terms to learning cards
+    /// Convert saved terms to learning cards. Sides are detected by content
+    /// because the headword field can hold either language depending on the
+    /// learning direction the entry was saved under.
     private var vocabularyCards: [LearningCard] {
         savedTermsStore.terms.map { term in
             LearningCard(
-                chinese: term.chinese,
-                english: term.definition,
+                chinese: term.chineseSide.isEmpty ? term.chinese : term.chineseSide,
+                english: term.englishSide.isEmpty ? term.definition : term.englishSide,
                 pinyin: term.pinyin.isEmpty ? nil : term.pinyin,
                 exampleSentence: nil,
                 tags: ["Vocabulary"],
@@ -399,27 +401,44 @@ struct LearnView: View {
 struct FlashcardView: View {
     let card: LearningCard
     @Binding var isFlipped: Bool
-    
+
+    /// The front of the card quizzes the LEARNING language (中文 UI → English
+    /// front with English narration; English UI → Chinese front with pinyin
+    /// and Mandarin narration). The back reveals the native-language meaning.
+    private var learningChinese: Bool { LocalizationManager.shared.learningIsChinese }
+
     var body: some View {
         ZStack {
-            // Front of card (Chinese)
+            // Front of card — the learning-language side
             cardFace(isFront: true) {
                 VStack(spacing: 16) {
-                    Text(card.chinese)
-                        .font(.system(size: 72, weight: .medium))
-                    
-                    // Use stored pinyin if available, otherwise convert
-                    if let pinyin = card.pinyin, !pinyin.isEmpty {
-                        Text(pinyin)
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
+                    if learningChinese {
+                        Text(card.chinese)
+                            .font(.system(size: 72, weight: .medium))
+
+                        // Use stored pinyin if available, otherwise convert
+                        if let pinyin = card.pinyin, !pinyin.isEmpty {
+                            Text(pinyin)
+                                .font(.title2)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(PinyinConverter.coloredPinyin(card.chinese))
+                                .font(.title2)
+                        }
                     } else {
-                        Text(PinyinConverter.coloredPinyin(card.chinese))
-                            .font(.title2)
+                        Text(card.english)
+                            .font(.system(size: 56, weight: .medium))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                            .minimumScaleFactor(0.3)
                     }
-                    
+
                     Button {
-                        SpeechService.speakChinese(card.chinese)
+                        if learningChinese {
+                            SpeechService.speakChinese(card.chinese)
+                        } else {
+                            SpeechService.speakEnglish(card.english)
+                        }
                     } label: {
                         Image(systemName: "speaker.wave.2")
                             .font(.title3)
@@ -429,25 +448,29 @@ struct FlashcardView: View {
             }
             .opacity(isFlipped ? 0 : 1)
             .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            
-            // Back of card (English)
+
+            // Back of card — the native-language meaning
             cardFace(isFront: false) {
                 VStack(spacing: 16) {
-                    Text(card.english)
+                    Text(learningChinese ? card.english : card.chinese)
                         .font(.title)
                         .fontWeight(.medium)
                         .multilineTextAlignment(.center)
-                    
+
                     if let example = card.exampleSentence {
                         Divider()
-                        
+
                         VStack(spacing: 8) {
                             Text(example)
                                 .font(.body)
-                            
-                            Text(PinyinConverter.convert(example))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+
+                            // Pinyin is a learner aid; native Chinese readers
+                            // don't need it on their own-language side.
+                            if learningChinese {
+                                Text(PinyinConverter.convert(example))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }

@@ -43,7 +43,13 @@ struct PhrasesView: View {
                                 }
                         }
                     } header: {
-                        Label(category.name, systemImage: category.icon)
+                        // Category names are data strings; route them through
+                        // the catalog so headers follow the language toggle.
+                        Label {
+                            Text(LocalizedStringKey(category.name))
+                        } icon: {
+                            Image(systemName: category.icon)
+                        }
                     }
                 }
             }
@@ -69,25 +75,42 @@ struct PhrasesView: View {
 
 struct PhraseRow: View {
     let phrase: Phrase
-    
+
+    /// The learning-language side leads (中文 UI → English headline with
+    /// English narration; English UI → Chinese headline + pinyin).
+    private var learningChinese: Bool { LocalizationManager.shared.learningIsChinese }
+
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(phrase.chinese)
-                    .font(.headline)
-                
-                Text(PinyinConverter.coloredPinyin(phrase.chinese))
-                    .font(.subheadline)
-                
-                Text(phrase.english)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if learningChinese {
+                    Text(phrase.chinese)
+                        .font(.headline)
+
+                    Text(PinyinConverter.coloredPinyin(phrase.chinese))
+                        .font(.subheadline)
+
+                    Text(phrase.english)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text(phrase.english)
+                        .font(.headline)
+
+                    Text(phrase.chinese)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
-            
+
             Spacer()
-            
+
             Button {
-                SpeechService.speakChinese(phrase.chinese)
+                if learningChinese {
+                    SpeechService.speakChinese(phrase.chinese)
+                } else {
+                    SpeechService.speakEnglish(phrase.english)
+                }
             } label: {
                 Image(systemName: "speaker.wave.2")
                     .foregroundStyle(.tint)
@@ -105,31 +128,43 @@ struct PhraseDetailSheet: View {
     let phrase: Phrase
     @Environment(\.dismiss) private var dismiss
     @Environment(SavedTermsStore.self) private var savedTermsStore
-    
+
+    /// The learning-language side leads (中文 UI → English big, Chinese small;
+    /// English UI → Chinese big + pinyin, English small).
+    private var learningChinese: Bool { LocalizationManager.shared.learningIsChinese }
+
+    private var headlineText: String { learningChinese ? phrase.chinese : phrase.english }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
                     // Large display
                     VStack(spacing: 12) {
-                        Text(phrase.chinese)
+                        Text(headlineText)
                             .font(.system(size: 36, weight: .medium))
                             .multilineTextAlignment(.center)
-                        
-                        Text(PinyinConverter.coloredPinyin(phrase.chinese))
-                            .font(.title3)
-                        
-                        Text(phrase.english)
+
+                        if learningChinese {
+                            Text(PinyinConverter.coloredPinyin(phrase.chinese))
+                                .font(.title3)
+                        }
+
+                        Text(learningChinese ? phrase.english : phrase.chinese)
                             .font(.body)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, 20)
-                    
+
                     // Actions
                     HStack(spacing: 24) {
                         Button {
-                            SpeechService.speakChinese(phrase.chinese)
+                            if learningChinese {
+                                SpeechService.speakChinese(phrase.chinese)
+                            } else {
+                                SpeechService.speakEnglish(phrase.english)
+                            }
                         } label: {
                             VStack(spacing: 4) {
                                 Image(systemName: "speaker.wave.2")
@@ -139,9 +174,9 @@ struct PhraseDetailSheet: View {
                             }
                         }
                         .buttonStyle(.bordered)
-                        
+
                         Button {
-                            ClipboardService.copy(phrase.chinese)
+                            ClipboardService.copy(headlineText)
                         } label: {
                             VStack(spacing: 4) {
                                 Image(systemName: "doc.on.doc")

@@ -170,9 +170,24 @@ final class AppPreferences {
         }
     }
 
+    /// Align the learner mode with the interface language (the interface
+    /// language is the user's native language, so the learning direction
+    /// follows from it). Called by `LocalizationManager` whenever the in-app
+    /// language toggle changes, so one gesture re-orients the whole app.
+    func syncLearnerMode(toInterfaceLanguage language: AppLanguage) {
+        let target: LearnerMode = (language == .chinese) ? .mandarinToEnglish : .englishToMandarin
+        if learnerMode != target {
+            learnerMode = target
+        }
+    }
+
     private init() {
         let savedMode = UserDefaults.standard.string(forKey: Keys.learnerMode)
-        self.learnerMode = savedMode.flatMap(LearnerMode.init(rawValue:)) ?? .englishToMandarin
+        // First launch: derive the learning direction from the interface
+        // language (中文 UI → native Mandarin speaker learning English).
+        let derivedDefault: LearnerMode =
+            LocalizationManager.shared.language == .chinese ? .mandarinToEnglish : .englishToMandarin
+        self.learnerMode = savedMode.flatMap(LearnerMode.init(rawValue:)) ?? derivedDefault
 
         let savedScan = UserDefaults.standard.string(forKey: Keys.photoScanLanguage)
         self.photoScanLanguage = savedScan.flatMap(PhotoScanLanguage.init(rawValue:)) ?? .auto

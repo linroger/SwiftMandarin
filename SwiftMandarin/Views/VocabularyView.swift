@@ -49,12 +49,13 @@ struct VocabularyView: View {
             }
         }
         
-        // Apply sort with direction
+        // Apply sort with direction (alphabetical sorts the visible headword,
+        // which is the learning-language side)
         switch sortOrder {
         case .dateAdded:
             return terms.sorted { sortAscending ? $0.dateAdded < $1.dateAdded : $0.dateAdded > $1.dateAdded }
         case .alphabetical:
-            return terms.sorted { sortAscending ? $0.chinese < $1.chinese : $0.chinese > $1.chinese }
+            return terms.sorted { sortAscending ? $0.headlineText < $1.headlineText : $0.headlineText > $1.headlineText }
         case .pinyin:
             return terms.sorted { sortAscending ? $0.pinyin < $1.pinyin : $0.pinyin > $1.pinyin }
         }
@@ -107,7 +108,7 @@ struct VocabularyView: View {
                         Label("Decrease Font Size", systemImage: "textformat.size.smaller")
                     }
                     .disabled(chineseFontSize <= 14)
-                    .help("Decrease Chinese font size (⌘-)")
+                    .help("Decrease headword font size (⌘-)")
                     .keyboardShortcut("-", modifiers: .command)
                     
                     Button {
@@ -118,7 +119,7 @@ struct VocabularyView: View {
                         Label("Increase Font Size", systemImage: "textformat.size.larger")
                     }
                     .disabled(chineseFontSize >= 48)
-                    .help("Increase Chinese font size (⌘+)")
+                    .help("Increase headword font size (⌘+)")
                     .keyboardShortcut("=", modifiers: .command)
                     
                     Divider()
@@ -420,7 +421,7 @@ struct VocabularyView: View {
                         .tint(term.isMastered ? .orange : .green)
                         
                         Button {
-                            SpeechService.speakChinese(term.chinese)
+                            SpeechService.speakAuto(term.headlineText)
                         } label: {
                             Label("Speak", systemImage: "speaker.wave.2")
                         }
@@ -475,30 +476,37 @@ struct VocabularyRow: View {
                     .font(.system(size: 20))
             }
             .buttonStyle(.plain)
-            
-            // Chinese character with adjustable font size
-            Text(term.chinese)
+
+            // Headword — the side in the language being learned — with the
+            // adjustable font size (中文 UI: the English word; English UI:
+            // the Chinese characters).
+            Text(term.headlineText)
                 .font(.system(size: chineseFontSize, weight: .medium))
                 .frame(minWidth: max(60, chineseFontSize * 2.5), alignment: .leading)
-            
+
             VStack(alignment: .leading, spacing: 4) {
-                // Pinyin with tone colors
-                Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chinese))
-                    .font(.subheadline)
-                
-                // Definition
-                Text(term.definition)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                // Pinyin with tone colors — a learner aid, shown only when
+                // the user is learning Chinese.
+                if term.showsPinyin {
+                    Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
+                        .font(.subheadline)
+                }
+
+                // Native-language gloss, kept small.
+                if !term.glossText.isEmpty {
+                    Text(term.glossText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
             }
-            
+
             Spacer()
-            
+
             // AI Explain button
             if let onAIExplainTap = onAIExplainTap {
                 AIExplainButton(
-                    word: term.chinese,
+                    word: term.headlineText,
                     pinyin: term.pinyin,
                     onTap: onAIExplainTap
                 )
@@ -546,32 +554,40 @@ struct TermDetailSheet: View {
     private var term: SavedTerm {
         selectedTerm ?? SavedTerm(chinese: "", pinyin: "", definition: "")
     }
-    
-    /// The definition to display - use fetched if available, otherwise stored
+
+    /// The gloss to display — the native-language side of the entry, or a
+    /// freshly fetched translation when the stored one is missing/unwieldy.
     private var displayDefinition: String {
         if !fetchedTranslation.isEmpty {
             return fetchedTranslation
         }
-        return term.definition
+        return term.glossText
     }
-    
+
     /// Check if we should offer to fetch a better translation
     private var shouldOfferTranslation: Bool {
-        term.definition.isEmpty || term.definition.count > 100
+        term.glossText.isEmpty || term.glossText.count > 100
     }
-    
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Large character display
+                    // Large headword display — the language being learned.
+                    // English headwords can be long, so allow shrinking.
                     VStack(spacing: 12) {
-                        Text(term.chinese)
+                        Text(term.headlineText)
                             .font(.system(size: 80, weight: .medium))
-                        
-                        Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chinese))
-                            .font(.title)
-                        
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.35)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+
+                        if term.showsPinyin {
+                            Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
+                                .font(.title)
+                        }
+
                         if !term.partOfSpeech.isEmpty {
                             Text(term.partOfSpeech)
                                 .font(.caption)
@@ -645,7 +661,7 @@ struct TermDetailSheet: View {
                     // Actions
                     HStack(spacing: 24) {
                         Button {
-                            SpeechService.speakChinese(term.chinese)
+                            SpeechService.speakAuto(term.headlineText)
                             triggerHaptic()
                         } label: {
                             VStack(spacing: 4) {
@@ -656,9 +672,9 @@ struct TermDetailSheet: View {
                             }
                         }
                         .buttonStyle(.bordered)
-                        
+
                         Button {
-                            ClipboardService.copy(term.chinese)
+                            ClipboardService.copy(term.headlineText)
                             showCopiedFeedback = true
                             triggerHaptic()
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -674,9 +690,14 @@ struct TermDetailSheet: View {
                         }
                         .buttonStyle(.bordered)
                         .tint(showCopiedFeedback ? .green : nil)
-                        
+
                         Button {
-                            let text = "\(term.chinese)\n\(term.pinyin)\n\(displayDefinition)"
+                            let parts = [
+                                term.headlineText,
+                                term.showsPinyin ? term.pinyin : "",
+                                displayDefinition
+                            ].filter { !$0.isEmpty }
+                            let text = parts.joined(separator: "\n")
                             ClipboardService.copy(text)
                             showCopiedFeedback = true
                             triggerHaptic()
@@ -744,12 +765,12 @@ struct TermDetailSheet: View {
                             .padding(.horizontal)
                         
                         AIWordExplanationView(
-                            word: term.chinese,
+                            word: term.headlineText,
                             pinyin: term.pinyin,
-                            context: term.definition.isEmpty ? nil : term.definition
+                            context: term.glossText.isEmpty ? nil : term.glossText
                         )
                     }
-                    
+
                     Spacer()
                 }
             }
@@ -767,20 +788,24 @@ struct TermDetailSheet: View {
                 fetchedTranslation = ""
                 isLoadingTranslation = false
                 showCopiedFeedback = false
-                
-                // Auto-fetch translation if definition is empty
-                if term.definition.isEmpty {
+
+                // Auto-fetch a translation when the native-language gloss is missing
+                if term.glossText.isEmpty {
                     await fetchTranslation()
                 }
             }
         }
     }
-    
+
+    /// Translate the headword into the user's native language (the headword's
+    /// own language decides the direction, since it can be either).
     private func fetchTranslation() async {
         isLoadingTranslation = true
-        
+
         do {
-            let translation = try await WordTranslationService.shared.translateToEnglish(term.chinese)
+            let headword = term.headlineText
+            let translation = try await WordTranslationService.shared
+                .translate(headword, sourceIsChinese: headword.containsCJK)
             await MainActor.run {
                 fetchedTranslation = translation
                 isLoadingTranslation = false
@@ -839,13 +864,13 @@ struct TermDetailInspector: View {
         if !fetchedTranslation.isEmpty {
             return fetchedTranslation
         }
-        return term.definition
+        return term.glossText
     }
-    
+
     private var shouldOfferTranslation: Bool {
-        term.definition.isEmpty || term.definition.count > 100
+        term.glossText.isEmpty || term.glossText.count > 100
     }
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -862,15 +887,21 @@ struct TermDetailInspector: View {
                     .buttonStyle(.plain)
                 }
                 .padding(.horizontal)
-                
-                // Large character display
+
+                // Large headword display — the language being learned.
                 VStack(spacing: 10) {
-                    Text(term.chinese)
+                    Text(term.headlineText)
                         .font(.system(size: 64, weight: .medium))
-                    
-                    Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chinese))
-                        .font(.title2)
-                    
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.35)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+
+                    if term.showsPinyin {
+                        Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
+                            .font(.title2)
+                    }
+
                     if !term.partOfSpeech.isEmpty {
                         Text(term.partOfSpeech)
                             .font(.caption)
@@ -945,7 +976,7 @@ struct TermDetailInspector: View {
                 // Actions
                 HStack(spacing: 16) {
                     Button {
-                        SpeechService.speakChinese(term.chinese)
+                        SpeechService.speakAuto(term.headlineText)
                     } label: {
                         VStack(spacing: 3) {
                             Image(systemName: "speaker.wave.2")
@@ -955,9 +986,9 @@ struct TermDetailInspector: View {
                         }
                     }
                     .buttonStyle(.bordered)
-                    
+
                     Button {
-                        ClipboardService.copy(term.chinese)
+                        ClipboardService.copy(term.headlineText)
                         showCopiedFeedback = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                             showCopiedFeedback = false
@@ -972,9 +1003,14 @@ struct TermDetailInspector: View {
                     }
                     .buttonStyle(.bordered)
                     .tint(showCopiedFeedback ? .green : nil)
-                    
+
                     Button {
-                        let text = "\(term.chinese)\n\(term.pinyin)\n\(displayDefinition)"
+                        let parts = [
+                            term.headlineText,
+                            term.showsPinyin ? term.pinyin : "",
+                            displayDefinition
+                        ].filter { !$0.isEmpty }
+                        let text = parts.joined(separator: "\n")
                         ClipboardService.copy(text)
                         showCopiedFeedback = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -1023,12 +1059,12 @@ struct TermDetailInspector: View {
                         .padding(.horizontal)
                     
                     AIWordExplanationView(
-                        word: term.chinese,
+                        word: term.headlineText,
                         pinyin: term.pinyin,
-                        context: term.definition.isEmpty ? nil : term.definition
+                        context: term.glossText.isEmpty ? nil : term.glossText
                     )
                 }
-                
+
                 Spacer()
             }
             .padding(.vertical)
@@ -1038,18 +1074,22 @@ struct TermDetailInspector: View {
             fetchedTranslation = ""
             isLoadingTranslation = false
             showCopiedFeedback = false
-            
-            if term.definition.isEmpty {
+
+            if term.glossText.isEmpty {
                 await fetchTranslation()
             }
         }
     }
-    
+
+    /// Translate the headword into the user's native language (the headword's
+    /// own language decides the direction, since it can be either).
     private func fetchTranslation() async {
         isLoadingTranslation = true
-        
+
         do {
-            let translation = try await WordTranslationService.shared.translateToEnglish(term.chinese)
+            let headword = term.headlineText
+            let translation = try await WordTranslationService.shared
+                .translate(headword, sourceIsChinese: headword.containsCJK)
             await MainActor.run {
                 fetchedTranslation = translation
                 isLoadingTranslation = false
@@ -1388,18 +1428,18 @@ struct AIExplanationSheet: View {
             Divider()
             
             AIWordExplanationView(
-                word: term.chinese,
+                word: term.headlineText,
                 pinyin: term.pinyin,
-                context: term.definition.isEmpty ? nil : term.definition
+                context: term.glossText.isEmpty ? nil : term.glossText
             )
         }
         .frame(minWidth: 450, idealWidth: 500, minHeight: 550, idealHeight: 650)
         #else
         NavigationStack {
             AIWordExplanationView(
-                word: term.chinese,
+                word: term.headlineText,
                 pinyin: term.pinyin,
-                context: term.definition.isEmpty ? nil : term.definition
+                context: term.glossText.isEmpty ? nil : term.glossText
             )
             .navigationTitle("AI Word Analysis")
             .navigationBarTitleDisplayMode(.inline)

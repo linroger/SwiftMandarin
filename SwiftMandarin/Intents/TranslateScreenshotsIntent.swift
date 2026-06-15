@@ -39,8 +39,8 @@ struct TranslateScreenshotsIntent: AppIntent {
     
     @Parameter(
         title: "Target Language",
-        description: "The language to translate the text into.",
-        default: .english
+        description: "The language to translate the text into. Defaults to the app's interface language (your native language).",
+        default: .appLanguage
     )
     var targetLanguage: ShortcutTargetLanguage
     
@@ -128,22 +128,28 @@ struct TranslateScreenshotsIntent: AppIntent {
 // MARK: - Target Language Enum
 
 enum ShortcutTargetLanguage: String, AppEnum {
+    case appLanguage
     case english
     case chinese
-    
+
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
         TypeDisplayRepresentation(name: "Target Language")
     }
-    
+
     static var caseDisplayRepresentations: [ShortcutTargetLanguage: DisplayRepresentation] {
         [
+            .appLanguage: DisplayRepresentation(title: "App Language", subtitle: "Translate into your native language"),
             .english: DisplayRepresentation(title: "English", subtitle: "Translate Chinese to English"),
             .chinese: DisplayRepresentation(title: "中文 (Chinese)", subtitle: "Translate English to Chinese")
         ]
     }
-    
+
     var toScreenshotTargetLanguage: ScreenshotTargetLanguage {
         switch self {
+        case .appLanguage:
+            // The interface language is the user's native language; screenshot
+            // translation is a comprehension aid, so translate into it.
+            return AppLanguage.persisted == .chinese ? .chinese : .english
         case .english: return .english
         case .chinese: return .chinese
         }

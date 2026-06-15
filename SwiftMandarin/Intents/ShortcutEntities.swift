@@ -21,9 +21,20 @@ struct SavedTermEntity: AppEntity, Identifiable {
     let isMastered: Bool
 
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(
-            title: LocalizedStringResource(stringLiteral: chinese),
-            subtitle: LocalizedStringResource(stringLiteral: definition)
+        // The learning-language side is the title (中文 UI → English title,
+        // Mandarin subtitle; English UI → the reverse). Sides are detected by
+        // content because the headword field can hold either language.
+        let zhSide = chinese.containsCJK ? chinese : (definition.containsCJK ? definition : "")
+        let enSide = (!chinese.containsCJK && !chinese.isEmpty) ? chinese : (!definition.containsCJK ? definition : "")
+        let learningEnglish = AppLanguage.persisted == .chinese
+        let title = learningEnglish ? (enSide.isEmpty ? chinese : enSide) : (zhSide.isEmpty ? chinese : zhSide)
+        let subtitle = learningEnglish ? zhSide : enSide
+        if subtitle.isEmpty || subtitle == title {
+            return DisplayRepresentation(title: LocalizedStringResource(stringLiteral: title))
+        }
+        return DisplayRepresentation(
+            title: LocalizedStringResource(stringLiteral: title),
+            subtitle: LocalizedStringResource(stringLiteral: subtitle)
         )
     }
 
@@ -83,9 +94,11 @@ struct PhraseEntity: AppEntity, Identifiable {
     let category: String
 
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(
-            title: LocalizedStringResource(stringLiteral: chinese),
-            subtitle: LocalizedStringResource(stringLiteral: english)
+        // The learning-language side is the title (see SavedTermEntity).
+        let learningEnglish = AppLanguage.persisted == .chinese
+        return DisplayRepresentation(
+            title: LocalizedStringResource(stringLiteral: learningEnglish ? english : chinese),
+            subtitle: LocalizedStringResource(stringLiteral: learningEnglish ? chinese : english)
         )
     }
 

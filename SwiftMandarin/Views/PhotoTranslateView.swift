@@ -79,8 +79,11 @@ struct PhotoTranslateView: View {
     @State private var extractedVocab: [ExtractedVocabItem] = []
     @State private var isExtractingVocab: Bool = false
 
-    // Workbook grading (tucked-away feature)
+    // Workbook grading (tucked-away feature) + its review bank and history,
+    // all kept within the Photo tab.
     @State private var showWorkbookGrading: Bool = false
+    @State private var showQuestionBank: Bool = false
+    @State private var showGradingHistory: Bool = false
 
     // AI cleanup transparency: keep the raw OCR text so the user can compare
     // or revert, and surface a notice when cleanup was skipped or failed.
@@ -156,11 +159,25 @@ struct PhotoTranslateView: View {
 
                         Divider()
 
-                        // Tucked-away workbook grading feature.
-                        Button {
-                            showWorkbookGrading = true
-                        } label: {
-                            Label("作业批改 · Grade Workbook", systemImage: "checkmark.rectangle.stack")
+                        // Workbook suite — grade pages, review the question
+                        // bank, and revisit past graded workbooks. All kept in
+                        // the Photo tab.
+                        Section("作业 · Workbook") {
+                            Button {
+                                showWorkbookGrading = true
+                            } label: {
+                                Label("作业批改 · Grade Workbook", systemImage: "checkmark.rectangle.stack")
+                            }
+                            Button {
+                                showQuestionBank = true
+                            } label: {
+                                Label("复习题库 · Review Bank", systemImage: "tray.full")
+                            }
+                            Button {
+                                showGradingHistory = true
+                            } label: {
+                                Label("批改历史 · Grading History", systemImage: "clock.arrow.circlepath")
+                            }
                         }
 
                         Divider()
@@ -209,6 +226,14 @@ struct PhotoTranslateView: View {
             .sheet(isPresented: $showWorkbookGrading) {
                 WorkbookGradingView()
                     .environment(savedTermsStore)
+                    .localizedSurface()
+            }
+            .sheet(isPresented: $showQuestionBank) {
+                WorkbookQuestionBankView()
+                    .localizedSurface()
+            }
+            .sheet(isPresented: $showGradingHistory) {
+                WorkbookGradingHistoryView()
                     .localizedSurface()
             }
             .fileImporter(isPresented: $showPhotoFiles, allowedContentTypes: [.image], allowsMultipleSelection: false) { result in
@@ -1264,32 +1289,26 @@ struct PhotoTranslateView: View {
         }
     }
 
-    /// Save AI-extracted vocabulary to the vocabulary book (Chinese-keyed).
+    /// Save AI-extracted vocabulary to the vocabulary book. The extracted
+    /// TERM is the study item (it is in the passage's language — the one the
+    /// user is reading to learn), so it becomes the headword whichever
+    /// language it is in; the meaning (written in the user's native language)
+    /// becomes the gloss. Pinyin only applies to Chinese headwords.
     private func saveExtractedVocab() {
-        let sourceIsChinese = detectedLanguage.isChinese
         for item in extractedVocab {
-            let chinese: String
-            let pinyin: String
-            let definition: String
-            if sourceIsChinese {
-                chinese = item.term
-                pinyin = item.reading.isEmpty ? PinyinConverter.convert(item.term) : item.reading
-                definition = item.meaning
-            } else {
-                // English passage: the Chinese side is the item's meaning.
-                chinese = item.meaning
-                pinyin = PinyinConverter.convert(item.meaning)
-                definition = item.term
-            }
+            let headword = item.term.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !headword.isEmpty else { continue }
+            guard !savedTermsStore.contains(chinese: headword) else { continue }
 
-            let trimmed = chinese.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty, trimmed.contains(where: { $0.isChineseCharacter }) else { continue }
-            guard !savedTermsStore.contains(chinese: trimmed) else { continue }
+            let headwordIsChinese = headword.contains { $0.isChineseCharacter }
+            let pinyin = headwordIsChinese
+                ? (item.reading.isEmpty ? PinyinConverter.convert(headword) : item.reading)
+                : ""
 
             savedTermsStore.add(SavedTerm(
-                chinese: trimmed,
+                chinese: headword,
                 pinyin: pinyin,
-                definition: definition,
+                definition: item.meaning.trimmingCharacters(in: .whitespacesAndNewlines),
                 partOfSpeech: "phrase"
             ))
         }

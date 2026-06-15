@@ -232,14 +232,23 @@ struct WordDetailPopover: View {
     private var segmentIsChinese: Bool {
         segment.text.contains { $0.isChineseCharacter }
     }
-    
+
+    /// The learning-language side leads (中文 UI → English headline, Chinese
+    /// gloss, English narration first; English UI → Chinese headline with
+    /// pinyin, English gloss, Mandarin narration first).
+    private var learningChinese: Bool { LocalizationManager.shared.learningIsChinese }
+
+    /// The learning-language text — what gets the headline, primary
+    /// narration, and the plain Copy button.
+    private var headlineWord: String { learningChinese ? chineseWord : englishDefinition }
+
     private var isSaved: Bool {
         savedTermsStore.contains(chinese: chineseWord.isEmpty ? segment.text : chineseWord)
     }
-    
+
     var body: some View {
         VStack(spacing: 16) {
-            // Large character display - always show Chinese with pinyin
+            // Large display — the learning-language side of the word
             VStack(spacing: 4) {
                 if isLoadingTranslation {
                     ProgressView()
@@ -248,13 +257,21 @@ struct WordDetailPopover: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text(pinyinText)
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                    
-                    Text(chineseWord)
-                        .font(.system(size: 56, weight: .medium))
-                    
+                    if learningChinese {
+                        Text(pinyinText)
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+
+                        Text(chineseWord)
+                            .font(.system(size: 56, weight: .medium))
+                    } else {
+                        Text(englishDefinition)
+                            .font(.system(size: 40, weight: .medium))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.4)
+                            .multilineTextAlignment(.center)
+                    }
+
                     // Part of speech badge
                     Text(segment.partOfSpeech.displayName)
                         .font(.caption)
@@ -268,16 +285,16 @@ struct WordDetailPopover: View {
                         )
                 }
             }
-            
+
             Divider()
-            
-            // Definition section - always shows English translation
+
+            // Definition section — the native-language gloss
             VStack(alignment: .leading, spacing: 8) {
                 Text("Definition")
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
-                
+
                 if isLoadingTranslation {
                     HStack(spacing: 8) {
                         ProgressView()
@@ -292,7 +309,7 @@ struct WordDetailPopover: View {
                         Text(error)
                             .font(.caption)
                             .foregroundStyle(.red)
-                        
+
                         // Fallback to context if available
                         if !contextTranslation.isEmpty {
                             Text("Context: \(contextTranslation)")
@@ -302,29 +319,38 @@ struct WordDetailPopover: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
-                    Text(englishDefinition)
+                    Text(learningChinese ? englishDefinition : chineseWord)
                         .font(.body)
                         .fontWeight(.medium)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding(.horizontal)
-            
-            Divider()
-            
-            // Action buttons
-            HStack(spacing: 12) {
-                // Mandarin narration (always available).
-                Button {
-                    SpeechService.speakChinese(chineseWord)
-                } label: {
-                    Label("中文", systemImage: "speaker.wave.2")
-                }
-                .buttonStyle(.bordered)
-                .disabled(isLoadingTranslation || chineseWord.isEmpty)
 
-                // English narration (concern D — dual narration).
-                if prefs.dualNarration {
+            Divider()
+
+            // Action buttons — learning-language narration first
+            HStack(spacing: 12) {
+                if learningChinese {
+                    Button {
+                        SpeechService.speakChinese(chineseWord)
+                    } label: {
+                        Label("中文", systemImage: "speaker.wave.2")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isLoadingTranslation || chineseWord.isEmpty)
+
+                    // Native-language narration (dual narration).
+                    if prefs.dualNarration {
+                        Button {
+                            SpeechService.speakEnglish(englishDefinition)
+                        } label: {
+                            Label("EN", systemImage: "speaker.wave.2")
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isLoadingTranslation || englishDefinition.isEmpty)
+                    }
+                } else {
                     Button {
                         SpeechService.speakEnglish(englishDefinition)
                     } label: {
@@ -332,10 +358,20 @@ struct WordDetailPopover: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isLoadingTranslation || englishDefinition.isEmpty)
+
+                    if prefs.dualNarration {
+                        Button {
+                            SpeechService.speakChinese(chineseWord)
+                        } label: {
+                            Label("中文", systemImage: "speaker.wave.2")
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isLoadingTranslation || chineseWord.isEmpty)
+                    }
                 }
 
                 Button {
-                    ClipboardService.copy(chineseWord)
+                    ClipboardService.copy(headlineWord)
                     showCopiedFeedback = true
                     onCopy()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -346,7 +382,7 @@ struct WordDetailPopover: View {
                 }
                 .buttonStyle(.bordered)
                 .tint(showCopiedFeedback ? .green : nil)
-                .disabled(isLoadingTranslation || chineseWord.isEmpty)
+                .disabled(isLoadingTranslation || headlineWord.isEmpty)
                 
                 Button {
                     // Pass the word-specific translation when saving
@@ -360,17 +396,20 @@ struct WordDetailPopover: View {
                 .disabled(isLoadingTranslation || isSaved)
             }
             
-            // Copy with pinyin button
+            // Copy-everything button (pinyin included only when the user is
+            // learning Chinese — it is a learner aid, not native furniture)
             Button {
                 let definition = englishDefinition.isEmpty ? contextTranslation : englishDefinition
-                let fullText = "\(chineseWord) (\(pinyinText))\n\(definition)"
+                let fullText = learningChinese
+                    ? "\(chineseWord) (\(pinyinText))\n\(definition)"
+                    : "\(englishDefinition)\n\(chineseWord)"
                 ClipboardService.copy(fullText)
                 showCopiedFeedback = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     showCopiedFeedback = false
                 }
             } label: {
-                Label("Copy with Pinyin", systemImage: "doc.on.doc.fill")
+                Label(learningChinese ? "Copy with Pinyin" : "Copy All", systemImage: "doc.on.doc.fill")
                     .fitSingleLine()
                     .frame(maxWidth: .infinity)
             }

@@ -40,6 +40,54 @@ struct SavedTerm: Identifiable, Codable, Equatable, Hashable {
     }
 }
 
+// MARK: - Interface-language-aware display
+
+/// The `chinese` field is really a *headword*: photo-extraction and workbook
+/// flows store English headwords there when the user is learning English. So
+/// the two display sides are detected from content, and which side is the big
+/// headline follows the interface language (= the user's native language):
+/// 中文 UI → learning English → English is the headline, Mandarin the gloss;
+/// English UI → learning Mandarin → Chinese headline + pinyin, English gloss.
+extension SavedTerm {
+
+    /// The Chinese side of the entry (headword preferred, else definition).
+    var chineseSide: String {
+        if chinese.containsCJK { return chinese }
+        if definition.containsCJK { return definition }
+        return ""
+    }
+
+    /// The English side of the entry (headword preferred, else definition).
+    var englishSide: String {
+        if !chinese.containsCJK, !chinese.isEmpty { return chinese }
+        if !definition.containsCJK { return definition }
+        return ""
+    }
+
+    /// The text shown big — the side in the language the user is learning.
+    /// Falls back to the headword when the entry has no text in that language.
+    @MainActor
+    var headlineText: String {
+        let primary = LocalizationManager.shared.learningIsChinese ? chineseSide : englishSide
+        return primary.isEmpty ? chinese : primary
+    }
+
+    /// The small secondary text — the side in the user's native language.
+    /// Empty when the entry has nothing beyond the headline.
+    @MainActor
+    var glossText: String {
+        let secondary = LocalizationManager.shared.learningIsChinese ? englishSide : chineseSide
+        return secondary == headlineText ? "" : secondary
+    }
+
+    /// Pinyin is a learner aid for reading Chinese: shown only when the user
+    /// is learning Chinese (English UI) and the entry has a Chinese side.
+    @MainActor
+    var showsPinyin: Bool {
+        LocalizationManager.shared.learningIsChinese && !chineseSide.isEmpty && !pinyin.isEmpty
+    }
+}
+
 // MARK: - Saved Terms Store
 
 @Observable

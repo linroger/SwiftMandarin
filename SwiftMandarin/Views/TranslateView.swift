@@ -687,9 +687,14 @@ struct TranslateView: View {
         }
     }
     
-    /// Whether to show English section first (when source was Chinese)
+    /// Whether to show the English section first and prominently. The
+    /// learning language leads: a 中文 interface means the user is learning
+    /// English, so English always gets the top, prominent slot; in the
+    /// English interface the order follows the content (English first only
+    /// when the source was Chinese).
     private var showEnglishFirst: Bool {
-        containsChinese(sharedState.sourceText) && !containsChinese(sharedState.translatedText)
+        if LocalizationManager.shared.nativeIsChinese { return true }
+        return containsChinese(sharedState.sourceText) && !containsChinese(sharedState.translatedText)
     }
     
     /// Fetch additional translation when input language mismatches direction

@@ -375,17 +375,35 @@ struct AIWordExplanationView: View {
     }
     
     private func exampleSentenceRow(_ sentence: ExampleSentenceResult) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(sentence.chinese)
-                .font(.body)
-                .fontWeight(.medium)
-            
-            Text(PinyinConverter.coloredPinyin(fromPinyin: sentence.pinyin))
-                .font(.caption)
-            
-            Text(sentence.english)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                // The sentence is in the word's own language (the learning
+                // target), so it leads; pinyin only exists for Chinese text.
+                Text(sentence.sentence)
+                    .font(.body)
+                    .fontWeight(.medium)
+
+                if !sentence.pinyin.isEmpty {
+                    Text(PinyinConverter.coloredPinyin(fromPinyin: sentence.pinyin))
+                        .font(.caption)
+                }
+
+                Text(sentence.translation)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button {
+                SpeechService.speakAuto(sentence.sentence)
+            } label: {
+                Image(systemName: "speaker.wave.2")
+                    .font(.caption)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.blue)
+            .accessibilityLabel(Text("Read sentence aloud"))
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
@@ -395,25 +413,27 @@ struct AIWordExplanationView: View {
                 .fill(.quaternary.opacity(0.5))
         )
     }
-    
+
     private func relatedWordRow(_ word: RelatedWordResult, tint: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
-                Text(word.chinese)
+                Text(word.word)
                     .font(.body)
                     .fontWeight(.medium)
-                
-                Text(word.pinyin)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                
+
+                if !word.pinyin.isEmpty {
+                    Text(word.pinyin)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Spacer()
-                
+
                 Text(word.meaning)
                     .font(.caption)
                     .foregroundStyle(tint)
             }
-            
+
             if !word.difference.isEmpty {
                 Text(word.difference)
                     .font(.caption2)
@@ -422,22 +442,24 @@ struct AIWordExplanationView: View {
         }
         .padding(.vertical, 4)
     }
-    
+
     private func collocationRow(_ collocation: CollocationResult) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(collocation.chinese)
+                Text(collocation.phrase)
                     .font(.callout)
                     .fontWeight(.medium)
-                
-                Text(collocation.pinyin)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+
+                if !collocation.pinyin.isEmpty {
+                    Text(collocation.pinyin)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
-            
+
             Spacer()
-            
-            Text(collocation.english)
+
+            Text(collocation.translation)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

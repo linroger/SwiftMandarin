@@ -55,6 +55,19 @@ enum AppLanguage: String, CaseIterable, Identifiable, Codable {
     }
 
     var locale: Locale { Locale(identifier: rawValue) }
+
+    /// Nonisolated snapshot of the persisted UI language, for contexts that
+    /// cannot hop to the main actor (e.g. App Intents entity display).
+    /// Mirrors `LocalizationManager`'s persistence key and first-launch
+    /// default (device language when Chinese, otherwise English).
+    static var persisted: AppLanguage {
+        if let raw = UserDefaults.standard.string(forKey: "app_language"),
+           let language = AppLanguage(rawValue: raw) {
+            return language
+        }
+        let preferred = Locale.preferredLanguages.first ?? "en"
+        return preferred.lowercased().hasPrefix("zh") ? .chinese : .english
+    }
 }
 
 // MARK: - Localization Manager
@@ -77,13 +90,24 @@ final class LocalizationManager {
 
     /// The active UI language. Setting it persists the choice and updates the
     /// active localization bundle so subsequent string lookups switch over.
+    /// The interface language doubles as the user's NATIVE language, so the
+    /// learner-mode preference is kept in sync: a 中文 interface means a native
+    /// Mandarin speaker learning English, and vice versa.
     var language: AppLanguage {
         didSet {
             guard oldValue != language else { return }
             UserDefaults.standard.set(language.rawValue, forKey: Keys.appLanguage)
             Bundle.setLanguageOverride(language.rawValue)
+            AppPreferences.shared.syncLearnerMode(toInterfaceLanguage: language)
         }
     }
+
+    /// The interface language is treated as the user's native language.
+    var nativeIsChinese: Bool { language == .chinese }
+
+    /// The language the user is learning — always the opposite of the UI
+    /// language (中文 UI → learning English; English UI → learning Mandarin).
+    var learningIsChinese: Bool { language == .english }
 
     /// Locale to inject into the SwiftUI environment so number/date/plural
     /// formatting matches the chosen UI language.

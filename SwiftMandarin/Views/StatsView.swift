@@ -268,17 +268,24 @@ struct StatsView: View {
     
     @ViewBuilder
     private func selectedDateDetail(_ activity: DailyActivity) -> some View {
-        HStack(spacing: 20) {
-            Label("\(activity.wordsLearned)", systemImage: "character.book.closed")
-                .font(.subheadline.weight(.medium))
-            Label("\(activity.reviewsCompleted)", systemImage: "checkmark.circle")
-                .font(.subheadline.weight(.medium))
-            Label("\(activity.translationsMade)", systemImage: "globe")
-                .font(.subheadline.weight(.medium))
-            Spacer()
+        HStack(spacing: 14) {
+            Group {
+                Label("\(activity.wordsLearned)", systemImage: "character.book.closed")
+                Label("\(activity.reviewsCompleted)", systemImage: "checkmark.circle")
+                Label("\(activity.translationsMade)", systemImage: "globe")
+                Label("\(activity.questionsGraded)", systemImage: "checkmark.rectangle.stack")
+            }
+            .font(.subheadline.weight(.medium))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            Spacer(minLength: 4)
+            // Keep the date intact; let the metric counts shrink instead.
             Text(activity.date, style: .date)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(1)
         }
         .padding(.horizontal)
         .padding(.vertical, 10)
@@ -749,6 +756,11 @@ struct StatsView: View {
                     value: "\(activityStore.totalTranslationsMade)",
                     label: "Translations",
                     icon: "globe"
+                )
+                QuickStatCell(
+                    value: "\(activityStore.totalQuestionsGraded)",
+                    label: "Questions Graded",
+                    icon: "checkmark.rectangle.stack"
                 )
                 QuickStatCell(
                     value: String(format: "%.1f", averageDailyReviews),

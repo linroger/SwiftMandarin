@@ -232,3 +232,12 @@ extension Character {
         return scalar.isCJKIdeograph
     }
 }
+
+extension String {
+    /// Whether the string contains any CJK ideograph. Used to tell which side
+    /// of a saved term / extracted pair is the Chinese one, since headword
+    /// fields can hold either language depending on the learning direction.
+    var containsCJK: Bool {
+        unicodeScalars.contains { $0.isCJKIdeograph }
+    }
+}

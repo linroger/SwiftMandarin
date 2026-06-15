@@ -73,33 +73,61 @@ struct EnglishWordDetailSheet: View {
         }
         return ""
     }
-    
+
+    /// The learning-language side leads: 中文 UI (learning English) keeps the
+    /// English word as the big headline; English UI (learning Chinese) makes
+    /// the Chinese translation the headline with pinyin underneath.
+    private var learningChinese: Bool { LocalizationManager.shared.learningIsChinese }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    // Word header with Chinese translation prominently displayed
+                    // Word header — learning-language side displayed prominently
                     VStack(spacing: 12) {
-                        // English word
-                        Text(word.text)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        
-                        // Chinese translation (large and prominent)
-                        if isLoading {
-                            HStack(spacing: 8) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("正在翻译...")
-                                    .font(.title2)
-                                    .foregroundStyle(.secondary)
+                        if learningChinese {
+                            // Chinese translation is what's being learned
+                            if isLoading {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("正在翻译...")
+                                        .font(.title2)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } else if !chineseTranslation.isEmpty {
+                                Text(chineseTranslation)
+                                    .font(.system(size: 44, weight: .medium))
+
+                                Text(PinyinConverter.coloredPinyin(chineseTranslation))
+                                    .font(.title3)
                             }
-                        } else if !chineseTranslation.isEmpty {
-                            Text(chineseTranslation)
-                                .font(.system(size: 36, weight: .medium))
-                                .foregroundStyle(.primary)
+
+                            Text(word.text)
+                                .font(.title2)
+                                .fontWeight(.medium)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            // English word is what's being learned
+                            Text(word.text)
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+
+                            if isLoading {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("正在翻译...")
+                                        .font(.title2)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } else if !chineseTranslation.isEmpty {
+                                Text(chineseTranslation)
+                                    .font(.system(size: 36, weight: .medium))
+                                    .foregroundStyle(.primary)
+                            }
                         }
-                        
+
                         // Part of speech badge
                         HStack {
                             Text(word.partOfSpeech.englishName)
@@ -179,17 +207,10 @@ struct EnglishWordDetailSheet: View {
                             .fill(.ultraThinMaterial)
                     )
                     
-                    // Narration — English always; Mandarin when dual narration is on (concern D).
+                    // Narration — the learning language always; the native
+                    // language additionally when dual narration is on.
                     HStack(spacing: 12) {
-                        Button {
-                            SpeechService.speakEnglish(word.text)
-                        } label: {
-                            Label("English", systemImage: "speaker.wave.2")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-
-                        if prefs.dualNarration {
+                        if learningChinese {
                             Button {
                                 SpeechService.speakChinese(chineseTranslation)
                             } label: {
@@ -198,6 +219,35 @@ struct EnglishWordDetailSheet: View {
                             }
                             .buttonStyle(.bordered)
                             .disabled(chineseTranslation.isEmpty)
+
+                            if prefs.dualNarration {
+                                Button {
+                                    SpeechService.speakEnglish(word.text)
+                                } label: {
+                                    Label("English", systemImage: "speaker.wave.2")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                        } else {
+                            Button {
+                                SpeechService.speakEnglish(word.text)
+                            } label: {
+                                Label("English", systemImage: "speaker.wave.2")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+
+                            if prefs.dualNarration {
+                                Button {
+                                    SpeechService.speakChinese(chineseTranslation)
+                                } label: {
+                                    Label("中文", systemImage: "speaker.wave.2")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(chineseTranslation.isEmpty)
+                            }
                         }
                     }
 

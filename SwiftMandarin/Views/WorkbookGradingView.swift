@@ -45,6 +45,18 @@ struct WorkbookGradingView: View {
     @State private var errorMessage: String?
     @State private var savedQuestionIDs: Set<UUID> = []
 
+    // Review bank + saved-session feedback
+    @State private var bank = WorkbookQuestionBankStore.shared
+    @State private var savedToBankIDs: Set<UUID> = []
+    @State private var didSaveSession = false
+    @State private var didAddAllToBank = false
+
+    // Direct camera capture (iOS only)
+    #if os(iOS)
+    @State private var showCamera = false
+    @State private var cameraTarget: FileImportTarget = .workbook
+    #endif
+
     private var gradingProvider: AIProvider? {
         // Read an observable property so the view re-evaluates when settings change.
         _ = aiSettings.provider
@@ -52,7 +64,12 @@ struct WorkbookGradingView: View {
     }
 
     private var canGrade: Bool {
-        (!workbookImages.isEmpty || !answerImages.isEmpty) && gradingProvider != nil && !isGrading
+        // `!didSaveSession` makes the current image set "consumed" after a
+        // successful grade so re-tapping can't duplicate the history session,
+        // re-write the photos to disk, or double-count today's graded questions.
+        // Changing the inputs resets the flag (see onChange below), re-enabling
+        // a fresh grade.
+        (!workbookImages.isEmpty || !answerImages.isEmpty) && gradingProvider != nil && !isGrading && !didSaveSession
     }
 
     var body: some View {
@@ -67,6 +84,7 @@ struct WorkbookGradingView: View {
                         items: $workbookItems,
                         images: workbookImages,
                         isLoading: isLoadingWorkbook,
+                        onCamera: cameraAction(for: .workbook),
                         onAddFiles: { fileImportTarget = .workbook; showFileImporter = true },
                         onRemove: { idx in if workbookImages.indices.contains(idx) { workbookImages.remove(at: idx) } },
                         onDrop: { handleDrop($0, into: .workbook) },
@@ -78,6 +96,7 @@ struct WorkbookGradingView: View {
                         items: $answerItems,
                         images: answerImages,
                         isLoading: isLoadingAnswers,
+                        onCamera: cameraAction(for: .answers),
                         onAddFiles: { fileImportTarget = .answers; showFileImporter = true },
                         onRemove: { idx in if answerImages.indices.contains(idx) { answerImages.remove(at: idx) } },
                         onDrop: { handleDrop($0, into: .answers) },
@@ -109,6 +128,10 @@ struct WorkbookGradingView: View {
                 guard !items.isEmpty else { return }
                 Task { await addAnswerPhotos(items) }
             }
+            // Any change to the loaded images (add/remove/clear/camera) means a
+            // new input set, so a fresh grade is allowed again.
+            .onChange(of: workbookImages) { _, _ in didSaveSession = false }
+            .onChange(of: answerImages) { _, _ in didSaveSession = false }
             // A single fileImporter routed by `fileImportTarget`. SwiftUI only
             // honors one fileImporter per view, so both buckets share this one.
             .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
@@ -120,6 +143,36 @@ struct WorkbookGradingView: View {
                     }
                 }
             }
+            #if os(iOS)
+            // Direct camera capture — the captured photo is downscaled and added
+            // to whichever bucket the camera was opened from.
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraImagePicker { data in
+                    addCapturedImage(data, into: cameraTarget)
+                }
+                .ignoresSafeArea()
+            }
+            #endif
+        }
+    }
+
+    /// The camera action for a bucket, or nil when no camera is available
+    /// (macOS, Simulator, camera-less devices) so the button is hidden.
+    private func cameraAction(for target: FileImportTarget) -> (() -> Void)? {
+        #if os(iOS)
+        guard CameraImagePicker.isAvailable else { return nil }
+        return { cameraTarget = target; showCamera = true }
+        #else
+        return nil
+        #endif
+    }
+
+    /// Downscale a freshly captured camera photo and append it to a bucket.
+    private func addCapturedImage(_ data: Data, into target: FileImportTarget) {
+        let processed = downscaledJPEG(data)
+        switch target {
+        case .workbook: workbookImages.append(processed)
+        case .answers: answerImages.append(processed)
         }
     }
 
@@ -167,6 +220,7 @@ struct WorkbookGradingView: View {
         items: Binding<[PhotosPickerItem]>,
         images: [Data],
         isLoading: Bool,
+        onCamera: (() -> Void)?,
         onAddFiles: @escaping () -> Void,
         onRemove: @escaping (Int) -> Void,
         onDrop: @escaping ([NSItemProvider]) -> Bool,
@@ -222,9 +276,21 @@ struct WorkbookGradingView: View {
                 .frame(maxWidth: .infinity)
             } else {
                 HStack(spacing: 10) {
+                    // Directly from the camera (take a photo of the page now).
+                    if let onCamera {
+                        Button(action: onCamera) {
+                            Label("拍照 · Camera", systemImage: "camera.fill")
+                                .fitSingleLine()
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                    }
+
                     // From the Photos library.
                     PhotosPicker(selection: items, maxSelectionCount: 10, matching: .images) {
                         Label("照片 · Photos", systemImage: "photo.on.rectangle")
+                            .fitSingleLine()
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
@@ -233,6 +299,7 @@ struct WorkbookGradingView: View {
                     // From files (Files app on iOS, Finder on macOS).
                     Button(action: onAddFiles) {
                         Label("文件 · Files", systemImage: "folder")
+                            .fitSingleLine()
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
@@ -363,24 +430,47 @@ struct WorkbookGradingView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
+            if didSaveSession {
+                Label("已保存到批改历史 · Saved to grading history", systemImage: "clock.badge.checkmark")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             ForEach(result.questions) { question in
                 GradedQuestionCard(
                     question: question,
                     isSaved: savedQuestionIDs.contains(question.id),
-                    onSaveVocab: { saveVocab(for: question) }
+                    isInBank: isInBank(question),
+                    onSaveVocab: { saveVocab(for: question) },
+                    onAddToBank: { addToBank(question) }
                 )
             }
 
-            // Save all wrong-answer vocab
-            if result.wrongQuestions.contains(where: { $0.vocab != nil }) {
+            // Bulk actions: add every question to the review bank, and save all
+            // wrong-answer vocab to the vocabulary book.
+            VStack(spacing: 10) {
                 Button {
-                    saveAllWrongVocab()
+                    addAllToBank()
                 } label: {
-                    Label("保存所有错题词汇到词汇本", systemImage: "bookmark")
+                    Label(didAddAllToBank ? "已全部加入 · Added all" : "全部加入题库 · Add all to Review Bank",
+                          systemImage: didAddAllToBank ? "tray.full.fill" : "tray.and.arrow.down.fill")
                         .fitSingleLine()
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedProminent)
+                .disabled(didAddAllToBank)
+
+                if result.wrongQuestions.contains(where: { $0.vocab != nil }) {
+                    Button {
+                        saveAllWrongVocab()
+                    } label: {
+                        Label("保存所有错题词汇到词汇本", systemImage: "bookmark")
+                            .fitSingleLine()
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
         }
     }
@@ -491,19 +581,55 @@ struct WorkbookGradingView: View {
     }
 
     private func grade() async {
+        // Guard against re-entry (a rapid double-tap) and against re-grading an
+        // already-saved input set — both would duplicate the history session,
+        // re-write the photos, and double-count today's graded questions.
+        guard !isGrading, !didSaveSession else { return }
         await MainActor.run {
             isGrading = true
             errorMessage = nil
             result = nil
             savedQuestionIDs = []
+            savedToBankIDs = []
+            didAddAllToBank = false
+            didSaveSession = false
         }
+        // Snapshot the inputs (value types are Sendable) for off-main work.
+        let wbImages = workbookImages
+        let ansImages = answerImages
+        let custom = customInstructions
         do {
             let graded = try await AIWordExplanationService.shared.gradeWorkbook(
-                workbookImages: workbookImages,
-                answerImages: answerImages,
-                customInstructions: customInstructions.isEmpty ? nil : customInstructions
+                workbookImages: wbImages,
+                answerImages: ansImages,
+                customInstructions: custom.isEmpty ? nil : custom
             )
+            // Persist the original scans to disk off the main actor (large IO).
+            let (wbIDs, ansIDs) = await Task.detached {
+                (WorkbookImageStore.saveAll(wbImages), WorkbookImageStore.saveAll(ansImages))
+            }.value
             await MainActor.run {
+                // Save this grading as a history session (keeps the photos),
+                // and count the graded questions toward today's activity.
+                let session = GradedSession(
+                    score: graded.score,
+                    summary: graded.summary,
+                    questions: graded.questions.map { WorkbookQuestion(graded: $0) },
+                    workbookImageIDs: wbIDs,
+                    answerImageIDs: ansIDs,
+                    customInstructions: custom
+                )
+                WorkbookGradingHistoryStore.shared.add(session)
+                if !graded.questions.isEmpty {
+                    LearningActivityStore.shared.recordQuestionsGraded(graded.questions.count)
+                }
+                // Non-fatal notice if some scans couldn't be written to disk
+                // (the grade result itself is unaffected and still shown).
+                let lostScans = (wbImages.count - wbIDs.count) + (ansImages.count - ansIDs.count)
+                if lostScans > 0 {
+                    errorMessage = String(localized: "Graded successfully, but \(lostScans) scan(s) couldn't be saved to history.")
+                }
+                didSaveSession = true
                 result = graded
                 isGrading = false
             }
@@ -513,6 +639,28 @@ struct WorkbookGradingView: View {
                 isGrading = false
             }
         }
+    }
+
+    // MARK: - Review bank
+
+    /// Whether a graded question is already in the review bank (either saved
+    /// this session or matched by content from a prior save).
+    private func isInBank(_ question: GradedQuestion) -> Bool {
+        savedToBankIDs.contains(question.id) || bank.containsGraded(question)
+    }
+
+    private func addToBank(_ question: GradedQuestion) {
+        _ = bank.add(WorkbookQuestion(graded: question))
+        _ = savedToBankIDs.insert(question.id)
+    }
+
+    private func addAllToBank() {
+        guard let result else { return }
+        for question in result.questions {
+            _ = bank.add(WorkbookQuestion(graded: question))
+            _ = savedToBankIDs.insert(question.id)
+        }
+        didAddAllToBank = true
     }
 
     private func saveVocab(for question: GradedQuestion) {
@@ -546,13 +694,16 @@ struct WorkbookGradingView: View {
         return ExtractedVocabItem(term: question.correctAnswer, reading: "", meaning: "")
     }
 
-    /// Save a wrong-answer word to the vocabulary store. The store keys on the
-    /// Chinese field, so: use whichever side is Chinese; if neither is, translate
-    /// the English term to Chinese; as a last resort keep the word as-is rather
-    /// than silently dropping it. When a `question` is given, the correct answer
-    /// and the student's wrong answer are appended to the definition so the saved
-    /// card shows what to learn and what was missed. Returns true when a save
-    /// was attempted.
+    /// Save a wrong-answer word to the vocabulary store. The store keys on its
+    /// headword field, which holds the term in the LEARNING language (the
+    /// opposite of the interface language): the English word for a 中文-UI
+    /// student studying English, the Chinese word for an English-UI student
+    /// studying Mandarin. The other side becomes the definition; a missing
+    /// headword side is translated, and as a last resort the word is kept
+    /// as-is rather than silently dropped. When a `question` is given, the
+    /// correct answer and the student's wrong answer are appended to the
+    /// definition so the saved card shows what to learn and what was missed.
+    /// Returns true when a save was attempted.
     @discardableResult
     private func saveVocabItem(_ item: ExtractedVocabItem, question: GradedQuestion? = nil) async -> Bool {
         let term = item.term.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -561,24 +712,47 @@ struct WorkbookGradingView: View {
 
         let termIsChinese = term.contains { $0.isChineseCharacter }
         let meaningIsChinese = meaning.contains { $0.isChineseCharacter }
+        let learningChinese = await MainActor.run { LocalizationManager.shared.learningIsChinese }
 
         var chinese: String
         var definition: String
-        if termIsChinese {
-            chinese = term
-            definition = meaning
-        } else if meaningIsChinese {
-            chinese = meaning
-            definition = term
-        } else {
-            // Neither side is Chinese — translate the (English) term to Chinese.
-            let english = term.isEmpty ? meaning : term
-            definition = english
-            if let zh = try? await WordTranslationService.shared.translateToChinese(english),
-               zh.contains(where: { $0.isChineseCharacter }) {
-                chinese = zh
+        if learningChinese {
+            // Headword should be the Chinese side.
+            if termIsChinese {
+                chinese = term
+                definition = meaning
+            } else if meaningIsChinese {
+                chinese = meaning
+                definition = term
             } else {
-                chinese = english  // last resort: keep the word rather than drop it
+                // Neither side is Chinese — translate the (English) term.
+                let english = term.isEmpty ? meaning : term
+                definition = english
+                if let zh = try? await WordTranslationService.shared.translateToChinese(english),
+                   zh.contains(where: { $0.isChineseCharacter }) {
+                    chinese = zh
+                } else {
+                    chinese = english  // last resort: keep the word rather than drop it
+                }
+            }
+        } else {
+            // Studying English: headword should be the English side.
+            if !termIsChinese, !term.isEmpty {
+                chinese = term
+                definition = meaning
+            } else if !meaningIsChinese, !meaning.isEmpty {
+                chinese = meaning
+                definition = term
+            } else {
+                // Both sides are Chinese — translate the term to English.
+                let zhTerm = term.isEmpty ? meaning : term
+                definition = zhTerm
+                if let en = try? await WordTranslationService.shared.translateToEnglish(zhTerm),
+                   !en.contains(where: { $0.isChineseCharacter }), !en.isEmpty {
+                    chinese = en
+                } else {
+                    chinese = zhTerm  // last resort: keep the word rather than drop it
+                }
             }
         }
 
@@ -622,7 +796,9 @@ struct WorkbookGradingView: View {
 private struct GradedQuestionCard: View {
     let question: GradedQuestion
     let isSaved: Bool
+    let isInBank: Bool
     let onSaveVocab: () -> Void
+    let onAddToBank: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -646,16 +822,16 @@ private struct GradedQuestionCard: View {
                 // Fallback read-aloud when the model gave no explicit full
                 // sentence (the dedicated row below carries its own button).
                 if question.fullSentence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                   !question.spokenEnglish.isEmpty {
+                   !question.spokenSentence.isEmpty {
                     Button {
-                        SpeechService.speakEnglish(question.spokenEnglish)
+                        SpeechService.speakAuto(question.spokenSentence)
                     } label: {
                         Image(systemName: "speaker.wave.2.fill")
                             .font(.body)
                     }
                     .buttonStyle(.borderless)
                     .accessibilityLabel(Text("Read sentence aloud"))
-                    .help("Read the full English sentence aloud")
+                    .help("Read the full sentence aloud")
                 }
             }
 
@@ -699,6 +875,22 @@ private struct GradedQuestionCard: View {
                     .disabled(isSaved)
                 }
             }
+
+            // Add this single question to the review bank.
+            HStack {
+                Spacer()
+                Button {
+                    onAddToBank()
+                } label: {
+                    Label(isInBank ? "已在题库 · In Bank" : "加入题库 · Add to Bank",
+                          systemImage: isInBank ? "tray.full.fill" : "tray.and.arrow.down")
+                        .font(.caption)
+                        .fitSingleLine()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(isInBank)
+            }
         }
         .padding()
         .background(
@@ -725,7 +917,8 @@ private struct GradedQuestionCard: View {
         }
     }
 
-    /// The complete English sentence with an inline read-aloud button.
+    /// The complete sentence (in the learning language) with an inline
+    /// read-aloud button using the voice matching the sentence's language.
     private func fullSentenceRow(_ sentence: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text("Full sentence")
@@ -738,7 +931,7 @@ private struct GradedQuestionCard: View {
                 .foregroundStyle(.primary)
             Spacer(minLength: 4)
             Button {
-                SpeechService.speakEnglish(sentence)
+                SpeechService.speakAuto(sentence)
             } label: {
                 Image(systemName: "speaker.wave.2")
             }

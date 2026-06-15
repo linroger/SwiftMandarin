@@ -272,13 +272,9 @@ struct TranslatedScreenshotOverlayView: View {
     }
     
     private func speakText() {
-        // Use the app's speech service
-        let text = store.fullTranslatedText
-        if store.targetLanguage == .english {
-            SpeechService.speakEnglish(text)
-        } else {
-            SpeechService.speak(text)
-        }
+        // Voice follows the translated text's actual language (the target
+        // language can be either, depending on the user's native language).
+        SpeechService.speakAuto(store.fullTranslatedText)
     }
 }
 

@@ -58,7 +58,13 @@ private struct LearningStatsSummary {
         streak = activityStore.currentStreak
     }
 
+    /// Localized line-per-stat summary (follows the in-app language toggle).
     var formatted: String {
-        "Words learned: \(wordsLearned)\nReviews: \(reviewsCompleted)\nTranslations: \(translationsMade)\nCurrent streak: \(streak)"
+        [
+            String(localized: "Words learned: \(wordsLearned)"),
+            String(localized: "Reviews: \(reviewsCompleted)"),
+            String(localized: "Translations: \(translationsMade)"),
+            String(localized: "Current streak: \(streak)"),
+        ].joined(separator: "\n")
     }
 }

@@ -239,13 +239,13 @@ struct HistoryTabView: View {
 
 struct HistoryDragPreview: View {
     let entry: TranslationHistoryEntry
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(entry.source)
+            Text(entry.learningLanguageText)
                 .font(.caption)
                 .lineLimit(1)
-            Text(entry.target)
+            Text(entry.nativeLanguageText)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -296,19 +296,37 @@ struct HistoryItemRow: View {
                     .foregroundStyle(.tertiary)
             }
             
-            // Source text
-            Text(entry.source)
+            // Learning-language side first and primary
+            Text(entry.learningLanguageText)
                 .font(.subheadline)
                 .lineLimit(2)
                 .foregroundStyle(.primary)
-            
-            // Target text
-            Text(entry.target)
+
+            // Native-language side second, secondary
+            Text(entry.nativeLanguageText)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
         }
         .padding(.vertical, 6)
+    }
+}
+
+// MARK: - Interface-language-aware sides
+
+private extension TranslationHistoryEntry {
+    /// The side in the language the user is learning (shown first, primary).
+    /// `chineseText`/`englishText` come from the model, derived from the
+    /// entry's recorded direction.
+    @MainActor
+    var learningLanguageText: String {
+        LocalizationManager.shared.learningIsChinese ? chineseText : englishText
+    }
+
+    /// The side in the user's native language (shown second, secondary).
+    @MainActor
+    var nativeLanguageText: String {
+        LocalizationManager.shared.learningIsChinese ? englishText : chineseText
     }
 }
 

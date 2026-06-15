@@ -34,12 +34,20 @@ struct GetRandomPhraseIntent: AppIntent {
     func perform() async throws -> some IntentResult & ReturnsValue<PhraseEntity> {
         let phrase = pickPhrase()
 
+        // Speak/copy the side in the language the user is LEARNING (the
+        // opposite of the interface language).
+        let learningEnglish = LocalizationManager.shared.nativeIsChinese
+
         if speakPhrase {
-            SpeechService.speakChinese(phrase.chinese)
+            if learningEnglish {
+                SpeechService.speakEnglish(phrase.english)
+            } else {
+                SpeechService.speakChinese(phrase.chinese)
+            }
         }
 
         if copyToClipboard {
-            ClipboardService.copy(phrase.chinese)
+            ClipboardService.copy(learningEnglish ? phrase.english : phrase.chinese)
         }
 
         if saveToVocabulary {

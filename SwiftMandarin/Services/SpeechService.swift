@@ -26,9 +26,21 @@ enum SpeechService {
     static func speakChinese(_ text: String) {
         speak(text, languageCode: "zh-CN")
     }
-    
+
     static func speakEnglish(_ text: String) {
         speak(text, languageCode: "en-US")
+    }
+
+    /// Speak with the voice matching the text's content (CJK → Mandarin,
+    /// otherwise English). Headword fields can hold either language depending
+    /// on the learning direction, so callers that show direction-aware text
+    /// should use this instead of hardcoding a voice.
+    static func speakAuto(_ text: String) {
+        if text.containsCJK {
+            speakChinese(text)
+        } else {
+            speakEnglish(text)
+        }
     }
     
     static func stop() {

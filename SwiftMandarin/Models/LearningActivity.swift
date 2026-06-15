@@ -22,13 +22,16 @@ struct DailyActivity: Codable, Identifiable {
     
     /// Number of translations made
     var translationsMade: Int
-    
+
+    /// Number of workbook questions graded this day (Photo-tab grader).
+    var questionsGraded: Int
+
     /// Words learned broken down by part of speech
     var wordsByPartOfSpeech: [String: Int]
-    
+
     /// Computed total activity score for heatmap intensity
     var activityScore: Int {
-        wordsLearned * 3 + reviewsCompleted + translationsMade
+        wordsLearned * 3 + reviewsCompleted + translationsMade + questionsGraded
     }
     
     /// The actual date represented by this activity
@@ -49,20 +52,39 @@ struct DailyActivity: Codable, Identifiable {
         return formatter
     }()
 
-    init(dateKey: String, wordsLearned: Int = 0, reviewsCompleted: Int = 0, translationsMade: Int = 0, wordsByPartOfSpeech: [String: Int] = [:]) {
+    init(dateKey: String, wordsLearned: Int = 0, reviewsCompleted: Int = 0, translationsMade: Int = 0, questionsGraded: Int = 0, wordsByPartOfSpeech: [String: Int] = [:]) {
         self.dateKey = dateKey
         self.wordsLearned = wordsLearned
         self.reviewsCompleted = reviewsCompleted
         self.translationsMade = translationsMade
+        self.questionsGraded = questionsGraded
         self.wordsByPartOfSpeech = wordsByPartOfSpeech
     }
 
-    init(date: Date, wordsLearned: Int = 0, reviewsCompleted: Int = 0, translationsMade: Int = 0, wordsByPartOfSpeech: [String: Int] = [:]) {
+    init(date: Date, wordsLearned: Int = 0, reviewsCompleted: Int = 0, translationsMade: Int = 0, questionsGraded: Int = 0, wordsByPartOfSpeech: [String: Int] = [:]) {
         self.dateKey = DailyActivity.keyFormatter.string(from: date)
         self.wordsLearned = wordsLearned
         self.reviewsCompleted = reviewsCompleted
         self.translationsMade = translationsMade
+        self.questionsGraded = questionsGraded
         self.wordsByPartOfSpeech = wordsByPartOfSpeech
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case dateKey, wordsLearned, reviewsCompleted, translationsMade, questionsGraded, wordsByPartOfSpeech
+    }
+
+    // Tolerant decode: `questionsGraded` was added later, so older saved
+    // payloads omit it. Defaulting every field (rather than letting a missing
+    // key throw) keeps existing heatmap/streak data from being discarded.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        dateKey = (try? c.decode(String.self, forKey: .dateKey)) ?? DailyActivity.keyFormatter.string(from: Date())
+        wordsLearned = (try? c.decode(Int.self, forKey: .wordsLearned)) ?? 0
+        reviewsCompleted = (try? c.decode(Int.self, forKey: .reviewsCompleted)) ?? 0
+        translationsMade = (try? c.decode(Int.self, forKey: .translationsMade)) ?? 0
+        questionsGraded = (try? c.decode(Int.self, forKey: .questionsGraded)) ?? 0
+        wordsByPartOfSpeech = (try? c.decode([String: Int].self, forKey: .wordsByPartOfSpeech)) ?? [:]
     }
 }
 
@@ -85,7 +107,22 @@ enum PartOfSpeechCategory: String, CaseIterable, Codable {
         let lower = rawPOS.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
         if lower.isEmpty { return .other }
-        
+
+        // Chinese POS labels — AI explanations are written in Mandarin when
+        // the interface language is 中文, so saved terms carry these values.
+        // (形容词/副词 are checked before 名词/动词 so compounds match first;
+        // 助动词 intentionally falls through to the 动词 check.)
+        if lower.contains("形容词") || lower.contains("形容詞") { return .adjective }
+        if lower.contains("副词") || lower.contains("副詞") { return .adverb }
+        if lower.contains("代词") || lower.contains("代詞") { return .pronoun }
+        if lower.contains("介词") || lower.contains("介詞") { return .preposition }
+        if lower.contains("连词") || lower.contains("連詞") { return .conjunction }
+        if lower.contains("叹词") || lower.contains("嘆詞") || lower.contains("感叹词") { return .interjection }
+        if lower.contains("量词") || lower.contains("量詞") { return .classifier }
+        if lower.contains("助词") || lower.contains("助詞") { return .particle }
+        if lower.contains("名词") || lower.contains("名詞") { return .noun }
+        if lower.contains("动词") || lower.contains("動詞") { return .verb }
+
         // Match common patterns
         if lower.contains("noun") { return .noun }
         if lower.contains("verb") { return .verb }
@@ -150,6 +187,11 @@ final class LearningActivityStore {
     var totalTranslationsMade: Int {
         activities.values.reduce(0) { $0 + $1.translationsMade }
     }
+
+    /// Total workbook questions graded all time
+    var totalQuestionsGraded: Int {
+        activities.values.reduce(0) { $0 + $1.questionsGraded }
+    }
     
     private init() {
         loadActivities()
@@ -184,6 +226,16 @@ final class LearningActivityStore {
     func recordTranslationMade() {
         var activity = todayActivity()
         activity.translationsMade += 1
+        activities[activity.dateKey] = activity
+        updateLongestStreak()
+        saveActivities()
+    }
+
+    /// Record that workbook questions were graded today (Photo-tab grader).
+    func recordQuestionsGraded(_ count: Int = 1) {
+        guard count > 0 else { return }
+        var activity = todayActivity()
+        activity.questionsGraded += count
         activities[activity.dateKey] = activity
         updateLongestStreak()
         saveActivities()
