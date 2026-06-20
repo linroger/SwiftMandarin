@@ -18,9 +18,49 @@ struct AIWordExplanationView: View {
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
     @State private var expandedSections: Set<String> = ["definition", "examples"]
-    
+    /// True when the currently shown explanation came from the persistent cache
+    /// rather than a fresh generation, so the UI can label it.
+    @State private var servedFromCache: Bool = false
+    /// Identity (word + direction) the currently shown explanation belongs to.
+    /// Lets us drop a stale explanation if the view instance is reused for a
+    /// different word (e.g. `sheet(item:)` reuse) or the interface language
+    /// flips while open.
+    @State private var shownKey: String?
+    /// Provider that generated the currently shown explanation. For a cached
+    /// result this is the provider recorded at generation time (which may differ
+    /// from the current selection), so the badge stays accurate.
+    @State private var shownProviderName: String?
+
     private let aiService = AIWordExplanationService.shared
     private let aiSettings = AIModelSettings.shared
+    private let cache = WordExplanationCacheStore.shared
+
+    /// Direction token for the current word + interface language, used as the
+    /// per-direction cache key. Recomputed if the language changes while open.
+    private var directionToken: String {
+        ExplanationDirection.current(forWord: word).cacheToken
+    }
+
+    /// Identity of what should be shown right now: the word plus its direction.
+    /// Drives `.task(id:)` so the view reconciles when reused for another word.
+    private var currentKey: String { "\(word)\u{1}\(directionToken)" }
+
+    /// Provider label for the header: the generating provider for a cached
+    /// result, otherwise the current selection.
+    private var displayedProviderName: String {
+        servedFromCache ? (shownProviderName ?? currentProviderName) : currentProviderName
+    }
+
+    /// Provider whose icon/name the header shows. For a cached result this is
+    /// resolved from the recorded provider name (display names are unique), so
+    /// the icon matches the label even after the user switches providers.
+    private var displayedProvider: AIProvider {
+        if servedFromCache, let name = shownProviderName,
+           let match = AIProvider.allCases.first(where: { $0.displayName == name }) {
+            return match
+        }
+        return aiSettings.effectiveProvider
+    }
     
     /// Check if any AI provider is available
     private var isAnyProviderAvailable: Bool {
@@ -45,6 +85,12 @@ struct AIWordExplanationView: View {
             } else {
                 generateButton
             }
+        }
+        // Serve a previously generated explanation instantly, without another
+        // AI round-trip. Re-runs if the word OR direction changes (view reuse /
+        // interface-language flip). Never overrides a fresh in-memory result.
+        .task(id: currentKey) {
+            loadCachedExplanationIfAvailable()
         }
     }
     
@@ -152,21 +198,31 @@ struct AIWordExplanationView: View {
         VStack(alignment: .leading, spacing: 0) {
             // AI badge header
             HStack {
-                ProviderIcon(provider: aiSettings.effectiveProvider, size: 16)
+                ProviderIcon(provider: displayedProvider, size: 16)
                     .foregroundStyle(.blue)
-                Text(currentProviderName)
+                Text(displayedProviderName)
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundStyle(.blue)
+                if servedFromCache {
+                    Label("Saved", systemImage: "internaldrive")
+                        .labelStyle(.titleAndIcon)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .help("Loaded from a previously generated explanation. Tap refresh to regenerate.")
+                }
                 Spacer()
+                // Re-run the analysis with the currently selected AI model,
+                // replacing the saved result. Always bypasses the cache.
                 Button {
                     Task { await generateExplanation() }
                 } label: {
-                    Image(systemName: "arrow.clockwise")
+                    Label("Regenerate", systemImage: "arrow.clockwise")
                         .font(.caption)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Re-run this analysis with \(currentProviderName)")
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
@@ -468,21 +524,57 @@ struct AIWordExplanationView: View {
     
     // MARK: - Actions
     
+    /// Reconcile the view with the current direction: if a previously shown
+    /// explanation belongs to a now-stale direction (interface language flipped),
+    /// drop it; then serve this direction's cached explanation if one exists and
+    /// nothing fresh is already shown. Safe to call repeatedly.
+    private func loadCachedExplanationIfAvailable() {
+        // Drop a previously shown explanation belonging to a different word or
+        // direction (view reused for another term, or interface language flipped).
+        if let shown = shownKey, shown != currentKey {
+            explanation = nil
+            errorMessage = nil
+            servedFromCache = false
+            shownProviderName = nil
+            shownKey = nil
+        }
+        guard explanation == nil, !isLoading else { return }
+        guard let cached = cache.explanation(forWord: word, directionToken: directionToken) else { return }
+        explanation = cached.result
+        errorMessage = nil
+        servedFromCache = true
+        shownProviderName = cached.providerName.isEmpty ? nil : cached.providerName
+        shownKey = currentKey
+    }
+
+    /// Generate a fresh explanation (always bypasses the cache — this is also
+    /// the "regenerate" path) and persist the result for instant reuse later.
     private func generateExplanation() async {
         isLoading = true
         errorMessage = nil
-        
+        servedFromCache = false
+
         do {
             // Use the unified provider method that routes to Apple Intelligence or Ollama
-            explanation = try await aiService.generateExplanationWithProvider(
+            let result = try await aiService.generateExplanationWithProvider(
                 for: word,
                 pinyin: pinyin,
                 context: context
             )
+            explanation = result
+            shownKey = currentKey
+            shownProviderName = nil  // fresh result → header shows the current provider
+            cache.store(
+                word: word,
+                pinyin: pinyin,
+                directionToken: directionToken,
+                providerName: aiSettings.effectiveProvider.displayName,
+                result: result
+            )
         } catch {
             errorMessage = error.localizedDescription
         }
-        
+
         isLoading = false
     }
 }

@@ -1127,11 +1127,18 @@ struct ExportSheet: View {
     let terms: [SavedTerm]
     @Environment(\.dismiss) private var dismiss
     @State private var exportFormat: VocabularyExportFormat = .json
+    @State private var includeAIAnalysis: Bool = true
     @State private var showExportSuccess: Bool = false
-    @State private var exportSuccessMessage: String = "Exported Successfully"
-    
+    @State private var exportSuccessMessage: String = String(localized: "Exported Successfully")
+
+    /// How many of the exported words have a saved AI analysis to bundle.
+    private var aiAnalysisCount: Int {
+        let cache = WordExplanationCacheStore.shared
+        return terms.filter { !cache.explanations(forWords: $0.aiCacheCandidateWords).isEmpty }.count
+    }
+
     private var exportPreview: String {
-        guard let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat),
+        guard let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat, includeAIAnalysis: includeAIAnalysis),
               let content = String(data: data, encoding: .utf8) else {
             return ""
         }
@@ -1193,7 +1200,18 @@ struct ExportSheet: View {
                 } header: {
                     Text("Format")
                 }
-                
+
+                // AI analysis bundling
+                Section {
+                    Toggle("Include AI Analysis", isOn: $includeAIAnalysis)
+                } footer: {
+                    if aiAnalysisCount > 0 {
+                        Text("Bundles saved AI analyses (\(aiAnalysisCount) of \(terms.count)) so they restore on import.")
+                    } else {
+                        Text("No saved AI analyses yet. Run Batch AI Analysis or open a word's analysis first.")
+                    }
+                }
+
                 // Preview Section
                 Section {
                     ScrollView {
@@ -1226,8 +1244,8 @@ struct ExportSheet: View {
                         title: "Save to File...",
                         subtitle: "Choose location and filename"
                     ) {
-                        VocabularyImportExportService.shared.exportToFile(terms: terms, format: exportFormat)
-                        exportSuccessMessage = "Saved to File"
+                        VocabularyImportExportService.shared.exportToFile(terms: terms, format: exportFormat, includeAIAnalysis: includeAIAnalysis)
+                        exportSuccessMessage = String(localized: "Saved to File")
                         showExportSuccess = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                             dismiss()
@@ -1241,18 +1259,18 @@ struct ExportSheet: View {
                         title: "Copy to Clipboard",
                         subtitle: "Paste anywhere you need"
                     ) {
-                        if let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat),
+                        if let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat, includeAIAnalysis: includeAIAnalysis),
                            let content = String(data: data, encoding: .utf8) {
                             ClipboardService.copy(content)
                         }
-                        exportSuccessMessage = "Copied to Clipboard"
+                        exportSuccessMessage = String(localized: "Copied to Clipboard")
                         showExportSuccess = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                             dismiss()
                         }
                     }
                     
-                    if let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat),
+                    if let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat, includeAIAnalysis: includeAIAnalysis),
                        let content = String(data: data, encoding: .utf8) {
                         ShareLink(item: content) {
                             HStack(spacing: 12) {
@@ -1343,8 +1361,8 @@ private struct FormatCard: View {
                 Text(format.rawValue)
                     .font(.headline)
                     .foregroundStyle(isSelected ? .white : .primary)
-                
-                Text(formatDescription)
+
+                Text(LocalizedStringKey(formatDescription))
                     .font(.caption2)
                     .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
                     .multilineTextAlignment(.center)
@@ -1370,8 +1388,8 @@ private struct FormatCard: View {
 private struct ExportActionRow: View {
     let icon: String
     let iconColor: Color
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
     let action: () -> Void
     
     var body: some View {

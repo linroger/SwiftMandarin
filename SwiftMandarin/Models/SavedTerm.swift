@@ -86,6 +86,23 @@ extension SavedTerm {
     var showsPinyin: Bool {
         LocalizationManager.shared.learningIsChinese && !chineseSide.isEmpty && !pinyin.isEmpty
     }
+
+    /// Headword forms an AI explanation might be cached under. The analyzed word
+    /// is `headlineText`, which is either side depending on the learning
+    /// direction at generation time, so export gathers explanations matching any
+    /// of these (deduplicated, non-empty). Non-isolated so it is usable off the
+    /// main actor (it reads only content-derived sides, not the interface
+    /// language).
+    var aiCacheCandidateWords: [String] {
+        var seen = Set<String>()
+        var out: [String] = []
+        for candidate in [chinese, chineseSide, englishSide] {
+            let trimmed = candidate.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, seen.insert(trimmed).inserted else { continue }
+            out.append(trimmed)
+        }
+        return out
+    }
 }
 
 // MARK: - Saved Terms Store
@@ -145,19 +162,18 @@ final class SavedTermsStore {
     }
     
     func remove(at offsets: IndexSet) {
-        terms.remove(atOffsets: offsets)
-        updateSortOrders()
+        var updated = terms
+        updated.remove(atOffsets: offsets)
+        terms = reindexed(updated)
     }
-    
+
     func remove(_ term: SavedTerm) {
-        terms.removeAll { $0.id == term.id }
-        updateSortOrders()
+        terms = reindexed(terms.filter { $0.id != term.id })
     }
 
     func remove(chinese: String) {
         let key = Self.normalizedKey(chinese)
-        terms.removeAll { Self.normalizedKey($0.chinese) == key }
-        updateSortOrders()
+        terms = reindexed(terms.filter { Self.normalizedKey($0.chinese) != key })
     }
 
     func term(withID id: UUID) -> SavedTerm? {
@@ -178,8 +194,9 @@ final class SavedTermsStore {
     }
     
     func move(from source: Int, to destination: Int) {
-        terms.move(fromOffsets: IndexSet(integer: source), toOffset: destination)
-        updateSortOrders()
+        var updated = terms
+        updated.move(fromOffsets: IndexSet(integer: source), toOffset: destination)
+        terms = reindexed(updated)
     }
     
     func contains(chinese: String) -> Bool {
@@ -210,10 +227,18 @@ final class SavedTermsStore {
     
     // MARK: - Private Methods
     
-    private func updateSortOrders() {
-        for (index, _) in terms.enumerated() {
-            terms[index].sortOrder = index
+    /// Return a copy of `terms` with `sortOrder` renumbered to match array
+    /// position. Callers assign the result to `terms` in a single statement so
+    /// the `didSet` persistence hook fires exactly once. Renumbering in place
+    /// (`terms[i].sortOrder = i` in a loop) instead triggers `save()` for every
+    /// row, turning one delete into an O(n²) synchronous JSON-encode +
+    /// UserDefaults write storm that freezes the UI on large lists.
+    private func reindexed(_ source: [SavedTerm]) -> [SavedTerm] {
+        var result = source
+        for index in result.indices {
+            result[index].sortOrder = index
         }
+        return result
     }
     
     private func save() {

@@ -138,11 +138,15 @@ struct AIProviderConfigView: View {
         let provider = settings.provider
 
         Section {
+            // `.id(provider)` forces a fresh field per provider so the editor
+            // always shows (and writes to) the selected provider's own key,
+            // which is persisted separately in the Keychain.
             SecureField("API Key", text: apiKeyBinding(for: provider))
                 #if os(iOS)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 #endif
+                .id(provider)
             if let urlString = provider.apiKeyURL, let url = URL(string: urlString) {
                 Link(destination: url) {
                     Label("Get an API key", systemImage: "key")
@@ -152,19 +156,24 @@ struct AIProviderConfigView: View {
             Text("\(provider.displayName) API Key")
                 .fitSingleLine()
         } footer: {
-            Text("Stored securely in the Keychain. \(provider.description).")
+            Text("Stored securely in the Keychain, separately for each provider. \(provider.description).")
         }
 
         Section {
-            LabeledContent("Base URL") {
+            // Label above a full-width field so long URLs render on one line
+            // instead of wrapping inside a narrow trailing column.
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Base URL")
                 TextField(provider.defaultBaseURL, text: baseURLBinding(for: provider))
                     .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: 240)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     #if os(iOS)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     #endif
             }
+            .id(provider)
 
             Picker("API Format", selection: apiStyleBinding(for: provider)) {
                 Text("Default (\(defaultStyleLabel(provider)))").tag(String?.none)
@@ -174,7 +183,7 @@ struct AIProviderConfigView: View {
         } header: {
             Text("Endpoint")
         } footer: {
-            Text("Leave as default unless using a proxy, self-hosted gateway, or an Anthropic-compatible endpoint (such as a Kimi/Moonshot coding plan — set Base URL to …/anthropic and API Format to Anthropic).")
+            Text("Leave as default unless using a proxy, self-hosted gateway, or an Anthropic-compatible endpoint (e.g. DeepSeek/GLM at …/anthropic, or a Kimi coding plan at …/coding — then set API Format to Anthropic).")
         }
 
         Section {

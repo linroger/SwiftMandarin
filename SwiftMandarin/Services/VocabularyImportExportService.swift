@@ -43,7 +43,9 @@ struct ImportResult {
     let imported: Int
     let skipped: Int
     let errors: [String]
-    
+    /// AI word-analyses restored into the explanation cache during this import.
+    var explanationsRestored: Int = 0
+
     var summary: String {
         var parts: [String] = []
         if imported > 0 {
@@ -52,11 +54,74 @@ struct ImportResult {
         if skipped > 0 {
             parts.append("\(skipped) duplicate\(skipped == 1 ? "" : "s") skipped")
         }
-        if errors.isEmpty {
-            return parts.joined(separator: ", ")
-        } else {
-            return parts.joined(separator: ", ") + ". Errors: \(errors.count)"
+        if explanationsRestored > 0 {
+            parts.append("\(explanationsRestored) AI analys\(explanationsRestored == 1 ? "is" : "es") restored")
         }
+        var summary = parts.joined(separator: ", ")
+        if summary.isEmpty { summary = "Nothing to import" }
+        if !errors.isEmpty {
+            summary += ". Errors: \(errors.count)"
+        }
+        return summary
+    }
+}
+
+// MARK: - Import Payload
+
+/// Parsed contents of an import file: the vocabulary terms plus any AI
+/// word-analyses bundled with them (empty for legacy files without AI data).
+struct ImportedVocabulary {
+    let terms: [SavedTerm]
+    let explanations: [CachedWordExplanation]
+}
+
+// MARK: - Export Envelope (schema v2 — carries AI analysis)
+
+/// Versioned JSON export that bundles each term with its cached AI analyses, so
+/// the analysis round-trips losslessly. Legacy exports (a bare `[SavedTerm]`
+/// array) remain importable; this richer object is tried first on import.
+private struct ExportEnvelope: Codable {
+    var schemaVersion: Int = 2
+    var exportedAt: Date = Date()
+    var terms: [ExportedTerm]
+}
+
+/// One term in the envelope: every `SavedTerm` field, plus the AI analyses
+/// cached for it (across learning directions).
+private struct ExportedTerm: Codable {
+    let id: UUID
+    let chinese: String
+    let pinyin: String
+    let definition: String
+    let partOfSpeech: String
+    let dateAdded: Date
+    let sortOrder: Int
+    let isMastered: Bool
+    var aiExplanations: [CachedWordExplanation]?
+
+    init(term: SavedTerm, explanations: [CachedWordExplanation]) {
+        self.id = term.id
+        self.chinese = term.chinese
+        self.pinyin = term.pinyin
+        self.definition = term.definition
+        self.partOfSpeech = term.partOfSpeech
+        self.dateAdded = term.dateAdded
+        self.sortOrder = term.sortOrder
+        self.isMastered = term.isMastered
+        self.aiExplanations = explanations.isEmpty ? nil : explanations
+    }
+
+    var savedTerm: SavedTerm {
+        SavedTerm(
+            id: id,
+            chinese: chinese,
+            pinyin: pinyin,
+            definition: definition,
+            partOfSpeech: partOfSpeech,
+            dateAdded: dateAdded,
+            sortOrder: sortOrder,
+            isMastered: isMastered
+        )
     }
 }
 
@@ -69,26 +134,66 @@ final class VocabularyImportExportService {
     private init() {}
     
     // MARK: - Export
-    
-    /// Generates export data in the specified format
-    func generateExportData(terms: [SavedTerm], format: VocabularyExportFormat) -> Data? {
+
+    /// Generates export data in the specified format.
+    /// - Parameter includeAIAnalysis: when true, each term's cached AI
+    ///   word-analyses are bundled in (JSON: a versioned envelope; CSV: extra
+    ///   columns including a lossless base64 payload). When false the legacy
+    ///   shape (bare `[SavedTerm]` JSON / 6-column CSV) is produced, keeping old
+    ///   importers happy.
+    func generateExportData(
+        terms: [SavedTerm],
+        format: VocabularyExportFormat,
+        includeAIAnalysis: Bool = false
+    ) -> Data? {
         switch format {
         case .json:
-            return generateJSONExport(terms: terms)
+            return generateJSONExport(terms: terms, includeAIAnalysis: includeAIAnalysis)
         case .csv:
-            return generateCSVExport(terms: terms)
+            return generateCSVExport(terms: terms, includeAIAnalysis: includeAIAnalysis)
         }
     }
-    
-    private func generateJSONExport(terms: [SavedTerm]) -> Data? {
+
+    /// Encoder/decoder used for the embedded AI payloads so dates round-trip
+    /// consistently with the rest of the export.
+    private static func aiEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        return encoder
+    }
+
+    private static func aiDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }
+
+    /// All AI analyses cached for a term, across learning directions.
+    private func explanations(for term: SavedTerm) -> [CachedWordExplanation] {
+        WordExplanationCacheStore.shared.explanations(forWords: term.aiCacheCandidateWords)
+    }
+
+    private func generateJSONExport(terms: [SavedTerm], includeAIAnalysis: Bool) -> Data? {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
-        return try? encoder.encode(terms)
+
+        guard includeAIAnalysis else {
+            // Legacy shape: a bare array of terms (back-compatible on import).
+            return try? encoder.encode(terms)
+        }
+
+        let envelope = ExportEnvelope(
+            terms: terms.map { ExportedTerm(term: $0, explanations: explanations(for: $0)) }
+        )
+        return try? encoder.encode(envelope)
     }
-    
-    private func generateCSVExport(terms: [SavedTerm]) -> Data? {
-        var csv = "Chinese,Pinyin,Definition,Part of Speech,Date Added,Mastered\n"
+
+    private func generateCSVExport(terms: [SavedTerm], includeAIAnalysis: Bool) -> Data? {
+        var csv = includeAIAnalysis
+            ? "Chinese,Pinyin,Definition,Part of Speech,Date Added,Mastered,AI Definition,AI Examples,AI Data\n"
+            : "Chinese,Pinyin,Definition,Part of Speech,Date Added,Mastered\n"
+
         for term in terms {
             let chinese = escapeCSV(term.chinese)
             let pinyin = escapeCSV(term.pinyin)
@@ -96,9 +201,39 @@ final class VocabularyImportExportService {
             let pos = escapeCSV(term.partOfSpeech)
             let date = ISO8601DateFormatter().string(from: term.dateAdded)
             let mastered = term.isMastered ? "true" : "false"
-            csv += "\(chinese),\(pinyin),\(definition),\(pos),\(date),\(mastered)\n"
+            var row = "\(chinese),\(pinyin),\(definition),\(pos),\(date),\(mastered)"
+
+            if includeAIAnalysis {
+                let analyses = explanations(for: term)
+                // Human-readable columns from the first analysis, plus a lossless
+                // base64 payload of all analyses for round-tripping on import.
+                let first = analyses.first?.result
+                let aiDef = escapeCSV(Self.singleLine(first?.definition ?? ""))
+                let aiExamples = escapeCSV(Self.singleLine(
+                    (first?.exampleSentences.prefix(2).map { $0.sentence }.joined(separator: " | ")) ?? ""
+                ))
+                let aiData: String
+                if !analyses.isEmpty, let encoded = try? Self.aiEncoder().encode(analyses) {
+                    aiData = encoded.base64EncodedString()
+                } else {
+                    aiData = ""
+                }
+                row += ",\(aiDef),\(aiExamples),\(escapeCSV(aiData))"
+            }
+
+            csv += row + "\n"
         }
         return csv.data(using: .utf8)
+    }
+
+    /// Collapse newlines/tabs to spaces so a value stays on one CSV line (the
+    /// importer splits on newlines before parsing quotes).
+    private static func singleLine(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\r\n", with: " ")
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+            .replacingOccurrences(of: "\t", with: " ")
     }
     
     private func escapeCSV(_ value: String) -> String {
@@ -111,8 +246,8 @@ final class VocabularyImportExportService {
     
     /// Export to file using system file dialog
     #if os(macOS)
-    func exportToFile(terms: [SavedTerm], format: VocabularyExportFormat) {
-        guard let data = generateExportData(terms: terms, format: format) else { return }
+    func exportToFile(terms: [SavedTerm], format: VocabularyExportFormat, includeAIAnalysis: Bool = false) {
+        guard let data = generateExportData(terms: terms, format: format, includeAIAnalysis: includeAIAnalysis) else { return }
         
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [.init(filenameExtension: format.fileExtension)!]
@@ -134,38 +269,51 @@ final class VocabularyImportExportService {
     
     // MARK: - Import
 
-    /// Parse import data and return terms, detecting format automatically
-    func parseImportData(_ data: Data) -> [SavedTerm]? {
-        // Try JSON first
-        if let terms = parseJSONImport(data) {
-            return terms
+    /// Parse import data, detecting format automatically. Returns the terms plus
+    /// any bundled AI analyses (empty for legacy files).
+    func parseImportData(_ data: Data) -> ImportedVocabulary? {
+        if let parsed = parseJSONImport(data) {
+            return parsed
         }
-        // Try CSV
-        if let terms = parseCSVImport(data) {
-            return terms
+        if let parsed = parseCSVImport(data) {
+            return parsed
         }
         return nil
     }
-    
-    private func parseJSONImport(_ data: Data) -> [SavedTerm]? {
+
+    private func parseJSONImport(_ data: Data) -> ImportedVocabulary? {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        return try? decoder.decode([SavedTerm].self, from: data)
+        // Prefer the v2 envelope (object with `terms`), which carries AI
+        // analysis; fall back to the legacy bare `[SavedTerm]` array.
+        if let envelope = try? decoder.decode(ExportEnvelope.self, from: data) {
+            return ImportedVocabulary(
+                terms: envelope.terms.map { $0.savedTerm },
+                explanations: envelope.terms.flatMap { $0.aiExplanations ?? [] }
+            )
+        }
+        if let terms = try? decoder.decode([SavedTerm].self, from: data) {
+            return ImportedVocabulary(terms: terms, explanations: [])
+        }
+        return nil
     }
-    
-    private func parseCSVImport(_ data: Data) -> [SavedTerm]? {
+
+    private func parseCSVImport(_ data: Data) -> ImportedVocabulary? {
         guard let content = String(data: data, encoding: .utf8) else { return nil }
-        
+
         var terms: [SavedTerm] = []
-        let lines = content.components(separatedBy: .newlines)
-        
+        var explanations: [CachedWordExplanation] = []
+        // Split into records respecting quoted fields, so a newline inside a
+        // quoted value (e.g. a multi-line definition) does not break the record.
+        let lines = Self.splitCSVRecords(content)
+
         // Skip header row
         for (index, line) in lines.enumerated() {
             guard index > 0, !line.isEmpty else { continue }
-            
+
             let columns = parseCSVLine(line)
             guard columns.count >= 3 else { continue }
-            
+
             let chinese = columns[0]
             let pinyin = columns.count > 1 ? columns[1] : ""
             let definition = columns.count > 2 ? columns[2] : ""
@@ -187,11 +335,59 @@ final class VocabularyImportExportService {
                 isMastered: isMastered
             )
             terms.append(term)
+
+            // Optional "AI Data" column (index 8): base64 of a compact JSON
+            // [CachedWordExplanation]. Columns 6/7 are human-readable only.
+            if columns.count > 8 {
+                let aiData = columns[8].trimmingCharacters(in: .whitespacesAndNewlines)
+                if !aiData.isEmpty,
+                   let decoded = Data(base64Encoded: aiData),
+                   let parsed = try? Self.aiDecoder().decode([CachedWordExplanation].self, from: decoded) {
+                    explanations.append(contentsOf: parsed)
+                }
+            }
         }
-        
-        return terms.isEmpty ? nil : terms
+
+        return terms.isEmpty ? nil : ImportedVocabulary(terms: terms, explanations: explanations)
     }
     
+    /// Split raw CSV text into records, treating newlines inside quoted fields
+    /// as part of the field (RFC 4180). This is done before per-record column
+    /// parsing so an exported value containing a newline (wrapped in quotes by
+    /// `escapeCSV`) round-trips instead of being split across two records.
+    static func splitCSVRecords(_ content: String) -> [String] {
+        var records: [String] = []
+        var current = ""
+        var inQuotes = false
+        let chars = Array(content)
+        var i = 0
+        while i < chars.count {
+            let c = chars[i]
+            if c == "\"" {
+                // Keep an escaped quote ("") intact for the column parser.
+                if inQuotes, i + 1 < chars.count, chars[i + 1] == "\"" {
+                    current.append("\"")
+                    current.append("\"")
+                    i += 2
+                    continue
+                }
+                inQuotes.toggle()
+                current.append(c)
+            } else if c.isNewline, !inQuotes {
+                // Record boundary outside quotes. `isNewline` matches \n, \r,
+                // and — crucially — the \r\n grapheme, which Swift treats as a
+                // SINGLE Character (so a literal \r/\n comparison would miss it).
+                records.append(current)
+                current = ""
+            } else {
+                current.append(c)
+            }
+            i += 1
+        }
+        if !current.isEmpty { records.append(current) }
+        return records
+    }
+
     private func parseCSVLine(_ line: String) -> [String] {
         var columns: [String] = []
         var current = ""
@@ -228,24 +424,37 @@ final class VocabularyImportExportService {
         return normalized == "true" || normalized == "1" || normalized == "yes" || normalized == "y"
     }
     
-    /// Import terms with duplicate detection
-    /// Returns ImportResult with count of imported, skipped, and any errors
-    func importTerms(_ newTerms: [SavedTerm], into store: SavedTermsStore) -> ImportResult {
-        var imported = 0
+    /// Import parsed vocabulary with duplicate detection, and restore any
+    /// bundled AI analyses into the explanation cache. Explanations are merged
+    /// even for duplicate (skipped) terms, since they enrich words already saved.
+    @discardableResult
+    func importVocabulary(_ imported: ImportedVocabulary, into store: SavedTermsStore) -> ImportResult {
+        var importedCount = 0
         var skipped = 0
-        let errors: [String] = []
-        
-        for term in newTerms {
+
+        for term in imported.terms {
             // Check for duplicates based on Chinese text
             if store.contains(chinese: term.chinese) {
                 skipped += 1
             } else {
                 store.add(term)
-                imported += 1
+                importedCount += 1
             }
         }
-        
-        return ImportResult(imported: imported, skipped: skipped, errors: errors)
+
+        var restored = 0
+        if !imported.explanations.isEmpty {
+            WordExplanationCacheStore.shared.merge(imported.explanations)
+            restored = imported.explanations.count
+        }
+
+        return ImportResult(imported: importedCount, skipped: skipped, errors: [], explanationsRestored: restored)
+    }
+
+    /// Back-compatible wrapper: import bare terms with no AI analysis.
+    @discardableResult
+    func importTerms(_ newTerms: [SavedTerm], into store: SavedTermsStore) -> ImportResult {
+        importVocabulary(ImportedVocabulary(terms: newTerms, explanations: []), into: store)
     }
 
     /// Import from a file URL (iOS/iPadOS/macOS). Handles security-scoped access when needed.
@@ -262,8 +471,8 @@ final class VocabularyImportExportService {
 
         do {
             let data = try Data(contentsOf: url)
-            if let terms = parseImportData(data) {
-                return importTerms(terms, into: store)
+            if let parsed = parseImportData(data) {
+                return importVocabulary(parsed, into: store)
             }
             return ImportResult(imported: 0, skipped: 0, errors: ["Could not parse file"])
         } catch {
@@ -287,8 +496,8 @@ final class VocabularyImportExportService {
             if response == .OK, let url = openPanel.url {
                 do {
                     let data = try Data(contentsOf: url)
-                    if let terms = self.parseImportData(data) {
-                        let result = self.importTerms(terms, into: store)
+                    if let parsed = self.parseImportData(data) {
+                        let result = self.importVocabulary(parsed, into: store)
                         completion(result)
                     } else {
                         completion(ImportResult(imported: 0, skipped: 0, errors: ["Could not parse file"]))

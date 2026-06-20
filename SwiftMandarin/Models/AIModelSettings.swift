@@ -120,8 +120,10 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     /// prompt and are parsed with tolerant extraction.
     var supportsJSONResponseFormat: Bool {
         switch self {
-        case .openAI, .deepseek, .kimi, .qwen: return true
-        case .anthropic, .doubao, .zhipu, .minimax, .appleIntelligence, .ollama: return false
+        case .openAI, .deepseek, .qwen: return true
+        // Kimi's coding-plan endpoint rejects the `response_format` field
+        // (returns 401), so JSON is requested via the prompt + tolerant parsing.
+        case .anthropic, .doubao, .zhipu, .minimax, .kimi, .appleIntelligence, .ollama: return false
         }
     }
 
@@ -135,18 +137,27 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     }
 
     /// Default base URL (without a trailing slash). Paths below are appended.
+    ///
+    /// Cloud providers default to their mainland-China (domestic) endpoints;
+    /// users outside China can override with the international host in Settings
+    /// (e.g. Qwen → dashscope-intl…, MiniMax → api.minimax.io, GLM → api.z.ai).
     var defaultBaseURL: String {
         switch self {
         case .openAI: return "https://api.openai.com/v1"
         case .anthropic: return "https://api.anthropic.com"
-        case .deepseek: return "https://api.deepseek.com"
+        case .deepseek: return "https://api.deepseek.com/v1"
         case .doubao: return "https://ark.cn-beijing.volces.com/api/v3"
-        // International (Singapore) endpoint — works without a workspace ID.
-        // China users can override with https://dashscope.aliyuncs.com/compatible-mode/v1
-        case .qwen: return "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-        case .kimi: return "https://api.moonshot.cn/v1"
+        // Mainland-China DashScope (百炼). International users override with
+        // https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+        case .qwen: return "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        // Kimi coding-plan endpoint (OpenAI-compatible). For the Anthropic
+        // format set the base to https://api.kimi.com/coding and API Format
+        // to Anthropic (path becomes …/coding/v1/messages).
+        case .kimi: return "https://api.kimi.com/coding/v1"
         case .zhipu: return "https://open.bigmodel.cn/api/paas/v4"
-        case .minimax: return "https://api.minimax.chat/v1"
+        // MiniMax mainland-China host. International users override with
+        // https://api.minimax.io/v1
+        case .minimax: return "https://api.minimaxi.com/v1"
         case .appleIntelligence, .ollama: return ""
         }
     }
@@ -155,18 +166,23 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     var chatPath: String {
         switch self {
         case .anthropic: return "/v1/messages"
-        case .minimax: return "/text/chatcompletion_v2"
         default: return "/chat/completions"
         }
     }
 
     /// Model-list path appended to the base URL, or `nil` when the provider
     /// has no standard listing endpoint (defaults are used instead).
+    /// Every cloud provider here exposes an OpenAI-style `GET /models` (or the
+    /// Anthropic `/v1/models`), so model lists are pulled live rather than
+    /// relying on the curated `defaultModels` fallbacks.
     var modelsPath: String? {
         switch self {
         case .anthropic: return "/v1/models"
-        case .openAI, .deepseek, .qwen, .kimi, .doubao: return "/models"
-        case .zhipu, .minimax: return nil
+        case .openAI, .deepseek, .qwen, .doubao, .zhipu, .minimax: return "/models"
+        // The Kimi coding-plan proxy exposes only the fixed `kimi-for-coding`
+        // model and has no `GET /models` route — listing it returns 401, so we
+        // skip live listing and use the curated default instead.
+        case .kimi: return nil
         case .appleIntelligence, .ollama: return nil
         }
     }
@@ -190,11 +206,14 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .qwen:
             return ["qwen-plus", "qwen-max", "qwen-turbo", "qwen-vl-max", "qwen-vl-plus", "qwen-max-latest"]
         case .kimi:
-            return ["kimi-latest", "kimi-k2-0711-preview", "kimi-k2-turbo-preview", "moonshot-v1-128k", "moonshot-v1-auto", "moonshot-v1-128k-vision-preview"]
+            // The coding-plan endpoint (api.kimi.com/coding/v1) serves a single
+            // unified model id. Users on the Moonshot Open Platform can override
+            // the Base URL and type a kimi-k2.x / kimi-latest model id instead.
+            return ["kimi-for-coding"]
         case .zhipu:
             return ["glm-4.6", "glm-4.5", "glm-4-plus", "glm-4.5v", "glm-4v-plus", "glm-4-flash"]
         case .minimax:
-            return ["MiniMax-Text-01", "MiniMax-M1", "abab6.5s-chat"]
+            return ["MiniMax-M2.5", "MiniMax-M2.7", "MiniMax-M3", "MiniMax-Text-01"]
         case .appleIntelligence, .ollama:
             return []
         }
@@ -210,7 +229,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .qwen: return "qwen-vl-max"
         case .doubao: return "doubao-1-5-vision-pro-32k-250115"
         case .zhipu: return "glm-4.5v"
-        case .kimi: return "moonshot-v1-128k-vision-preview"
+        case .kimi: return "kimi-for-coding"
         case .deepseek, .minimax, .appleIntelligence, .ollama: return nil
         }
     }
@@ -226,7 +245,9 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .deepseek: return "https://platform.deepseek.com/api_keys"
         case .doubao: return "https://console.volcengine.com/ark"
         case .qwen: return "https://dashscope.console.aliyun.com/apiKey"
-        case .kimi: return "https://platform.moonshot.cn/console/api-keys"
+        // Kimi *Code* console — the coding-plan key. NOT the Moonshot Open
+        // Platform (platform.kimi.ai); their keys are not interchangeable.
+        case .kimi: return "https://www.kimi.com/code/console"
         case .zhipu: return "https://open.bigmodel.cn/usercenter/apikeys"
         case .minimax: return "https://platform.minimaxi.com/user-center/basic-information/interface-key"
         case .appleIntelligence, .ollama: return nil
@@ -255,7 +276,13 @@ final class AIModelSettings {
         static let cloudBaseURLs = "cloud_base_overrides"   // [providerRaw: baseURL]
         static let cloudAPIStyles = "cloud_api_style_overrides" // [providerRaw: "openai"|"anthropic"]
         static let aiPhotoCleanup = "ai_photo_cleanup_enabled"
+        static let batchConcurrency = "ai_batch_concurrency"
     }
+
+    /// Allowed range for batch-analysis parallelism. Capped low enough that a
+    /// cloud provider's rate limits aren't trivially tripped, but high enough
+    /// to meaningfully speed up large lists.
+    static let batchConcurrencyRange = 1...10
 
     // MARK: - Properties
 
@@ -293,6 +320,21 @@ final class AIModelSettings {
         didSet { UserDefaults.standard.set(aiPhotoCleanupEnabled, forKey: Keys.aiPhotoCleanup) }
     }
 
+    /// How many words the batch AI word-analysis processes in parallel. Clamped
+    /// to `batchConcurrencyRange` on write so a corrupted/out-of-range value can
+    /// never reach the task group.
+    var batchConcurrency: Int {
+        didSet {
+            let clamped = min(max(batchConcurrency, Self.batchConcurrencyRange.lowerBound),
+                              Self.batchConcurrencyRange.upperBound)
+            if clamped != batchConcurrency {
+                batchConcurrency = clamped
+                return  // the re-assignment re-enters didSet and persists the clamped value
+            }
+            UserDefaults.standard.set(batchConcurrency, forKey: Keys.batchConcurrency)
+        }
+    }
+
     /// Per-provider selected cloud model IDs.
     private(set) var cloudModelSelections: [String: String] {
         didSet { persistDictionary(cloudModelSelections, key: Keys.cloudModels) }
@@ -325,6 +367,14 @@ final class AIModelSettings {
         self.enableThinking = UserDefaults.standard.object(forKey: Keys.enableThinking) as? Bool ?? true
         self.contextLength = UserDefaults.standard.object(forKey: Keys.contextLength) as? Int ?? 128000
         self.aiPhotoCleanupEnabled = UserDefaults.standard.object(forKey: Keys.aiPhotoCleanup) as? Bool ?? false
+
+        // Default 3 — a safe parallelism that speeds up large lists without
+        // tripping typical cloud rate limits. Clamp the persisted value in case
+        // it was written by a future build with a wider range. (didSet does not
+        // fire for this in-init assignment, so clamp here explicitly.)
+        let savedConcurrency = UserDefaults.standard.object(forKey: Keys.batchConcurrency) as? Int ?? 3
+        self.batchConcurrency = min(max(savedConcurrency, AIModelSettings.batchConcurrencyRange.lowerBound),
+                                    AIModelSettings.batchConcurrencyRange.upperBound)
 
         self.cloudModelSelections = AIModelSettings.loadDictionary(key: Keys.cloudModels)
         self.cloudBaseURLOverrides = AIModelSettings.loadDictionary(key: Keys.cloudBaseURLs)
@@ -402,7 +452,7 @@ final class AIModelSettings {
     func effectiveChatPath(for provider: AIProvider) -> String {
         switch effectiveAPIStyle(for: provider) {
         case .anthropic: return "/v1/messages"
-        case .openAICompatible: return provider == .minimax ? "/text/chatcompletion_v2" : "/chat/completions"
+        case .openAICompatible: return "/chat/completions"
         }
     }
 

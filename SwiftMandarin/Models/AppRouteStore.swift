@@ -26,7 +26,13 @@ final class AppRouteStore {
     }
 
     func triggerReview(mode: String, source: String) {
+        // On iOS the Learn screen lives inside the More hub, which pushes it
+        // when this action arrives; on macOS Learn is its own sidebar item.
+        #if os(iOS)
+        selectedTab = .more
+        #else
         selectedTab = .learn
+        #endif
         pendingAction = AppPendingAction(kind: .startReview(mode: mode, source: source))
     }
 

@@ -13,16 +13,28 @@
 import SwiftUI
 import Ollama
 
-/// More tab — a streamlined settings & about hub.
+/// Destinations the More hub pushes onto its own navigation stack. On iOS these
+/// are the former Learn/Phrases/Stats tabs, consolidated here to keep the tab
+/// bar at five items.
+enum MoreRoute: Hashable {
+    case learn
+    case phrases
+    case stats
+}
+
+/// More tab — a streamlined learning, settings & about hub.
 struct MoreView: View {
+    @Environment(AppRouteStore.self) private var routeStore
     @State private var localization = LocalizationManager.shared
     @State private var prefs = AppPreferences.shared
     @State private var aiSettings = AIModelSettings.shared
+    @State private var path: [MoreRoute] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 headerSection
+                learningSection
                 quickSetupSection
                 settingsSection
                 aboutSection
@@ -31,10 +43,41 @@ struct MoreView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             #endif
+            .navigationDestination(for: MoreRoute.self) { route in
+                switch route {
+                case .learn: LearnView()
+                case .phrases: PhrasesView()
+                case .stats: StatsView()
+                }
+            }
+        }
+        // A Siri "start review" intent routes to this tab on iOS; push the Learn
+        // screen so it can consume the pending action exactly as it did when it
+        // was a top-level tab.
+        .onChange(of: routeStore.pendingAction?.id) { _, _ in
+            if case .startReview = routeStore.pendingAction?.kind, path.last != .learn {
+                path.append(.learn)
+            }
         }
     }
 
     // MARK: - Sections
+
+    private var learningSection: some View {
+        Section {
+            NavigationLink(value: MoreRoute.learn) {
+                Label(AppTab.learn.titleKey, systemImage: AppTab.learn.icon)
+            }
+            NavigationLink(value: MoreRoute.phrases) {
+                Label(AppTab.phrases.titleKey, systemImage: AppTab.phrases.icon)
+            }
+            NavigationLink(value: MoreRoute.stats) {
+                Label(AppTab.stats.titleKey, systemImage: AppTab.stats.icon)
+            }
+        } header: {
+            Text("Learning Tools")
+        }
+    }
 
     private var headerSection: some View {
         Section {
@@ -92,6 +135,18 @@ struct MoreView: View {
                     Text(aiSettings.provider.displayName)
                         .foregroundStyle(.secondary)
                         .fitSingleLine(0.8)
+                }
+            }
+
+            NavigationLink {
+                BatchAIAnalysisView()
+            } label: {
+                HStack {
+                    Label("Batch AI Analysis", systemImage: "sparkles.rectangle.stack")
+                    Spacer()
+                    // Live progress, visible even from the hub root, so the user
+                    // knows a background run is still going after navigating back.
+                    BatchAIAnalysisStatusBadge()
                 }
             }
 
@@ -379,9 +434,12 @@ struct DataManagementView: View {
     @Environment(TranslationHistoryStore.self) private var historyStore
     @Environment(LearningProgressStore.self) private var learningStore
 
+    private let explanationCache = WordExplanationCacheStore.shared
+
     @State private var showingClearVocabularyAlert: Bool = false
     @State private var showingClearHistoryAlert: Bool = false
     @State private var showingResetProgressAlert: Bool = false
+    @State private var showingClearExplanationCacheAlert: Bool = false
 
     var body: some View {
         List {
@@ -404,6 +462,13 @@ struct DataManagementView: View {
                     Text("Learning Progress")
                     Spacer()
                     Text("\(learningStore.progress.count) cards")
+                        .foregroundStyle(.secondary)
+                }
+
+                HStack {
+                    Text("Cached AI Explanations")
+                    Spacer()
+                    Text("\(explanationCache.count)")
                         .foregroundStyle(.secondary)
                 }
             }
@@ -429,6 +494,13 @@ struct DataManagementView: View {
                     Text("Reset Learning Progress")
                 }
                 .disabled(learningStore.progress.isEmpty)
+
+                Button(role: .destructive) {
+                    showingClearExplanationCacheAlert = true
+                } label: {
+                    Text("Clear Cached AI Explanations")
+                }
+                .disabled(explanationCache.isEmpty)
             }
         }
         .navigationTitle("Manage Data")
@@ -458,6 +530,14 @@ struct DataManagementView: View {
             }
         } message: {
             Text("This will reset all learning progress. This action cannot be undone.")
+        }
+        .alert("Clear Explanation Cache", isPresented: $showingClearExplanationCacheAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Clear", role: .destructive) {
+                explanationCache.clear()
+            }
+        } message: {
+            Text("This will delete \(explanationCache.count) saved AI explanations. They will be regenerated the next time you open those words.")
         }
     }
 }
