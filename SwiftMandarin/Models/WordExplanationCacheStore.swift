@@ -78,7 +78,18 @@ final class WordExplanationCacheStore {
     static let shared = WordExplanationCacheStore()
 
     /// Most-recently-used first; trimmed from the tail when over capacity.
-    private(set) var entries: [CachedWordExplanation] = []
+    /// The `didSet` keeps `lookupIndex` in lockstep so membership tests never
+    /// rescan the array — critical because the batch UI calls `hasExplanation`
+    /// once per saved term on every render, which would otherwise be
+    /// O(terms × entries) and saturate the main thread during a batch run.
+    private(set) var entries: [CachedWordExplanation] = [] {
+        didSet { rebuildLookupIndex() }
+    }
+
+    /// O(1) membership set of `"<directionToken>\u{1}<normalizedWord>"` for the
+    /// current `entries`. Observed (not ignored) so the live "remaining" count
+    /// updates as analyses are stored.
+    private var lookupIndex: Set<String> = []
 
     private let saveKey = "wordExplanationCache"
     private let maxEntries = 400
@@ -92,6 +103,14 @@ final class WordExplanationCacheStore {
     var count: Int { entries.count }
     var isEmpty: Bool { entries.isEmpty }
 
+    private static func lookupKey(directionToken: String, word: String) -> String {
+        "\(directionToken)\u{1}\(normalizedKey(word))"
+    }
+
+    private func rebuildLookupIndex() {
+        lookupIndex = Set(entries.map { Self.lookupKey(directionToken: $0.directionToken, word: $0.word) })
+    }
+
     /// Return a cached explanation for `word` in the given direction, if one
     /// exists. Matching ignores invisible characters and surrounding
     /// whitespace, and is case-insensitive (English headwords).
@@ -103,8 +122,9 @@ final class WordExplanationCacheStore {
     }
 
     /// Whether an explanation is cached for `word` in the given direction.
+    /// O(1) via `lookupIndex` — this is the batch hot path.
     func hasExplanation(forWord word: String, directionToken: String) -> Bool {
-        explanation(forWord: word, directionToken: directionToken) != nil
+        lookupIndex.contains(Self.lookupKey(directionToken: directionToken, word: word))
     }
 
     /// Every cached explanation whose headword matches any of `words` (across

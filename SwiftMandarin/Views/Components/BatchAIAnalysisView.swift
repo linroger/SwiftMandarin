@@ -22,27 +22,29 @@ struct BatchAIAnalysisControls: View {
     @State private var settings = AIModelSettings.shared
 
     private var totalSaved: Int { savedTermsStore.terms.count }
-    private var remaining: Int { controller.remainingCount(from: savedTermsStore.terms) }
-    private var analyzed: Int { max(0, totalSaved - remaining) }
     private var providerAvailable: Bool { settings.isAnyProviderAvailable }
 
     var body: some View {
-        Group {
-            overviewSection
+        // Compute the unprocessed count ONCE per render and thread it through;
+        // recomputing it per subview would multiply the cache scan on every
+        // progress tick during a batch.
+        let remaining = controller.remainingCount(from: savedTermsStore.terms)
+        return Group {
+            overviewSection(remaining: remaining)
             batchSizeSection
-            actionSection
+            actionSection(remaining: remaining)
         }
     }
 
     // MARK: Overview
 
-    private var overviewSection: some View {
+    private func overviewSection(remaining: Int) -> some View {
         Section {
             LabeledContent("Saved Words") {
                 Text("\(totalSaved)").foregroundStyle(.secondary)
             }
             LabeledContent("Analyzed") {
-                Text("\(analyzed)").foregroundStyle(.secondary)
+                Text("\(max(0, totalSaved - remaining))").foregroundStyle(.secondary)
             }
             LabeledContent("Needs Analysis") {
                 Text("\(remaining)")
@@ -78,7 +80,7 @@ struct BatchAIAnalysisControls: View {
     // MARK: Action / progress
 
     @ViewBuilder
-    private var actionSection: some View {
+    private func actionSection(remaining: Int) -> some View {
         Section {
             if controller.isRunning {
                 progressContent
@@ -88,7 +90,7 @@ struct BatchAIAnalysisControls: View {
                     Label("Cancel", systemImage: "stop.circle")
                 }
             } else {
-                startButton
+                startButton(remaining: remaining)
                 lastRunSummary
             }
         } footer: {
@@ -129,7 +131,7 @@ struct BatchAIAnalysisControls: View {
         .padding(.vertical, 2)
     }
 
-    private var startButton: some View {
+    private func startButton(remaining: Int) -> some View {
         Button {
             controller.start(concurrency: settings.batchConcurrency)
         } label: {
