@@ -118,12 +118,18 @@ final class OllamaService {
             // Get detailed info for each model to check capabilities
             var models: [OllamaModelInfo] = []
             for model in response.models {
+                // Skip any discovered model whose name isn't a valid Ollama model ID
+                // rather than force-unwrapping (which would crash the whole refresh).
+                guard let modelID = Ollama.Model.ID(rawValue: model.name) else {
+                    continue
+                }
+
                 // Try to get capabilities for each model
                 var supportsThinking = false
                 var supportsTools = false
-                
+
                 do {
-                    let details = try await client.showModel(Ollama.Model.ID(rawValue: model.name)!)
+                    let details = try await client.showModel(modelID)
                     supportsThinking = details.capabilities.contains(.thinking)
                     supportsTools = details.capabilities.contains(.tools)
                 } catch {
@@ -168,13 +174,15 @@ final class OllamaService {
         enableThinking: Bool = true,
         options: [String: Ollama.Value]? = nil
     ) async throws -> (content: String, thinking: String?) {
-        let modelID = Ollama.Model.ID(rawValue: model)!
-        
+        guard let modelID = Ollama.Model.ID(rawValue: model) else {
+            throw OllamaServiceError.modelNotFound(model)
+        }
+
         let messages: [Ollama.Chat.Message] = [
             .system(systemPrompt),
             .user(userPrompt)
         ]
-        
+
         let response = try await client.chat(
             model: modelID,
             messages: messages,
@@ -194,13 +202,15 @@ final class OllamaService {
         enableThinking: Bool = true,
         options: [String: Ollama.Value]? = nil
     ) throws -> AsyncThrowingStream<Ollama.Client.ChatResponse, Error> {
-        let modelID = Ollama.Model.ID(rawValue: model)!
-        
+        guard let modelID = Ollama.Model.ID(rawValue: model) else {
+            throw OllamaServiceError.modelNotFound(model)
+        }
+
         let messages: [Ollama.Chat.Message] = [
             .system(systemPrompt),
             .user(userPrompt)
         ]
-        
+
         return try client.chatStream(
             model: modelID,
             messages: messages,
@@ -227,13 +237,15 @@ final class OllamaService {
         schema: Ollama.Value,
         enableThinking: Bool = true
     ) async throws -> String {
-        let modelID = Ollama.Model.ID(rawValue: model)!
-        
+        guard let modelID = Ollama.Model.ID(rawValue: model) else {
+            throw OllamaServiceError.modelNotFound(model)
+        }
+
         let messages: [Ollama.Chat.Message] = [
             .system(systemPrompt),
             .user(userPrompt)
         ]
-        
+
         let response = try await client.chat(
             model: modelID,
             messages: messages,

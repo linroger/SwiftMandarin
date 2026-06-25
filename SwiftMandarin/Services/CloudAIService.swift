@@ -340,14 +340,50 @@ final class CloudAIService {
                 ["role": "system", "content": systemPrompt],
                 ["role": "user", "content": userContent],
             ],
-            "temperature": 0.3,
             "stream": false,
-            "max_tokens": maxTokens,
         ]
+
+        // Reasoning families reject a custom `temperature`. The token-limit
+        // parameter, however, is provider-specific: OpenAI's o-series uses
+        // `max_completion_tokens`, while other OpenAI-compatible reasoners
+        // (e.g. DeepSeek's `deepseek-reasoner`) still use the classic
+        // `max_tokens`. Everything else keeps `max_tokens` + `temperature`.
+        if isReasoningModel(model) {
+            if isOpenAIReasoningModel(model) {
+                body["max_completion_tokens"] = maxTokens
+            } else {
+                body["max_tokens"] = maxTokens
+            }
+        } else {
+            body["temperature"] = 0.3
+            body["max_tokens"] = maxTokens
+        }
+
         if useResponseFormat {
             body["response_format"] = ["type": "json_object"]
         }
         return body
+    }
+
+    /// The bare model id with any provider prefix (e.g. "openai/", "openai:") stripped.
+    private static func bareModelID(_ modelID: String) -> String {
+        modelID.lowercased().split(whereSeparator: { $0 == "/" || $0 == ":" }).last.map(String.init)
+            ?? modelID.lowercased()
+    }
+
+    /// OpenAI o-series reasoning models (o1, o3, o4, o5… plus -mini/-pro/-preview
+    /// variants) — the only family that requires `max_completion_tokens`.
+    private static func isOpenAIReasoningModel(_ modelID: String) -> Bool {
+        let bare = bareModelID(modelID)
+        guard let first = bare.first, first == "o",
+              let second = bare.dropFirst().first, second.isNumber else { return false }
+        return true
+    }
+
+    /// Any reasoning model that rejects a custom `temperature` — the OpenAI
+    /// o-series plus "reasoner" families such as DeepSeek's `deepseek-reasoner`.
+    private static func isReasoningModel(_ modelID: String) -> Bool {
+        isOpenAIReasoningModel(modelID) || bareModelID(modelID).contains("reasoner")
     }
 
     private static func anthropicBody(

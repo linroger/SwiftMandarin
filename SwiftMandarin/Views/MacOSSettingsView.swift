@@ -111,12 +111,12 @@ struct GeneralSettingsTab: View {
             
             Section {
                 LabeledContent("Version") {
-                    Text("1.0.0")
+                    Text(verbatim: AppConfig.appVersion)
                         .foregroundStyle(.secondary)
                 }
-                
+
                 LabeledContent("Build") {
-                    Text("2026.02.11")
+                    Text(verbatim: AppConfig.buildNumber)
                         .foregroundStyle(.secondary)
                 }
             } header: {

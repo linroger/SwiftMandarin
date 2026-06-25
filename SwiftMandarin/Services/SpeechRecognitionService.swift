@@ -436,13 +436,54 @@ private final class ModernSpeechEngine: SpeechRecognitionEngine {
             }
         }
 
-        // Install audio tap
-        audioEngine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
-            guard let self else { return }
+        // Install audio tap.
+        //
+        // Capture the conversion context locally so the tap can run *fully
+        // synchronously* on the audio thread, exactly like the legacy engine's
+        // `request.append(buffer)`. The previous implementation hopped onto an
+        // unstructured `Task` while holding the engine's reused input buffer,
+        // which risked three concrete defects: (1) use-after-reuse — the engine
+        // overwrites `buffer` as soon as the tap returns, before the async Task
+        // reads it; (2) frame reordering — independent `Task`s have no ordering
+        // guarantee, so buffers could reach the analyzer out of sequence; and
+        // (3) a broken converter input block that returned the same buffer on
+        // every callback. Doing the work synchronously here removes all three.
+        let converter = audioConverter
+        let targetFormat = analyzerFormat
+        let continuation = inputBuilder
 
-            Task {
-                await self.processAudioBuffer(buffer)
+        audioEngine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { buffer, _ in
+            let outputBuffer: AVAudioPCMBuffer
+            if let converter {
+                let ratio = targetFormat.sampleRate / buffer.format.sampleRate
+                let capacity = AVAudioFrameCount((Double(buffer.frameLength) * ratio).rounded(.up)) + 1
+                guard let converted = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: capacity) else { return }
+
+                var consumed = false
+                var conversionError: NSError?
+                converter.convert(to: converted, error: &conversionError) { _, outStatus in
+                    // One-shot input block: hand the source buffer over exactly
+                    // once, then report exhaustion so the converter never re-reads
+                    // the same frames (the prior code looped on the same buffer).
+                    if consumed {
+                        outStatus.pointee = .noDataNow
+                        return nil
+                    }
+                    consumed = true
+                    outStatus.pointee = .haveData
+                    return buffer
+                }
+
+                guard conversionError == nil, converted.frameLength > 0 else { return }
+                outputBuffer = converted
+            } else {
+                // Formats already match, so no converter was created; the engine
+                // reuses `buffer`, so the analyzer must receive an owned copy
+                // rather than the soon-to-be-overwritten original.
+                guard let copy = ModernSpeechEngine.copyBuffer(buffer) else { return }
+                outputBuffer = copy
             }
+            continuation.yield(AnalyzerInput(buffer: outputBuffer))
         }
 
         // Start audio engine
@@ -454,34 +495,27 @@ private final class ModernSpeechEngine: SpeechRecognitionEngine {
         }
     }
 
-    /// Process audio buffer and send to analyzer
-    private func processAudioBuffer(_ buffer: AVAudioPCMBuffer) async {
-        guard let inputContinuation, let analyzerFormat else { return }
-
-        var bufferToSend = buffer
-
-        // Convert format if needed
-        if let converter = audioConverter {
-            let convertedBuffer = AVAudioPCMBuffer(
-                pcmFormat: analyzerFormat,
-                frameCapacity: AVAudioFrameCount(Double(buffer.frameLength) * (analyzerFormat.sampleRate / buffer.format.sampleRate))
-            )
-
-            guard let convertedBuffer else { return }
-
-            var error: NSError?
-            converter.convert(to: convertedBuffer, error: &error) { inNumPackets, outStatus in
-                outStatus.pointee = .haveData
-                return buffer
-            }
-
-            if error == nil {
-                bufferToSend = convertedBuffer
-            }
+    /// Deep-copies a PCM buffer so it can safely outlive the audio engine's
+    /// reuse of the tap buffer. Copies the raw audio buffer list, so it works
+    /// for any PCM layout (float/int, interleaved/non-interleaved).
+    ///
+    /// `nonisolated` because it is called from the audio render thread inside the
+    /// tap; it touches only its argument, so it must not be main-actor isolated.
+    nonisolated private static func copyBuffer(_ source: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
+        guard let copy = AVAudioPCMBuffer(pcmFormat: source.format, frameCapacity: source.frameCapacity) else {
+            return nil
         }
+        copy.frameLength = source.frameLength
 
-        let input = AnalyzerInput(buffer: bufferToSend)
-        inputContinuation.yield(input)
+        let sourceList = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: source.audioBufferList))
+        let destinationList = UnsafeMutableAudioBufferListPointer(copy.mutableAudioBufferList)
+        for index in 0..<min(sourceList.count, destinationList.count) {
+            guard let sourceData = sourceList[index].mData,
+                  let destinationData = destinationList[index].mData else { continue }
+            memcpy(destinationData, sourceData, Int(sourceList[index].mDataByteSize))
+            destinationList[index].mDataByteSize = sourceList[index].mDataByteSize
+        }
+        return copy
     }
 
     func stop() async {

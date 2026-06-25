@@ -37,16 +37,7 @@ struct LearnView: View {
     /// because the headword field can hold either language depending on the
     /// learning direction the entry was saved under.
     private var vocabularyCards: [LearningCard] {
-        savedTermsStore.terms.map { term in
-            LearningCard(
-                chinese: term.chineseSide.isEmpty ? term.chinese : term.chineseSide,
-                english: term.englishSide.isEmpty ? term.definition : term.englishSide,
-                pinyin: term.pinyin.isEmpty ? nil : term.pinyin,
-                exampleSentence: nil,
-                tags: ["Vocabulary"],
-                notes: term.partOfSpeech.isEmpty ? nil : term.partOfSpeech
-            )
-        }
+        savedTermsStore.terms.map { LearningCard(from: $0) }
     }
     
     /// All available cards based on source selection
@@ -193,11 +184,13 @@ struct LearnView: View {
             studyMode = mapStudyMode(mode)
             cardSource = mapCardSource(source)
             reloadSessionCards()
+            // Clear only the action this view actually handled, so a camera /
+            // screenshot action routed to the Photo tab isn't swallowed here.
+            routeStore.clearPendingAction()
+            return true
         case .openCameraScanner, .translateScreenshots:
-            break
+            return false
         }
-        routeStore.clearPendingAction()
-        return true
     }
 
     private func mapStudyMode(_ raw: String) -> StudyMode {
@@ -218,7 +211,14 @@ struct LearnView: View {
     }
 
     private func reloadSessionCards() {
-        sessionCards = filteredStudyCards
+        // For a review session, run the due cards through the spaced-repetition
+        // scheduler so they're ordered by urgency and capped at a sensible
+        // session size; other study modes keep their full filtered list.
+        if studyMode == .dueForReview {
+            sessionCards = learningStore.getCardsForReview(from: filteredStudyCards)
+        } else {
+            sessionCards = filteredStudyCards
+        }
         currentCardIndex = 0
         isFlipped = false
     }

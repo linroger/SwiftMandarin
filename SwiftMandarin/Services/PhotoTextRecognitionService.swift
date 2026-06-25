@@ -247,29 +247,16 @@ final class PhotoTextRecognitionService {
         useLanguageCorrection: Bool,
         orientation: CGImagePropertyOrientation
     ) async throws -> [RecognizedTextBlock] {
-        try await withCheckedThrowingContinuation { continuation in
-            let request = VNRecognizeTextRequest { request, error in
-                if let error = error {
-                    continuation.resume(throwing: RecognitionError.recognitionFailed(error.localizedDescription))
-                    return
-                }
-
-                guard let observations = request.results as? [VNRecognizedTextObservation] else {
-                    continuation.resume(returning: [])
-                    return
-                }
-
-                let blocks = observations.compactMap { observation -> RecognizedTextBlock? in
-                    guard let candidate = observation.topCandidates(1).first else { return nil }
-                    return RecognizedTextBlock(
-                        text: candidate.string,
-                        confidence: candidate.confidence,
-                        boundingBox: observation.boundingBox
-                    )
-                }
-
-                continuation.resume(returning: blocks)
-            }
+        // Run Vision off the main actor. `handler.perform([request])` is
+        // synchronous and, on a large stitched screenshot with `.accurate` +
+        // revision 3, would otherwise block the UI. We hop explicitly with
+        // `Task.detached` rather than a bare `nonisolated` because, under this
+        // project's SWIFT_APPROACHABLE_CONCURRENCY (NonisolatedNonsendingByDefault),
+        // a plain `nonisolated async` adopts the caller's (main) executor and
+        // would still run on the main thread. This matches ScreenshotStitchingService.
+        // All captured inputs and the returned [RecognizedTextBlock] are Sendable.
+        try await Task.detached(priority: .userInitiated) {
+            let request = VNRecognizeTextRequest()
 
             // Configure for accurate recognition.
             request.recognitionLevel = .accurate
@@ -293,9 +280,19 @@ final class PhotoTextRecognitionService {
             do {
                 try handler.perform([request])
             } catch {
-                continuation.resume(throwing: RecognitionError.recognitionFailed(error.localizedDescription))
+                throw RecognitionError.recognitionFailed(error.localizedDescription)
             }
-        }
+
+            guard let observations = request.results else { return [] }
+            return observations.compactMap { observation -> RecognizedTextBlock? in
+                guard let candidate = observation.topCandidates(1).first else { return nil }
+                return RecognizedTextBlock(
+                    text: candidate.string,
+                    confidence: candidate.confidence,
+                    boundingBox: observation.boundingBox
+                )
+            }
+        }.value
     }
 
     /// Read EXIF orientation from raw image data.

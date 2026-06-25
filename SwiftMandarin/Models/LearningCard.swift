@@ -19,13 +19,28 @@ struct LearningCard: Identifiable, Hashable, Codable {
     let notes: String?
     
     init(chinese: String, english: String, pinyin: String? = nil, exampleSentence: String? = nil, tags: [String] = [], notes: String? = nil) {
-        self.id = chinese
+        // Namespace built-in cards so their progress never collides with a
+        // saved-vocabulary card that happens to share the same headword.
+        self.id = "builtin:\(chinese)"
         self.chinese = chinese
         self.english = english
         self.pinyin = pinyin
         self.exampleSentence = exampleSentence
         self.tags = tags
         self.notes = notes
+    }
+
+    /// Build a card from a saved vocabulary term, namespacing the id with the
+    /// term's stable UUID. This keeps each saved term's spaced-repetition
+    /// history distinct — even from a built-in card with the same Chinese word.
+    init(from term: SavedTerm) {
+        self.id = "vocab:\(term.id.uuidString)"
+        self.chinese = term.chineseSide.isEmpty ? term.chinese : term.chineseSide
+        self.english = term.englishSide.isEmpty ? term.definition : term.englishSide
+        self.pinyin = term.pinyin.isEmpty ? nil : term.pinyin
+        self.exampleSentence = nil
+        self.tags = ["Vocabulary"]
+        self.notes = term.partOfSpeech.isEmpty ? nil : term.partOfSpeech
     }
 }
 
@@ -39,14 +54,20 @@ struct CardProgress: Codable, Identifiable {
     var lastReviewDate: Date?
     var nextReviewDate: Date
     var easeFactor: Double
-    
+    /// The most recent scheduling interval, in seconds. Persisted so the
+    /// next-review math survives relaunches instead of being re-derived.
+    var interval: TimeInterval
+    /// Consecutive incorrect reviews; reset to 0 on a correct answer. Tracked
+    /// and persisted for spaced-repetition scheduling and analytics.
+    var lapse: Int
+
     var id: String { cardId }
-    
+
     var accuracy: Double {
         guard reviewCount > 0 else { return 0 }
         return Double(correctCount) / Double(reviewCount)
     }
-    
+
     init(cardId: String) {
         self.cardId = cardId
         self.masteryLevel = .new
@@ -55,8 +76,34 @@ struct CardProgress: Codable, Identifiable {
         self.lastReviewDate = nil
         self.nextReviewDate = Date()
         self.easeFactor = 2.5
+        self.interval = 0
+        self.lapse = 0
     }
-    
+
+    private enum CodingKeys: String, CodingKey {
+        case cardId, masteryLevel, reviewCount, correctCount
+        case lastReviewDate, nextReviewDate, easeFactor, interval, lapse
+    }
+
+    /// Tolerant, migrating decoder: legacy ids (raw Chinese, no namespace) are
+    /// promoted to the built-in namespace, and the newer `interval`/`lapse`
+    /// fields default cleanly when absent from older saved data. Individual
+    /// missing fields fall back to sane defaults rather than failing the whole
+    /// decode.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let rawCardId = try c.decode(String.self, forKey: .cardId)
+        self.cardId = rawCardId.contains(":") ? rawCardId : "builtin:\(rawCardId)"
+        self.masteryLevel = (try? c.decode(MasteryLevel.self, forKey: .masteryLevel)) ?? .new
+        self.reviewCount = (try? c.decode(Int.self, forKey: .reviewCount)) ?? 0
+        self.correctCount = (try? c.decode(Int.self, forKey: .correctCount)) ?? 0
+        self.lastReviewDate = (try? c.decodeIfPresent(Date.self, forKey: .lastReviewDate)) ?? nil
+        self.nextReviewDate = (try? c.decode(Date.self, forKey: .nextReviewDate)) ?? Date()
+        self.easeFactor = (try? c.decode(Double.self, forKey: .easeFactor)) ?? 2.5
+        self.interval = (try? c.decodeIfPresent(TimeInterval.self, forKey: .interval)) ?? 0
+        self.lapse = (try? c.decodeIfPresent(Int.self, forKey: .lapse)) ?? 0
+    }
+
     mutating func recordReview(correct: Bool, quality: ReviewQuality) {
         let reviewDate = Date()
         let priorReviewDate = lastReviewDate
@@ -66,7 +113,12 @@ struct CardProgress: Codable, Identifiable {
         )
 
         reviewCount += 1
-        if correct { correctCount += 1 }
+        if correct {
+            correctCount += 1
+            lapse = 0
+        } else {
+            lapse += 1
+        }
         lastReviewDate = reviewDate
         updateMasteryLevel()
         calculateNextReview(
@@ -74,6 +126,8 @@ struct CardProgress: Codable, Identifiable {
             reviewDate: reviewDate,
             previousInterval: previousInterval
         )
+        // Persist the freshly-computed interval (time until the next review).
+        interval = nextReviewDate.timeIntervalSince(reviewDate)
     }
     
     private mutating func updateMasteryLevel() {
@@ -231,7 +285,12 @@ final class LearningProgressStore {
     
     private func load() {
         if let decoded = PersistentCodableStore.load([String: CardProgress].self, key: storageKey) {
-            progress = decoded
+            // Re-key by each entry's (migrated) cardId so legacy plain-text keys
+            // become "builtin:<term>" and always agree with the stored cardId.
+            progress = Dictionary(
+                decoded.values.map { ($0.cardId, $0) },
+                uniquingKeysWith: { existing, _ in existing }
+            )
         }
         todayReviewedCount = UserDefaults.standard.integer(forKey: todayCountKey)
     }

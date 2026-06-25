@@ -2,5 +2,7 @@
 build/
 dist/dmg_payload_*/
 
-# Session logs must never live inside the app source folder (they break the build)
+# Session logs / agent data must never live inside the app source folder
+# (the file-system-synchronized target would bundle them into SwiftMandarin.app)
 SwiftMandarin/logs/
+SwiftMandarin/.claude/

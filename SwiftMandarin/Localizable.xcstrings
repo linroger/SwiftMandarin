@@ -5935,6 +5935,16 @@
         }
       }
     },
+    "Translation & AI powered by Apple Translation, on-device Ollama, and configured cloud providers including OpenAI, Claude, DeepSeek, and Qwen." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "翻译与 AI 由 Apple 翻译、本地 Ollama，以及已配置的云端服务（包括 OpenAI、Claude、DeepSeek 和通义千问）提供支持。"
+          }
+        }
+      }
+    },
     "Translation powered by Apple Translation API" : {
       "comment" : "A description of the translation feature powered by Apple's Translation API.",
       "localizations" : {

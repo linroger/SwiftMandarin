@@ -920,32 +920,34 @@ struct TranslateView: View {
 
     private func triggerAITranslation() async {
         let sourceSnapshot = sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let directionSnapshot = sharedState.direction
         guard !sourceSnapshot.isEmpty else { return }
-        
+
         isAITranslating = true
         aiTranslationError = nil
         sharedState.translationError = nil
-        
+
         do {
-            // Detect actual input language (not based on setting)
-            // EN input → ZH output, ZH input → EN output
+            // Detect actual input language (not based on the UI toggle).
+            // EN input → ZH output, ZH input → EN output. History must record
+            // the direction that actually happened, not what the toggle said.
             let sourceIsChinese = containsChinese(sourceSnapshot)
-            
+            let actualDirection: TranslationDirection = sourceIsChinese ? .chineseToEnglish : .englishToChinese
+
             let translation = try await AIWordExplanationService.shared.translateWithProvider(
                 sourceSnapshot,
                 sourceIsChinese: sourceIsChinese
             )
-            
-            guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot,
-                  sharedState.direction == directionSnapshot else {
+
+            // Only guard against a stale source text; the UI toggle is irrelevant
+            // because the direction is derived from the (unchanged) source content.
+            guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot else {
                 isAITranslating = false
                 return
             }
 
             sharedState.translatedText = translation
             isAITranslating = false
-            handleCompletedTranslation(source: sourceSnapshot, target: translation, direction: directionSnapshot)
+            handleCompletedTranslation(source: sourceSnapshot, target: translation, direction: actualDirection)
         } catch {
             isAITranslating = false
             sharedState.translationError = "AI Translation failed: \(error.localizedDescription)"
@@ -956,23 +958,26 @@ struct TranslateView: View {
     @available(iOS 18.0, macOS 15.0, *)
     private func performTranslation(session: TranslationSession) async {
         let sourceSnapshot = sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let directionSnapshot = sharedState.direction
 
         sharedState.isTranslating = true
         sharedState.translationError = nil
-        
+
         do {
             let response = try await session.translate(sourceSnapshot)
             await MainActor.run {
                 sharedState.isTranslating = false
 
-                guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot,
-                      sharedState.direction == directionSnapshot else {
+                // Only guard against a stale source text, not the UI toggle.
+                guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot else {
                     return
                 }
 
+                // Record the direction actually performed, derived from the source content.
+                let sourceIsChinese = containsChinese(sourceSnapshot)
+                let actualDirection: TranslationDirection = sourceIsChinese ? .chineseToEnglish : .englishToChinese
+
                 sharedState.translatedText = response.targetText
-                handleCompletedTranslation(source: sourceSnapshot, target: response.targetText, direction: directionSnapshot)
+                handleCompletedTranslation(source: sourceSnapshot, target: response.targetText, direction: actualDirection)
             }
         } catch {
             await MainActor.run {
