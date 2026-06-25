@@ -1,0 +1,1344 @@
+[
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a3feb7a93ff057692",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-a3feb7a93ff057692.jsonl",
+    "last_assistant_message": "Now I'll analyze all the files for language direction handling and related concerns. Let me compile my findings.\n\nBased on my thorough review of all 12 service files, I can now provide a comprehensive analysis:\n\n## Summary of Findings\n\n**WordTranslationService.swift**: Provides bidirectional word translation (Chinese\u2194English) via Apple's Translation API (iOS 26+) or configured AI provider. Caches results. Uses `sourceIsChinese` boolean to route translation direction. **Key insight**: This is direction-agnostic\u2014it translates based on source language, not interface language.\n\n**ChineseTextAnalyzer.swift**: Detects Chinese/English with robust CJK-weighted heuristics, segments Chinese words, extracts part-of-speech (PartOfSpeech enum with color coding). No language-direction assumptions.\n\n**EnglishTextAnalyzer.swift**: Analyzes English\u2014word segmentation, POS tagging (EnglishPartOfSpeech enum with Chinese rawValue labels like \"\u540d\u8bcd\"), sentence type detection, grammar point detection. **Language issue**: Grammar point labels use `String(localized: ...)` so they adapt to UI language\u2014correct.\n\n**PinyinConverter.swift**: Converts Chinese text to pinyin, detects tones, renders with tone-color attribution. Pinyin-only for Chinese. No language-direction concerns.\n\n**SpeechService.swift**: Generic speak/speakChinese/speakEnglish functions. No interface-language adaptation\u2014callers decide which to invoke.\n\n**SpeechRecognitionService.swift**: Supports English and Chinese (zh-CN, zh-TW) speech-to-text. Uses explicit language enum. No interface-language coupling.\n\n**VocabularyImportExportService.swift**: Imports/exports SavedTerms in JSON/CSV. CSV export header is hardcoded: \"Chinese,Pinyin,Definition,Part of Speech,Date Added,Mastered\" (line 91). **Direction issue**: This header assumes Chinese is the \"primary\" learned language and never adapts for English learners. **No interface-language awareness**.\n\n**ClipboardService.swift**: Simple cross-platform copy/paste. No language concerns.\n\n**PhotoTextRecognitionService.swift**: OCR service respects `PhotoScanLanguage` (`.auto`, `.bilingual`, `.chinese`, `.english`) and uses `ChineseTextAnalyzer.detectLanguageRobust()` for robust detection. **Correct**: Uses detected language, not interface language, to clean text. No direction conflicts.\n\n**ScreenshotStitchingService.swift**: Image stitching utility. No language concerns.\n\n**CloudAIService.swift**: LLM chat/translation service for multiple providers (OpenAI-compatible + Anthropic). Translation method (line 289) hardcodes system prompt: \"Translate accurately and naturally... For English\u2192Chinese use \u7b80\u4f53\u4e2d\u6587.\" **Direction issue**: Prompt doesn't say \"explain in [interface language]\"\u2014it's unconditional. The user parameter (line 296) includes `\"Chinese to English\"` or `\"English to Chinese\"` based on `sourceIsChinese`, not interface language. This is **correct for translation but NOT for explanations** (if this service is used for AI explanations, not just word translation).\n\n**OllamaService.swift**: Local LLM service. Translation method (line 279) uses similar system prompt (line 290-310) with hardcoded English/Simplified Chinese guidance. **Same direction issue** as CloudAIService if used for explanations.\n\n---\n\n<StructuredOutput>\n<parameter name=\"summary\">\nAll 12 service files were analyzed for language direction handling (interface language vs. learned language direction). Most are language-direction-neutral utility services. Three critical findings emerge:\n\n1. **CSV Export Format** (VocabularyImportExportService): Hardcoded header assumes Chinese is the primary learned word, never adapts for English learners.\n\n2. **AI Translation/Explanation Prompts** (CloudAIService, OllamaService): Both translation methods use `sourceIsChinese` (the source text language) to route translation direction, but the system prompts are generic and don't key off the UI interface language. If these services are used for word explanations (not just translations), they will explain in English even when the interface is in Mandarin, breaking the goal.\n\n3. **SpeechService**: Provide separate `speakChinese()` and `speakEnglish()` methods, but no guidance on which to emphasize based on interface language.\n\nNo other files contain hardcoded direction assumptions. PhotoTextRecognitionService correctly detects language from text, not interface. EnglishTextAnalyzer grammar labels correctly use `String(localized:)` so they follow the UI toggle.\n</parameter>\n<parameter name=\"directionFindings\">[\n  {\n    \"file\": \"/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/VocabularyImportExportService.swift\",\n    \"line\": 91,\n    \"what\": \"CSV export header hardcoded as 'Chinese,Pinyin,Definition,Part of Speech,Date Added,Mastered'\",\n    \"current\": \"Header assumes Chinese is always the primary learned language ('Chinese' column is first, 'Definition' is English)\",\n    \"desired\": \"When interface is in Mandarin (English learner), header should swap: 'English,Pinyin,Chinese Translation,Part of Speech,Date Added,Mastered' or dynamically adapt based on LocalizationManager.shared.language and AppPreferences.learnerMode\",\n    \"severity\": \"important\"\n  },\n  {\n    \"file\": \"/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/CloudAIService.swift\",\n    \"line\": 289,\n    \"what\": \"translate() method system prompt and direction routing\",\n    \"current\": \"System prompt (lines 290-294) hardcodes 'Translate accurately and naturally... For English\u2192Chinese use \u7b80\u4f53\u4e2d\u6587' and user message (line 296) reads '\\\\(direction) from \\\\(sourceIsChinese ? \\\"Chinese to English\\\" : \\\"English to Chinese\\\")'. Routes based on sourceIsChinese only, ignores interface language.\",\n    \"desired\": \"If this method is used for word explanations in the workbook/detail views (not just stand-alone translation), the system prompt should instead read 'Explain in [interface language, read from LocalizationManager.shared.language]' so explanations match the user's UI language. Example: 'You are a language teacher. Explain the English word [word] in Mandarin Chinese' when interface is zh-Hans.\",\n    \"severity\": \"important\"\n  },\n  {\n    \"file\": \"/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/OllamaService.swift\",\n    \"line\": 279,\n    \"what\": \"translate() method system prompt and direction routing\",\n    \"current\": \"System prompt (lines 290-310) hardcodes 'For English to Chinese translations: Use Simplified Chinese characters (\u7b80\u4f53\u4e2d\u6587)... For Chinese to English translations: Use natural, fluent English'. Routes based on sourceIsChinese. No interface-language awareness.\",\n    \"desired\": \"Same as CloudAIService (line 289): if used for explanations, system prompt should adapt to LocalizationManager.shared.language so explanations are written in the UI language, not always both English and Chinese.\",\n    \"severity\": \"important\"\n  },\n  {\n    \"file\": \"/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/SpeechService.swift\",\n    \"line\": 26,\n    \"what\": \"speakChinese() and speakEnglish() are separate unconditioned methods\",\n    \"current\": \"Callers must explicitly choose which language to speak. No guidance on which language to emphasize based on interface language or learner mode.\",\n    \"desired\": \"Ideally add a method like speakLearningTarget() that reads AppPreferences.learnerMode and speaks the target language. Example: if learnerMode == .englishToMandarin, speak Chinese; if .mandarinToEnglish, speak English. Or add a parameter speakTargetLanguage() that reads LocalizationManager.shared.language and AppPreferences to decide.\",\n    \"severity\": \"minor\"\n  },\n  {\n    \"file\": \"/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/PhotoTextRecognitionService.swift\",\n    \"line\": 39,\n    \"what\": \"TextRecognitionResult initializer respects scanLanguage and robustly detects language\",\n    \"current\": \"Correctly honors explicit PhotoScanLanguage choice; auto-detects via ChineseTextAnalyzer.detectLanguageRobust() for .auto/.bilingual modes (lines 49-56). Text cleaning branches by detected language, not interface language (lines 59-63).\",\n    \"desired\": \"No change needed. Correct approach.\",\n    \"severity\": \"ok\"\n  },\n  {\n    \"file\": \"/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/EnglishTextAnalyzer.swift\",\n    \"line\": 350,\n    \"what\": \"Grammar point detection labels use String(localized:)\",\n    \"current\": \"All grammar point labels (lines 350-390) are wrapped in String(localized: ...) so they follow the UI language toggle via Localizable.xcstrings. Example line 350: points.append(String(localized: \\\"Present continuous: be + verb-ing\\\"))\",\n    \"desired\": \"No change needed. Correct approach.\",\n    \"severity\": \"ok\"\n  }\n]</parameter>\n<parameter name=\"prefUsage\">[\n  \"WordTranslationService.swift: No LocalizationManager or AppPreferences usage. Uses sourceIsChinese parameter to route translation direction.\",\n  \"ChineseTextAnalyzer.swift: No LocalizationManager or AppPreferences usage. Language detection only.\",\n  \"EnglishTextAnalyzer.swift line 350-390: Implicitly uses LocalizationManager via String(localized:) for grammar point labels. Not an explicit read, but respects the UI language toggle.\",\n  \"PinyinConverter.swift: No LocalizationManager or AppPreferences usage.\",\n  \"SpeechService.swift: No LocalizationManager or AppPreferences usage. Caller decides language via speakChinese() or speakEnglish().\",\n  \"SpeechRecognitionService.swift: No LocalizationManager or AppPreferences usage. Caller chooses language via SpeechRecognitionLanguage parameter.\",\n  \"VocabularyImportExportService.swift: No LocalizationManager or AppPreferences usage. CSV header is hardcoded.\",\n  \"ClipboardService.swift: No LocalizationManager or AppPreferences usage.\",\n  \"PhotoTextRecognitionService.swift: Uses ChineseTextAnalyzer.shared.detectLanguageRobust() (line 55) to detect language from text, not interface language. Does not directly read LocalizationManager or AppPreferences.\",\n  \"ScreenshotStitchingService.swift: No LocalizationManager or AppPreferences usage.\",\n  \"CloudAIService.swift line 289: No LocalizationManager or AppPreferences usage. Routes based on sourceIsChinese parameter only.\",\n  \"OllamaService.swift line 279: No LocalizationManager or AppPreferences usage. Routes based on sourceIsChinese parameter only.\"\n]</parameter>\n<parameter name=\"recommendations\">[\n  \"1. Add a helper enum/computed property in a shared location (e.g., Models or a new Utils file) to determine primary learning direction from interface language: `isPrimaryLanguageChinese = LocalizationManager.shared.language == \\\"zh-Hans\\\"`. Use this throughout the app to adapt text orientation, TTS emphasis, and AI prompts.\",\n  \"2. Update VocabularyImportExportService.generateCSVExport() to adapt the header and column order based on the learning direction. When interface is Mandarin (English learner), swap the first two columns to 'English,Pinyin,Chinese Translation,...'. Add a private helper `func csvHeader() -> String` that reads LocalizationManager.\",\n  \"3. Refactor CloudAIService.translate() and OllamaService.translate() to accept an optional `explainInLanguage` parameter. If provided (for explanation use cases), override the system prompt to 'Explain in [language]' instead of hardcoding both English and Chinese. Or create separate explainWord() methods that always explain in the UI language.\",\n  \"4. Add SpeechService.speakLearningTarget(_ text: String) convenience method that reads AppPreferences.learnerMode and speaks the appropriate target language. If mode is .englishToMandarin, speak Chinese; if .mandarinToEnglish, speak English. Use this in workbook audio buttons and flashcard TTS.\",\n  \"5. Document that AI explanation services (AIWordExplanationService, if it calls CloudAIService/OllamaService) must adapt their system prompt to LocalizationManager.shared.language. Currently unclear if those services exist or how they bridge to these translation methods.\",\n  \"6. Consider adding a `UILanguagePreference` or `LearningDirection` model to AppPreferences that computes the primary/secondary language split for easy access throughout the app, rather than computing it ad-hoc from LocalizationManager + learnerMode.\",\n  \"7. No changes needed to PhotoTextRecognitionService, EnglishTextAnalyzer grammar labels, or PinyinConverter.\"\n]</parameter>\n</StructuredOutput>",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a54cbfb39367dc349",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-a54cbfb39367dc349.jsonl",
+    "last_assistant_message": "Done. I've completed a thorough read-only analysis of all 14 assigned intent files and produced a structured report with:\n\n**Summary:** Brief 1-2 sentence descriptions of each file's purpose.\n\n**Direction Findings (16 items):** Core, important, and minor severity issues where the shortcuts assume a fixed language direction (English speaker learning Mandarin) rather than adapting to the interface language setting. Key problems:\n- **SavedTermEntity and PhraseEntity** always show Chinese as the title/headline, but should swap to English title when interface is Mandarin (native Mandarin learner).\n- **GetRandomPhraseIntent** hardcodes Chinese speech and clipboard copy, should respect interface language.\n- **SpeakTranslationIntent** uses direction logic without considering interface language context.\n- **AI translation** calls don't pass interface language, so explanations won't adapt.\n- **saveChinesePhrasesToVocabulary** assumes English definitions; should work bidirectionally.\n- **TranslateScreenshotsIntent** defaults to English and has backwards subtitles for Mandarin speakers.\n- Intent descriptions are hardcoded English.\n- Stats string uses hardcoded English labels instead of localization.\n\n**Preference Usage:** Documents that NO files in this set currently read LocalizationManager.shared.language or adapt behavior based on it, which is the root cause.\n\n**Recommendations:** Concrete, minimal changes including a language adapter helper, displayRepresentation swaps for entities, interface language checks in speech/copy operations, AI service plumbing, bidirectional phrase extraction, and localized stats strings.",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a6cea1d3103b27c85",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-a6cea1d3103b27c85.jsonl",
+    "last_assistant_message": "## Summary\n\nI've completed a thorough analysis of all four assigned files. Here's what I found:\n\n**Core Issue**: Three of the four files (LearnView, PhrasesView, LearningCard) hardcode a Chinese-primary / English-secondary display layout with Chinese-only TTS, completely ignoring the interface language (`LocalizationManager.language`). The goal requires flipping this display orientation when the interface is in Mandarin (indicating a Mandarin-native English learner).\n\n**Key Hardcoded Conflicts**:\n\n1. **LearnView.FlashcardView (lines 408, 436, 422)**: Chinese at 72pt headline (front), English at .title (back), Chinese-only TTS. Must conditionally swap front/back and TTS based on interface language.\n\n2. **PhrasesView.PhraseRow (lines 76, 90)**: Chinese at .headline, pinyin at .subheadline, English at .caption/.secondary, Chinese-only TTS. Must swap text sizes and TTS language.\n\n3. **PhrasesView.PhraseDetailSheet (lines 115, 132)**: Chinese at 36pt large, English at .body/.secondary, Chinese-only TTS. Same issue.\n\n4. **LearningCard.swift & GrammarPoint.swift**: No display logic, so no conflicts detected (severity \"ok\"), but their models are consumed by views that need adaptation.\n\n**Critical Missing Dependencies**: None of these files read `LocalizationManager.shared.language`, `AppPreferences.learnerMode`, or `TranslationDirection`. This is the root cause\u2014they have no awareness of who the user is.\n\n**Recommendation**: Create a shared `CardDisplayOrientation` helper that centralizes the interface-language check, then apply it to both LearnView and PhrasesView to avoid duplicating logic. Add English TTS support to SpeechService or create a language-aware wrapper.",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a54d4c792e6ec05bb",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-a54d4c792e6ec05bb.jsonl",
+    "last_assistant_message": "Perfect. I've completed a comprehensive analysis of the four assigned files and their dependencies. Here's a summary of my findings:\n\n## Summary\n\nI've identified **10 distinct language direction issues** across your translation and history views where the app currently hardcodes or assumes English is the primary learning language, conflicting with the goal of adapting UI prominence based on interface language (Mandarin vs English).\n\n### Core Problems Found:\n\n1. **Text Prominence Inverted**: Chinese text is always displayed as the headline (.title2, .title3, 56pt) with English secondary, regardless of interface language. When the UI is Mandarin, English (the learning target) should be primary.\n\n2. **Section Headers Hardcoded**: \"ENGLISH\", \"CHINESE (TAP WORDS FOR DETAILS)\" are in English only, not localized.\n\n3. **AI Prompts Language-Agnostic**: System instructions say \"Explain Chinese words for English-speaking learners\" unconditionally. When UI is Mandarin, the learner is Mandarin-speaking and needs English explanations\u2014the prompt is backwards.\n\n4. **History Display Unordered**: HistoryItemRow always shows source then target without adapting to what the user is learning. Should show the learning language (target) first and larger.\n\n5. **Buttons and Labels Hardcoded**: \"\u4e2d\u6587\", \"EN\" labels in WordDetailPopover aren't localized; TTS buttons don't adapt emphasis to interface language.\n\n### Key Recommendations:\n\n- **Create a DisplayOrientation helper** that encapsulates all layout decisions (primary/secondary text, sizes, colors) based on interface language.\n- **Make AI prompts dynamic** by injecting the actual interface language at runtime.\n- **Observe LocalizationManager.shared.language** in views so layout updates when users toggle the UI language.\n- **Adapt HistoryItemRow and HistoryDragPreview** to reorder source/target based on what the learner is studying.\n\nAll findings include exact file:line references so implementation is straightforward.",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a98d00b5c8e3c7e62",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-a98d00b5c8e3c7e62.jsonl",
+    "last_assistant_message": "Perfect! I have completed the comprehensive analysis of your four assigned files. Here's a summary of what I found:\n\n## Summary\n\nAll four components are **currently hardcoded to assume a fixed language direction** (Chinese learners or English learners) rather than adapting to the actual interface language setting in LocalizationManager. This directly conflicts with your goal of tailoring the app to the user's INTERFACE LANGUAGE as the authoritative source of whether they're a native Mandarin speaker (interface in Chinese, learning English) or native English speaker (interface in English, learning Mandarin).\n\n### Critical Gaps:\n\n1. **RubyTextView & WordDetailPopover** \u2014 Always display Chinese as the large headline (56pt) with English as secondary. Correct only for English interface users. When interface is Mandarin, this should invert: English (the learner's target) should be large, Chinese small.\n\n2. **EnglishRubyTextView & EnglishWordDetailSheet** \u2014 Always display English as the large headline with Chinese secondary, and TTS speaks English first. Correct only for English interface. When interface is Mandarin, should invert to show Chinese large (the learner's target) with English secondary.\n\n3. **LiveSpeechTranslationView** \u2014 TTS language selection and primary transcript display are driven by the `translationDirection` parameter, NOT the interface language. All UI labels (\"Voice Translation\", \"Listening...\", etc.) are hardcoded in English.\n\n4. **CameraScannerView** \u2014 All UI labels are hardcoded in Chinese. Does NOT adapt to interface language at all.\n\n5. **No LocalizationManager Usage** \u2014 None of these four files read `LocalizationManager.shared.language`, which is the critical missing piece.\n\nMy detailed findings with exact file:line references and concrete recommendations have been provided in the structured output above.",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a3feb7a93ff057692",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": true,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-a3feb7a93ff057692.jsonl",
+    "last_assistant_message": "Perfect. The analysis is complete. I've provided a comprehensive report of all 12 service files with exact file:line references for every language-direction issue and correct pattern found. The key findings are:\n\n1. **CSV export** always assumes Chinese is primary (important fix)\n2. **AI explanation prompts** don't adapt to interface language (important fix)\n3. **Speech emphasis** lacks guidance on which language to prioritize (minor improvement)\n4. Several services already handle direction correctly and need no changes",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a733cf89802d57ec9",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-a733cf89802d57ec9.jsonl",
+    "last_assistant_message": "Perfect. I've completed the exhaustive analysis of both assigned files. Here's a summary of my findings:\n\n## Summary\n\nBoth files have **critical hardcoded assumptions** that ignore the interface language setting:\n\n1. **AIWordExplanationService.swift**: System prompts (lines 234, 1018) unconditionally instruct the AI to \"explain Chinese words for English-speaking learners,\" with no awareness of whether the UI is in Mandarin or English. When the interface is in Mandarin, these prompts are backwards\u2014the user is a native Chinese speaker learning English.\n\n2. **AIWordExplanationView.swift**: Visual hierarchy is fixed\u2014Chinese always rendered large (`.body`/`.medium`) and English always small (`.caption`/`.secondary`) in example sentences (lines 379\u2013388), related words (lines 402\u2013414), and collocations (lines 429\u2013442). When the UI is in Mandarin, the English text (what the user is learning) should be the large headline, not the small secondary text.\n\n## Key Findings\n\n**Severity \"core\"** (architecture violations):\n- System prompts don't check `LocalizationManager.shared.language` before generating explanations\n- Visual text hierarchy in example sentences, synonyms, antonyms, and collocations is hardcoded for English-learner context\n- No adaptation logic for display orientation exists\n\n**Severity \"important\"** (content misalignment):\n- All explanation fields (definition, nuances, grammar, learning tips) are implicitly expected to be in English but should adapt to interface language\n- Example sentence `.english` field should be `.mandarin` when UI is Mandarin; same for related word meanings and collocation translations\n- Model prompts don't condition on interface language\n\nNeither file currently reads `LocalizationManager` or `AppPreferences`\u2014they're completely unaware of the learner's language setting or interface language choice.",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a6051201f0ce6aeea",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-a6051201f0ce6aeea.jsonl",
+    "last_assistant_message": "Perfect! I have completed the comprehensive analysis. Here's a summary of the key findings:\n\n## Summary\n\n**VocabularyView.swift** is the saved-words list and detail view for iOS/macOS. It currently has **zero awareness** of the interface language setting (LocalizationManager). The file **exclusively assumes English-native learners studying Chinese**, with Chinese characters always displayed as the large headline and English definitions as secondary text.\n\n### Critical Direction Conflicts (Severity: **Core**)\n\n1. **Layout orientation**: Chinese always headline-sized; English always secondary. When interface is Mandarin (native Mandarin speaker), English should be the large headline instead.\n2. **Text-to-speech**: `SpeakChinese()` is hardcoded in vocabulary list swipe actions (line 423), term detail \"Speak\" buttons (648, 948). Native Mandarin speakers should hear English narration instead.\n3. **AI explanations**: Both AIWordExplanationView and AIWordExplanationService hardcode assumptions about explaining Mandarin words to English speakers. When interface is Mandarin, they should explain English words instead.\n4. **Copy/clipboard**: Always copies Chinese characters; should copy the primary language (definition/English for Mandarin-native learners).\n\n### Important Direction Issues\n\n- Pinyin is always shown (supporting Chinese learning). Suppress when learning English (Mandarin UI).\n- Font size labeled \"ChineseFontSize\" even though it controls headline prominence. Rename and adapt to interface language.\n- Alphabetical sorting always sorts by Chinese; should sort by English when learner is native Mandarin.\n- Translation fetching always calls `translateToEnglish()`. When Mandarin UI, either skip or call `translateToChinese()` for richer explanations.\n\n### No LocalizationManager Usage Found\n\nThe file currently reads **zero instances** of `LocalizationManager`, `AppPreferences`, `TranslationDirection`, or `L()`. This is the root cause of the disconnect\u2014the view has no way to know the user's interface language preference.\n\n**All findings with exact line numbers and severity levels are in the structured output above.**",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8742f32872b9cfb3",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-a8742f32872b9cfb3.jsonl",
+    "last_assistant_message": "Perfect! I've completed the analysis. Here's a summary of my findings:\n\n## Summary\n\nI've analyzed all three files for language direction assumptions and interface language adaptation. The core issue is that the photo translation and screenshot translation features make hardcoded assumptions based on **detected source language** or a fixed **default direction**, without checking the **interface language** (which should determine the learner's native language).\n\n### Key Findings:\n\n**PhotoTranslateView.swift** (1,444 lines)\n- AI extracted vocabulary (lines 556\u2013574): Always shows `.term` as large/bold, `.meaning` as small/secondary\u2014assumes term is the learning focus, but when interface is Mandarin (user learning English), the English term should be large and Chinese small.\n- TTS hardcoded to English for Chinese text (line 689) and English text (line 1362) without checking interface language.\n- Vocabulary saving (lines 1268\u20131296) flips Chinese/English based only on detected language, not interface language\u2014this mis-orders the \"definition\" field which shows second in the UI.\n- AI vocab extraction (line 1250) passes `sourceIsChinese` to the AI service without considering that interface language should inform the AI's explanation language.\n- Word translation (line 1012) hardcodes `sourceIsChinese: false` assuming all users learn Mandarin from English.\n\n**ScreenshotTranslationStore.swift** (318 lines)\n- Default `targetLanguage = .english` (line 101) assumes all users want English translations (i.e., are learning English from Chinese).\n- Translation direction logic (line 290: `sourceIsChinese = targetLanguage == .english`) is brittle\u2014it assumes a fixed pair without interface language context.\n\n**TranslatedScreenshotOverlayView.swift** (369 lines)\n- TTS language selection (lines 277\u2013281) checks `targetLanguage` but never checks interface language to validate the assumption.\n- All UI labels hardcoded in English: \"Translation\", \"Translated Content\", \"Show Original Text\", etc. (lines 42, 58, 62, 73, 81, 87, 129, 164, 171, 221\u2013227, 235, 253, 255).\n\n### The Fix Pattern:\nEvery location that makes a language/direction choice should check `LocalizationManager.shared.language`:\n- If interface is **Mandarin** (`.zh-Hans`): User is native Mandarin **learning English** \u2192 show English prominently, explain in Chinese, default target=English.\n- If interface is **English** (`.en`): User is native English **learning Mandarin** \u2192 show Chinese prominently, explain in English, default target=Chinese.\n\nI've provided 10 concrete recommendations with exact function/property names and file:line references to guide the implementation.",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a2ef4c214032f75b9",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-a2ef4c214032f75b9.jsonl",
+    "last_assistant_message": "Perfect! I've completed a thorough analysis of the three assigned files. Here's a summary of my findings:\n\n## Summary\n\n**StatsView** is a statistics dashboard displaying learning progress via heatmaps, pie charts, and bar charts. It currently has no interface-language awareness\u2014all section headers and labels (like \"Activity Heatmap,\" \"Words Learned,\" \"Overview\") are hardcoded English strings with no localization.\n\n**LearningActivity** is a language-neutral data model for tracking daily learning activity broken down by part-of-speech categories (Noun, Verb, etc.). The model itself is fine, but the views that use it should adapt to interface language.\n\n**WorkbookGradingView** is an AI-powered grading feature that accepts workbook photos, sends them to vision LLMs, and saves extracted vocabulary. It has significant language-direction issues: The AI system prompt unconditionally asks for \"fullSentence: the COMPLETE sentence in English\" and always calls `SpeechService.speakEnglish()`, regardless of whether the interface language is Mandarin (which indicates a Chinese native learning English, not an English native learning Mandarin).\n\n## Key Findings\n\n**Core Issues:**\n1. **WorkbookGradingView AI prompts** hardcode English as the target language, ignoring LocalizationManager.shared.language\n2. **TTS buttons** (lines 651, 741) always speak English, but should adapt when interface is Mandarin\n3. **Hardcoded UI strings** across all files use inline bilingual text instead of L() localization\n4. **Vocab direction in grading** isn't specified\u2014when interface is Mandarin, the AI should know to extract English as the learning term and Mandarin as the meaning\n\n**Minor Issues:**\nAll hardcoded English section headers and labels in StatsView should use L() for proper localization.\n\nThe analysis includes exact file:line references, current code snippets, desired behavior, and concrete recommendations for minimal changes to achieve the interface-language-aware goal.",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aa0299ce7b21e2aaf",
+    "agent_type": "Explore",
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-aa0299ce7b21e2aaf.jsonl",
+    "last_assistant_message": "Perfect. I have successfully completed the analysis. Let me provide a summary of the report:\n\n## Summary\n\nI have thoroughly analyzed all 7 assigned files in the SwiftMandarin app for language direction assumptions and localization patterns. The goal is to ensure the app adapts to the **interface language** (not just learner mode): when UI is in Mandarin, the user is a native Mandarin speaker learning English; when in English, they are learning Mandarin.\n\n### Key Findings:\n\n**CRITICAL ISSUE (Severity: core)**\n- **AIProviderConfigView.swift, line 278**: The `testConnection()` method sends hard-coded English prompts to AI (\"You are a connectivity check\"). This should adapt to the interface language\u2014when UI is Mandarin, prompt should be in Mandarin to ensure consistency.\n\n**WIDESPREAD LOCALIZATION GAPS (Severity: important)**\n- **80+ hard-coded English strings** across MoreView.swift and MacOSSettingsView.swift that should use `LocalizedStringKey` or `L()` function:\n  - Navigation labels: \"History\", \"Settings\", \"About\", \"Privacy Policy\", \"Rate App\", \"Share App\" \n  - Section headers: \"Language\", \"Learning Mode\", \"AI\", \"Translation\", \"Output\", \"Display\", \"Feedback\", \"Data\", \"Statistics\", \"Clear Data\"\n  - View titles: \".navigationTitle(\"Settings\")\", \".navigationTitle(\"History\")\", etc.\n  \n- **AIModelSettings.swift, lines 56-69**: Provider descriptions returned by `AIProvider.description` are hard-coded English and appear in settings UI\u2014should be localized.\n\n**CORRECT IMPLEMENTATIONS (Severity: ok)**\n- ContentView.swift properly uses `LocalizedStringKey` for all tab titles\n- SwiftMandarinApp.swift correctly injects `LocalizationManager.shared` and keys view identity to force rebuilds when language changes\n- Both settings views read `LocalizationManager.language` and `AppPreferences.learnerMode`\n\n### Recommendations:\n\n1. **Task A**: Convert 80+ hard-coded English literals to `LocalizedStringKey` in settings views\n2. **Task B**: Localize `AIProvider.description` strings  \n3. **Task C (Critical)**: Make `testConnection()` AI prompt adapt to interface language\n4. **Task D**: Create a shared helper function for language-dependent string selection to centralize the pattern\n5. **Task E**: Ensure all section headers/footers use localization\n6. **Tasks F\u2013G**: Future work on SavedTerm display orientation and other AI services outside assigned files\n\nThe report has been delivered in the required structured format with exact file:line references, severity levels, and concrete implementation guidance.",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a4a4c09661b0d5495",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_a6d013a4-22a/agent-a4a4c09661b0d5495.jsonl",
+    "last_assistant_message": "Structured output delivered. The audit missed 13 items, most critically the Ollama/cloud AI explanation paths in AIWordExplanationService.swift (lines 479, 488-545, 604-676), the misattribution of grading prompts to WorkbookGradingView.swift (they live in AIWordExplanationService.swift:865-887), and the absent core linkage between LocalizationManager.language and AppPreferences.learnerMode.",
+    "background_tasks": [
+      {
+        "id": "wc53jru95",
+        "type": "workflow",
+        "status": "running",
+        "description": "Parallel deep-read of SwiftMandarin to map every language-direction assumption",
+        "name": "map-language-direction"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8fe5ea42cbb52da7",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a8fe5ea42cbb52da7.jsonl",
+    "last_assistant_message": "Review complete. Findings delivered via structured output: one major (photo vocab extraction prompt now returns native-language meanings, which collapses to same-language pairs and saves cards with no translation side in cross-language cases) and two minor (the \"Questions\"\u2192\"\u9898\u76ee\" wrong-context translation newly surfaced in the Phrases tab headers, and the workbook-grading prompt flipping `fullSentence` language for English-UI users grading English workbooks). All new user-facing strings in the diff were verified present in `Localizable.xcstrings` with zh-Hans values, and the prompt/schema/decoder key shapes (`sentence`/`pinyin`/`translation`/`word`/`phrase`) are consistent across all three provider paths.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ac3c2708a7a8eaa07",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-ac3c2708a7a8eaa07.jsonl",
+    "last_assistant_message": "Structured output delivered: 9 findings (6 major, 3 minor) covering en-UI regressions in SavedTerm display helpers (pinyin fallback lost, CJK-containing definitions hidden), history row ordering, EnglishWordDetailSheet layout/TTS flip, workbook fullSentence language, photo-extraction vocab saving, plus minor placeholder, TTS-voice, and Shortcuts-entity changes.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ab1f0114b7a8c914d",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-ab1f0114b7a8c914d.jsonl",
+    "last_assistant_message": "Review complete. Three initialization-order/didSet-ordering findings were reported via structured output; no actor-isolation violations or singleton init cycles were found (both platform builds compile with zero errors and warnings, all `@MainActor` call sites verified).",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a57ef154bb6c51e0d",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a57ef154bb6c51e0d.jsonl",
+    "last_assistant_message": "Review complete. Findings submitted via structured output.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "acfcb58aa13cac398",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-acfcb58aa13cac398.jsonl",
+    "last_assistant_message": "Structured output delivered: 7 findings (4 major, 3 minor) covering the logic-inversion/direction dimension \u2014 the English example-sentence filter that can drop everything, the extractVocabulary and gradeWorkbook prompt-language mistakes, and three places where the frozen English-UI behavior was silently changed (EnglishWordDetailSheet narration/layout, pinyin gating, history row order). No outright boolean inversions were found in the core `nativeIsChinese`/`learningIsChinese` plumbing.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a125c304d84c0654a",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a125c304d84c0654a.jsonl",
+    "last_assistant_message": "Verification complete. The claim is refuted: while the English-UI branch does flip the headline to the Chinese translation, that is the change-set's documented design for English-UI learners, and the central failure scenario fails on its premise \u2014 `dualNarration` defaults to true (AppPreferences.swift:196), so default-path English-UI users retain an always-enabled English narration button, including while the translation loads.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a7cc94f283703e39f",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a7cc94f283703e39f.jsonl",
+    "last_assistant_message": "The claim was verified and confirmed via the StructuredOutput call.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a91e3a4dd4cda7e22",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a91e3a4dd4cda7e22.jsonl",
+    "last_assistant_message": "Verification complete. The claim is confirmed: the case-sensitive `contains(word)` filters at lines 344-345 and 1359-1360 of AIWordExplanationService.swift drop legitimately exact English examples under the \u4e2d\u6587 UI direction newly introduced by this change-set.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a0caf83e399a60f97",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a0caf83e399a60f97.jsonl",
+    "last_assistant_message": "Verification complete \u2014 the claim is confirmed.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a6ac7407914551dbf",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a6ac7407914551dbf.jsonl",
+    "last_assistant_message": "Verification complete. The claim was confirmed, not refuted \u2014 the full failure chain (prompt change at AIWordExplanationService.swift:858, the unguarded English-headword save in PhotoTranslateView.saveExtractedVocab, and the glossText collapse in SavedTerm.swift) reproduces exactly as described for English-UI users extracting vocabulary from an English passage.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ab736631e8722ca90",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-ab736631e8722ca90.jsonl",
+    "last_assistant_message": "Verification complete. The claim is confirmed: the prompt change at AIWordExplanationService.swift:858 combined with the rewritten saveExtractedVocab (and its removed CJK guard) produces English-only, pinyin-less vocabulary cards with invisible glosses for English-UI users extracting vocabulary from English passages \u2014 a regression in the direction required to be unchanged.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a27401dddd7319450",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a27401dddd7319450.jsonl",
+    "last_assistant_message": "Verification complete. The claim is confirmed in the current working-tree code: the new native-language prompt in `extractVocabulary` produces Chinese meanings for Chinese passages under \u4e2d\u6587 UI, `saveExtractedVocab` (PhotoTranslateView.swift:1283) stores the degenerate Chinese/Chinese entry, SavedTerm's side detection makes the meaning undisplayable, and LearnView flashcards show and \"speak\" the Chinese definition on the English front with the en-US voice.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ac6da2fd70047a37c",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-ac6da2fd70047a37c.jsonl",
+    "last_assistant_message": "Verification complete. The claim was confirmed rather than refuted: the new extractVocabulary prompt (AIWordExplanationService.swift:858) forces \"meaning\" into the native language, which under English UI with an English passage produces all-English term/meaning pairs, and the rewritten saveExtractedVocab (PhotoTranslateView.swift:1283) saves them as English-headword cards with empty pinyin and a gloss that collapses to empty \u2014 a change to behavior that was required to remain untouched for English-UI users.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a5a170dc3fe395320",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a5a170dc3fe395320.jsonl",
+    "last_assistant_message": "The structured output has been provided. The claim was confirmed (refuted=false): under \u4e2d\u6587 UI, scanning a Chinese passage produces degenerate Chinese/Chinese vocab entries whose stored meaning is unreachable through SavedTerm's display accessors, with the downstream flashcard and en-US TTS fallout exactly as the reviewer described.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a17b8c0ff6ae082e0",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a17b8c0ff6ae082e0.jsonl",
+    "last_assistant_message": "Verification complete \u2014 the claim was confirmed, not refuted.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "af03daf16e7da7c0b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-af03daf16e7da7c0b.jsonl",
+    "last_assistant_message": "Claim evaluated and refuted via structured output.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ad785a6e2426b7dfa",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-ad785a6e2426b7dfa.jsonl",
+    "last_assistant_message": "The claim is confirmed, not refuted \u2014 the structured output has been provided with the full verification chain.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a32c38c8d8bda68de",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a32c38c8d8bda68de.jsonl",
+    "last_assistant_message": "The structured output has been provided. The claim was confirmed (refuted=false): the EN\u2192ZH history rows do flip for English-UI users in the current working-tree code, breaking the source-first behavior that the change-set was required to leave unchanged.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a05f47940d6c70269",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a05f47940d6c70269.jsonl",
+    "last_assistant_message": "Verification complete. The reviewer's claim was confirmed: `showsPinyin` at SavedTerm.swift:87 gates pinyin rendering on `!pinyin.isEmpty`, which kills the previously-working auto-generation fallback in `PinyinConverter.coloredPinyin(preferred:fallbackText:)` for English-UI users with empty-pinyin Chinese terms (e.g. CSV imports with empty pinyin cells), regressing rows, the detail sheet, and the inspector.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ae2be6cba864e5ccc",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-ae2be6cba864e5ccc.jsonl",
+    "last_assistant_message": "Verdict delivered: the claim is refuted under the design-intent lens \u2014 the en-UI placeholder change is a deliberately authored localization that serves the tailoring feature's core mechanism, not an unintended deviation.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "abd4c31df4023b016",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-abd4c31df4023b016.jsonl",
+    "last_assistant_message": "Refutation complete. The claim's core scenario fails to reproduce because `dualNarration` defaults to `true` (AppPreferences.swift:196), so English-UI users retain an always-enabled English narration button by default, and the headline flip is the change-set's documented intent matching the spec's canonical English-UI presentation.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a93e95821ae0fd9a2",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a93e95821ae0fd9a2.jsonl",
+    "last_assistant_message": "Verdict returned: the claim is confirmed (refuted = false).",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a56905a426fc5866a",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a56905a426fc5866a.jsonl",
+    "last_assistant_message": "The verdict is recorded: the claim is confirmed, not refuted. The case-sensitive exact-substring filters at lines 344-345 and 1359-1360 of AIWordExplanationService.swift were rewritten in this diff and now apply CJK byte-exact semantics to the newly supported English-headword path (\u4e2d\u6587 UI), where sentence-initial capitalization and case-mismatched saved headwords cause silently dropped examples/collocations, with the view hiding the emptied sections entirely.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a5d1080bbda42f097",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a5d1080bbda42f097.jsonl",
+    "last_assistant_message": "Verdict returned: the claim is confirmed (refuted=false). The `!pinyin.isEmpty` clause in `showsPinyin` (SavedTerm.swift:87) drops the previously unconditional auto-generated colored pinyin for CJK terms with empty stored pinyin in English UI, across VocabularyView.swift:490, :586, and :900 \u2014 contradicting both the change-set's \"English UI unchanged\" invariant and the property's own doc comment.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a4c0e8511933ce91d",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a4c0e8511933ce91d.jsonl",
+    "last_assistant_message": "Verification complete. The claim is confirmed: `showsPinyin`'s `!pinyin.isEmpty` conjunct at SavedTerm.swift:87 silently drops the character-derived pinyin fallback for English-UI users with empty-pinyin Chinese terms (e.g. CSV/JSON imports), contradicting both the \"completely unchanged\" freeze requirement and the property's own doc comment.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a2d37870070da7e4b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a2d37870070da7e4b.jsonl",
+    "last_assistant_message": "Verification complete. The claim is confirmed: `showsPinyin`'s `!pinyin.isEmpty` term (SavedTerm.swift:87) hides the previously synthesized character-derived pinyin for English-UI users whose Chinese terms have an empty stored pinyin field (e.g., CSV imports with an empty pinyin column), regressing the \"English UI unchanged\" guarantee in VocabularyRow, TermDetailSheet, and TermDetailInspector.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8040b3b7064afe84",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a8040b3b7064afe84.jsonl",
+    "last_assistant_message": "Claim confirmed \u2014 the structured output has been returned with refuted=false.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a0d027313842aa44c",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a0d027313842aa44c.jsonl",
+    "last_assistant_message": "Verdict delivered: the claim is confirmed (refuted=false). The new prompt at AIWordExplanationService.swift:968 derives the workbook's language from the UI language rather than detecting it, flipping English-UI grading output from English (hard-coded at HEAD) to Mandarin Chinese for the feature's own documented English-workbook use case, with the Chinese sentence then spoken by the Mandarin voice via the new speakAuto path.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aaf361d04ff11a0b7",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-aaf361d04ff11a0b7.jsonl",
+    "last_assistant_message": "Verification complete. The reviewer's claim is confirmed: in English UI, `subtitle = enSide` (ShortcutEntities.swift:31) drops the definition subtitle both when the definition contains any CJK character (enSide becomes \"\") and when the headword is Latin with a Latin definition (enSide equals the title), whereas the pre-change code always showed the definition as subtitle.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a0468a2fe4bdf6e2e",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a0468a2fe4bdf6e2e.jsonl",
+    "last_assistant_message": "Verification complete. The claim stands: the new `speakAuto` content-detection path at line 277 can flip an English-UI user's entire English translation to the zh-CN voice on a single residual hanzi \u2014 with the delimiter-fallback at `ScreenshotTranslationStore.swift:279` providing a concrete way for original Chinese text to leak into `fullTranslatedText`.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8ab88ce0d8727418",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a8ab88ce0d8727418.jsonl",
+    "last_assistant_message": "Verdict returned: the claim is confirmed (refuted=false). The new `speakAuto` call at TranslatedScreenshotOverlayView.swift:277 keys the voice off `containsCJK`, which flips the entire English translation to the zh-CN voice on a single residual hanzi \u2014 with a guaranteed trigger path via the delimiter-split fallback at ScreenshotTranslationStore.swift:279 \u2014 whereas the pre-change code always used en-US for the `.english` target under the English UI.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a17771216dfb356e0",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a17771216dfb356e0.jsonl",
+    "last_assistant_message": "Verification complete \u2014 the claim stands and the structured output has been submitted.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a39c175584204056a",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a39c175584204056a.jsonl",
+    "last_assistant_message": "Verification complete. The claim was confirmed: under English UI, the new gradeWorkbook prompt at line 968 demands Mandarin fullSentences where HEAD hard-coded English, breaking the explicitly frozen English-UI behavior for the workbook feature's own advertised use case.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a5798c848954449dc",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a5798c848954449dc.jsonl",
+    "last_assistant_message": "Verification complete. The claim was confirmed against the working-tree code: with English UI, `SavedTermEntity.displayRepresentation` (ShortcutEntities.swift:27\u201333) drops the definition subtitle both when the definition contains any CJK character (enSide becomes \"\", reproducible via the workbook wrong-answer notes like \"to eat  (\u2717 \u5403\u53cd)\") and when the headword is Latin-script with an English definition (subtitle equals title and is suppressed). Pre-change, the subtitle was always the definition, so this is a real en-UI regression.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a370fde6a88d33952",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a370fde6a88d33952.jsonl",
+    "last_assistant_message": "Confirmed the claim; structured output submitted with refuted=false.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a4547bd15c632707a",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a4547bd15c632707a.jsonl",
+    "last_assistant_message": "Verification complete. The claim was confirmed, not refuted \u2014 the structured output has been provided.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a0c07c755ecfde64e",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a0c07c755ecfde64e.jsonl",
+    "last_assistant_message": "The verification is complete and the structured output has been submitted. The claim was confirmed (refuted=false): the `syncLearnerMode` call added at LocalizationManager.swift:101 by this diff unconditionally resets an explicit `.bilingual` learner-mode choice to a directional mode on any interface-language flip, with no path back to `.bilingual`.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a517dfce2d59b0318",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a517dfce2d59b0318.jsonl",
+    "last_assistant_message": "Done.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a410a930d750c5f05",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a410a930d750c5f05.jsonl",
+    "last_assistant_message": "Refuted. The init-time language capture at ScreenshotTranslationStore.swift:156 is real but behaviorally inert: every screenshot translation is initiated by TranslateScreenshotsIntent, which overwrites `store.targetLanguage` per-run (resolving the `.appLanguage` default from live UserDefaults that the language toggle writes synchronously), so the claimed stale-target breakage cannot manifest under either UI language.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "afcb02d0a5999091f",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-afcb02d0a5999091f.jsonl",
+    "last_assistant_message": "Verification complete. The claim is confirmed, not refuted \u2014 the init assignment at AppPreferences.swift:190 cannot fire the `didSet` that writes the \"defaultDirection\" key, and no other code path writes it at startup, so a fresh \u4e2d\u6587-UI install launches with Settings showing \u4e2d\u2192EN while the Translate tab defaults to English\u2192Chinese.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ab41af9063e5f30b4",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-ab41af9063e5f30b4.jsonl",
+    "last_assistant_message": "Refutation complete and submitted.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ac3aea29a869ca7f4",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-ac3aea29a869ca7f4.jsonl",
+    "last_assistant_message": "Done. Verdict: refuted \u2014 the mechanical behavior the reviewer describes does occur (LocalizationManager.swift:101 \u2192 AppPreferences.swift:180 force-sets a directional mode and can never produce `.bilingual`), but it is the explicitly documented design intent of the change-set (\"one gesture re-orients the whole app\"; interface language = native language \u21d2 learning direction follows). The tailored rendering is keyed entirely on `LocalizationManager`, not `learnerMode`, so the overwrite doesn't change any user-visible tailoring, and the Bilingual choice is recoverable with one tap in the same picker rather than \"permanently lost.\"",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a59827c565014fa85",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013/subagents/workflows/wf_ebadb868-a11/agent-a59827c565014fa85.jsonl",
+    "last_assistant_message": "Verification complete. The claim was confirmed: the line-190 init assignment bypasses the `didSet` (verified empirically for `@Observable` classes), leaving the `\"defaultDirection\"` UserDefaults key unwritten on a fresh \u4e2d\u6587-device install, so the Translate tab opens English\u2192Chinese while Settings shows the \u4e2d\u2192EN learner mode \u2014 exactly the half-reoriented state the reviewer described, and it is introduced by this change-set's new derived default rather than pre-existing.",
+    "background_tasks": [
+      {
+        "id": "whgiwc31z",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-dimension review of the native-language tailoring diff",
+        "name": "review-language-direction-diff"
+      }
+    ],
+    "session_crons": []
+  }
+]

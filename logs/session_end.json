@@ -14,5 +14,53 @@
     "hook_event_name": "SessionEnd",
     "reason": "other",
     "logged_at": "2026-06-08T17:18:50.042929"
+  },
+  {
+    "session_id": "cf517dd1-c093-4676-a7cd-d0a1bd8b57fc",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "SessionEnd",
+    "reason": "other",
+    "logged_at": "2026-06-12T16:47:27.466211"
+  },
+  {
+    "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/b5f41151-0aed-461b-8504-2e6443986013.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "SessionEnd",
+    "reason": "other",
+    "logged_at": "2026-06-13T02:53:00.706961"
+  },
+  {
+    "session_id": "68f39402-1287-40a5-9bec-6373d1b93526",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/68f39402-1287-40a5-9bec-6373d1b93526.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "SessionEnd",
+    "reason": "other",
+    "logged_at": "2026-06-13T02:53:03.691658"
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "SessionEnd",
+    "reason": "other",
+    "logged_at": "2026-06-16T21:57:05.615439"
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "SessionEnd",
+    "reason": "other",
+    "logged_at": "2026-06-18T02:06:42.866749"
+  },
+  {
+    "session_id": "90f110be-2760-48a2-9a2f-eea29a3995f5",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/90f110be-2760-48a2-9a2f-eea29a3995f5.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "SessionEnd",
+    "reason": "other",
+    "logged_at": "2026-06-22T03:19:42.179019"
   }
 ]

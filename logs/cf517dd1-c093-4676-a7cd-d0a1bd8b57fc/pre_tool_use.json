@@ -2479,5 +2479,22 @@
       "description": "Create new branch, commit pending logs, push with upstream"
     },
     "tool_use_id": "toolu_01FBAF49jWp8cS6BJPZSP4VH"
+  },
+  {
+    "session_id": "cf517dd1-c093-4676-a7cd-d0a1bd8b57fc",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "TaskOutput",
+    "tool_input": {
+      "task_id": "bo865pvcj",
+      "block": true,
+      "timeout": 120000
+    },
+    "tool_use_id": "toolu_019MAjXL7BCJiWudcdWj9uso"
   }
 ]
