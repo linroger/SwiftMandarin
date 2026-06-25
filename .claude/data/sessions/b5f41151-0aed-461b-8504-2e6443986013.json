@@ -1,0 +1,6 @@
+{
+  "session_id": "b5f41151-0aed-461b-8504-2e6443986013",
+  "prompts": [
+    "go through this app's codebase and understand it. if the interface language is in mandarin, then tailor it for a native\n  mandarin speaker, so the explanations will be in mandarin from the AI, the interface from the AI explanations will be in\n  mandarin, in the saved words database ,the english text will be the main text, since that is what the user is\n  presumably trying to learn, and the mandarin text will be small, etc. and vice versa if the interface language is in\n  english.. read through the codebase and make a report of the all the changes you need to make to optimize this app and to make these aspects more intuitive, and then make a plan for how to resolve this issues and improve the app, and then execute on the plan methodically and systematically, paying careful attention to detail"
+  ]
+}

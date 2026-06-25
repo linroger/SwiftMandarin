@@ -338,6 +338,22 @@ struct PhotoTranslateView: View {
 
     // MARK: - Input Section
 
+    /// Icon-over-text label for a source-picker button. A vertical layout gives
+    /// the (often long, localized) title the button's full width, so it stays on
+    /// one line instead of wrapping letter-by-letter when three buttons share a
+    /// narrow iPhone row.
+    private func sourceButtonLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.title3)
+            Text(title)
+                .font(.subheadline)
+                .fitSingleLine(0.6)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+    }
+
     private var inputSection: some View {
         VStack(spacing: 16) {
             // Input buttons
@@ -348,32 +364,26 @@ struct PhotoTranslateView: View {
                     Button {
                         showCameraScanner = true
                     } label: {
-                        Label("相机扫描", systemImage: "camera.fill")
-                            .frame(maxWidth: .infinity)
+                        sourceButtonLabel("相机扫描", systemImage: "camera.fill")
                     }
                     .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
                     .disabled(!CameraScannerView.isAvailable)
                 }
                 #endif
-                
+
                 // Photo picker (Photos library)
                 PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                    Label("照片", systemImage: "photo.fill")
-                        .frame(maxWidth: .infinity)
+                    sourceButtonLabel("照片", systemImage: "photo.fill")
                 }
                 .buttonStyle(.bordered)
-                .controlSize(.large)
 
                 // File picker (Files app / Finder)
                 Button {
                     showPhotoFiles = true
                 } label: {
-                    Label("文件", systemImage: "folder")
-                        .frame(maxWidth: .infinity)
+                    sourceButtonLabel("文件", systemImage: "folder")
                 }
                 .buttonStyle(.bordered)
-                .controlSize(.large)
             }
 
             // Scan-language selector + re-recognize. Lets the user force

@@ -1,0 +1,313 @@
+[
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git status && echo \"=== BRANCH ===\" && git branch -vv && echo \"=== LOG ===\" && git log --oneline -15",
+      "description": "Check git status, branches, and recent log"
+    },
+    "tool_use_id": "toolu_01JsSQjrwHEn8mYvYPCZFjAd"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "echo \"=== remote ===\" && git remote -v && echo \"=== main vs branch ===\" && git log --oneline main..jun-12-2026-ios17-compat 2>/dev/null | head -30 && echo \"=== files in SwiftMandarin/logs ===\" && ls -la SwiftMandarin/logs 2>/dev/null | head && echo \"=== SwiftMandarin/.claude ===\" && ls -la SwiftMandarin/.claude 2>/dev/null | head && echo \"=== .gitignore ===\" && cat .gitignore 2>/dev/null",
+      "description": "Check remote, branch divergence, log dirs, gitignore"
+    },
+    "tool_use_id": "toolu_01QxJ7DXdt9NAMxfruMtU2dv"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cat .remember/remember.md 2>/dev/null | head -60; echo \"=== handoff ===\"; ls -la handoff.md 2>/dev/null; cat handoff.md 2>/dev/null | head -40",
+      "description": "Read remember and handoff files"
+    },
+    "tool_use_id": "toolu_01NjMdaMXthMinW4gSd5VsoC"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "echo \"=== project.pbxproj working diff ===\"; git diff SwiftMandarin.xcodeproj/project.pbxproj | head -80",
+      "description": "Show working diff of project.pbxproj"
+    },
+    "tool_use_id": "toolu_01K9JWVWWtySJD1X7f5EAbbc"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -n \"FileSystemSynchronized\\|membershipExceptions\\|MandarinKit.md\\|logs\\|\\.claude\" SwiftMandarin.xcodeproj/project.pbxproj | head -40",
+      "description": "Find file-system synchronized exception set in pbxproj"
+    },
+    "tool_use_id": "toolu_015QxfdNxdzCTK8EZCswkTvq"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "sed -n '34,120p' SwiftMandarin.xcodeproj/project.pbxproj",
+      "description": "Inspect exception set, root group, and groups in pbxproj"
+    },
+    "tool_use_id": "toolu_01DdkKsTNVS4G8F5gLuz3LLo"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "echo \"=== HEAD pbxproj exception set ===\"; git show HEAD:SwiftMandarin.xcodeproj/project.pbxproj | grep -n \"membershipExceptions\" -A4 ; echo \"=== does SOURCE_ROOT logs exist on disk (root) ===\"; ls -d logs 2>/dev/null; echo \"=== synchronized root group path ===\"; git show HEAD:SwiftMandarin.xcodeproj/project.pbxproj | grep -n \"PBXFileSystemSynchronizedRootGroup\" -A6",
+      "description": "Compare HEAD exception set and root group path"
+    },
+    "tool_use_id": "toolu_01AWM7mDonhUwfhDz7fFwNm4"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "ToolSearch",
+    "tool_input": {
+      "query": "select:TaskCreate,TaskUpdate,TaskList",
+      "max_results": 5
+    },
+    "tool_use_id": "toolu_01NeYtDQBzz9zfxSyAgdPXy5"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "TaskCreate",
+    "tool_input": {
+      "subject": "Git flow: commit current work, merge to main, branch",
+      "description": "Revert accidental pbxproj regression, remove stray bundled dirs, commit current log-sync state, push branch, merge jun-12-2026-ios17-compat into main, push main, create new feature branch for audit fixes.",
+      "activeForm": "Running git flow (commit/merge/branch)"
+    },
+    "tool_use_id": "toolu_01PBQBEthU5F9ctrVAwFN8k8"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "TaskCreate",
+    "tool_input": {
+      "subject": "P0-1: Stop bundling session logs/.claude into app",
+      "description": "Keep `logs` in PBXFileSystemSynchronizedBuildFileExceptionSet, delete SwiftMandarin/logs and SwiftMandarin/.claude from source, add SwiftMandarin/.claude to .gitignore.",
+      "activeForm": "Fixing log/.claude bundling (P0-1)"
+    },
+    "tool_use_id": "toolu_01HsAQJfqeSM8spM9QUWb8V6"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "TaskCreate",
+    "tool_input": {
+      "subject": "P0-2: Fix translation-history direction metadata",
+      "description": "TranslateView triggerAITranslation/performTranslation record directionSnapshot from UI toggle instead of detected direction. Use detectedTranslationDirection for history metadata; keep source-text stale guard.",
+      "activeForm": "Fixing translation-history direction (P0-2)"
+    },
+    "tool_use_id": "toolu_01NbHDreTGNfaBjiUmFKM8ic"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "TaskCreate",
+    "tool_input": {
+      "subject": "P0-3: Fix unsafe audio-buffer async boundary in speech",
+      "description": "SpeechRecognitionService audio tap captures AVAudioPCMBuffer into unstructured Task; converter returns same buffer. Convert/yield synchronously or deep-copy; one-shot converter input block (.haveData then .endOfStream).",
+      "activeForm": "Fixing speech audio buffer boundary (P0-3)"
+    },
+    "tool_use_id": "toolu_01BzoKVmnuoDmKWEu9se6J6E"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "TaskCreate",
+    "tool_input": {
+      "subject": "P1: Persistence, Vision/stitching off-main, stride, intent routing, intent race",
+      "description": "P1-1 versioned tolerant decoding in PersistentCodableStore + models; P1-2 move Vision OCR + pixel compare off-main; P1-3 correct pixel stride in stitching; P1-4 clear only handled pending actions; P1-5 intent summary + re-entry guard + snapshot inputs.",
+      "activeForm": "Fixing P1 reliability issues"
+    },
+    "tool_use_id": "toolu_014Ea3RoJg7UALejkEAhVVpP"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "TaskCreate",
+    "tool_input": {
+      "subject": "P2: Ollama IDs, reasoning models, learner-mode sync, SRS, About",
+      "description": "P2-1 guard Ollama model IDs; P2-2 reasoning-model request body; P2-3 bidirectional learner-mode/app-language; P2-4 route sessions through getCardsForReview + namespace IDs + persist interval/lapse; P2-5 derive version/build from Bundle + fix About text/links.",
+      "activeForm": "Fixing P2 correctness issues"
+    },
+    "tool_use_id": "toolu_01CnTasESXMrPTHdTrMxZHbk"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "TaskCreate",
+    "tool_input": {
+      "subject": "Build-verify (iOS+macOS), adversarial review, commit",
+      "description": "Build iOS Simulator + macOS Debug with zero warnings; run adversarial review workflow over the diff; fix confirmed issues; commit + push branch; update handoff.",
+      "activeForm": "Build-verifying and reviewing"
+    },
+    "tool_use_id": "toolu_014UUV9qe2HCHfc5fPQEJLrQ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "TaskUpdate",
+    "tool_input": {
+      "taskId": "1",
+      "status": "in_progress"
+    },
+    "tool_use_id": "toolu_01Aje7MRQoDXFzpQ1v7ePPic"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit checkout -- SwiftMandarin.xcodeproj/project.pbxproj\nSCRATCH=\"/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/scratchpad/removed-bundled-dirs\"\nmkdir -p \"$SCRATCH\"\n[ -d SwiftMandarin/logs ] && mv SwiftMandarin/logs \"$SCRATCH/SwiftMandarin-logs\" && echo \"moved SwiftMandarin/logs\"\n[ -d SwiftMandarin/.claude ] && mv SwiftMandarin/.claude \"$SCRATCH/SwiftMandarin-dotclaude\" && echo \"moved SwiftMandarin/.claude\"\necho \"=== exception set after revert ===\"\ngrep -n \"membershipExceptions\" -A4 SwiftMandarin.xcodeproj/project.pbxproj\necho \"=== remaining SwiftMandarin dotdirs ===\"\nls -la SwiftMandarin | grep -E \"logs|\\.claude\" || echo \"none\"",
+      "description": "Revert pbxproj and relocate stray bundled dirs"
+    },
+    "tool_use_id": "toolu_017thyPunvVwbdqmiYyH8UKc"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit status --short\necho \"=== is root logs/ tracked? ===\"\ngit ls-files logs | head -3\necho \"=== is .claude/data/sessions tracked? ===\"\ngit ls-files .claude/data/sessions | head -3\necho \"=== is .remember tracked? ===\"\ngit ls-files .remember | head -3",
+      "description": "Check git status and which dirs are tracked"
+    },
+    "tool_use_id": "toolu_015jN9ZdeUKZL9Ypua2pfRDB"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit add logs .claude/data/sessions\ngit status --short | head -30\necho \"=== staged file count ===\"\ngit diff --cached --name-only | wc -l",
+      "description": "Stage session log/data sync changes"
+    },
+    "tool_use_id": "toolu_01Aor6W1D5yimhxYad4kzVWn"
+  }
+]

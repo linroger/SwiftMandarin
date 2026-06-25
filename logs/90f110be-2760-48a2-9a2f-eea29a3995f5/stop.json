@@ -1,0 +1,44 @@
+[
+  {
+    "session_id": "90f110be-2760-48a2-9a2f-eea29a3995f5",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/90f110be-2760-48a2-9a2f-eea29a3995f5.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "All done. Both platforms build clean and the logic is verified. Here's the summary.\n\n## What I built\n\n**Background batch AI word-analysis** \u2014 a new engine + UI that analyzes all your saved vocabulary with the current AI model, in parallel, persisting results.\n\n**New engine** \u2014 `Models/BatchExplanationController.swift`: an `@Observable @MainActor` singleton (matching every other store). It owns the background `Task` and a `withTaskGroup` sliding window, so:\n- It only analyzes words with **no cached explanation** for the current direction (the same cache the detail view reads).\n- Results persist via the existing `WordExplanationCacheStore` (keyed by `headlineText` + direction, so the detail view serves them instantly).\n- Because it's a singleton, **navigating away \u2014 even closing Settings \u2014 doesn't stop it**, and any view observing it shows live progress.\n\n**Settings UI** \u2014 `Views/Components/BatchAIAnalysisView.swift`:\n- **Batch-size stepper** (1\u201310 parallel words, persisted in `AIModelSettings.batchConcurrency`).\n- **\"Analyze N Words\"** button (only counts unanalyzed words; disabled when none/no provider).\n- Once running: a **progress bar**, a **live \"\u2713 done / total\" count**, the last analyzed word, and a **Cancel** button.\n- Reachable from **iOS More \u2192 Batch AI Analysis** (with a live progress badge on the row itself) and embedded in **macOS Settings \u2192 AI**.\n\n**Per-word rerun** \u2014 the detail view's analysis header now has a clear labeled **\"Regenerate\"** button that re-runs with the current model.\n\n**Import/export** \u2014 AI analysis now round-trips in both formats (toggle in both export UIs): JSON via a versioned envelope (lossless), CSV via human-readable `AI Definition`/`AI Examples` columns plus a base64 `AI Data` column. Both are backward-compatible with old files.\n\n## Edges I ironed out\nI ran a 92-agent adversarial audit (51 confirmed issues) in parallel. It caught a **compile bug in my own code** before the first build (uninitialized `batchConcurrency`). I fixed that plus the feature-relevant ones: stale AI-analysis state when reusing the view for a different word, mislabeled provider on cached results, and a CSV multi-line-quoted-field round-trip bug. A standalone Swift test then caught a **second real bug** \u2014 Swift treats `\\r\\n` as one grapheme, so my CSV splitter ignored Windows/Excel line endings; fixed with `Character.isNewline`. Pre-existing, out-of-scope findings are documented in `docs/handoff/batch-ai-analysis/handoff.md` for a follow-up.\n\n## Verification\n- **macOS build:** SUCCEEDED \u2014 0 errors, 0 warnings.\n- **iOS build** (iPhone 17 sim): SUCCEEDED \u2014 0 errors, 0 warnings.\n- **Round-trip logic test:** 4/4 pass (multi-line CSV, CRLF, base64 AI-data, envelope/legacy disambiguation).\n- 29 zh-Hans localization strings added.\n\nChanges are staged in the working tree on `jun-12-2026-ios17-compat` (not committed \u2014 say the word and I'll commit).",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "90f110be-2760-48a2-9a2f-eea29a3995f5",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/90f110be-2760-48a2-9a2f-eea29a3995f5.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Committed and pushed.\n\n- **Commit:** `a196480` on `jun-12-2026-ios17-compat`\n- **Push:** `5379ba5..a196480 \u2192 origin/jun-12-2026-ios17-compat` \u2705\n\nThe commit contains the full feature (18 files: 3 new + edits) plus the handoff doc. I deliberately left the `logs/`, `.claude/data/sessions/`, and `SwiftMandarin/.claude/` artifacts unstaged, since the repo syncs those in separate commits \u2014 say the word if you'd like a follow-up \"sync logs\" commit too.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "90f110be-2760-48a2-9a2f-eea29a3995f5",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/90f110be-2760-48a2-9a2f-eea29a3995f5.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "Fixed, committed, and pushed.\n\n## What the SIGTERM was\n\n`SIGTERM` isn't a memory crash \u2014 it's a termination signal, and the debugger parking on `normalizedKey` was the tell: the **main thread was spinning there**. My batch UI caused it. `BatchAIAnalysisControls` recomputed the \"unprocessed words\" count **on every render and ~4\u00d7 per render** (for `analyzed`, \"Needs Analysis\", the button label, and `.disabled`), and each computation scanned the *entire* explanation cache calling `normalizedKey()` per entry \u2014 **O(terms \u00d7 entries)** with a string allocation each time. Since the view re-renders on every cache store and every progress tick during a batch, the main thread saturated \u2192 watchdog termination.\n\n## The fixes (commit `c827d8b`, pushed)\n1. **O(1) cache lookup** \u2014 `WordExplanationCacheStore` now maintains a `lookupIndex` set (kept in sync via `entries.didSet`); `hasExplanation()` is a set membership test instead of a full O(n) scan. The index is observed, so the live count still updates.\n2. **Compute once per render** \u2014 `BatchAIAnalysisControls` computes the unprocessed count a single time in `body` and threads it down, instead of recomputing it in each subview.\n\nTogether these turn the per-render cost from O(terms \u00d7 entries) into O(terms) with no inner string churn \u2014 the hot path that was burning the main thread is gone.\n\n## Also fixed: project-file warnings\nWhile verifying, a separate issue surfaced: **a local hook had mangled `project.pbxproj`**, injecting triplicated `PBXBuildFile`/`Sources` entries for my new files (and references to `logs/`/session JSON). Since the project uses a synchronized root group that auto-compiles everything, those explicit entries double-counted files \u2192 \"duplicate build file\" warnings. My committed `pbxproj` (HEAD) was already clean; I discarded the working-tree junk and confirmed the build returns to **0 warnings**, and the pbxproj stayed clean across a rebuild.\n\n\u26a0\ufe0f Heads-up: that hook re-adds stray `.pbxproj` references on tool activity (it's why the file showed as modified at session start). It didn't re-trigger this time, but if you see `project.pbxproj` go dirty with duplicate build-file entries again, `git checkout HEAD -- SwiftMandarin.xcodeproj/project.pbxproj` restores the clean synchronized-group form.\n\nVerified: clean macOS build, 0 errors / 0 warnings. If the SIGTERM recurs in a different scenario (e.g. a specific Preview, or at launch), send the full Xcode console / crash context and I'll dig further \u2014 but the batch-run hang is resolved.",
+    "background_tasks": [],
+    "session_crons": []
+  }
+]

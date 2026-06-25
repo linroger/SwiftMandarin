@@ -1,0 +1,1162 @@
+[
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -rl \"VocabularyView\\|SavedTerm\\|onDelete\\|deleteTerm\\|removeTerm\" SwiftMandarin --include=\"*.swift\" | head -30",
+      "description": "Find vocabulary/delete related files"
+    },
+    "tool_response": {
+      "stdout": "SwiftMandarin/SwiftMandarinApp.swift\nSwiftMandarin/Models/SavedTerm.swift\nSwiftMandarin/ContentView.swift\nSwiftMandarin/Intents/LookupVocabularyIntent.swift\nSwiftMandarin/Intents/ShortcutHelpers.swift\nSwiftMandarin/Views/MacOSSettingsView.swift\nSwiftMandarin/Intents/SaveVocabularyTermIntent.swift\nSwiftMandarin/Views/WorkbookGradingHistoryView.swift\nSwiftMandarin/Intents/ShortcutEntities.swift\nSwiftMandarin/Views/PhrasesView.swift\nSwiftMandarin/Views/TranslateView.swift\nSwiftMandarin/Views/LearnView.swift\nSwiftMandarin/Views/MoreView.swift\nSwiftMandarin/Views/WorkbookQuestionBankView.swift\nSwiftMandarin/Views/WorkbookGradingView.swift\nSwiftMandarin/Views/PhotoTranslateView.swift\nSwiftMandarin/Views/Components/EnglishRubyTextView.swift\nSwiftMandarin/Views/StatsView.swift\nSwiftMandarin/Views/VocabularyView.swift\nSwiftMandarin/Views/Components/LiveSpeechTranslationView.swift\nSwiftMandarin/Views/Components/RubyTextView.swift\nSwiftMandarin/Services/VocabularyImportExportService.swift",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01XL3VzhfYMGitBPJZskYcQ8",
+    "duration_ms": 440
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -n \"delete\\|onDelete\\|remove\\|\\.save\\|func save\\|store\\|Store\" SwiftMandarin/Views/VocabularyView.swift | head -50",
+      "description": "Find delete logic in VocabularyView"
+    },
+    "tool_response": {
+      "stdout": "13:    @Environment(AppRouteStore.self) private var routeStore\n14:    @Environment(SavedTermsStore.self) private var savedTermsStore\n41:        var terms = savedTermsStore.terms\n66:        selectedTerm = savedTermsStore.term(withID: currentID)\n72:                if savedTermsStore.terms.isEmpty {\n83:            .onChange(of: savedTermsStore.terms) { _, _ in\n92:                        savedTermsStore: savedTermsStore\n128:                        VocabularyImportExportService.shared.importFromFile(into: savedTermsStore) { result in\n144:                    .disabled(savedTermsStore.terms.isEmpty)\n169:                            savedTermsStore.clear()\n173:                        .disabled(savedTermsStore.terms.isEmpty)\n234:                        .disabled(savedTermsStore.terms.isEmpty)\n239:                            savedTermsStore.clear()\n243:                        .disabled(savedTermsStore.terms.isEmpty)\n257:                ExportSheet(terms: savedTermsStore.terms)\n279:                let result = VocabularyImportExportService.shared.importFromFileURL(url, into: savedTermsStore)\n360:        savedTermsStore.toggleMastered(term)\n373:                routeStore.selectedTab = .translate\n392:                        savedTermsStore.toggleMastered(term)\n407:                            savedTermsStore.remove(term)\n414:                            savedTermsStore.toggleMastered(term)\n448:                        savedTermsStore: savedTermsStore\n547:    @Environment(SavedTermsStore.self) private var savedTermsStore\n559:    /// freshly fetched translation when the stored one is missing/unwieldy.\n718:                            savedTermsStore.toggleMastered(term)\n719:                            selectedTerm = savedTermsStore.term(withID: term.id)\n833:        // The term may have been deleted while this sheet was open; in that\n835:        guard savedTermsStore.update(updatedTerm) else { return }\n836:        selectedTerm = savedTermsStore.term(withID: term.id)\n857:    var savedTermsStore: SavedTermsStore\n920:                    savedTermsStore.toggleMastered(term)\n921:                    selectedTerm = savedTermsStore.term(withID: term.id)\n1116:        // The term may have been deleted while the inspector was open; in\n1118:        guard savedTermsStore.update(updatedTerm) else { return }\n1119:        selectedTerm = savedTermsStore.term(withID: term.id)\n1460:        .environment(SavedTermsStore.shared)\n1461:        .environment(AppRouteStore.shared)",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01VU8bbeqSDM8Lqg6wEXhNNy",
+    "duration_ms": 20
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -rln \"class SavedTermsStore\\|func remove\\|func clear\\|func save\" SwiftMandarin/Models/SavedTerm.swift SwiftMandarin/**/*.swift 2>/dev/null | head; echo \"---\"; grep -rln \"SavedTermsStore\" SwiftMandarin --include=\"*.swift\"",
+      "description": "Locate SavedTermsStore definition"
+    },
+    "tool_response": {
+      "stdout": "SwiftMandarin/Models/SavedTerm.swift\nSwiftMandarin/Intents/ShortcutHelpers.swift\nSwiftMandarin/Models/AppRouteStore.swift\nSwiftMandarin/Models/LearningActivity.swift\nSwiftMandarin/Models/LearningCard.swift\nSwiftMandarin/Models/SavedTerm.swift\nSwiftMandarin/Models/PersistentCodableStore.swift\nSwiftMandarin/Models/ScreenshotTranslationStore.swift\nSwiftMandarin/Models/TranslationState.swift\nSwiftMandarin/Models/TranslationHistory.swift\n---\nSwiftMandarin/SwiftMandarinApp.swift\nSwiftMandarin/ContentView.swift\nSwiftMandarin/Models/SavedTerm.swift\nSwiftMandarin/Intents/ShortcutHelpers.swift\nSwiftMandarin/Intents/LookupVocabularyIntent.swift\nSwiftMandarin/Intents/SaveVocabularyTermIntent.swift\nSwiftMandarin/Intents/ShortcutEntities.swift\nSwiftMandarin/Views/MacOSSettingsView.swift\nSwiftMandarin/Views/PhrasesView.swift\nSwiftMandarin/Views/TranslateView.swift\nSwiftMandarin/Views/LearnView.swift\nSwiftMandarin/Views/MoreView.swift\nSwiftMandarin/Views/StatsView.swift\nSwiftMandarin/Views/PhotoTranslateView.swift\nSwiftMandarin/Views/WorkbookGradingView.swift\nSwiftMandarin/Views/Components/LiveSpeechTranslationView.swift\nSwiftMandarin/Views/Components/EnglishRubyTextView.swift\nSwiftMandarin/Views/VocabularyView.swift\nSwiftMandarin/Views/Components/RubyTextView.swift\nSwiftMandarin/Services/VocabularyImportExportService.swift",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01JYustp73wpBnJnXQaJkXrD",
+    "duration_ms": 28
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -n \"class SavedTermsStore\\|func remove\\|func clear\\|func add\\|func update\\|func toggleMastered\\|persist\\|didSet\\|@Published\\|@Observable\\|var terms\\|save(\" SwiftMandarin/Models/SavedTerm.swift",
+      "description": "SavedTermsStore methods"
+    },
+    "tool_response": {
+      "stdout": "93:@Observable\n95:final class SavedTermsStore {\n98:    var terms: [SavedTerm] = [] {\n99:        didSet { save() }\n121:    func add(_ term: SavedTerm) {\n131:    func add(chinese: String, pinyin: String, definition: String, partOfSpeech: String = \"\") {\n147:    func remove(at offsets: IndexSet) {\n152:    func remove(_ term: SavedTerm) {\n157:    func remove(chinese: String) {\n171:    func update(_ updatedTerm: SavedTerm) -> Bool {\n190:    func clear() {\n195:    func toggleMastered(_ term: SavedTerm) {\n213:    private func updateSortOrders() {\n219:    private func save() {\n220:        PersistentCodableStore.save(terms, key: saveKey)",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_011FMMqMDXY4K3EbsDYL3Ccg",
+    "duration_ms": 16
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/SavedTerm.swift",
+      "offset": 93,
+      "limit": 160
+    },
+    "tool_response": {
+      "type": "text",
+      "file": {
+        "filePath": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/SavedTerm.swift",
+        "content": "@Observable\n@MainActor\nfinal class SavedTermsStore {\n    static let shared = SavedTermsStore()\n    \n    var terms: [SavedTerm] = [] {\n        didSet { save() }\n    }\n    \n    /// Public accessor for saved terms (alias for terms)\n    var savedTerms: [SavedTerm] { terms }\n    \n    private let saveKey = \"savedTerms\"\n    \n    private init() {\n        load()\n    }\n    \n    // MARK: - Public Methods\n\n    /// Normalize a term for duplicate comparison: AI/OCR sources can attach\n    /// invisible characters (zero-width space/joiners, BOM) or stray\n    /// whitespace, which would defeat plain string equality.\n    private static func normalizedKey(_ s: String) -> String {\n        String(s.unicodeScalars.filter { ![0x200B, 0x200C, 0x200D, 0xFEFF].contains($0.value) })\n            .trimmingCharacters(in: .whitespacesAndNewlines)\n    }\n\n    func add(_ term: SavedTerm) {\n        let key = Self.normalizedKey(term.chinese)\n        guard !terms.contains(where: { Self.normalizedKey($0.chinese) == key }) else { return }\n        var newTerm = term\n        newTerm.sortOrder = terms.count\n        terms.append(newTerm)\n        // Track activity with part of speech\n        LearningActivityStore.shared.recordWordLearned(partOfSpeech: term.partOfSpeech)\n    }\n\n    func add(chinese: String, pinyin: String, definition: String, partOfSpeech: String = \"\") {\n        let key = Self.normalizedKey(chinese)\n        guard !terms.contains(where: { Self.normalizedKey($0.chinese) == key }) else { return }\n\n        let newTerm = SavedTerm(\n            chinese: chinese,\n            pinyin: pinyin,\n            definition: definition,\n            partOfSpeech: partOfSpeech,\n            sortOrder: terms.count\n        )\n        terms.append(newTerm)\n        // Track activity with part of speech\n        LearningActivityStore.shared.recordWordLearned(partOfSpeech: partOfSpeech)\n    }\n    \n    func remove(at offsets: IndexSet) {\n        terms.remove(atOffsets: offsets)\n        updateSortOrders()\n    }\n    \n    func remove(_ term: SavedTerm) {\n        terms.removeAll { $0.id == term.id }\n        updateSortOrders()\n    }\n\n    func remove(chinese: String) {\n        let key = Self.normalizedKey(chinese)\n        terms.removeAll { Self.normalizedKey($0.chinese) == key }\n        updateSortOrders()\n    }\n\n    func term(withID id: UUID) -> SavedTerm? {\n        terms.first { $0.id == id }\n    }\n\n    /// Replace a stored term. Returns `false` when the term no longer exists\n    /// (e.g. it was deleted while a detail view held a stale copy), so callers\n    /// can surface the failure instead of silently dropping the edit.\n    @discardableResult\n    func update(_ updatedTerm: SavedTerm) -> Bool {\n        guard let index = terms.firstIndex(where: { $0.id == updatedTerm.id }) else { return false }\n\n        var replacement = updatedTerm\n        replacement.sortOrder = terms[index].sortOrder\n        terms[index] = replacement\n        return true\n    }\n    \n    func move(from source: Int, to destination: Int) {\n        terms.move(fromOffsets: IndexSet(integer: source), toOffset: destination)\n        updateSortOrders()\n    }\n    \n    func contains(chinese: String) -> Bool {\n        let key = Self.normalizedKey(chinese)\n        return terms.contains { Self.normalizedKey($0.chinese) == key }\n    }\n    \n    func clear() {\n        terms.removeAll()\n    }\n    \n    /// Toggle the mastered status of a term\n    func toggleMastered(_ term: SavedTerm) {\n        guard let index = terms.firstIndex(where: { $0.id == term.id }) else { return }\n        terms[index].isMastered.toggle()\n    }\n    \n    /// Set the mastered status of a term\n    func setMastered(_ term: SavedTerm, isMastered: Bool) {\n        guard let index = terms.firstIndex(where: { $0.id == term.id }) else { return }\n        terms[index].isMastered = isMastered\n    }\n    \n    /// Count of mastered terms\n    var masteredCount: Int {\n        terms.filter { $0.isMastered }.count\n    }\n    \n    // MARK: - Private Methods\n    \n    private func updateSortOrders() {\n        for (index, _) in terms.enumerated() {\n            terms[index].sortOrder = index\n        }\n    }\n    \n    private func save() {\n        PersistentCodableStore.save(terms, key: saveKey)\n    }\n\n    private func load() {\n        if let decoded = PersistentCodableStore.load([SavedTerm].self, key: saveKey) {\n            terms = decoded.sorted { $0.sortOrder < $1.sortOrder }\n        }\n    }\n}\n",
+        "numLines": 137,
+        "startLine": 93,
+        "totalLines": 229
+      }
+    },
+    "tool_use_id": "toolu_01G2QZ2Ac3L7fA6qzXsxGJyJ",
+    "duration_ms": 8
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "offset": 36,
+      "limit": 110
+    },
+    "tool_response": {
+      "type": "text",
+      "file": {
+        "filePath": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+        "content": "        case alphabetical = \"Alphabetical\"\n        case pinyin = \"Pinyin\"\n    }\n    \n    private var filteredTerms: [SavedTerm] {\n        var terms = savedTermsStore.terms\n        \n        // Apply search filter\n        if !searchText.isEmpty {\n            terms = terms.filter { term in\n                term.chinese.localizedCaseInsensitiveContains(searchText) ||\n                term.pinyin.localizedCaseInsensitiveContains(searchText) ||\n                term.definition.localizedCaseInsensitiveContains(searchText)\n            }\n        }\n        \n        // Apply sort with direction (alphabetical sorts the visible headword,\n        // which is the learning-language side)\n        switch sortOrder {\n        case .dateAdded:\n            return terms.sorted { sortAscending ? $0.dateAdded < $1.dateAdded : $0.dateAdded > $1.dateAdded }\n        case .alphabetical:\n            return terms.sorted { sortAscending ? $0.headlineText < $1.headlineText : $0.headlineText > $1.headlineText }\n        case .pinyin:\n            return terms.sorted { sortAscending ? $0.pinyin < $1.pinyin : $0.pinyin > $1.pinyin }\n        }\n    }\n\n    private func syncSelectedTerm() {\n        guard let currentID = selectedTerm?.id else { return }\n        selectedTerm = savedTermsStore.term(withID: currentID)\n    }\n    \n    var body: some View {\n        NavigationStack {\n            Group {\n                if savedTermsStore.terms.isEmpty {\n                    emptyState\n                } else {\n                    vocabularyList\n                }\n            }\n            .navigationTitle(\"Vocabulary\")\n            #if os(iOS)\n            .navigationBarTitleDisplayMode(.large)\n            #endif\n            .searchable(text: $searchText, prompt: \"Search vocabulary\")\n            .onChange(of: savedTermsStore.terms) { _, _ in\n                syncSelectedTerm()\n            }\n            #if os(macOS)\n            .inspector(isPresented: .constant(vocabularyDetailUsesInspector && selectedTerm != nil)) {\n                if vocabularyDetailUsesInspector, let term = selectedTerm {\n                    TermDetailInspector(\n                        term: term,\n                        selectedTerm: $selectedTerm,\n                        savedTermsStore: savedTermsStore\n                    )\n                    .id(term.id)\n                    .inspectorColumnWidth(min: 280, ideal: 320, max: 400)\n                }\n            }\n            #endif\n            .toolbar {\n                #if os(macOS)\n                ToolbarItemGroup(placement: .primaryAction) {\n                    // Font size controls\n                    Button {\n                        if chineseFontSize > 14 {\n                            chineseFontSize -= 2\n                        }\n                    } label: {\n                        Label(\"Decrease Font Size\", systemImage: \"textformat.size.smaller\")\n                    }\n                    .disabled(chineseFontSize <= 14)\n                    .help(\"Decrease headword font size (\u2318-)\")\n                    .keyboardShortcut(\"-\", modifiers: .command)\n                    \n                    Button {\n                        if chineseFontSize < 48 {\n                            chineseFontSize += 2\n                        }\n                    } label: {\n                        Label(\"Increase Font Size\", systemImage: \"textformat.size.larger\")\n                    }\n                    .disabled(chineseFontSize >= 48)\n                    .help(\"Increase headword font size (\u2318+)\")\n                    .keyboardShortcut(\"=\", modifiers: .command)\n                    \n                    Divider()\n                    \n                    Button {\n                        VocabularyImportExportService.shared.importFromFile(into: savedTermsStore) { result in\n                            if let result = result {\n                                importResult = result\n                                showingImportResult = true\n                            }\n                        }\n                    } label: {\n                        Label(\"Import\", systemImage: \"square.and.arrow.down\")\n                    }\n                    .help(\"Import vocabulary from file\")\n                    \n                    Button {\n                        showingExportSheet = true\n                    } label: {\n                        Label(\"Export\", systemImage: \"square.and.arrow.up\")\n                    }\n                    .disabled(savedTermsStore.terms.isEmpty)\n                    .help(\"Export vocabulary to file\")",
+        "numLines": 110,
+        "startLine": 36,
+        "totalLines": 1463
+      }
+    },
+    "tool_use_id": "toolu_01XRVS5s82jCgC39N1iJRzxt",
+    "duration_ms": 3
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "offset": 300,
+      "limit": 160
+    },
+    "tool_response": {
+      "type": "text",
+      "file": {
+        "filePath": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+        "content": "            .onAppear {\n                isVocabularyFocused = true\n            }\n            .onKeyPress(keys: [.downArrow, .rightArrow]) { _ in\n                guard isVocabularyFocused else { return .ignored }\n                selectNextTerm()\n                return .handled\n            }\n            .onKeyPress(keys: [.upArrow, .leftArrow]) { _ in\n                guard isVocabularyFocused else { return .ignored }\n                selectPreviousTerm()\n                return .handled\n            }\n            .onKeyPress(.space) {\n                guard isVocabularyFocused else { return .ignored }\n                toggleSelectedMastered()\n                return .handled\n            }\n            .onKeyPress(.return) {\n                guard isVocabularyFocused else { return .ignored }\n                toggleSelectedMastered()\n                return .handled\n            }\n            #endif\n        }\n    }\n    \n    // MARK: - Keyboard Navigation\n    \n    #if os(macOS)\n    private func selectNextTerm() {\n        let terms = filteredTerms\n        guard !terms.isEmpty else { return }\n        \n        if let current = selectedTerm,\n           let currentIndex = terms.firstIndex(where: { $0.id == current.id }) {\n            let nextIndex = min(currentIndex + 1, terms.count - 1)\n            selectedTerm = terms[nextIndex]\n        } else {\n            // No selection, select first\n            selectedTerm = terms.first\n        }\n    }\n    \n    private func selectPreviousTerm() {\n        let terms = filteredTerms\n        guard !terms.isEmpty else { return }\n        \n        if let current = selectedTerm,\n           let currentIndex = terms.firstIndex(where: { $0.id == current.id }) {\n            let prevIndex = max(currentIndex - 1, 0)\n            selectedTerm = terms[prevIndex]\n        } else {\n            // No selection, select last\n            selectedTerm = terms.last\n        }\n    }\n    \n    private func toggleSelectedMastered() {\n        guard let term = selectedTerm else { return }\n        savedTermsStore.toggleMastered(term)\n    }\n    #endif\n    \n    // MARK: - Empty State\n    \n    private var emptyState: some View {\n        ContentUnavailableView {\n            Label(\"No Saved Words\", systemImage: \"text.book.closed\")\n        } description: {\n            Text(\"Words you save while translating will appear here\")\n        } actions: {\n            Button {\n                routeStore.selectedTab = .translate\n            } label: {\n                Text(\"Start Translating\")\n            }\n            .buttonStyle(.borderedProminent)\n        }\n    }\n    \n    // MARK: - Vocabulary List\n    \n    @ViewBuilder\n    private var vocabularyList: some View {\n        let list = List {\n            ForEach(filteredTerms) { term in\n                VocabularyRow(\n                    term: term,\n                    chineseFontSize: chineseFontSize,\n                    isSelected: selectedTerm?.id == term.id,\n                    onMasteredToggle: {\n                        savedTermsStore.toggleMastered(term)\n                    },\n                    onAIExplainTap: {\n                        aiExplanationTerm = term\n                    }\n                )\n                .contentShape(Rectangle())\n                .onTapGesture {\n                    selectedTerm = term\n                    #if os(macOS)\n                    isVocabularyFocused = true\n                    #endif\n                }\n                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {\n                        Button(role: .destructive) {\n                            savedTermsStore.remove(term)\n                        } label: {\n                            Label(\"Delete\", systemImage: \"trash\")\n                        }\n                    }\n                    .swipeActions(edge: .leading, allowsFullSwipe: true) {\n                        Button {\n                            savedTermsStore.toggleMastered(term)\n                        } label: {\n                            Label(\n                                term.isMastered ? \"Unmaster\" : \"Mastered\",\n                                systemImage: term.isMastered ? \"xmark.circle\" : \"checkmark.circle\"\n                            )\n                        }\n                        .tint(term.isMastered ? .orange : .green)\n                        \n                        Button {\n                            SpeechService.speakAuto(term.headlineText)\n                        } label: {\n                            Label(\"Speak\", systemImage: \"speaker.wave.2\")\n                        }\n                        .tint(.blue)\n                    }\n            }\n        }\n        #if os(iOS)\n        list\n            .listStyle(.insetGrouped)\n        #else\n        if vocabularyDetailUsesInspector {\n            list\n                .focusable()\n                .focused($isVocabularyFocused)\n        } else {\n            list\n                .focusable()\n                .focused($isVocabularyFocused)\n                .popover(item: $selectedTerm) { term in\n                    TermDetailInspector(\n                        term: term,\n                        selectedTerm: $selectedTerm,\n                        savedTermsStore: savedTermsStore\n                    )\n                    .localizedSurface()\n                    .id(term.id)\n                    .frame(minWidth: 320, minHeight: 420)\n                }\n        }\n        #endif\n    }\n}\n\n// MARK: - Vocabulary Row",
+        "numLines": 160,
+        "startLine": 300,
+        "totalLines": 1463
+      }
+    },
+    "tool_use_id": "toolu_01E24RSD5iBUdKyD9k9Ehevi",
+    "duration_ms": 3
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift"
+    },
+    "tool_response": {
+      "type": "text",
+      "file": {
+        "filePath": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift",
+        "content": "//\n//  PersistentCodableStore.swift\n//  SwiftMandarin\n//\n//  Shared loader/saver for the app's UserDefaults-backed JSON stores\n//  (vocabulary, history, learning progress, activity). Decode failures are\n//  logged instead of silently discarded, and a last-known-good snapshot is\n//  kept under \"<key>.backup\" so a corrupted payload can't wipe user data.\n//\n\nimport Foundation\nimport os.log\n\nenum PersistentCodableStore {\n\n    private static let log = Logger(subsystem: \"com.rogerlin.SwiftMandarin\", category: \"Persistence\")\n\n    /// Load and decode the value stored under `key`.\n    ///\n    /// On a successful decode the payload is also snapshotted to\n    /// \"<key>.backup\" (once per launch is enough \u2014 this is called from each\n    /// store's init). If the primary payload fails to decode, the backup is\n    /// tried; when the backup succeeds it is promoted back to the primary key.\n    static func load<T: Codable>(_ type: T.Type, key: String) -> T? {\n        let defaults = UserDefaults.standard\n        let backupKey = key + \".backup\"\n\n        if let data = defaults.data(forKey: key) {\n            do {\n                let value = try JSONDecoder().decode(T.self, from: data)\n                defaults.set(data, forKey: backupKey)\n                return value\n            } catch {\n                log.error(\"Decode failed for \\(key, privacy: .public): \\(error.localizedDescription, privacy: .public) \u2014 trying backup\")\n            }\n        }\n\n        if let backup = defaults.data(forKey: backupKey) {\n            do {\n                let value = try JSONDecoder().decode(T.self, from: backup)\n                log.notice(\"Restored \\(key, privacy: .public) from last-known-good backup\")\n                defaults.set(backup, forKey: key)\n                return value\n            } catch {\n                log.error(\"Backup decode also failed for \\(key, privacy: .public): \\(error.localizedDescription, privacy: .public)\")\n            }\n        }\n\n        return nil\n    }\n\n    /// Encode and store `value` under `key`, logging encode failures\n    /// (which would otherwise silently skip the write).\n    static func save<T: Codable>(_ value: T, key: String) {\n        do {\n            let data = try JSONEncoder().encode(value)\n            UserDefaults.standard.set(data, forKey: key)\n        } catch {\n            log.error(\"Encode failed for \\(key, privacy: .public): \\(error.localizedDescription, privacy: .public)\")\n        }\n    }\n}\n",
+        "numLines": 63,
+        "startLine": 1,
+        "totalLines": 63
+      }
+    },
+    "tool_use_id": "toolu_01XPWqGGDx3EYszhPN9FpsKX",
+    "duration_ms": 2
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/SavedTerm.swift",
+      "offset": 1,
+      "limit": 93
+    },
+    "tool_response": {
+      "type": "text",
+      "file": {
+        "filePath": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/SavedTerm.swift",
+        "content": "//\n//  SavedTerm.swift\n//  SwiftMandarin\n//\n//  Model for saved vocabulary terms\n//\n\nimport Foundation\nimport SwiftUI\nimport Observation\n\nstruct SavedTerm: Identifiable, Codable, Equatable, Hashable {\n    let id: UUID\n    let chinese: String\n    let pinyin: String\n    let definition: String\n    let partOfSpeech: String\n    let dateAdded: Date\n    var sortOrder: Int\n    var isMastered: Bool\n    \n    init(\n        id: UUID = UUID(),\n        chinese: String,\n        pinyin: String,\n        definition: String,\n        partOfSpeech: String = \"\",\n        dateAdded: Date = Date(),\n        sortOrder: Int = 0,\n        isMastered: Bool = false\n    ) {\n        self.id = id\n        self.chinese = chinese\n        self.pinyin = pinyin\n        self.definition = definition\n        self.partOfSpeech = partOfSpeech\n        self.dateAdded = dateAdded\n        self.sortOrder = sortOrder\n        self.isMastered = isMastered\n    }\n}\n\n// MARK: - Interface-language-aware display\n\n/// The `chinese` field is really a *headword*: photo-extraction and workbook\n/// flows store English headwords there when the user is learning English. So\n/// the two display sides are detected from content, and which side is the big\n/// headline follows the interface language (= the user's native language):\n/// \u4e2d\u6587 UI \u2192 learning English \u2192 English is the headline, Mandarin the gloss;\n/// English UI \u2192 learning Mandarin \u2192 Chinese headline + pinyin, English gloss.\nextension SavedTerm {\n\n    /// The Chinese side of the entry (headword preferred, else definition).\n    var chineseSide: String {\n        if chinese.containsCJK { return chinese }\n        if definition.containsCJK { return definition }\n        return \"\"\n    }\n\n    /// The English side of the entry (headword preferred, else definition).\n    var englishSide: String {\n        if !chinese.containsCJK, !chinese.isEmpty { return chinese }\n        if !definition.containsCJK { return definition }\n        return \"\"\n    }\n\n    /// The text shown big \u2014 the side in the language the user is learning.\n    /// Falls back to the headword when the entry has no text in that language.\n    @MainActor\n    var headlineText: String {\n        let primary = LocalizationManager.shared.learningIsChinese ? chineseSide : englishSide\n        return primary.isEmpty ? chinese : primary\n    }\n\n    /// The small secondary text \u2014 the side in the user's native language.\n    /// Empty when the entry has nothing beyond the headline.\n    @MainActor\n    var glossText: String {\n        let secondary = LocalizationManager.shared.learningIsChinese ? englishSide : chineseSide\n        return secondary == headlineText ? \"\" : secondary\n    }\n\n    /// Pinyin is a learner aid for reading Chinese: shown only when the user\n    /// is learning Chinese (English UI) and the entry has a Chinese side.\n    @MainActor\n    var showsPinyin: Bool {\n        LocalizationManager.shared.learningIsChinese && !chineseSide.isEmpty && !pinyin.isEmpty\n    }\n}\n\n// MARK: - Saved Terms Store\n\n@Observable",
+        "numLines": 93,
+        "startLine": 1,
+        "totalLines": 229
+      }
+    },
+    "tool_use_id": "toolu_01ExboCSVZuV4TKX5ekLjDz2",
+    "duration_ms": 3
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; ls *.xcodeproj *.xcworkspace 2>/dev/null; xcodebuild -list 2>/dev/null | head -30",
+      "description": "Inspect Xcode project schemes"
+    },
+    "tool_response": {
+      "stdout": "(eval):1: no matches found: *.xcworkspace\nCommand line invocation:\n    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -list\n\nResolve Package Graph\n\n\nResolved source packages:\n  Ollama: https://github.com/mattt/ollama-swift.git @ 1.8.0\n\nInformation about project \"SwiftMandarin\":\n    Targets:\n        SwiftMandarin\n\n    Build Configurations:\n        Debug\n        Release\n\n    If no build configuration is specified and -scheme is not passed then \"Release\" is used.\n\n    Schemes:\n        SwiftMandarin",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_0199ym8fnzPSx5qmmRy76vdN",
+    "duration_ms": 1519
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; xcodebuild -scheme SwiftMandarin -destination 'platform=iOS Simulator,name=iPhone 16' -configuration Debug build 2>&1 | tail -25",
+      "timeout": 10000,
+      "description": "Build for iOS Simulator"
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false,
+      "backgroundTaskId": "brfwhtneo",
+      "assistantAutoBackgrounded": false
+    },
+    "tool_use_id": "toolu_01RepZPX2up6NFpNUwc1KUDH",
+    "duration_ms": 10016
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -c \"error:\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output; echo \"---tail---\"; tail -3 /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output",
+      "description": "Check for build errors so far"
+    },
+    "tool_response": {
+      "stdout": "0\n---tail---",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01VxBkUdQQgtFh4J84aubYvQ",
+    "duration_ms": 24
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "until grep -qE \"BUILD (SUCCEEDED|FAILED)|error:\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output 2>/dev/null; do sleep 3; done; echo \"=== DONE ===\"; grep -E \"BUILD (SUCCEEDED|FAILED)\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output | tail -2; grep \"error:\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output | head",
+      "timeout": 10000,
+      "description": "Wait for build completion"
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false,
+      "backgroundTaskId": "bd4gbopwn",
+      "assistantAutoBackgrounded": false
+    },
+    "tool_use_id": "toolu_011KzoE4Qh5jNP5LPNmKNPZG",
+    "duration_ms": 10029
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -E \"BUILD (SUCCEEDED|FAILED)\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output | tail -2; echo \"errors:\"; grep \"error:\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output | head",
+      "description": "Check final build result"
+    },
+    "tool_response": {
+      "stdout": "errors:",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_015TwvrCQvXav5G5uGtRUx9t",
+    "duration_ms": 22
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "tail -4 /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output",
+      "description": "Tail build output"
+    },
+    "tool_response": {
+      "stdout": "\t\t{ platform:iOS Simulator, arch:arm64, id:53013922-AC15-4228-AF66-215E2C7735B4, OS:26.3.1, name:iPhone Air }\n\n\tIneligible destinations for the \"SwiftMandarin\" scheme:\n\t\t{ platform:visionOS, id:dvtdevice-DVTiOSDevicePlaceholder-xros:placeholder, name:Any visionOS Device, error:visionOS 26.2 is not installed. Please download and install the platform from Xcode > Settings > Components. }",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01WWYJeBycwZoAKshGE1KAjR",
+    "duration_ms": 16
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -E \"BUILD SUCCEEDED|BUILD FAILED|error:\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output | tail -3",
+      "description": "Confirm build succeeded"
+    },
+    "tool_response": {
+      "stdout": "xcodebuild: error: Unable to find a device matching the provided destination specifier:\n\t\t{ platform:visionOS, id:dvtdevice-DVTiOSDevicePlaceholder-xros:placeholder, name:Any visionOS Device, error:visionOS 26.2 is not installed. Please download and install the platform from Xcode > Settings > Components. }",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01Sfz5WkeJLbH2kKVR8qdfoa",
+    "duration_ms": 17
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -cE \"Compiling|SwiftCompile|CompileSwift\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output; echo \"=== SUCCEEDED/FAILED lines ===\"; grep -nE \"\\*\\* BUILD|BUILD SUCCEEDED|BUILD FAILED\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output; echo \"=== line count ===\"; wc -l /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output",
+      "description": "Inspect build output thoroughly"
+    },
+    "tool_response": {
+      "stdout": "0\n=== SUCCEEDED/FAILED lines ===\n=== line count ===\n      25 /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/brfwhtneo.output",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_014Jeww3mnvLHTRLLnGzu6q3",
+    "duration_ms": 24
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; xcodebuild -scheme SwiftMandarin -destination 'generic/platform=iOS Simulator' -configuration Debug build > /tmp/smbuild.log 2>&1; echo \"exit=$?\"; grep -E \"\\*\\* BUILD (SUCCEEDED|FAILED)|error:\" /tmp/smbuild.log | head",
+      "description": "Clean iOS Simulator build capturing result",
+      "run_in_background": true
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false,
+      "backgroundTaskId": "baljtbjy8"
+    },
+    "tool_use_id": "toolu_01W99dYNgvkui2CQqJxXfNrU",
+    "duration_ms": 5
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "until grep -qE \"exit=\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/baljtbjy8.output 2>/dev/null; do sleep 5; done; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/baljtbjy8.output",
+      "timeout": 10000,
+      "description": "Wait for clean build and show result"
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false,
+      "backgroundTaskId": "bmccflvp4",
+      "assistantAutoBackgrounded": false
+    },
+    "tool_use_id": "toolu_01RVHuUf33gHedBunwrJQ2Ug",
+    "duration_ms": 10029
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "tail -3 /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/baljtbjy8.output",
+      "description": "Check build result"
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_017GAFKeX9YGzw1GW1GVsSwy",
+    "duration_ms": 67
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/baljtbjy8.output"
+    },
+    "tool_response": {
+      "type": "text",
+      "file": {
+        "filePath": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/baljtbjy8.output",
+        "content": "",
+        "numLines": 1,
+        "startLine": 1,
+        "totalLines": 1
+      }
+    },
+    "tool_use_id": "toolu_01U6UjZPVtqE3aKzVpjm6ygH",
+    "duration_ms": 4
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "until grep -qE \"exit=\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/baljtbjy8.output 2>/dev/null; do sleep 10; done; echo READY",
+      "timeout": 10000,
+      "description": "Block until build done marker appears",
+      "run_in_background": true
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false,
+      "backgroundTaskId": "bi7c335db"
+    },
+    "tool_use_id": "toolu_01LVLEjUQ6MzZPMN6GHQCFtV",
+    "duration_ms": 10
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/baljtbjy8.output",
+      "description": "Show build outcome"
+    },
+    "tool_response": {
+      "stdout": "exit=0\n** BUILD SUCCEEDED **",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01RHPMGRpUuAazEkFEwLZ25w",
+    "duration_ms": 16
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; echo \"=== count of duplicate-file warnings ===\"; grep -c \"Skipping duplicate build file\" /tmp/smbuild2.log; echo \"=== unique files warned ===\"; grep \"Skipping duplicate build file\" /tmp/smbuild2.log | grep -oE \"SwiftMandarin/[A-Za-z/]+\\.swift\" | sort -u; echo \"=== in Sources count in pbxproj ===\"; grep -c \"in Sources\" SwiftMandarin.xcodeproj/project.pbxproj; echo \"=== explicit refs to my files / edited files ===\"; grep -nE \"WordExplanationCacheStore|PBXBuildFile\" SwiftMandarin.xcodeproj/project.pbxproj | head",
+      "description": "Diagnose duplicate build file warnings"
+    },
+    "tool_response": {
+      "stdout": "=== count of duplicate-file warnings ===\n18\n=== unique files warned ===\nSwiftMandarin/Models/SavedTerm.swift\nSwiftMandarin/Models/WordExplanationCacheStore.swift\nSwiftMandarin/Services/AIWordExplanationService.swift\n=== in Sources count in pbxproj ===\n18\n=== explicit refs to my files / edited files ===\n9:/* Begin PBXBuildFile section */\n10:\t\t26028DAF841FEB4646E6E5E8 /* SavedTerm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A595D243AAD4AF7F894C778 /* SavedTerm.swift */; };\n11:\t\t47ABCB0002B076A6A64DE115 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };\n12:\t\tA7F06F562F8D375000B51F21 /* Ollama in Frameworks */ = {isa = PBXBuildFile; productRef = A7F06F552F8D375000B51F21 /* Ollama */; };\n13:\t\tAFE8E7AE0515F2DC830BDB39 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };\n14:\t\tB6FD861D04F52994835A6A82 /* WordExplanationCacheStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 884BF3CD34563C2B63B54E45 /* WordExplanationCacheStore.swift */; };\n15:\t\tCE4E71E98B6FDE8985E5925D /* SavedTerm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A595D243AAD4AF7F894C778 /* SavedTerm.swift */; };\n16:\t\tD4DC51238DC5D7FDC094857F /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };\n17:\t\tE720A8F48F600B7DE68211C0 /* AIWordExplanationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F48B04792536251BC69F63 /* AIWordExplanationService.swift */; };\n18:\t\tF9046872DD4D6A8598F72B77 /* SavedTerm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A595D243AAD4AF7F894C778 /* SavedTerm.swift */; };",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01JFPV4g437GpCq3BKs8UYKB",
+    "duration_ms": 45
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; echo \"=== is pbxproj modified vs HEAD? ===\"; git status --short SwiftMandarin.xcodeproj/project.pbxproj; echo \"=== duplicates in HEAD version ===\"; git show HEAD:SwiftMandarin.xcodeproj/project.pbxproj | grep -E \"SavedTerm.swift in Sources|AIWordExplanationService.swift in Sources\" | wc -l; echo \"=== PBXFileSystemSynchronized present? ===\"; grep -c \"PBXFileSystemSynchronizedRootGroup\\|fileSystemSynchronized\" SwiftMandarin.xcodeproj/project.pbxproj; echo \"=== number of PBXSourcesBuildPhase ===\"; grep -c \"PBXSourcesBuildPhase\" SwiftMandarin.xcodeproj/project.pbxproj",
+      "description": "Check git state and project structure for duplicates"
+    },
+    "tool_response": {
+      "stdout": "=== is pbxproj modified vs HEAD? ===\n M SwiftMandarin.xcodeproj/project.pbxproj\n=== duplicates in HEAD version ===\n       0\n=== PBXFileSystemSynchronized present? ===\n4\n=== number of PBXSourcesBuildPhase ===\n3",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_018wGkiSzw9DVDLVMsK85sAy",
+    "duration_ms": 38
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; git checkout -- SwiftMandarin.xcodeproj/project.pbxproj; echo \"reverted. in-Sources count now:\"; grep -c \"in Sources\" SwiftMandarin.xcodeproj/project.pbxproj",
+      "description": "Revert auto-added pbxproj entries"
+    },
+    "tool_response": {
+      "stdout": "reverted. in-Sources count now:\n0",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "returnCodeInterpretation": "No matches found",
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_017jzib4F2gAexifybAiYMAV",
+    "duration_ms": 27
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; xcodebuild -scheme SwiftMandarin -destination 'generic/platform=iOS Simulator' -configuration Debug build > /tmp/smbuild3.log 2>&1; echo \"exit=$?\"; grep -E \"\\*\\* BUILD (SUCCEEDED|FAILED)\" /tmp/smbuild3.log; echo \"--- duplicate warnings ---\"; grep -c \"Skipping duplicate\" /tmp/smbuild3.log; echo \"--- other warnings/errors (non-Ollama) ---\"; grep -E \"error:|warning:\" /tmp/smbuild3.log | grep -v \"Ollama\" | head; echo \"--- confirm new file compiled ---\"; grep -c \"WordExplanationCacheStore.swift\" /tmp/smbuild3.log",
+      "description": "Rebuild and verify zero warnings",
+      "run_in_background": true
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false,
+      "backgroundTaskId": "b28yrjwpm"
+    },
+    "tool_use_id": "toolu_013cd7uSb1GkMtmaX7GDdtER",
+    "duration_ms": 115
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; echo \"=== pbxproj in-Sources count (must be 0) ===\"; grep -c \"in Sources\" SwiftMandarin.xcodeproj/project.pbxproj; echo \"=== git status of source/project files ===\"; git status --short | grep -E \"\\.swift|\\.pbxproj|\\.xcstrings\"; echo \"=== xcstrings diff stat (should be additions only) ===\"; git diff --numstat SwiftMandarin/Localizable.xcstrings",
+      "description": "Verify pbxproj clean and additive xcstrings diff"
+    },
+    "tool_response": {
+      "stdout": "=== pbxproj in-Sources count (must be 0) ===\n0\n=== git status of source/project files ===\n M SwiftMandarin/Localizable.xcstrings\n M SwiftMandarin/Models/SavedTerm.swift\n M SwiftMandarin/Services/AIWordExplanationService.swift\n M SwiftMandarin/Views/Components/AIWordExplanationView.swift\n M SwiftMandarin/Views/MoreView.swift\n?? SwiftMandarin/Models/WordExplanationCacheStore.swift\n=== xcstrings diff stat (should be additions only) ===\n333\t8\tSwiftMandarin/Localizable.xcstrings",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01HJiaA9KJjwfT9UvBsekE5J",
+    "duration_ms": 59
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; echo \"=== deletions in xcstrings diff ===\"; git diff SwiftMandarin/Localizable.xcstrings | grep -E \"^-\" | grep -v \"^---\" | head -20; echo \"=== my 6 inserted keys context ===\"; git diff SwiftMandarin/Localizable.xcstrings | grep -A1 \"Cached AI Explanations\\|Clear Explanation Cache\\|Regenerate explanation\" | head",
+      "description": "Inspect deletions and my insertions in catalog diff"
+    },
+    "tool_response": {
+      "stdout": "=== deletions in xcstrings diff ===\n-    \"Questions Graded\" : {\n-            \"value\" : \"\u5df2\u6279\u6539\u9898\u76ee\"\n-    \"Display & Pinyin\" : {\n-            \"value\" : \"\u663e\u793a\u4e0e\u62fc\u97f3\"\n-    \"Quick Setup\" : {\n-            \"value\" : \"\u5feb\u901f\u8bbe\u7f6e\"\n-    \"About & Support\" : {\n-            \"value\" : \"\u5173\u4e8e\u4e0e\u652f\u6301\"\n=== my 6 inserted keys context ===\n+    \"Cached AI Explanations\" : {\n       \"localizations\" : {\n--\n+    \"Clear Cached AI Explanations\" : {\n       \"localizations\" : {\n--\n+    \"Clear Explanation Cache\" : {\n       \"localizations\" : {\n--\n+    \"Regenerate explanation\" : {",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_014rYvA8ay9FouKCcbJVLiTZ",
+    "duration_ms": 32
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; xcodebuild -scheme SwiftMandarin -destination 'generic/platform=iOS Simulator' -configuration Debug build > /tmp/smbuild4.log 2>&1; echo \"exit=$?\"; grep -E \"\\*\\* BUILD (SUCCEEDED|FAILED)\" /tmp/smbuild4.log; echo \"dup warnings:\"; grep -c \"Skipping duplicate\" /tmp/smbuild4.log; echo \"non-Ollama warnings/errors:\"; grep -E \"error:|warning:\" /tmp/smbuild4.log | grep -v \"Ollama\" | head; echo \"in-Sources after build:\"; grep -c \"in Sources\" SwiftMandarin.xcodeproj/project.pbxproj",
+      "description": "Final iOS build verification",
+      "run_in_background": true
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false,
+      "backgroundTaskId": "bkag290f8"
+    },
+    "tool_use_id": "toolu_01WtS1AibU2DgXzua4UgiMnW",
+    "duration_ms": 6
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "until grep -qE \"exit=\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/bkag290f8.output 2>/dev/null; do sleep 8; done; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/bkag290f8.output",
+      "timeout": 10000,
+      "description": "Wait for final build result",
+      "run_in_background": true
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false,
+      "backgroundTaskId": "bogsdpgvw"
+    },
+    "tool_use_id": "toolu_01YMvvQv1AxKX1AkZ2FAyiSH",
+    "duration_ms": 5
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/bkag290f8.output; echo \"=== errors in log ===\"; grep -E \"error:\" /tmp/smbuild4.log | grep -v \"Ollama\" | head",
+      "description": "Show build failure details"
+    },
+    "tool_response": {
+      "stdout": "exit=0\n** BUILD SUCCEEDED **\ndup warnings:\n0\nnon-Ollama warnings/errors:\nin-Sources after build:\n0\n=== errors in log ===",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01KmMoAG3gN4f4emj3vVQuEZ",
+    "duration_ms": 27
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/Components/AIWordExplanationView.swift",
+      "old_string": "    /// True when the currently shown explanation came from the persistent cache\n    /// rather than a fresh generation, so the UI can label it.\n    @State private var servedFromCache: Bool = false",
+      "new_string": "    /// True when the currently shown explanation came from the persistent cache\n    /// rather than a fresh generation, so the UI can label it.\n    @State private var servedFromCache: Bool = false\n    /// Direction token the currently shown explanation belongs to. Lets us drop\n    /// a stale explanation if the interface language flips while the view is open.\n    @State private var shownDirection: String?",
+      "replace_all": false
+    },
+    "tool_response": {
+      "filePath": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/Components/AIWordExplanationView.swift",
+      "oldString": "    /// True when the currently shown explanation came from the persistent cache\n    /// rather than a fresh generation, so the UI can label it.\n    @State private var servedFromCache: Bool = false",
+      "newString": "    /// True when the currently shown explanation came from the persistent cache\n    /// rather than a fresh generation, so the UI can label it.\n    @State private var servedFromCache: Bool = false\n    /// Direction token the currently shown explanation belongs to. Lets us drop\n    /// a stale explanation if the interface language flips while the view is open.\n    @State private var shownDirection: String?",
+      "originalFile": "//\n//  AIWordExplanationView.swift\n//  SwiftMandarin\n//\n//  A reusable view component that displays AI-generated word explanations\n//  using either Apple Intelligence or Ollama based on user settings\n//\n\nimport SwiftUI\n\n/// A view that displays a detailed AI-generated explanation for a Mandarin word\nstruct AIWordExplanationView: View {\n    let word: String\n    let pinyin: String\n    let context: String?\n    \n    @State private var explanation: WordExplanationResult?\n    @State private var isLoading: Bool = false\n    @State private var errorMessage: String?\n    @State private var expandedSections: Set<String> = [\"definition\", \"examples\"]\n    /// True when the currently shown explanation came from the persistent cache\n    /// rather than a fresh generation, so the UI can label it.\n    @State private var servedFromCache: Bool = false\n\n    private let aiService = AIWordExplanationService.shared\n    private let aiSettings = AIModelSettings.shared\n    private let cache = WordExplanationCacheStore.shared\n\n    /// Direction token for the current word + interface language, used as the\n    /// per-direction cache key. Recomputed if the language changes while open.\n    private var directionToken: String {\n        ExplanationDirection.current(forWord: word).cacheToken\n    }\n    \n    /// Check if any AI provider is available\n    private var isAnyProviderAvailable: Bool {\n        aiSettings.isAnyProviderAvailable\n    }\n    \n    /// Get the current provider name for display\n    private var currentProviderName: String {\n        aiSettings.effectiveProvider.displayName\n    }\n    \n    var body: some View {\n        Group {\n            if !isAnyProviderAvailable {\n                unavailableView\n            } else if isLoading {\n                loadingView\n            } else if let error = errorMessage {\n                errorView(error)\n            } else if let explanation = explanation {\n                explanationContent(explanation)\n            } else {\n                generateButton\n            }\n        }\n        // Serve a previously generated explanation instantly, without another\n        // AI round-trip. Re-runs if the direction (interface language) changes\n        // while the view is open. Never overrides a fresh in-memory result.\n        .task(id: directionToken) {\n            loadCachedExplanationIfAvailable()\n        }\n    }\n    \n    // MARK: - Unavailable State\n    \n    private var unavailableView: some View {\n        VStack(spacing: 12) {\n            Image(systemName: \"cpu\")\n                .font(.system(size: 32))\n                .foregroundStyle(.secondary)\n            \n            Text(\"AI Not Available\")\n                .font(.headline)\n            \n            Text(\"Enable Apple Intelligence or connect to Ollama in Settings to use AI features.\")\n                .font(.caption)\n                .foregroundStyle(.secondary)\n                .multilineTextAlignment(.center)\n        }\n        .padding()\n        .frame(maxWidth: .infinity)\n    }\n    \n    // MARK: - Loading State\n    \n    private var loadingView: some View {\n        VStack(spacing: 16) {\n            ProgressView()\n                .controlSize(.large)\n            \n            Text(\"Generating explanation...\")\n                .font(.subheadline)\n                .foregroundStyle(.secondary)\n            \n            Text(\"Using \\(currentProviderName)\")\n                .font(.caption2)\n                .foregroundStyle(.tertiary)\n        }\n        .padding(.vertical, 32)\n        .frame(maxWidth: .infinity)\n    }\n    \n    // MARK: - Error State\n    \n    private func errorView(_ message: String) -> some View {\n        VStack(spacing: 12) {\n            Image(systemName: \"exclamationmark.triangle\")\n                .font(.system(size: 28))\n                .foregroundStyle(.orange)\n            \n            Text(\"Could not generate explanation\")\n                .font(.headline)\n            \n            Text(message)\n                .font(.caption)\n                .foregroundStyle(.secondary)\n                .multilineTextAlignment(.center)\n            \n            Button {\n                Task { await generateExplanation() }\n            } label: {\n                Label(\"Try Again\", systemImage: \"arrow.clockwise\")\n            }\n            .buttonStyle(.bordered)\n        }\n        .padding()\n        .frame(maxWidth: .infinity)\n    }\n    \n    // MARK: - Generate Button\n    \n    private var generateButton: some View {\n        VStack(spacing: 16) {\n            Spacer()\n                .frame(height: 40)\n            \n            ProviderIcon(provider: aiSettings.effectiveProvider, size: 40)\n                .foregroundStyle(.blue)\n            \n            Text(\"Get a detailed explanation of this word including nuances, grammar usage, examples, and more.\")\n                .font(.caption)\n                .foregroundStyle(.secondary)\n                .multilineTextAlignment(.center)\n            \n            Button {\n                Task { await generateExplanation() }\n            } label: {\n                Label(\"Explain with \\(currentProviderName)\", systemImage: \"sparkles\")\n                    .fitSingleLine()\n                    .frame(maxWidth: .infinity)\n            }\n            .buttonStyle(.borderedProminent)\n            .controlSize(.large)\n            \n            Spacer()\n        }\n        .padding()\n        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)\n    }\n    \n    // MARK: - Explanation Content\n    \n    @ViewBuilder\n    private func explanationContent(_ explanation: WordExplanationResult) -> some View {\n        VStack(alignment: .leading, spacing: 0) {\n            // AI badge header\n            HStack {\n                ProviderIcon(provider: aiSettings.effectiveProvider, size: 16)\n                    .foregroundStyle(.blue)\n                Text(currentProviderName)\n                    .font(.caption)\n                    .fontWeight(.medium)\n                    .foregroundStyle(.blue)\n                if servedFromCache {\n                    Label(\"Saved\", systemImage: \"internaldrive\")\n                        .labelStyle(.titleAndIcon)\n                        .font(.caption2)\n                        .foregroundStyle(.secondary)\n                        .help(\"Loaded from a previously generated explanation. Tap refresh to regenerate.\")\n                }\n                Spacer()\n                Button {\n                    Task { await generateExplanation() }\n                } label: {\n                    Image(systemName: \"arrow.clockwise\")\n                        .font(.caption)\n                }\n                .buttonStyle(.plain)\n                .foregroundStyle(.secondary)\n                .help(\"Regenerate explanation\")\n            }\n            .padding(.horizontal)\n            .padding(.vertical, 8)\n            .background(.blue.opacity(0.1))\n            \n            ScrollView {\n                VStack(alignment: .leading, spacing: 16) {\n                    // Definition Section\n                    collapsibleSection(\n                        title: \"Definition\",\n                        icon: \"text.book.closed\",\n                        id: \"definition\"\n                    ) {\n                        VStack(alignment: .leading, spacing: 8) {\n                            if !explanation.partOfSpeech.isEmpty {\n                                Text(explanation.partOfSpeech)\n                                    .font(.caption)\n                                    .fontWeight(.semibold)\n                                    .foregroundStyle(.white)\n                                    .padding(.horizontal, 8)\n                                    .padding(.vertical, 3)\n                                    .background(Capsule().fill(.blue))\n                            }\n                            \n                            Text(explanation.definition)\n                                .font(.body)\n                        }\n                    }\n                    \n                    // Nuances Section\n                    if !explanation.nuances.isEmpty {\n                        collapsibleSection(\n                            title: \"Nuances & Context\",\n                            icon: \"lightbulb\",\n                            id: \"nuances\"\n                        ) {\n                            Text(explanation.nuances)\n                                .font(.callout)\n                        }\n                    }\n                    \n                    // Grammar Usage Section\n                    if !explanation.grammarUsage.isEmpty {\n                        collapsibleSection(\n                            title: \"Grammar Usage\",\n                            icon: \"text.alignleft\",\n                            id: \"grammar\"\n                        ) {\n                            Text(explanation.grammarUsage)\n                                .font(.callout)\n                        }\n                    }\n                    \n                    // Usage Contexts Section\n                    if !explanation.usageContexts.isEmpty {\n                        collapsibleSection(\n                            title: \"When to Use\",\n                            icon: \"bubble.left.and.bubble.right\",\n                            id: \"contexts\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 6) {\n                                ForEach(explanation.usageContexts, id: \\.self) { context in\n                                    HStack(alignment: .top, spacing: 8) {\n                                        Image(systemName: \"checkmark.circle.fill\")\n                                            .foregroundStyle(.green)\n                                            .font(.caption)\n                                        Text(context)\n                                            .font(.callout)\n                                    }\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Example Sentences Section\n                    if !explanation.exampleSentences.isEmpty {\n                        collapsibleSection(\n                            title: \"Examples\",\n                            icon: \"text.quote\",\n                            id: \"examples\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 12) {\n                                ForEach(explanation.exampleSentences) { sentence in\n                                    exampleSentenceRow(sentence)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Synonyms Section\n                    if !explanation.synonyms.isEmpty {\n                        collapsibleSection(\n                            title: \"Synonyms\",\n                            icon: \"equal.circle\",\n                            id: \"synonyms\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 10) {\n                                ForEach(explanation.synonyms) { synonym in\n                                    relatedWordRow(synonym, tint: .blue)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Antonyms Section\n                    if !explanation.antonyms.isEmpty {\n                        collapsibleSection(\n                            title: \"Antonyms\",\n                            icon: \"arrow.left.arrow.right\",\n                            id: \"antonyms\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 10) {\n                                ForEach(explanation.antonyms) { antonym in\n                                    relatedWordRow(antonym, tint: .orange)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Common Collocations Section\n                    if !explanation.commonCollocations.isEmpty {\n                        collapsibleSection(\n                            title: \"Common Phrases\",\n                            icon: \"text.badge.plus\",\n                            id: \"collocations\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 8) {\n                                ForEach(explanation.commonCollocations) { collocation in\n                                    collocationRow(collocation)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Learning Tip Section\n                    if !explanation.learningTip.isEmpty {\n                        collapsibleSection(\n                            title: \"Learning Tip\",\n                            icon: \"graduationcap\",\n                            id: \"tip\"\n                        ) {\n                            HStack(alignment: .top, spacing: 10) {\n                                Image(systemName: \"lightbulb.fill\")\n                                    .foregroundStyle(.yellow)\n                                Text(explanation.learningTip)\n                                    .font(.callout)\n                                    .italic()\n                            }\n                            .padding()\n                            .background(\n                                RoundedRectangle(cornerRadius: 8)\n                                    .fill(.yellow.opacity(0.1))\n                            )\n                        }\n                    }\n                }\n                .padding()\n            }\n        }\n    }\n    \n    // MARK: - Section Components\n    \n    @ViewBuilder\n    private func collapsibleSection<Content: View>(\n        title: String,\n        icon: String,\n        id: String,\n        @ViewBuilder content: () -> Content\n    ) -> some View {\n        VStack(alignment: .leading, spacing: 8) {\n            Button {\n                withAnimation(.easeInOut(duration: 0.2)) {\n                    if expandedSections.contains(id) {\n                        expandedSections.remove(id)\n                    } else {\n                        expandedSections.insert(id)\n                    }\n                }\n            } label: {\n                HStack {\n                    Image(systemName: icon)\n                        .foregroundStyle(.secondary)\n                        .frame(width: 20)\n                    \n                    Text(title)\n                        .font(.subheadline)\n                        .fontWeight(.semibold)\n                        .foregroundStyle(.primary)\n                    \n                    Spacer()\n                    \n                    Image(systemName: expandedSections.contains(id) ? \"chevron.up\" : \"chevron.down\")\n                        .font(.caption)\n                        .foregroundStyle(.tertiary)\n                }\n            }\n            .buttonStyle(.plain)\n            \n            if expandedSections.contains(id) {\n                content()\n                    .padding(.leading, 28)\n            }\n        }\n        .padding(.vertical, 4)\n    }\n    \n    private func exampleSentenceRow(_ sentence: ExampleSentenceResult) -> some View {\n        HStack(alignment: .top, spacing: 8) {\n            VStack(alignment: .leading, spacing: 4) {\n                // The sentence is in the word's own language (the learning\n                // target), so it leads; pinyin only exists for Chinese text.\n                Text(sentence.sentence)\n                    .font(.body)\n                    .fontWeight(.medium)\n\n                if !sentence.pinyin.isEmpty {\n                    Text(PinyinConverter.coloredPinyin(fromPinyin: sentence.pinyin))\n                        .font(.caption)\n                }\n\n                Text(sentence.translation)\n                    .font(.caption)\n                    .foregroundStyle(.secondary)\n            }\n\n            Spacer()\n\n            Button {\n                SpeechService.speakAuto(sentence.sentence)\n            } label: {\n                Image(systemName: \"speaker.wave.2\")\n                    .font(.caption)\n            }\n            .buttonStyle(.plain)\n            .foregroundStyle(.blue)\n            .accessibilityLabel(Text(\"Read sentence aloud\"))\n        }\n        .padding(.vertical, 6)\n        .padding(.horizontal, 10)\n        .frame(maxWidth: .infinity, alignment: .leading)\n        .background(\n            RoundedRectangle(cornerRadius: 8)\n                .fill(.quaternary.opacity(0.5))\n        )\n    }\n\n    private func relatedWordRow(_ word: RelatedWordResult, tint: Color) -> some View {\n        VStack(alignment: .leading, spacing: 4) {\n            HStack(spacing: 8) {\n                Text(word.word)\n                    .font(.body)\n                    .fontWeight(.medium)\n\n                if !word.pinyin.isEmpty {\n                    Text(word.pinyin)\n                        .font(.caption)\n                        .foregroundStyle(.secondary)\n                }\n\n                Spacer()\n\n                Text(word.meaning)\n                    .font(.caption)\n                    .foregroundStyle(tint)\n            }\n\n            if !word.difference.isEmpty {\n                Text(word.difference)\n                    .font(.caption2)\n                    .foregroundStyle(.secondary)\n            }\n        }\n        .padding(.vertical, 4)\n    }\n\n    private func collocationRow(_ collocation: CollocationResult) -> some View {\n        HStack(spacing: 12) {\n            VStack(alignment: .leading, spacing: 2) {\n                Text(collocation.phrase)\n                    .font(.callout)\n                    .fontWeight(.medium)\n\n                if !collocation.pinyin.isEmpty {\n                    Text(collocation.pinyin)\n                        .font(.caption2)\n                        .foregroundStyle(.secondary)\n                }\n            }\n\n            Spacer()\n\n            Text(collocation.translation)\n                .font(.caption)\n                .foregroundStyle(.secondary)\n        }\n        .padding(.vertical, 4)\n    }\n    \n    // MARK: - Actions\n    \n    /// Load a cached explanation into the view if one exists and nothing has\n    /// already been generated this session. Safe to call repeatedly.\n    private func loadCachedExplanationIfAvailable() {\n        guard explanation == nil, !isLoading else { return }\n        guard let cached = cache.explanation(forWord: word, directionToken: directionToken) else { return }\n        explanation = cached.result\n        errorMessage = nil\n        servedFromCache = true\n    }\n\n    /// Generate a fresh explanation (always bypasses the cache \u2014 this is also\n    /// the \"regenerate\" path) and persist the result for instant reuse later.\n    private func generateExplanation() async {\n        isLoading = true\n        errorMessage = nil\n        servedFromCache = false\n\n        do {\n            // Use the unified provider method that routes to Apple Intelligence or Ollama\n            let result = try await aiService.generateExplanationWithProvider(\n                for: word,\n                pinyin: pinyin,\n                context: context\n            )\n            explanation = result\n            cache.store(\n                word: word,\n                pinyin: pinyin,\n                directionToken: directionToken,\n                providerName: aiSettings.effectiveProvider.displayName,\n                result: result\n            )\n        } catch {\n            errorMessage = error.localizedDescription\n        }\n\n        isLoading = false\n    }\n}\n\n// MARK: - Compact AI Button for List Rows\n\n/// A small button that can be added to vocabulary rows to trigger AI explanation\nstruct AIExplainButton: View {\n    let word: String\n    let pinyin: String\n    let onTap: () -> Void\n    \n    @State private var isAvailable: Bool = true\n    \n    private var provider: AIProvider {\n        AIModelSettings.shared.effectiveProvider\n    }\n\n    private var providerName: String {\n        AIModelSettings.shared.effectiveProvider.displayName\n    }\n\n    var body: some View {\n        Button(action: onTap) {\n            ProviderIcon(provider: provider, size: 16)\n                .foregroundStyle(isAvailable ? .blue : .secondary)\n        }\n        .buttonStyle(.plain)\n        .disabled(!isAvailable)\n        .help(isAvailable ? \"Explain with \\(providerName)\" : \"AI not available\")\n        .onAppear {\n            isAvailable = AIModelSettings.shared.isAppleIntelligenceAvailable || OllamaService.shared.isConnected\n        }\n    }\n}\n\n// MARK: - Preview\n\n#Preview {\n    AIWordExplanationView(\n        word: \"\u5b66\u4e60\",\n        pinyin: \"xu\u00e9x\u00ed\",\n        context: nil\n    )\n    .frame(width: 400, height: 600)\n}\n",
+      "structuredPatch": [
+        {
+          "oldStart": 21,
+          "oldLines": 6,
+          "newStart": 21,
+          "newLines": 9,
+          "lines": [
+            "     /// True when the currently shown explanation came from the persistent cache",
+            "     /// rather than a fresh generation, so the UI can label it.",
+            "     @State private var servedFromCache: Bool = false",
+            "+    /// Direction token the currently shown explanation belongs to. Lets us drop",
+            "+    /// a stale explanation if the interface language flips while the view is open.",
+            "+    @State private var shownDirection: String?",
+            " ",
+            "     private let aiService = AIWordExplanationService.shared",
+            "     private let aiSettings = AIModelSettings.shared"
+          ]
+        }
+      ],
+      "userModified": false,
+      "replaceAll": false
+    },
+    "tool_use_id": "toolu_01261S1QhyHJS453SW2ZVwkb",
+    "duration_ms": 6
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/Components/AIWordExplanationView.swift",
+      "old_string": "    /// Load a cached explanation into the view if one exists and nothing has\n    /// already been generated this session. Safe to call repeatedly.\n    private func loadCachedExplanationIfAvailable() {\n        guard explanation == nil, !isLoading else { return }\n        guard let cached = cache.explanation(forWord: word, directionToken: directionToken) else { return }\n        explanation = cached.result\n        errorMessage = nil\n        servedFromCache = true\n    }",
+      "new_string": "    /// Reconcile the view with the current direction: if a previously shown\n    /// explanation belongs to a now-stale direction (interface language flipped),\n    /// drop it; then serve this direction's cached explanation if one exists and\n    /// nothing fresh is already shown. Safe to call repeatedly.\n    private func loadCachedExplanationIfAvailable() {\n        if let shown = shownDirection, shown != directionToken {\n            explanation = nil\n            errorMessage = nil\n            servedFromCache = false\n            shownDirection = nil\n        }\n        guard explanation == nil, !isLoading else { return }\n        guard let cached = cache.explanation(forWord: word, directionToken: directionToken) else { return }\n        explanation = cached.result\n        errorMessage = nil\n        servedFromCache = true\n        shownDirection = directionToken\n    }",
+      "replace_all": false
+    },
+    "tool_response": {
+      "filePath": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/Components/AIWordExplanationView.swift",
+      "oldString": "    /// Load a cached explanation into the view if one exists and nothing has\n    /// already been generated this session. Safe to call repeatedly.\n    private func loadCachedExplanationIfAvailable() {\n        guard explanation == nil, !isLoading else { return }\n        guard let cached = cache.explanation(forWord: word, directionToken: directionToken) else { return }\n        explanation = cached.result\n        errorMessage = nil\n        servedFromCache = true\n    }",
+      "newString": "    /// Reconcile the view with the current direction: if a previously shown\n    /// explanation belongs to a now-stale direction (interface language flipped),\n    /// drop it; then serve this direction's cached explanation if one exists and\n    /// nothing fresh is already shown. Safe to call repeatedly.\n    private func loadCachedExplanationIfAvailable() {\n        if let shown = shownDirection, shown != directionToken {\n            explanation = nil\n            errorMessage = nil\n            servedFromCache = false\n            shownDirection = nil\n        }\n        guard explanation == nil, !isLoading else { return }\n        guard let cached = cache.explanation(forWord: word, directionToken: directionToken) else { return }\n        explanation = cached.result\n        errorMessage = nil\n        servedFromCache = true\n        shownDirection = directionToken\n    }",
+      "originalFile": "//\n//  AIWordExplanationView.swift\n//  SwiftMandarin\n//\n//  A reusable view component that displays AI-generated word explanations\n//  using either Apple Intelligence or Ollama based on user settings\n//\n\nimport SwiftUI\n\n/// A view that displays a detailed AI-generated explanation for a Mandarin word\nstruct AIWordExplanationView: View {\n    let word: String\n    let pinyin: String\n    let context: String?\n    \n    @State private var explanation: WordExplanationResult?\n    @State private var isLoading: Bool = false\n    @State private var errorMessage: String?\n    @State private var expandedSections: Set<String> = [\"definition\", \"examples\"]\n    /// True when the currently shown explanation came from the persistent cache\n    /// rather than a fresh generation, so the UI can label it.\n    @State private var servedFromCache: Bool = false\n    /// Direction token the currently shown explanation belongs to. Lets us drop\n    /// a stale explanation if the interface language flips while the view is open.\n    @State private var shownDirection: String?\n\n    private let aiService = AIWordExplanationService.shared\n    private let aiSettings = AIModelSettings.shared\n    private let cache = WordExplanationCacheStore.shared\n\n    /// Direction token for the current word + interface language, used as the\n    /// per-direction cache key. Recomputed if the language changes while open.\n    private var directionToken: String {\n        ExplanationDirection.current(forWord: word).cacheToken\n    }\n    \n    /// Check if any AI provider is available\n    private var isAnyProviderAvailable: Bool {\n        aiSettings.isAnyProviderAvailable\n    }\n    \n    /// Get the current provider name for display\n    private var currentProviderName: String {\n        aiSettings.effectiveProvider.displayName\n    }\n    \n    var body: some View {\n        Group {\n            if !isAnyProviderAvailable {\n                unavailableView\n            } else if isLoading {\n                loadingView\n            } else if let error = errorMessage {\n                errorView(error)\n            } else if let explanation = explanation {\n                explanationContent(explanation)\n            } else {\n                generateButton\n            }\n        }\n        // Serve a previously generated explanation instantly, without another\n        // AI round-trip. Re-runs if the direction (interface language) changes\n        // while the view is open. Never overrides a fresh in-memory result.\n        .task(id: directionToken) {\n            loadCachedExplanationIfAvailable()\n        }\n    }\n    \n    // MARK: - Unavailable State\n    \n    private var unavailableView: some View {\n        VStack(spacing: 12) {\n            Image(systemName: \"cpu\")\n                .font(.system(size: 32))\n                .foregroundStyle(.secondary)\n            \n            Text(\"AI Not Available\")\n                .font(.headline)\n            \n            Text(\"Enable Apple Intelligence or connect to Ollama in Settings to use AI features.\")\n                .font(.caption)\n                .foregroundStyle(.secondary)\n                .multilineTextAlignment(.center)\n        }\n        .padding()\n        .frame(maxWidth: .infinity)\n    }\n    \n    // MARK: - Loading State\n    \n    private var loadingView: some View {\n        VStack(spacing: 16) {\n            ProgressView()\n                .controlSize(.large)\n            \n            Text(\"Generating explanation...\")\n                .font(.subheadline)\n                .foregroundStyle(.secondary)\n            \n            Text(\"Using \\(currentProviderName)\")\n                .font(.caption2)\n                .foregroundStyle(.tertiary)\n        }\n        .padding(.vertical, 32)\n        .frame(maxWidth: .infinity)\n    }\n    \n    // MARK: - Error State\n    \n    private func errorView(_ message: String) -> some View {\n        VStack(spacing: 12) {\n            Image(systemName: \"exclamationmark.triangle\")\n                .font(.system(size: 28))\n                .foregroundStyle(.orange)\n            \n            Text(\"Could not generate explanation\")\n                .font(.headline)\n            \n            Text(message)\n                .font(.caption)\n                .foregroundStyle(.secondary)\n                .multilineTextAlignment(.center)\n            \n            Button {\n                Task { await generateExplanation() }\n            } label: {\n                Label(\"Try Again\", systemImage: \"arrow.clockwise\")\n            }\n            .buttonStyle(.bordered)\n        }\n        .padding()\n        .frame(maxWidth: .infinity)\n    }\n    \n    // MARK: - Generate Button\n    \n    private var generateButton: some View {\n        VStack(spacing: 16) {\n            Spacer()\n                .frame(height: 40)\n            \n            ProviderIcon(provider: aiSettings.effectiveProvider, size: 40)\n                .foregroundStyle(.blue)\n            \n            Text(\"Get a detailed explanation of this word including nuances, grammar usage, examples, and more.\")\n                .font(.caption)\n                .foregroundStyle(.secondary)\n                .multilineTextAlignment(.center)\n            \n            Button {\n                Task { await generateExplanation() }\n            } label: {\n                Label(\"Explain with \\(currentProviderName)\", systemImage: \"sparkles\")\n                    .fitSingleLine()\n                    .frame(maxWidth: .infinity)\n            }\n            .buttonStyle(.borderedProminent)\n            .controlSize(.large)\n            \n            Spacer()\n        }\n        .padding()\n        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)\n    }\n    \n    // MARK: - Explanation Content\n    \n    @ViewBuilder\n    private func explanationContent(_ explanation: WordExplanationResult) -> some View {\n        VStack(alignment: .leading, spacing: 0) {\n            // AI badge header\n            HStack {\n                ProviderIcon(provider: aiSettings.effectiveProvider, size: 16)\n                    .foregroundStyle(.blue)\n                Text(currentProviderName)\n                    .font(.caption)\n                    .fontWeight(.medium)\n                    .foregroundStyle(.blue)\n                if servedFromCache {\n                    Label(\"Saved\", systemImage: \"internaldrive\")\n                        .labelStyle(.titleAndIcon)\n                        .font(.caption2)\n                        .foregroundStyle(.secondary)\n                        .help(\"Loaded from a previously generated explanation. Tap refresh to regenerate.\")\n                }\n                Spacer()\n                Button {\n                    Task { await generateExplanation() }\n                } label: {\n                    Image(systemName: \"arrow.clockwise\")\n                        .font(.caption)\n                }\n                .buttonStyle(.plain)\n                .foregroundStyle(.secondary)\n                .help(\"Regenerate explanation\")\n            }\n            .padding(.horizontal)\n            .padding(.vertical, 8)\n            .background(.blue.opacity(0.1))\n            \n            ScrollView {\n                VStack(alignment: .leading, spacing: 16) {\n                    // Definition Section\n                    collapsibleSection(\n                        title: \"Definition\",\n                        icon: \"text.book.closed\",\n                        id: \"definition\"\n                    ) {\n                        VStack(alignment: .leading, spacing: 8) {\n                            if !explanation.partOfSpeech.isEmpty {\n                                Text(explanation.partOfSpeech)\n                                    .font(.caption)\n                                    .fontWeight(.semibold)\n                                    .foregroundStyle(.white)\n                                    .padding(.horizontal, 8)\n                                    .padding(.vertical, 3)\n                                    .background(Capsule().fill(.blue))\n                            }\n                            \n                            Text(explanation.definition)\n                                .font(.body)\n                        }\n                    }\n                    \n                    // Nuances Section\n                    if !explanation.nuances.isEmpty {\n                        collapsibleSection(\n                            title: \"Nuances & Context\",\n                            icon: \"lightbulb\",\n                            id: \"nuances\"\n                        ) {\n                            Text(explanation.nuances)\n                                .font(.callout)\n                        }\n                    }\n                    \n                    // Grammar Usage Section\n                    if !explanation.grammarUsage.isEmpty {\n                        collapsibleSection(\n                            title: \"Grammar Usage\",\n                            icon: \"text.alignleft\",\n                            id: \"grammar\"\n                        ) {\n                            Text(explanation.grammarUsage)\n                                .font(.callout)\n                        }\n                    }\n                    \n                    // Usage Contexts Section\n                    if !explanation.usageContexts.isEmpty {\n                        collapsibleSection(\n                            title: \"When to Use\",\n                            icon: \"bubble.left.and.bubble.right\",\n                            id: \"contexts\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 6) {\n                                ForEach(explanation.usageContexts, id: \\.self) { context in\n                                    HStack(alignment: .top, spacing: 8) {\n                                        Image(systemName: \"checkmark.circle.fill\")\n                                            .foregroundStyle(.green)\n                                            .font(.caption)\n                                        Text(context)\n                                            .font(.callout)\n                                    }\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Example Sentences Section\n                    if !explanation.exampleSentences.isEmpty {\n                        collapsibleSection(\n                            title: \"Examples\",\n                            icon: \"text.quote\",\n                            id: \"examples\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 12) {\n                                ForEach(explanation.exampleSentences) { sentence in\n                                    exampleSentenceRow(sentence)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Synonyms Section\n                    if !explanation.synonyms.isEmpty {\n                        collapsibleSection(\n                            title: \"Synonyms\",\n                            icon: \"equal.circle\",\n                            id: \"synonyms\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 10) {\n                                ForEach(explanation.synonyms) { synonym in\n                                    relatedWordRow(synonym, tint: .blue)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Antonyms Section\n                    if !explanation.antonyms.isEmpty {\n                        collapsibleSection(\n                            title: \"Antonyms\",\n                            icon: \"arrow.left.arrow.right\",\n                            id: \"antonyms\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 10) {\n                                ForEach(explanation.antonyms) { antonym in\n                                    relatedWordRow(antonym, tint: .orange)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Common Collocations Section\n                    if !explanation.commonCollocations.isEmpty {\n                        collapsibleSection(\n                            title: \"Common Phrases\",\n                            icon: \"text.badge.plus\",\n                            id: \"collocations\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 8) {\n                                ForEach(explanation.commonCollocations) { collocation in\n                                    collocationRow(collocation)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Learning Tip Section\n                    if !explanation.learningTip.isEmpty {\n                        collapsibleSection(\n                            title: \"Learning Tip\",\n                            icon: \"graduationcap\",\n                            id: \"tip\"\n                        ) {\n                            HStack(alignment: .top, spacing: 10) {\n                                Image(systemName: \"lightbulb.fill\")\n                                    .foregroundStyle(.yellow)\n                                Text(explanation.learningTip)\n                                    .font(.callout)\n                                    .italic()\n                            }\n                            .padding()\n                            .background(\n                                RoundedRectangle(cornerRadius: 8)\n                                    .fill(.yellow.opacity(0.1))\n                            )\n                        }\n                    }\n                }\n                .padding()\n            }\n        }\n    }\n    \n    // MARK: - Section Components\n    \n    @ViewBuilder\n    private func collapsibleSection<Content: View>(\n        title: String,\n        icon: String,\n        id: String,\n        @ViewBuilder content: () -> Content\n    ) -> some View {\n        VStack(alignment: .leading, spacing: 8) {\n            Button {\n                withAnimation(.easeInOut(duration: 0.2)) {\n                    if expandedSections.contains(id) {\n                        expandedSections.remove(id)\n                    } else {\n                        expandedSections.insert(id)\n                    }\n                }\n            } label: {\n                HStack {\n                    Image(systemName: icon)\n                        .foregroundStyle(.secondary)\n                        .frame(width: 20)\n                    \n                    Text(title)\n                        .font(.subheadline)\n                        .fontWeight(.semibold)\n                        .foregroundStyle(.primary)\n                    \n                    Spacer()\n                    \n                    Image(systemName: expandedSections.contains(id) ? \"chevron.up\" : \"chevron.down\")\n                        .font(.caption)\n                        .foregroundStyle(.tertiary)\n                }\n            }\n            .buttonStyle(.plain)\n            \n            if expandedSections.contains(id) {\n                content()\n                    .padding(.leading, 28)\n            }\n        }\n        .padding(.vertical, 4)\n    }\n    \n    private func exampleSentenceRow(_ sentence: ExampleSentenceResult) -> some View {\n        HStack(alignment: .top, spacing: 8) {\n            VStack(alignment: .leading, spacing: 4) {\n                // The sentence is in the word's own language (the learning\n                // target), so it leads; pinyin only exists for Chinese text.\n                Text(sentence.sentence)\n                    .font(.body)\n                    .fontWeight(.medium)\n\n                if !sentence.pinyin.isEmpty {\n                    Text(PinyinConverter.coloredPinyin(fromPinyin: sentence.pinyin))\n                        .font(.caption)\n                }\n\n                Text(sentence.translation)\n                    .font(.caption)\n                    .foregroundStyle(.secondary)\n            }\n\n            Spacer()\n\n            Button {\n                SpeechService.speakAuto(sentence.sentence)\n            } label: {\n                Image(systemName: \"speaker.wave.2\")\n                    .font(.caption)\n            }\n            .buttonStyle(.plain)\n            .foregroundStyle(.blue)\n            .accessibilityLabel(Text(\"Read sentence aloud\"))\n        }\n        .padding(.vertical, 6)\n        .padding(.horizontal, 10)\n        .frame(maxWidth: .infinity, alignment: .leading)\n        .background(\n            RoundedRectangle(cornerRadius: 8)\n                .fill(.quaternary.opacity(0.5))\n        )\n    }\n\n    private func relatedWordRow(_ word: RelatedWordResult, tint: Color) -> some View {\n        VStack(alignment: .leading, spacing: 4) {\n            HStack(spacing: 8) {\n                Text(word.word)\n                    .font(.body)\n                    .fontWeight(.medium)\n\n                if !word.pinyin.isEmpty {\n                    Text(word.pinyin)\n                        .font(.caption)\n                        .foregroundStyle(.secondary)\n                }\n\n                Spacer()\n\n                Text(word.meaning)\n                    .font(.caption)\n                    .foregroundStyle(tint)\n            }\n\n            if !word.difference.isEmpty {\n                Text(word.difference)\n                    .font(.caption2)\n                    .foregroundStyle(.secondary)\n            }\n        }\n        .padding(.vertical, 4)\n    }\n\n    private func collocationRow(_ collocation: CollocationResult) -> some View {\n        HStack(spacing: 12) {\n            VStack(alignment: .leading, spacing: 2) {\n                Text(collocation.phrase)\n                    .font(.callout)\n                    .fontWeight(.medium)\n\n                if !collocation.pinyin.isEmpty {\n                    Text(collocation.pinyin)\n                        .font(.caption2)\n                        .foregroundStyle(.secondary)\n                }\n            }\n\n            Spacer()\n\n            Text(collocation.translation)\n                .font(.caption)\n                .foregroundStyle(.secondary)\n        }\n        .padding(.vertical, 4)\n    }\n    \n    // MARK: - Actions\n    \n    /// Load a cached explanation into the view if one exists and nothing has\n    /// already been generated this session. Safe to call repeatedly.\n    private func loadCachedExplanationIfAvailable() {\n        guard explanation == nil, !isLoading else { return }\n        guard let cached = cache.explanation(forWord: word, directionToken: directionToken) else { return }\n        explanation = cached.result\n        errorMessage = nil\n        servedFromCache = true\n    }\n\n    /// Generate a fresh explanation (always bypasses the cache \u2014 this is also\n    /// the \"regenerate\" path) and persist the result for instant reuse later.\n    private func generateExplanation() async {\n        isLoading = true\n        errorMessage = nil\n        servedFromCache = false\n\n        do {\n            // Use the unified provider method that routes to Apple Intelligence or Ollama\n            let result = try await aiService.generateExplanationWithProvider(\n                for: word,\n                pinyin: pinyin,\n                context: context\n            )\n            explanation = result\n            cache.store(\n                word: word,\n                pinyin: pinyin,\n                directionToken: directionToken,\n                providerName: aiSettings.effectiveProvider.displayName,\n                result: result\n            )\n        } catch {\n            errorMessage = error.localizedDescription\n        }\n\n        isLoading = false\n    }\n}\n\n// MARK: - Compact AI Button for List Rows\n\n/// A small button that can be added to vocabulary rows to trigger AI explanation\nstruct AIExplainButton: View {\n    let word: String\n    let pinyin: String\n    let onTap: () -> Void\n    \n    @State private var isAvailable: Bool = true\n    \n    private var provider: AIProvider {\n        AIModelSettings.shared.effectiveProvider\n    }\n\n    private var providerName: String {\n        AIModelSettings.shared.effectiveProvider.displayName\n    }\n\n    var body: some View {\n        Button(action: onTap) {\n            ProviderIcon(provider: provider, size: 16)\n                .foregroundStyle(isAvailable ? .blue : .secondary)\n        }\n        .buttonStyle(.plain)\n        .disabled(!isAvailable)\n        .help(isAvailable ? \"Explain with \\(providerName)\" : \"AI not available\")\n        .onAppear {\n            isAvailable = AIModelSettings.shared.isAppleIntelligenceAvailable || OllamaService.shared.isConnected\n        }\n    }\n}\n\n// MARK: - Preview\n\n#Preview {\n    AIWordExplanationView(\n        word: \"\u5b66\u4e60\",\n        pinyin: \"xu\u00e9x\u00ed\",\n        context: nil\n    )\n    .frame(width: 400, height: 600)\n}\n",
+      "structuredPatch": [
+        {
+          "oldStart": 495,
+          "oldLines": 14,
+          "newStart": 495,
+          "newLines": 23,
+          "lines": [
+            "     ",
+            "     // MARK: - Actions",
+            "     ",
+            "-    /// Load a cached explanation into the view if one exists and nothing has",
+            "-    /// already been generated this session. Safe to call repeatedly.",
+            "+    /// Reconcile the view with the current direction: if a previously shown",
+            "+    /// explanation belongs to a now-stale direction (interface language flipped),",
+            "+    /// drop it; then serve this direction's cached explanation if one exists and",
+            "+    /// nothing fresh is already shown. Safe to call repeatedly.",
+            "     private func loadCachedExplanationIfAvailable() {",
+            "+        if let shown = shownDirection, shown != directionToken {",
+            "+            explanation = nil",
+            "+            errorMessage = nil",
+            "+            servedFromCache = false",
+            "+            shownDirection = nil",
+            "+        }",
+            "         guard explanation == nil, !isLoading else { return }",
+            "         guard let cached = cache.explanation(forWord: word, directionToken: directionToken) else { return }",
+            "         explanation = cached.result",
+            "         errorMessage = nil",
+            "         servedFromCache = true",
+            "+        shownDirection = directionToken",
+            "     }",
+            " ",
+            "     /// Generate a fresh explanation (always bypasses the cache \u2014 this is also"
+          ]
+        }
+      ],
+      "userModified": false,
+      "replaceAll": false
+    },
+    "tool_use_id": "toolu_014xXHKh7Z7J1GgK9Kf9egDy",
+    "duration_ms": 7
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/Components/AIWordExplanationView.swift",
+      "old_string": "            explanation = result\n            cache.store(\n                word: word,\n                pinyin: pinyin,\n                directionToken: directionToken,\n                providerName: aiSettings.effectiveProvider.displayName,\n                result: result\n            )",
+      "new_string": "            explanation = result\n            shownDirection = directionToken\n            cache.store(\n                word: word,\n                pinyin: pinyin,\n                directionToken: directionToken,\n                providerName: aiSettings.effectiveProvider.displayName,\n                result: result\n            )",
+      "replace_all": false
+    },
+    "tool_response": {
+      "filePath": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/Components/AIWordExplanationView.swift",
+      "oldString": "            explanation = result\n            cache.store(\n                word: word,\n                pinyin: pinyin,\n                directionToken: directionToken,\n                providerName: aiSettings.effectiveProvider.displayName,\n                result: result\n            )",
+      "newString": "            explanation = result\n            shownDirection = directionToken\n            cache.store(\n                word: word,\n                pinyin: pinyin,\n                directionToken: directionToken,\n                providerName: aiSettings.effectiveProvider.displayName,\n                result: result\n            )",
+      "originalFile": "//\n//  AIWordExplanationView.swift\n//  SwiftMandarin\n//\n//  A reusable view component that displays AI-generated word explanations\n//  using either Apple Intelligence or Ollama based on user settings\n//\n\nimport SwiftUI\n\n/// A view that displays a detailed AI-generated explanation for a Mandarin word\nstruct AIWordExplanationView: View {\n    let word: String\n    let pinyin: String\n    let context: String?\n    \n    @State private var explanation: WordExplanationResult?\n    @State private var isLoading: Bool = false\n    @State private var errorMessage: String?\n    @State private var expandedSections: Set<String> = [\"definition\", \"examples\"]\n    /// True when the currently shown explanation came from the persistent cache\n    /// rather than a fresh generation, so the UI can label it.\n    @State private var servedFromCache: Bool = false\n    /// Direction token the currently shown explanation belongs to. Lets us drop\n    /// a stale explanation if the interface language flips while the view is open.\n    @State private var shownDirection: String?\n\n    private let aiService = AIWordExplanationService.shared\n    private let aiSettings = AIModelSettings.shared\n    private let cache = WordExplanationCacheStore.shared\n\n    /// Direction token for the current word + interface language, used as the\n    /// per-direction cache key. Recomputed if the language changes while open.\n    private var directionToken: String {\n        ExplanationDirection.current(forWord: word).cacheToken\n    }\n    \n    /// Check if any AI provider is available\n    private var isAnyProviderAvailable: Bool {\n        aiSettings.isAnyProviderAvailable\n    }\n    \n    /// Get the current provider name for display\n    private var currentProviderName: String {\n        aiSettings.effectiveProvider.displayName\n    }\n    \n    var body: some View {\n        Group {\n            if !isAnyProviderAvailable {\n                unavailableView\n            } else if isLoading {\n                loadingView\n            } else if let error = errorMessage {\n                errorView(error)\n            } else if let explanation = explanation {\n                explanationContent(explanation)\n            } else {\n                generateButton\n            }\n        }\n        // Serve a previously generated explanation instantly, without another\n        // AI round-trip. Re-runs if the direction (interface language) changes\n        // while the view is open. Never overrides a fresh in-memory result.\n        .task(id: directionToken) {\n            loadCachedExplanationIfAvailable()\n        }\n    }\n    \n    // MARK: - Unavailable State\n    \n    private var unavailableView: some View {\n        VStack(spacing: 12) {\n            Image(systemName: \"cpu\")\n                .font(.system(size: 32))\n                .foregroundStyle(.secondary)\n            \n            Text(\"AI Not Available\")\n                .font(.headline)\n            \n            Text(\"Enable Apple Intelligence or connect to Ollama in Settings to use AI features.\")\n                .font(.caption)\n                .foregroundStyle(.secondary)\n                .multilineTextAlignment(.center)\n        }\n        .padding()\n        .frame(maxWidth: .infinity)\n    }\n    \n    // MARK: - Loading State\n    \n    private var loadingView: some View {\n        VStack(spacing: 16) {\n            ProgressView()\n                .controlSize(.large)\n            \n            Text(\"Generating explanation...\")\n                .font(.subheadline)\n                .foregroundStyle(.secondary)\n            \n            Text(\"Using \\(currentProviderName)\")\n                .font(.caption2)\n                .foregroundStyle(.tertiary)\n        }\n        .padding(.vertical, 32)\n        .frame(maxWidth: .infinity)\n    }\n    \n    // MARK: - Error State\n    \n    private func errorView(_ message: String) -> some View {\n        VStack(spacing: 12) {\n            Image(systemName: \"exclamationmark.triangle\")\n                .font(.system(size: 28))\n                .foregroundStyle(.orange)\n            \n            Text(\"Could not generate explanation\")\n                .font(.headline)\n            \n            Text(message)\n                .font(.caption)\n                .foregroundStyle(.secondary)\n                .multilineTextAlignment(.center)\n            \n            Button {\n                Task { await generateExplanation() }\n            } label: {\n                Label(\"Try Again\", systemImage: \"arrow.clockwise\")\n            }\n            .buttonStyle(.bordered)\n        }\n        .padding()\n        .frame(maxWidth: .infinity)\n    }\n    \n    // MARK: - Generate Button\n    \n    private var generateButton: some View {\n        VStack(spacing: 16) {\n            Spacer()\n                .frame(height: 40)\n            \n            ProviderIcon(provider: aiSettings.effectiveProvider, size: 40)\n                .foregroundStyle(.blue)\n            \n            Text(\"Get a detailed explanation of this word including nuances, grammar usage, examples, and more.\")\n                .font(.caption)\n                .foregroundStyle(.secondary)\n                .multilineTextAlignment(.center)\n            \n            Button {\n                Task { await generateExplanation() }\n            } label: {\n                Label(\"Explain with \\(currentProviderName)\", systemImage: \"sparkles\")\n                    .fitSingleLine()\n                    .frame(maxWidth: .infinity)\n            }\n            .buttonStyle(.borderedProminent)\n            .controlSize(.large)\n            \n            Spacer()\n        }\n        .padding()\n        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)\n    }\n    \n    // MARK: - Explanation Content\n    \n    @ViewBuilder\n    private func explanationContent(_ explanation: WordExplanationResult) -> some View {\n        VStack(alignment: .leading, spacing: 0) {\n            // AI badge header\n            HStack {\n                ProviderIcon(provider: aiSettings.effectiveProvider, size: 16)\n                    .foregroundStyle(.blue)\n                Text(currentProviderName)\n                    .font(.caption)\n                    .fontWeight(.medium)\n                    .foregroundStyle(.blue)\n                if servedFromCache {\n                    Label(\"Saved\", systemImage: \"internaldrive\")\n                        .labelStyle(.titleAndIcon)\n                        .font(.caption2)\n                        .foregroundStyle(.secondary)\n                        .help(\"Loaded from a previously generated explanation. Tap refresh to regenerate.\")\n                }\n                Spacer()\n                Button {\n                    Task { await generateExplanation() }\n                } label: {\n                    Image(systemName: \"arrow.clockwise\")\n                        .font(.caption)\n                }\n                .buttonStyle(.plain)\n                .foregroundStyle(.secondary)\n                .help(\"Regenerate explanation\")\n            }\n            .padding(.horizontal)\n            .padding(.vertical, 8)\n            .background(.blue.opacity(0.1))\n            \n            ScrollView {\n                VStack(alignment: .leading, spacing: 16) {\n                    // Definition Section\n                    collapsibleSection(\n                        title: \"Definition\",\n                        icon: \"text.book.closed\",\n                        id: \"definition\"\n                    ) {\n                        VStack(alignment: .leading, spacing: 8) {\n                            if !explanation.partOfSpeech.isEmpty {\n                                Text(explanation.partOfSpeech)\n                                    .font(.caption)\n                                    .fontWeight(.semibold)\n                                    .foregroundStyle(.white)\n                                    .padding(.horizontal, 8)\n                                    .padding(.vertical, 3)\n                                    .background(Capsule().fill(.blue))\n                            }\n                            \n                            Text(explanation.definition)\n                                .font(.body)\n                        }\n                    }\n                    \n                    // Nuances Section\n                    if !explanation.nuances.isEmpty {\n                        collapsibleSection(\n                            title: \"Nuances & Context\",\n                            icon: \"lightbulb\",\n                            id: \"nuances\"\n                        ) {\n                            Text(explanation.nuances)\n                                .font(.callout)\n                        }\n                    }\n                    \n                    // Grammar Usage Section\n                    if !explanation.grammarUsage.isEmpty {\n                        collapsibleSection(\n                            title: \"Grammar Usage\",\n                            icon: \"text.alignleft\",\n                            id: \"grammar\"\n                        ) {\n                            Text(explanation.grammarUsage)\n                                .font(.callout)\n                        }\n                    }\n                    \n                    // Usage Contexts Section\n                    if !explanation.usageContexts.isEmpty {\n                        collapsibleSection(\n                            title: \"When to Use\",\n                            icon: \"bubble.left.and.bubble.right\",\n                            id: \"contexts\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 6) {\n                                ForEach(explanation.usageContexts, id: \\.self) { context in\n                                    HStack(alignment: .top, spacing: 8) {\n                                        Image(systemName: \"checkmark.circle.fill\")\n                                            .foregroundStyle(.green)\n                                            .font(.caption)\n                                        Text(context)\n                                            .font(.callout)\n                                    }\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Example Sentences Section\n                    if !explanation.exampleSentences.isEmpty {\n                        collapsibleSection(\n                            title: \"Examples\",\n                            icon: \"text.quote\",\n                            id: \"examples\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 12) {\n                                ForEach(explanation.exampleSentences) { sentence in\n                                    exampleSentenceRow(sentence)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Synonyms Section\n                    if !explanation.synonyms.isEmpty {\n                        collapsibleSection(\n                            title: \"Synonyms\",\n                            icon: \"equal.circle\",\n                            id: \"synonyms\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 10) {\n                                ForEach(explanation.synonyms) { synonym in\n                                    relatedWordRow(synonym, tint: .blue)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Antonyms Section\n                    if !explanation.antonyms.isEmpty {\n                        collapsibleSection(\n                            title: \"Antonyms\",\n                            icon: \"arrow.left.arrow.right\",\n                            id: \"antonyms\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 10) {\n                                ForEach(explanation.antonyms) { antonym in\n                                    relatedWordRow(antonym, tint: .orange)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Common Collocations Section\n                    if !explanation.commonCollocations.isEmpty {\n                        collapsibleSection(\n                            title: \"Common Phrases\",\n                            icon: \"text.badge.plus\",\n                            id: \"collocations\"\n                        ) {\n                            VStack(alignment: .leading, spacing: 8) {\n                                ForEach(explanation.commonCollocations) { collocation in\n                                    collocationRow(collocation)\n                                }\n                            }\n                        }\n                    }\n                    \n                    // Learning Tip Section\n                    if !explanation.learningTip.isEmpty {\n                        collapsibleSection(\n                            title: \"Learning Tip\",\n                            icon: \"graduationcap\",\n                            id: \"tip\"\n                        ) {\n                            HStack(alignment: .top, spacing: 10) {\n                                Image(systemName: \"lightbulb.fill\")\n                                    .foregroundStyle(.yellow)\n                                Text(explanation.learningTip)\n                                    .font(.callout)\n                                    .italic()\n                            }\n                            .padding()\n                            .background(\n                                RoundedRectangle(cornerRadius: 8)\n                                    .fill(.yellow.opacity(0.1))\n                            )\n                        }\n                    }\n                }\n                .padding()\n            }\n        }\n    }\n    \n    // MARK: - Section Components\n    \n    @ViewBuilder\n    private func collapsibleSection<Content: View>(\n        title: String,\n        icon: String,\n        id: String,\n        @ViewBuilder content: () -> Content\n    ) -> some View {\n        VStack(alignment: .leading, spacing: 8) {\n            Button {\n                withAnimation(.easeInOut(duration: 0.2)) {\n                    if expandedSections.contains(id) {\n                        expandedSections.remove(id)\n                    } else {\n                        expandedSections.insert(id)\n                    }\n                }\n            } label: {\n                HStack {\n                    Image(systemName: icon)\n                        .foregroundStyle(.secondary)\n                        .frame(width: 20)\n                    \n                    Text(title)\n                        .font(.subheadline)\n                        .fontWeight(.semibold)\n                        .foregroundStyle(.primary)\n                    \n                    Spacer()\n                    \n                    Image(systemName: expandedSections.contains(id) ? \"chevron.up\" : \"chevron.down\")\n                        .font(.caption)\n                        .foregroundStyle(.tertiary)\n                }\n            }\n            .buttonStyle(.plain)\n            \n            if expandedSections.contains(id) {\n                content()\n                    .padding(.leading, 28)\n            }\n        }\n        .padding(.vertical, 4)\n    }\n    \n    private func exampleSentenceRow(_ sentence: ExampleSentenceResult) -> some View {\n        HStack(alignment: .top, spacing: 8) {\n            VStack(alignment: .leading, spacing: 4) {\n                // The sentence is in the word's own language (the learning\n                // target), so it leads; pinyin only exists for Chinese text.\n                Text(sentence.sentence)\n                    .font(.body)\n                    .fontWeight(.medium)\n\n                if !sentence.pinyin.isEmpty {\n                    Text(PinyinConverter.coloredPinyin(fromPinyin: sentence.pinyin))\n                        .font(.caption)\n                }\n\n                Text(sentence.translation)\n                    .font(.caption)\n                    .foregroundStyle(.secondary)\n            }\n\n            Spacer()\n\n            Button {\n                SpeechService.speakAuto(sentence.sentence)\n            } label: {\n                Image(systemName: \"speaker.wave.2\")\n                    .font(.caption)\n            }\n            .buttonStyle(.plain)\n            .foregroundStyle(.blue)\n            .accessibilityLabel(Text(\"Read sentence aloud\"))\n        }\n        .padding(.vertical, 6)\n        .padding(.horizontal, 10)\n        .frame(maxWidth: .infinity, alignment: .leading)\n        .background(\n            RoundedRectangle(cornerRadius: 8)\n                .fill(.quaternary.opacity(0.5))\n        )\n    }\n\n    private func relatedWordRow(_ word: RelatedWordResult, tint: Color) -> some View {\n        VStack(alignment: .leading, spacing: 4) {\n            HStack(spacing: 8) {\n                Text(word.word)\n                    .font(.body)\n                    .fontWeight(.medium)\n\n                if !word.pinyin.isEmpty {\n                    Text(word.pinyin)\n                        .font(.caption)\n                        .foregroundStyle(.secondary)\n                }\n\n                Spacer()\n\n                Text(word.meaning)\n                    .font(.caption)\n                    .foregroundStyle(tint)\n            }\n\n            if !word.difference.isEmpty {\n                Text(word.difference)\n                    .font(.caption2)\n                    .foregroundStyle(.secondary)\n            }\n        }\n        .padding(.vertical, 4)\n    }\n\n    private func collocationRow(_ collocation: CollocationResult) -> some View {\n        HStack(spacing: 12) {\n            VStack(alignment: .leading, spacing: 2) {\n                Text(collocation.phrase)\n                    .font(.callout)\n                    .fontWeight(.medium)\n\n                if !collocation.pinyin.isEmpty {\n                    Text(collocation.pinyin)\n                        .font(.caption2)\n                        .foregroundStyle(.secondary)\n                }\n            }\n\n            Spacer()\n\n            Text(collocation.translation)\n                .font(.caption)\n                .foregroundStyle(.secondary)\n        }\n        .padding(.vertical, 4)\n    }\n    \n    // MARK: - Actions\n    \n    /// Reconcile the view with the current direction: if a previously shown\n    /// explanation belongs to a now-stale direction (interface language flipped),\n    /// drop it; then serve this direction's cached explanation if one exists and\n    /// nothing fresh is already shown. Safe to call repeatedly.\n    private func loadCachedExplanationIfAvailable() {\n        if let shown = shownDirection, shown != directionToken {\n            explanation = nil\n            errorMessage = nil\n            servedFromCache = false\n            shownDirection = nil\n        }\n        guard explanation == nil, !isLoading else { return }\n        guard let cached = cache.explanation(forWord: word, directionToken: directionToken) else { return }\n        explanation = cached.result\n        errorMessage = nil\n        servedFromCache = true\n        shownDirection = directionToken\n    }\n\n    /// Generate a fresh explanation (always bypasses the cache \u2014 this is also\n    /// the \"regenerate\" path) and persist the result for instant reuse later.\n    private func generateExplanation() async {\n        isLoading = true\n        errorMessage = nil\n        servedFromCache = false\n\n        do {\n            // Use the unified provider method that routes to Apple Intelligence or Ollama\n            let result = try await aiService.generateExplanationWithProvider(\n                for: word,\n                pinyin: pinyin,\n                context: context\n            )\n            explanation = result\n            cache.store(\n                word: word,\n                pinyin: pinyin,\n                directionToken: directionToken,\n                providerName: aiSettings.effectiveProvider.displayName,\n                result: result\n            )\n        } catch {\n            errorMessage = error.localizedDescription\n        }\n\n        isLoading = false\n    }\n}\n\n// MARK: - Compact AI Button for List Rows\n\n/// A small button that can be added to vocabulary rows to trigger AI explanation\nstruct AIExplainButton: View {\n    let word: String\n    let pinyin: String\n    let onTap: () -> Void\n    \n    @State private var isAvailable: Bool = true\n    \n    private var provider: AIProvider {\n        AIModelSettings.shared.effectiveProvider\n    }\n\n    private var providerName: String {\n        AIModelSettings.shared.effectiveProvider.displayName\n    }\n\n    var body: some View {\n        Button(action: onTap) {\n            ProviderIcon(provider: provider, size: 16)\n                .foregroundStyle(isAvailable ? .blue : .secondary)\n        }\n        .buttonStyle(.plain)\n        .disabled(!isAvailable)\n        .help(isAvailable ? \"Explain with \\(providerName)\" : \"AI not available\")\n        .onAppear {\n            isAvailable = AIModelSettings.shared.isAppleIntelligenceAvailable || OllamaService.shared.isConnected\n        }\n    }\n}\n\n// MARK: - Preview\n\n#Preview {\n    AIWordExplanationView(\n        word: \"\u5b66\u4e60\",\n        pinyin: \"xu\u00e9x\u00ed\",\n        context: nil\n    )\n    .frame(width: 400, height: 600)\n}\n",
+      "structuredPatch": [
+        {
+          "oldStart": 529,
+          "oldLines": 6,
+          "newStart": 529,
+          "newLines": 7,
+          "lines": [
+            "                 context: context",
+            "             )",
+            "             explanation = result",
+            "+            shownDirection = directionToken",
+            "             cache.store(",
+            "                 word: word,",
+            "                 pinyin: pinyin,"
+          ]
+        }
+      ],
+      "userModified": false,
+      "replaceAll": false
+    },
+    "tool_use_id": "toolu_0112uHUtnFWbMUNC1LLVYebL",
+    "duration_ms": 5
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; xcodebuild -scheme SwiftMandarin -destination 'generic/platform=iOS Simulator' -configuration Debug build > /tmp/smbuild5.log 2>&1; ec=$?; echo \"BUILD: $(grep -oE '\\*\\* BUILD (SUCCEEDED|FAILED) \\*\\*' /tmp/smbuild5.log)\"; echo \"dupWarn: $(grep -c 'Skipping duplicate' /tmp/smbuild5.log)\"; echo \"nonOllamaWarnErr:\"; grep -E 'error:|warning:' /tmp/smbuild5.log | grep -v Ollama | head; echo \"inSources: $(grep -c 'in Sources' SwiftMandarin.xcodeproj/project.pbxproj)\"",
+      "description": "Final build after edge-case fix",
+      "run_in_background": true
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false,
+      "backgroundTaskId": "bklfjpw2n"
+    },
+    "tool_use_id": "toolu_017mS2x1p57yFoDPa61XfNvr",
+    "duration_ms": 7
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "until grep -qE \"BUILD:\" /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/bklfjpw2n.output 2>/dev/null; do sleep 8; done; cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/bklfjpw2n.output",
+      "timeout": 10000,
+      "description": "Wait for final build result",
+      "run_in_background": true
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false,
+      "backgroundTaskId": "b4fnb94x6"
+    },
+    "tool_use_id": "toolu_01FGtmaF4ZAVTZQb1LiBatuJ",
+    "duration_ms": 102
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/bklfjpw2n.output 2>/dev/null | grep -E \"BUILD:|dupWarn:|inSources:|nonOllama\" ",
+      "description": "Check final build summary"
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "returnCodeInterpretation": "No matches found",
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01Y61xyNUjhGuKrUi79tQGJT",
+    "duration_ms": 28
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/bklfjpw2n.output",
+      "description": "Show final build summary"
+    },
+    "tool_response": {
+      "stdout": "BUILD: ** BUILD SUCCEEDED **\ndupWarn: 0\nnonOllamaWarnErr:\ninSources: 0",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01GxKxX7eFDdSRUSqLBXzEBF",
+    "duration_ms": 14
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; echo \"=== modified/new source & catalog files ===\"; git status --short | grep -E \"\\.swift|\\.xcstrings|\\.pbxproj\"; echo \"=== pbxproj must be clean (no output = clean) ===\"; git status --short SwiftMandarin.xcodeproj/project.pbxproj",
+      "description": "Final git sanity check"
+    },
+    "tool_response": {
+      "stdout": "=== modified/new source & catalog files ===\n M SwiftMandarin.xcodeproj/project.pbxproj\n M SwiftMandarin/Localizable.xcstrings\n M SwiftMandarin/Models/AIModelSettings.swift\n M SwiftMandarin/Models/SavedTerm.swift\n M SwiftMandarin/Services/AIWordExplanationService.swift\n M SwiftMandarin/Views/Components/AIProviderConfigView.swift\n M SwiftMandarin/Views/Components/AIWordExplanationView.swift\n M SwiftMandarin/Views/MoreView.swift\n?? SwiftMandarin/Models/WordExplanationCacheStore.swift\n=== pbxproj must be clean (no output = clean) ===\n M SwiftMandarin.xcodeproj/project.pbxproj",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01MV2mbVtgRXPs4njsYLV6pJ",
+    "duration_ms": 49
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; git diff --stat SwiftMandarin.xcodeproj/project.pbxproj; echo \"=== nature of change ===\"; git diff SwiftMandarin.xcodeproj/project.pbxproj | grep -E \"^[-+]\" | grep -v \"^[-+][-+]\" | head -30",
+      "description": "Inspect pbxproj diff"
+    },
+    "tool_response": {
+      "stdout": " SwiftMandarin.xcodeproj/project.pbxproj | 8 ++++++++\n 1 file changed, 8 insertions(+)\n=== nature of change ===\n+\t\t4BF0E5BD16A435932D397B29 /* pre_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = pre_tool_use.json; path = \"SwiftMandarin/logs/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/pre_tool_use.json\"; sourceTree = SOURCE_ROOT; };\n+\t\t6295BC706D4AD0666719FC98 /* pre_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = pre_tool_use.json; path = \"logs/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/pre_tool_use.json\"; sourceTree = SOURCE_ROOT; };\n+\t\t92958022F7FEE88A914DD280 /* post_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = post_tool_use.json; path = \"SwiftMandarin/logs/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/post_tool_use.json\"; sourceTree = SOURCE_ROOT; };\n+\t\tA33CE4FAEC68599F4AB625EC /* post_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = post_tool_use.json; path = \"logs/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/post_tool_use.json\"; sourceTree = SOURCE_ROOT; };\n+\t\t\t\t92958022F7FEE88A914DD280 /* post_tool_use.json */,\n+\t\t\t\t4BF0E5BD16A435932D397B29 /* pre_tool_use.json */,\n+\t\t\t\tA33CE4FAEC68599F4AB625EC /* post_tool_use.json */,\n+\t\t\t\t6295BC706D4AD0666719FC98 /* pre_tool_use.json */,",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_015gCQAogYF33eNC7WVEEzaq",
+    "duration_ms": 35
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; git checkout -- SwiftMandarin.xcodeproj/project.pbxproj; echo \"pbxproj status (clean = no output):\"; git status --short SwiftMandarin.xcodeproj/project.pbxproj; echo \"inSources: $(grep -c 'in Sources' SwiftMandarin.xcodeproj/project.pbxproj)\"",
+      "description": "Revert unrelated pbxproj log refs"
+    },
+    "tool_response": {
+      "stdout": "pbxproj status (clean = no output):\ninSources: 0",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01KxjocyasnxHMTsq1RhtqqS",
+    "duration_ms": 43
+  },
+  {
+    "session_id": "9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cat /private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/tasks/bjtaiz0ye.output; cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; git checkout -- SwiftMandarin.xcodeproj/project.pbxproj 2>/dev/null; echo \"final inSources: $(grep -c 'in Sources' SwiftMandarin.xcodeproj/project.pbxproj)\"; echo \"pbxproj clean (no output=clean):\"; git status --short SwiftMandarin.xcodeproj/project.pbxproj",
+      "description": "Show macOS result and clean pbxproj"
+    },
+    "tool_response": {
+      "stdout": "inSources: 0\nmacOS BUILD: ** BUILD SUCCEEDED **\nnon-Ollama warn/err:\nfinal inSources: 0\npbxproj clean (no output=clean):",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false,
+      "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_01VjDrJDnHHvVNajEQshWb8u",
+    "duration_ms": 43
+  }
+]

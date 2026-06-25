@@ -1,0 +1,1553 @@
+[
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a7509f81659a9da3b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a7509f81659a9da3b.jsonl",
+    "last_assistant_message": "I have completed the read-only audit of the AI services subsystem. Here is a summary of what I found.\n\n## Audit Summary: AI Services Subsystem\n\nI read all five target files fully and cross-verified call sites with grep. I did not modify, create, or delete any files.\n\n### Findings (9 defects)\n\n**High severity (3):**\n1. **Force-unwrap crash** \u2014 `Ollama.Model.ID(rawValue: model)!` at OllamaService.swift:126, 171, 197, 230 fatal-errors on an invalid/blank model name (callers only check `.isEmpty`, not validity).\n2. **Silent image drop on non-vision providers** \u2014 `cleanupRecognizedText` and `extractVocabulary` (AIWordExplanationService.swift:806-819, 884-894) don't gate on `provider.supportsVision`; when the effective provider is DeepSeek/MiniMax, CloudAIService.swift:238 strips the image and the model gets text only, with no error. (Grading does this correctly via `gradingProvider()`; these two paths don't.)\n3. **OpenAI reasoning models 400** \u2014 `openAIBody` (CloudAIService.swift:337-346) always sends `temperature: 0.3` and `max_tokens`; o3/o4-mini (shipped in default list) reject both and need `max_completion_tokens`/default temperature.\n\n**Medium (2):** array-root JSON not extractable by `extractJSONObject` (line 1098); API keys stored without `ThisDeviceOnly` so they sync to iCloud Keychain (KeychainHelper.swift:39).\n\n**Low (4):** unbounded explanation cache (line 201); no streaming/cancellation + unbounded Ollama `num_predict: -1`; `mediaType` mislabels HEIC as JPEG and over-matches WebP (CloudAIService.swift:403-412); grading retry re-uploads full image payload with no backoff/cancellation check (line 1003).\n\n### Suggestions (7)\nStreaming for interactive paths, a centralized capability/request resolver, balanced+array-aware JSON parsing, persisted/bounded cache, generic reasoning-model request shaping, base-URL validation/normalization (plus a MiniMax host discrepancy: `api.minimax.chat` vs the `minimaxi.com` key page), and ThisDeviceOnly keychain + key redaction in error bodies.\n\nFull details with file:line evidence, impact, and concrete fixes were returned via the StructuredOutput tool. Relevant files:\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/AIWordExplanationService.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/CloudAIService.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/OllamaService.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/AIModelSettings.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/KeychainHelper.swift`",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ada90f0b06785f8be",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-ada90f0b06785f8be.jsonl",
+    "last_assistant_message": "I have completed the read-only audit of the Vocabulary & Learn subsystem. The structured findings and suggestions have been submitted.\n\nSummary of what I substantiated across the four target files plus their dependencies (`SavedTerm.swift`, `PersistentCodableStore.swift`, `ChineseTextAnalyzer.swift`):\n\n**Highest-impact defects:**\n- **Spaced repetition is effectively non-functional** \u2014 `getCardsForReview`/`getDueCards` in `LearningCard.swift:187,209` (which contain the only due-ordering and 20-card session cap) have zero call sites; the live session pipeline (`LearnView.swift:220-221`) returns cards in raw deck order with no cap. Plus the SM-2 interval is mis-derived from dates, and \"Difficult\" (quality 2) is silently treated as \"Wrong.\"\n- **`LearningCard.id = chinese`** (`LearningCard.swift:23`) collides progress records between the built-in deck and saved vocabulary, and English-direction vocabulary cards all collapse to an empty id sharing one progress bucket.\n- **CSV import data loss** \u2014 `parseCSVImport` pre-splits on newlines (`VocabularyImportExportService.swift:160`) so any exported quoted field containing a newline is corrupted on re-import; the export/restore round-trip is lossy.\n\n**Medium/low:** per-render full sort of `filteredTerms`, per-row `ISO8601DateFormatter` allocation, `sortOrder` not preserved across JSON round-trip, duplicate mastery range, unconfirmed destructive Reset/Clear actions, flashcard accessibility (both faces exposed to VoiceOver), and detached `asyncAfter` dismiss timers.\n\nAll findings include precise `file:line` evidence and concrete fixes, and I added eight improvement suggestions (proper SM-2 with persisted interval state, wiring the dead due-ordering builder, RFC 4180 CSV parsing, namespaced card identity, cached filtering, richer stats, confirmations/undo, and accessibility). No files were modified.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a526d4347c93d09af",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a526d4347c93d09af.jsonl",
+    "last_assistant_message": "I completed a read-only audit of the Speech subsystem. Summary of what I found and substantiated with file:line evidence:\n\n**Critical/High-severity defects (all in `SpeechRecognitionService.swift`):**\n1. **Per-buffer unstructured Tasks** (lines 440-446) reorder audio and can outlive `stop()`, yielding into a finished stream.\n2. **AVAudioPCMBuffer retained across an async hop without copying** (lines 440-485) \u2014 the tap buffer's backing memory can be reused by the engine mid-read (undefined behavior).\n3. **AVAudioConverter input block always returns the same buffer with `.haveData`** (lines 473-476) on the default sample-rate-mismatch path, duplicating/garbling audio fed to the analyzer.\n\n**Medium-severity:**\n4. Audio session category (`.playAndRecord`/`.measurement`) is never restored, and on macOS never deactivated (lines 348-354, 315-317) \u2014 degrades later TTS/routing app-wide.\n5. Mid-session recognition errors are invisible: `speechService.error` is set but the view never reads it, and the delegate is never assigned anywhere (dead).\n6. `startRecording` doesn't re-check cancellation after its awaits \u2014 a stop/dismiss during model download can leave the mic live (lines 236-302).\n7. Legacy engine's fixed 300 ms sleep to flush the final transcript loses the speech tail on slow recognition (lines 618-635) \u2014 and iOS 17 is this branch's target.\n8. Progress-observation Task in `downloadModelIfNeeded` is never cancelled and can spin forever on download failure (lines 213-220).\n9. `SpeechService` never configures an audio session, making TTS unreliable after recording.\n10. Icon-only mic/speak/reset controls in `LiveSpeechTranslationView` have no accessibility labels.\n\n**Low-severity:** brittle setup-before-validation ordering in the modern engine, reentrant stream-error teardown, dead `SpeechRecognitionDelegate` protocol, and a double-trigger/self-cancelling translation loop in the view.\n\nI also provided 9 improvement suggestions (audio-session coordinator, synchronous tap hand-off, cancellable downloads, continuation-based legacy finalization, error surfacing, VoiceOver support, start/stop serialization, converter validation, and locale-based language detection). Full structured findings were returned via the StructuredOutput tool. No files were modified \u2014 this was strictly read-only.\n\nRelevant files:\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/SpeechRecognitionService.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/SpeechService.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/Components/LiveSpeechTranslationView.swift`",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aa480b89e4337aca4",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-aa480b89e4337aca4.jsonl",
+    "last_assistant_message": "I've completed the read-only audit of the Persistence & data models subsystem. Here's a summary of what I found.\n\n## Key findings (substantiated with file:line evidence)\n\n**High severity (data-loss):**\n1. **No schema-evolution strategy** \u2014 all persisted Codable models (`SavedTerm`, `CardProgress`, `DailyActivity`, history) use synthesized Codable with no `CodingKeys`/`init(from:)`/version tag. Any future release adding a non-optional field will throw `keyNotFound` decoding old data; the `.backup` is the same schema so it also fails, and the store silently starts empty.\n2. **Whole-array decode is all-or-nothing** \u2014 `PersistentCodableStore.load` (line 30) decodes the entire collection at once, so one corrupt element destroys the user's whole list rather than just the bad row.\n\n**Medium severity:**\n3. **O(n\u00b2) save amplification on import** \u2014 `SavedTermsStore.terms` has `didSet { save() }`; `importTerms` loops `store.add()`, re-encoding the whole growing array AND the whole activities dictionary per element on the main actor (plus polluting the daily heatmap with import noise).\n4. **Screenshot singleton retains full-res images for app lifetime** \u2014 `pendingImages`/`stitchedResult.image` are never released after stitching; jetsam risk.\n5. **Delimiter-split misaligns translations** \u2014 `translateBlocks` index-zips on a `\u00a7\u00a7\u00a7` delimiter the translator can mangle, silently attaching wrong/untranslated text to blocks.\n\n**Low severity:** stale `longestStreak` after data loss; time-zone/DST streak gaps; inconsistent dedup (history exact-match vs. terms normalized); orphaned `CardProgress` keyed on mutable Chinese string (SR history lost on edit, unbounded growth).\n\nI also provided 7 improvement suggestions (versioned envelope, resilient per-element decoder, batch APIs, off-main-actor encoding, image release, robust block mapping, UUID-stable SR keys). Full details were returned via the StructuredOutput tool. No files were modified \u2014 this was strictly read-only.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a32d76891cb0f3814",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a32d76891cb0f3814.jsonl",
+    "last_assistant_message": "I completed the read-only audit of the Stats & analytics subsystem. Findings and suggestions were returned via StructuredOutput.\n\nKey substantiated defects:\n\n- **High \u2014 Heatmap rows are not weekday-aligned** (`StatsView.swift:912`, `899`; `LearningActivity.swift:214-225`). Cells are filled by chronological index (`week*7 + dayOfWeek`) with no `.weekday` computation, while the M/W/F row labels assume a fixed weekday layout. The grid mislabels which day each activity occurred on.\n- **Medium \u2014 Month labels mispositioned** (`StatsView.swift:988-1023`) because they sample `activities[week*7]` on the same non-aligned grid.\n- **Medium \u2014 Repeated O(n) recomputation** (`LearningActivity.swift:147-167`; `StatsView.swift:225,290,430,772`): `currentStreak`, all totals, and `activitiesForLastDays` (DateFormatter per day over 180\u2013365 days) recompute on every render/interaction with no caching.\n- **Medium \u2014 Pie angle-selection off-by-one / boundary mishandling** (`StatsView.swift:568-600`).\n- **Medium \u2014 Heatmap has no accessibility** (`StatsView.swift:1033-1057`): raw `RoundedRectangle` + `.onTapGesture`, no labels/values/button trait.\n- Plus lower-severity items: monotonic-only `longestStreak` with no recompute (`LearningActivity.swift:359-371`), zero-fill gaps in the stacked bar (`429-457`), dead code (`masteredCardCount`, unused `MasteryLevel` extension, unused `weeklyTotals`/`weeklyWordsByPOS`), divergent `mastered` definitions, and the silent `?? Date()` fallback in `DailyActivity.date` (`LearningActivity.swift:35-37`).\n\nSix improvement suggestions cover single-pass windowing, a true calendar heatmap, full accessibility + Dynamic Type, unifying the mastery metric, batched persistence, and richer empty-state/time-range UX.\n\nRelevant files:\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/StatsView.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/LearningActivity.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/SavedTerm.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift`",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a34f317e3a7b8cd34",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a34f317e3a7b8cd34.jsonl",
+    "last_assistant_message": "I've completed the read-only audit of the Photo/OCR pipeline subsystem. I substantiated 12 concrete defects and 6 improvement suggestions, all with precise file:line evidence.\n\nThe most impactful findings:\n\n**High severity**\n- `ScreenshotStitchingService.swift`: overlap detection reads the freshly-rendered pixel buffer (stride `4*width`) using the *original* CGImage's `bytesPerRow` (which is usually padded/aligned), so every row offset is wrong and the bounds guard silently skips most comparisons \u2014 overlap detection is unreliable.\n- `PhotoTextRecognitionService.swift`: the service is `@MainActor` and calls `handler.perform([request])` synchronously, so accurate-level Vision OCR blocks the main thread (seconds for stitched multi-page screenshots).\n- `ScreenshotStitchingService.swift`: full-resolution pixel buffers for both images are allocated at once per pair with no downscale; tall Retina screenshots can spike memory tens-to-hundreds of MB and risk a jetsam kill.\n\n**Medium severity** include a stuck-forever processing spinner when OCR yields only whitespace, re-selecting the same photo doing nothing, swallowed camera `startScanning()` errors (with an unused `scannerError` state), and the AI-cleanup path re-detecting language in a way that can flip an explicit \u4e2d\u6587 selection back to the English pipeline \u2014 the exact regression the feature was built to fix.\n\n**Low severity** cover a checked-continuation double-resume crash window, a no-op \u91cd\u8bd5 button after OCR failures, possible double orientation on the data decode path, and unlocalized AI-cleanup badge strings in an otherwise bilingual UI.\n\nAll findings and suggestions were returned via the StructuredOutput tool. No files were modified \u2014 this was a strictly read-only audit.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ae0cfd5789a746316",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-ae0cfd5789a746316.jsonl",
+    "last_assistant_message": "I've completed the read-only audit of the Reusable components & rendering subsystem. I read all five target files fully and verified each finding against supporting code (`FlowLayout`, `ChineseTextAnalyzer`, `WordTranslationService`, `PinyinConverter`, `ScreenshotTranslationStore`, model identifiability, and actor isolation).\n\nSummary of what I found and substantiated with file:line evidence:\n\nHigh severity:\n- `WordTranslationService` data race \u2014 non-isolated `final class` with a mutable cache dictionary mutated from off-main-actor `.task` contexts (no `@MainActor`/`Sendable`/lock).\n- `RubyWordView.pinyinColor` colors an entire multi-syllable word by the first tone mark, which is wrong for any word longer than one syllable and duplicates the already-correct `PinyinConverter.coloredPinyin`/`toneColor`.\n\nMedium:\n- `RubySegment` regenerates `UUID()` on every rebuild (defeats ForEach diffing) and runs NLTagger + pinyin synchronously on the main thread in `onAppear`/`onChange`.\n- `FlowLayout` recomputes the full arrangement twice per pass with no cache.\n- Tone color and part-of-speech color carry meaning with no non-color/VoiceOver affordance.\n\nLow:\n- Unstructured uncancelled \"copied\" reset Task in `TranslatedBlockCard`.\n- Decorative icons / loading spinners missing accessibility labels and hidden flags; collapsible sections lack expanded state announcements.\n- `WordDetailPopover` save affordance can stay stale and `onSave` drops the canonical Chinese headword.\n\nI also listed six improvement suggestions (unify pinyin rendering, extract a shared chip/detail component and fix hardcoded Chinese strings, async+cached segmentation, real Layout cache, persist UI preferences, centralize clipboard). Full details are in the structured output.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a483d2d85bb24e59f",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a483d2d85bb24e59f.jsonl",
+    "last_assistant_message": "I've completed the read-only audit of the Swift concurrency & MainActor subsystem across the four target files plus their key dependencies (`CompatModifiers.swift`, `TranslationState.swift`, `LiveSpeechTranslationView.swift`, `CloudAIService.swift`, `WordTranslationService.swift`, `SpeechService.swift`) and the project build settings.\n\nKey context that shaped the analysis: the project builds in **Swift 5 language mode** with `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` and `SWIFT_APPROACHABLE_CONCURRENCY = YES`, but **without** `SWIFT_STRICT_CONCURRENCY = complete`. The default-MainActor setting isolates most untagged types (including `WordTranslationService`, `CloudAIService`, `OllamaService`) to the main actor, which neutralizes the mutable-cache races I initially suspected in those services. The genuine concurrency hazards therefore concentrate in the places where MainActor isolation does *not* reach: the real-time audio render-thread tap, the `AVAudioConverter` callback, and the `SFSpeechRecognizer` completion handler.\n\nHighest-priority findings (all in `SpeechRecognitionService.swift`):\n- **High / race** \u2014 the modern engine's audio tap captures a non-Sendable `AVAudioPCMBuffer` into `Task { await self.processAudioBuffer(buffer) }`; the engine recycles that buffer once the tap returns (use-after-free risk), and per-buffer Tasks lose capture ordering.\n- **High / race** \u2014 `AVAudioConverter` is driven from those interleaved Tasks rather than in capture order, corrupting resampling state when input/analyzer formats differ.\n- **Medium / memory** \u2014 the model-download progress poller is an unstructured, unretained, never-cancelled busy loop.\n- **Medium / bottleneck** \u2014 `WordTranslationService` gates the standalone `TranslationSession` batch path on iOS 26, forcing iOS 18\u201325 onto a slow serial AI fallback.\n- **Medium / smell** \u2014 strict concurrency is off, so the above races compile clean with no diagnostic; combined with `@preconcurrency` imports, the safety on the audio/recognition callbacks is by-convention only.\n\nFull details, file:line evidence, severities, and concrete fixes were returned via the StructuredOutput tool, along with six improvement suggestions.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a19d5e043ad7893ff",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a19d5e043ad7893ff.jsonl",
+    "last_assistant_message": "I have completed the read-only audit of the Workbook grading subsystem. Here is a summary of what I found.\n\n## Key files reviewed\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingView.swift` (the view + helpers)\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/AIWordExplanationService.swift:904-1255` (grading service, models, JSON repair)\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/CloudAIService.swift:216-368` (request building, base64 image inlining, 180s timeout)\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/SavedTerm.swift:93-188` (store keying/dedupe)\n\n## Highest-impact defects (full details in the structured output)\n\n1. **High \u2013 No payload/image cap.** File-import and drag-drop paths have zero limit; all images concatenate into one base64 JSON body (`AIWordExplanationService.swift:996`, `CloudAIService.swift:331/364`) with no size guard. OOM / 413 / token-bill risk.\n2. **High \u2013 No de-duplication.** Re-picking or re-dropping the same image appends duplicate base64 payloads silently.\n3. **High \u2013 Wrong-language headword on save.** `vocabItem(for:)` fallback (`WorkbookGradingView.swift:540-547`) keys the vocab store on `correctAnswer`, which is frequently a full sentence, producing unusable, never-deduplicated cards and nonsense pinyin.\n4. **Medium \u2013 Score contradiction.** `result.score` (raw model string, line 344) is shown next to a locally computed `correctCount/total` caption (line 347) that can disagree.\n5. **Medium \u2013 No persistence/history.** A paid grading result is `@State`-only and lost on `dismiss()` (line 101); no store analogous to `ScreenshotTranslationStore`.\n6. **Medium \u2013 Thumbnails re-decode full JPEGs every render** and `ForEach(id: \\.offset)` forces re-render on removal.\n7. **Medium \u2013 Silent failures** across every image-load path and in `downscaledJPEG`'s fallback (returns un-downscaled original), with no `errorMessage`.\n8. **Medium \u2013 `downscaledJPEG` runs on MainActor during drag-drop** (`handleDrop:455-483`), freezing the UI.\n9. **Low \u2013 Accessibility gaps** (correctness conveyed only via color/SF Symbols; unlabeled thumbnails/remove buttons) and **hardcoded English UI strings** in an otherwise bilingual screen.\n\n12 findings and 8 improvement suggestions were returned via the StructuredOutput tool.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ae08b346ad13d09f9",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-ae08b346ad13d09f9.jsonl",
+    "last_assistant_message": "I have completed the read-only audit of the Translation flows & availability subsystem. Summary of what I substantiated:\n\n**Key findings (highest impact first):**\n\n1. **High \u2014 History records wrong direction** (`TranslateView.swift:889/959/975/948`): the session is configured from content-detected direction but history is saved with the UI-toggle direction. Any cross-direction translation (the supported \"inputLanguageMismatch\" case) stores swapped languages, corrupting History, replay TTS, and derived SavedTerms.\n\n2. **High \u2014 `WordTranslationService` cache data race** (`WordTranslationService.swift:14-20`): a non-isolated `@Observable` singleton mutates a plain `Dictionary` concurrently from 8+ async call sites (ruby taps, batch screenshot translate, vocabulary, grading). Concurrent inserts can crash or corrupt.\n\n3. **Medium \u2014 `TranslationState` mutated off main actor** (`TranslationState.swift:13`, `TranslateView.swift:946-951`): the AI path mutates observable SwiftUI state in a plain `Task` without a main-actor hop (unlike the Apple path which uses `MainActor.run`).\n\n4. **Medium \u2014 `preserveCurrentTranslationDuringSourceUpdate` runloop-tick race** (`TranslateView.swift:1062`): the guard flag is cleared via `DispatchQueue.main.async`, racing the very onChange it protects; can blank a swapped/preserved translation.\n\n5. **Medium \u2014 auto-translate `invalidate()` reuse** translates live text rather than the scheduled text; **Medium \u2014 `fetchAdditionalTranslation`** does a second full round-trip with no stale-result guard; **Medium \u2014 language-pack error detection** uses localized-string substring matching that breaks on non-English systems.\n\n6. **Low** \u2014 retry button switches backends, hard-coded iOS-only/English Settings paths (app also builds macOS 26.2 and has a \u4e2d\u6587 UI), and the \"CHINESE\" ruby section renders over non-Chinese content in edge cases.\n\n**Availability gating verdict:** I verified against Apple docs that `TranslationSession(installedSource:target:)` is genuinely iOS 26.0+, and the SwiftUI `translationTask`/`Configuration` API is iOS 18+. The `#available` gates in `WordTranslationService.swift` (iOS 26), `CompatModifiers.swift` (iOS 18), and `TranslateView.swift` (iOS 18) are all **correct**. The iOS-17 AI-fallback routing is wired properly; my findings there are about user-facing clarity, not gating bugs.\n\nAll findings and five improvement suggestions were returned via the StructuredOutput tool with precise `file:line` evidence and concrete fixes. No files were modified.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a4e742401f222761c",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a4e742401f222761c.jsonl",
+    "last_assistant_message": "I have completed the read-only audit of the Architecture, navigation & UX subsystem. Here is a summary of what I found.\n\n## Key findings (substantiated with file:line evidence)\n\n**High severity**\n1. **iOS 17 tab overflow collision** (`ContentView.swift:147-181`) \u2014 8 tabs in the legacy TabView means iPhone collapses tabs 5-8 (including the app's own `.more` tab) into the OS \"More\" overflow, producing a nested/redundant More. Live because the deploy target was just lowered to iOS 17.\n2. **App Intent routing race** (`AppRouteStore.swift:17`, `LearnView.swift:160-199`, `PhotoTranslateView.swift:224-799`) \u2014 one shared `pendingAction` is observed and cleared by BOTH LearnView and PhotoTranslateView; LearnView's `case .openCameraScanner, .translateScreenshots: break` still clears the action, so photo-targeted intents can be silently swallowed.\n3. **~13 dead macOS settings** (`MacOSSettingsView.swift`) \u2014 `launchAtLogin`, `showInMenuBar`, `showDockIcon`, `globalHotkey`, `chineseFont`, `wordBorders`, `compactMode`, `dailyGoal`, `reviewReminders`, `reminderTime`, `autoAdvance`, `showHints`, `showStreak`, plus `fontSize`/`autoSpeak` on both platforms \u2014 written but read nowhere; no SMAppService, MenuBarExtra, hotkey, or notification code exists.\n\n**Medium severity**\n4. **History duplicated** \u2014 first-class tab (`HistoryTabView`) vs weaker `More->History` (`MoreView.swift:66-123`) with divergent capabilities.\n5. **Stats duplicated** \u2014 Stats tab vs `LearningStatsSheet` in Learn, plus \"Stats\" label vs \"Statistics\" title mismatch.\n6. **StatsView missing NavigationStack** (`StatsView.swift:68-93`) unlike every other tab \u2014 inconsistent iOS nav chrome.\n7. **iOS/macOS settings non-parity** \u2014 including `maxHistoryEntries` (enforced but iOS-uneditable) and a `fontSize` range mismatch (0.8\u20261.4 vs 0.8\u20261.6).\n8. **Hardcoded Chinese nav titles** bypassing the in-app language toggle (4 files).\n9. **Placeholder App Store ID** `id123456789` in Rate/Share links (`MoreView.swift:47,51`).\n\n**Low severity:** Apple-corporate privacy link, full-tree `.id(localization.language)` reroot dropping in-flight state, and non-optional macOS sidebar selection with a dead `.more` detail branch.\n\nI also proposed 5 streamlining suggestions: a frequency-ordered 5-tab IA with a real More hub, a unified declarative cross-platform settings source, deterministic typed App Intent handoff, scene-persisted tab/nav state, and better discoverability for tucked-away features. Full details delivered via the StructuredOutput tool.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ac36e1b28e0951bc6",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-ac36e1b28e0951bc6.jsonl",
+    "last_assistant_message": "I have completed the read-only audit of the App Intents & Shortcuts subsystem and returned my findings via the StructuredOutput tool.\n\nSummary of what I found across the 6 target files plus their dependencies (entities, stores, services, localization):\n\n**Defects (9):**\n- **High:** `TranslateScreenshotsIntent.swift:50` is the only `Summary` using double-backslash (`\\\\(`), so the parameter summary renders literal escaped text instead of interpolating the parameters \u2014 a visibly broken action in the Shortcuts editor.\n- **Medium:** Screenshot processing is a discarded fire-and-forget `Task` with no in-flight guard, creating both a lifetime risk (work may be torn down before completion) and a concurrent-run race that corrupts shared store state.\n- **Medium:** `GetLearningStatsIntent` localizes via `String(localized:)`, but the `Bundle.main` language override is only installed when `LocalizationManager.shared` is touched \u2014 which this intent never does \u2014 so cold-process runs return the wrong language.\n- **Low (5):** dynamic user text passed to `LocalizedStringResource(stringLiteral:)` (key-lookup/format-string risk), `LookupVocabularyIntent` `max(1, limit)` forcing a result and lacking an upper clamp, AI-first error swallowing, the unofficial `TranslationSession(installedSource:target:)` initializer used app-wide, the `SavedTermEntity` side-detection producing empty/duplicated titles, and per-keystroke re-flattening in `PhraseEntityQuery`.\n\n**Suggestions (7):** return values from Translate Screenshots, add Siri snippet/dialog surfaces, surface AI provider state, confirm detected direction, centralize the translation backend, cache entity-query collections, and localize shortcut phrases/type names.\n\nAll findings include precise `file:line` evidence and concrete fixes. No files were modified \u2014 this was strictly read-only.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a80adecf4b21d4d60",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a80adecf4b21d4d60.jsonl",
+    "last_assistant_message": "I've completed the read-only audit of the Localization & bilingual tailoring subsystem. Here's a summary of what I found.\n\n## Key findings (8 defects)\n\n**High severity (wrong behavior users hit):**\n1. **LearnerMode is decorative** \u2014 `LocalizationManager.learningIsChinese` (UI-language-derived) drives *all* content tailoring; `AppPreferences.learnerMode` (including `.bilingual`) is read for tailoring nowhere outside settings. Picking \"Bilingual\" changes only `defaultDirection` and otherwise does nothing.\n2. **Two pickers can contradict each other** \u2014 App Language and Learner Mode are independently selectable; the sync is one-directional (language\u2192mode only), so a user can reach an internally inconsistent state in two taps.\n\n**Medium severity:**\n3. **`detectLanguageRobust` line 110 is unreachable dead code** \u2014 I proved the `NLLanguageRecognizer` \"ambiguous middle ground\" fallback never executes; line 106 always fires first in every reachable path. The documented safety net does nothing.\n4. **Bundle override data race** \u2014 non-atomic `objc_setAssociatedObject` swap read by off-main App Intents localized-string lookups; the \"thread-safe\" comment overstates the guarantee.\n5. **`localizedSurface()`'s `.id(language)` destroys open-sheet `@State`** \u2014 toggling language while e.g. `WordDetailPopover` is open discards half-typed definitions.\n\n**Low severity:** dead `localized()`/`L()` helpers (zero callers), missing CJK Extension G/H + Compatibility Supplement ranges in `isCJKIdeograph`, and a comment/code mismatch in `segmentWithPartsOfSpeech`.\n\nI also provided 6 improvement suggestions (unify learning-direction into one model, add detector unit tests, harden the bundle override behind a lock, etc.). Full details with file:line evidence and concrete fixes were returned via the StructuredOutput tool.\n\nMost load-bearing evidence \u2014 the unreachability proof for `ChineseTextAnalyzer.swift:98-110`:\n- After line 98's early return, at least one of `cjk>0`/`latin>0` holds.\n- Reaching line 106 means line 103 was false. If `cjk==0` then `latin>0` so `latin > cjk*3` (=`latin>0`) is true \u2192 English. If `cjk>0` with `cjk*3<latin`, that's the same condition as line 106 \u2192 English. Line 110 never runs.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a48ccbd5a1d2a1884",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a48ccbd5a1d2a1884.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. The claim does not hold up.\n\n**Verdict: NOT confirmed** (severity adjusted from high to low).\n\nSummary of findings on `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingView.swift`:\n\n- The headline claim (\"re-selecting the same image silently drops it / onChange not fired\") is false and self-refuting \u2014 the claim author concedes \"this path is OK.\" The reset to `workbookItems = []` (line 452) combined with the `!items.isEmpty` guard (lines 117-120) means onChange fires on every re-pick; nothing is silently dropped.\n\n- The pivoted \"real defect\" (no de-duplication on `append(contentsOf:)`) is an accurate code observation but mischaracterized: it is data *duplication*, not the silent *loss* the title describes, and crucially it is NOT \"with no user signal.\" The UI shows a count (\"\\(images.count) \u5f20\", line 225), visible duplicate thumbnails (lines 252-258), per-thumbnail remove buttons (lines 325-340), and a Clear button (line 228). Duplicates are visible and user-correctable.\n\n- No normal single-pick path double-appends, and the downscaling (line 849) already bounds payload size. At worst this is a minor UX/cost nicety for an unusual, visible, user-driven re-add \u2014 not a high-severity bug.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8927c37e8171b511",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a8927c37e8171b511.jsonl",
+    "last_assistant_message": "Verified the claim against the actual code. The defect is real and reachable, confirmed at medium severity (down from the claimed high). Key findings:\n\n- The `maxSelectionCount: 10` cap is at WorkbookGradingView.swift:281 (not 226 as cited), and it only limits a single PhotosPicker batch \u2014 there are two independent pickers, the file importer (127-135) and drag-drop (512-540) have no cap at all, and even the Photos picker resets its selection to `[]` after each batch so repeated picking accumulates without limit via `append(contentsOf:)`.\n- `allImages = workbookImages + answerImages` (AIWordExplanationService.swift:996) flows unguarded into `CloudAIService.chat`, where every image is base64-encoded inline into one JSON body (CloudAIService.swift:331 OpenAI / 364 Anthropic) with no size or count guard.\n- The request runs all-or-nothing under a 180s timeout (CloudAIService.swift:78).\n\nI lowered severity to medium because every ingestion path downscales images first (`downscaledJPEG`, 1536px/q0.7 at line 849), bounding per-image size; the feature is manual and user-triggered only (no external/automated path); and the most likely failure is a catchable HTTP 413/400 or higher token cost rather than a guaranteed OOM.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a29f0f87c9337dc54",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a29f0f87c9337dc54.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. \n\n**Verdict: CONFIRMED (severity adjusted from high to medium)**\n\nThe stride mismatch is real and reachable in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/ScreenshotStitchingService.swift`:\n\n- `getPixelData(from:)` (line 343) renders into a fresh buffer with hardcoded stride `4*width` (line 347), no row padding.\n- `findOverlapHeight` (lines 289-290, 308-309) indexes that buffer using `topCG.bytesPerRow` / `bottomCG.bytesPerRow` \u2014 the *source* CGImage's stride, which for arbitrary decoded images may be padded and is not guaranteed to equal `4*width`.\n- The bounds guard (lines 311-313) checks against `topData.count = height*(4*width)`, so when the source stride is larger, high-row offsets overshoot the buffer and silently `continue`, skipping comparisons; in-bounds reads land on misaligned pixels. This corrupts overlap detection, feeding wrong OCR input.\n\nThe proposed fix (use the same `4*width` stride the buffer was allocated with) is correct.\n\nI downgraded high \u2192 medium because the manifestation is conditional: for common iOS screenshot widths (1170, 1179, 1284), `4*width` is already 64-byte-aligned and CoreGraphics typically returns `bytesPerRow == 4*width`, leaving the bug latent on the primary screenshot path. It triggers on non-standard widths or edited/re-encoded photo-library images \u2014 device/source-dependent, exactly as the claim notes. Real correctness defect, but not reliably hit on the happy path.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "addaa6d73cdfba91f",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-addaa6d73cdfba91f.jsonl",
+    "last_assistant_message": "Verdict: confirmed=true, severity downgraded to medium.\n\nThe claim is partially valid. The per-buffer unstructured Task pattern (lines 440-446) is real, and it does produce genuinely out-of-order audio delivery to the AnalyzerInput stream \u2014 separately-created Tasks have no FIFO ordering guarantee when contending for the MainActor, so frames can be yielded out of audio order, degrading transcription accuracy. The proposed fix is sound.\n\nHowever, the claim's headline severity (crash/corruption via \"yielding into a finished/nil continuation\" or \"feeding a torn-down analyzer\") is not reachable. Both `stop()` and `processAudioBuffer` are `@MainActor`, so they serialize and cannot interleave; the `guard let inputContinuation` at line 459 plus the absence of any `await` between that guard and the `yield` at line 484 means a late buffer Task either yields onto a live continuation or returns early \u2014 never onto a torn-down one. Yielding onto a finished `AsyncStream.Continuation` is also a documented no-op, not a crash.\n\nSo: real accuracy/ordering defect plus minor per-buffer Task overhead, but no crash or state corruption \u2014 medium, not high.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a355932a111cdd711",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a355932a111cdd711.jsonl",
+    "last_assistant_message": "I've completed my adversarial verification. The claim is not confirmed.\n\nVerdict: **confirmed=false, severity downgraded high \u2192 low.**\n\nKey findings (all from the cited files):\n\n1. The claim's central premise \u2014 \"correctAnswer is frequently a full phrase/sentence\" \u2014 is contradicted by the code. The grading prompt at `AIWordExplanationService.swift:968-976` defines `correctAnswer` and `fullSentence` as two *separate* JSON fields, deliberately routing complete sentences into `fullSentence`. For the fill-in-the-blank case the claim specifically flags, `correctAnswer` is the single missing word \u2014 the ideal headword, not a sentence. `GradedQuestion.spokenSentence` (lines 1335-1347) confirms this by concatenating `correctAnswer` onto the question to *build* a sentence.\n\n2. The proposed fix (\"prefer the model `vocab.term`\") is already implemented. `vocabItem(for:)` at `WorkbookGradingView.swift:597-604` returns `question.vocab` whenever it has a usable term or meaning, falling back to `correctAnswer` only when the model produced no usable vocab item at all.\n\n3. The downstream harms (sentence-wide pinyin, broken dedupe) depend entirely on the false premise. The store's `normalizedKey` dedupe (`SavedTerm.swift:116-129, 185-188`) handles short answers correctly, and the fallback is the documented \"nothing is ever lost\" design.\n\nThe only residual sliver: for non-fill-in-the-blank question types (e.g. translation exercises) `correctAnswer` could occasionally be a clause, and if the model also omitted vocab, that clause would be keyed verbatim. That is a narrow edge case behind a double-failure fallback \u2014 not the common, high-severity defect described.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aea88d0d8201b8c61",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-aea88d0d8201b8c61.jsonl",
+    "last_assistant_message": "Confirmed the defect. The claim holds up under independent verification.\n\nSummary: The OCR call `try handler.perform([request])` at `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/PhotoTextRecognitionService.swift:294` executes synchronously on the main thread. The class is `@MainActor` (line 155), `performRecognition` (lines 244-249) inherits that isolation with no `nonisolated`, and the non-async/non-Sendable `withCheckedThrowingContinuation` body (line 250) runs synchronously on the MainActor executor. With `.accurate` recognition (line 275) and revision 3 (line 287), this is CPU-heavy. The large-image path is reachable: `ScreenshotTranslationStore` (also `@MainActor`, line 85) passes a full stitched screenshot at line 178. Verdict: confirmed, severity high, proposed fix is correct.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a1a1dabd991313d3a",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a1a1dabd991313d3a.jsonl",
+    "last_assistant_message": "Verified the claim against the actual code. The defect is real and reachable, with severity adjusted from high to medium.\n\nKey files:\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/CloudAIService.swift` \u2014 `openAIBody` (lines 317-351) unconditionally emits `\"temperature\": 0.3` (343) and `\"max_tokens\": maxTokens` (345) with no reasoning-model branch; OpenAI routes here via `.openAICompatible` style (248-255); HTTP 400 surfaces as `CloudAIError.httpError(400, ...)` (272-273).\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/AIModelSettings.swift` \u2014 `o4-mini` and `o3` ship in `defaultModels` (line 180); the only `o3`/`o4` handling (line 423) is vision detection, not request shaping.\n\nSeverity reasoning: the failure is opt-in. The default OpenAI model is `gpt-4o` and all non-reasoning OpenAI models build correct requests; only deliberate selection of o3/o4-mini triggers the 400. That breaks two advertised non-default models for one provider rather than a core flow, fitting medium rather than high. The proposed `isReasoningModel(id:)` fix (emit `max_completion_tokens`, omit/raise `temperature`) is correct.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a1a23f701d3fe2506",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a1a23f701d3fe2506.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. \n\n**Verdict: CONFIRMED (severity adjusted high \u2192 medium)**\n\nThe defect is real and fully reachable. In `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/ScreenshotStitchingService.swift`:\n\n- `getPixelData` (lines 343-368) does allocate the full `4*width*height` RGBA buffer for the entire image.\n- `findOverlapHeight(topCG:bottomCG:)` decodes both images simultaneously (lines 283-284) for every adjacent pair.\n- The comparison loop only ever reads <300 rows per image (top rows in `[topHeight-maxOverlap, topHeight)`, bottom rows in `[0, maxOverlap)`) within a center column strip \u2014 so decoding the whole image is genuinely wasteful, validating the proposed strip-only fix.\n- No downscale anywhere; verified end-to-end from `TranslateScreenshotsIntent` (raw `UIImage(data:)`, no resize) through `processScreenshots()` to OCR on the full stitched image.\n- Per-pair recomputation is also confirmed (redundant CPU).\n\n**Why I downgraded to medium:** The OOM/jetsam/data-loss framing is overstated for the `getPixelData` portion. ARC releases `topData`/`bottomData` at the end of each `findOverlapHeight` call, so the transient peak is ~2 buffers (~24-30 MB), not the \"tens to hundreds of MB\" accumulation the claim implies \u2014 memory does not compound across N pairs. The genuinely unbounded allocation is the final stitched canvas + OCR copy, which is inherent to the feature rather than the flagged inefficiency. Input is a finite user-selected set of screenshots, and modern devices have ample headroom. It's a legitimate, worthwhile memory/efficiency defect, but the impact lands at medium rather than high.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a7be1751930c0a98b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a7be1751930c0a98b.jsonl",
+    "last_assistant_message": "Verdict: **CONFIRMED** (severity: high).\n\nThe claim holds up under independent verification. Both translation engines translate by detected input *content* but record the UI *toggle* direction into history, so every entry where the toggle disagrees with the input language gets its Chinese/English labeling reversed \u2014 corrupting History display, filtering, restore, TTS locale, and any saved vocabulary derived from those entries. The defect is reachable as a first-class state (the codebase explicitly models toggle/content mismatch via `inputLanguageMismatch`). The proposed fix (record the content-detected `actualDirection` instead of `sharedState.direction`, while keeping the toggle snapshot solely for the staleness guard) is correct.\n\nRelevant locations:\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/TranslateView.swift` \u2014 bug at lines 948 and 959/975 (record `directionSnapshot` = toggle); correct content-based config at lines 889/904-907; guard intent at 941/970; sink at 1047-1052.\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/TranslationHistory.swift` \u2014 reversed accessors at lines 27-33.\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/HistoryTabView.swift` \u2014 downstream consumption (filter line 23, labels 273/280, derived text 319-329, restore 209-211).",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "add9dbd8ed70d1870",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-add9dbd8ed70d1870.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. The claim is **confirmed** at **high** severity (data-loss).\n\nSummary of findings:\n\nThe defect is real and the evidence holds up precisely. All four cited models \u2014 `SavedTerm`, `CardProgress`, `DailyActivity`, `TranslationHistoryEntry` \u2014 use synthesized `Codable` with no custom decoding and have non-optional stored properties. They are persisted as `[Element]` / `[String: Value]` collections through `PersistentCodableStore`.\n\nThe mechanism is sound: Swift's collection decode is atomic, so the first element missing a newly-added non-optional key throws `keyNotFound` and aborts the whole array/dictionary. `PersistentCodableStore.load` (`/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift:24-50`) then falls back to `<key>.backup`, but that backup is byte-identical old-schema JSON decoded with the same type \u2014 it throws the same error, so `load` returns `nil` and the store silently starts empty. The backup only guards byte corruption, not schema evolution, as its own doc comment states.\n\nDecisive corroboration: the same codebase already solved this exact problem in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WorkbookBank.swift:90-108`, where `WorkbookQuestion` uses a tolerant `init(from:)` with `(try? c.decode(...)) ?? default` and the comment \"Tolerant decode so newly-added fields never break older saved data.\" The author knows the hazard and the fix pattern but did not apply it to the four user-data stores.\n\nI kept it at **high** rather than critical because the bug is latent \u2014 today's build decodes fine; it triggers only on a future release that adds a non-optional field. But when triggered, it irreversibly wipes all user vocabulary, spaced-repetition progress, and streak history with no recovery, and the trap is trivially easy to spring, so high is warranted.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a23917b4fedb5c370",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a23917b4fedb5c370.jsonl",
+    "last_assistant_message": "I have verified the claim against the actual code and reached my verdict.\n\n**Confirmed: true** | **Adjusted severity: medium** (down from high)\n\nThe defect is real and reachable end-to-end. In `cleanupRecognizedText` (AIWordExplanationService.swift:806-819) and `extractVocabulary` (:884-894), the model is selected with no `provider.supportsVision` gate, and `imageData` is still passed to `CloudAIService.chat`. For DeepSeek/MiniMax (`supportsVision == false`, `defaultVisionModel == nil`, no vision-looking ids in their default lists), vision resolution returns nil and the code falls back to the text model, then CloudAIService.swift:238 silently strips the image. Both call sites in PhotoTranslateView.swift (:864 and :1250) pass real image data, and `effectiveProvider` can resolve to these providers.\n\nI adjusted severity from high to medium because the impact is silent output-quality degradation on a user-facing feature, not a crash, data loss, or security issue \u2014 but it is a genuine, reachable, no-error-surfaced correctness/UX bug, made more notable by the fact that the same file already implements the correct gating pattern in `gradeWorkbook` via `gradingProvider()`.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ade7a996010f853ae",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-ade7a996010f853ae.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification of this claim.\n\n**Verdict: CONFIRMED (severity adjusted high \u2192 medium)**\n\nThe defect is real and reachable. `PersistentCodableStore.load` at `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift:30` decodes the full collection in one atomic `JSONDecoder().decode(T.self, ...)` call, and all 6 callers pass collection types. Swift array/dictionary decoding rethrows on the first failing element, so one corrupt element discards the entire store. The backup path (lines 38-47) shares the identical schema, so it cannot rescue a schema-level corruption. No per-element/lossy decoding exists anywhere.\n\nTwo nuances narrowed the severity from the claimed high to medium:\n- Four stores (`SavedTerm`, `TranslationHistoryEntry`, `CardProgress`, `DailyActivity`) use synthesized `Codable` with non-optional required fields and are fully exposed to the bug. But `WorkbookQuestion` and `GradedSession` already have tolerant per-field `try?` decoders (`WorkbookBank.swift:91`, `:273`), making them largely immune to the field-omission case.\n- The claim's illustrative example about a \"non-Gregorian-parseable key\" is inaccurate \u2014 dictionary keys are plain strings that aren't date-parsed at decode time.\n\nThe trigger requires already-corrupt persisted data (schema migration of old payloads, partial writes, tampering) rather than normal operation, and the proposed element-by-element lenient-wrapper fix is the correct remediation for the synthesized-Codable stores.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "af4a3755480c1da57",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-af4a3755480c1da57.jsonl",
+    "last_assistant_message": "Verified the claim against the actual code in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/SpeechRecognitionService.swift`.\n\nVerdict: **confirmed = true, severity = high**.\n\nThe defect is real and reachable. The AVAudioConverter input block (lines 473-476) always sets `.haveData` and returns the same buffer with no consumption tracking and no `.noDataNow`/`.endOfStream`/nil path \u2014 a grep confirmed it's the only `convert(to:)` call site with no external state tracking consumption. This violates Apple's documented input-block contract, and on the default sample-rate-conversion path (48 kHz mic vs 16 kHz speech model, present on essentially all iOS hardware) re-feeds consumed samples and garbles transcription in the modern iOS 26+ engine.\n\nI corrected two imprecise points in the claim (output is bounded by frameCapacity, not literally infinite; the math truncates rather than rounds) but these affect framing only, not the underlying validity, so I kept severity at high given it sits on the primary audio path for a core feature.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a98fedb13bd6ca722",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a98fedb13bd6ca722.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. \n\n**Verdict: NOT CONFIRMED (invalid).**\n\nThe claimed data race does not hold up. The decisive evidence is in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin.xcodeproj/project.pbxproj`, which sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` (lines 352/425) together with `SWIFT_APPROACHABLE_CONCURRENCY = YES`. Under main-actor-by-default isolation, the unannotated `WordTranslationService` class (`/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/WordTranslationService.swift`) and its `translationCache` are inferred `@MainActor`-isolated \u2014 the file carries no `nonisolated`, `@concurrent`, `actor`, or `Sendable` opt-out.\n\nEvery cited call site is also MainActor-isolated: all are methods on SwiftUI `View` structs (implicitly `@MainActor`) or on the explicitly `@MainActor` `ShortcutHelpers` enum, and none invoke the service via `Task.detached`, `@concurrent`, `async let`, or a task group. The \"photo batch fires concurrently with ruby taps\" scenario is therefore unreachable \u2014 both run serialized on the main actor. The Swift 6 argument is also backwards: with this configuration strict checking sees the cache as MainActor-protected and emits no diagnostic. The redundant `await MainActor.run` blocks in `RubyTextView.fetchWordDetails` are harmless legacy code, not proof of off-main mutation.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a36715b991c45769f",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a36715b991c45769f.jsonl",
+    "last_assistant_message": "Verification complete. The claim is **confirmed** at **high** severity.\n\nThe defect is real and reachable in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/VocabularyImportExportService.swift`:\n\n- **Export** wraps newline-containing fields in quotes (`escapeCSV` line 106-107, written inline at line 99), producing records that span multiple physical lines.\n- **Import** pre-splits the whole file on `.newlines` (line 160) before any quote tracking, then runs `parseCSVLine` per physical line with a fresh local `inQuotes` (line 198) \u2014 no quote state crosses line boundaries.\n- Concrete trace: a `\"line1\\nline2\"` definition splits into a truncated term (definition = \"line1\", passes the `>= 3` guard at line 167) plus a tail fragment that yields 1 column and is silently dropped (`continue`). Round-trip is lossy.\n- Reachable because `SavedTerm.definition` (SavedTerm.swift:16) is unconstrained free-form text and export\u2192import is the documented backup/restore path.\n\nKept at high (not critical) because it only triggers for entries whose quoted field contains a literal newline; most single-line glosses round-trip fine. The proposed quote-state-machine fix plus a round-trip regression test is correct.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8177429887fb54d8",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a8177429887fb54d8.jsonl",
+    "last_assistant_message": "I've completed my adversarial verification of the claim.\n\n**Verdict: NOT CONFIRMED (invalid)**\n\nThe claim is that `SpeechRecognitionService.swift:440-446` captures an `AVAudioPCMBuffer` from a tap into an escaping `Task` and reads it asynchronously, causing a \"data race on reused buffer memory\" because the buffer's backing storage gets overwritten by subsequent taps.\n\nThe code structure described is accurate \u2014 the buffer IS captured into an unstructured `Task` and read later in `processAudioBuffer` on the MainActor. But the defect's foundational premise is wrong:\n\n- `AVAudioPCMBuffer` is a reference-counted Obj-C object that **owns** its sample storage. Capturing it into the `Task` closure causes ARC to retain it; the object and its `mData` audio memory stay alive and unmodified as long as that reference lives. AVAudioEngine allocates a fresh buffer per tap callback \u2014 it does not overwrite the `mData` of a buffer you have retained.\n- Apple's `AVAudioNodeTapBlock` documentation describes the block as receiving \"copies of the output\" and carries no \"must copy if retained\" warning \u2014 unlike the explicit pool-reuse warnings on `CMSampleBuffer` from capture sessions. The claim incorrectly transfers `CMSampleBuffer`-style pool-recycle semantics onto AVAudioEngine taps.\n- Retaining a tap buffer for deferred async processing is the conventional, Apple-sample-endorsed pattern for feeding `SpeechAnalyzer`.\n\nThere is no reused/overwritten memory, so there is no data race on it. (There are unrelated latent concerns in this code \u2014 unordered per-tap `Task` spawning could reorder audio chunks under MainActor load \u2014 but that is not the claimed defect.)\n\nRelevant file: `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/SpeechRecognitionService.swift`",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "abc279f7f7d57e68a",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-abc279f7f7d57e68a.jsonl",
+    "last_assistant_message": "Verified the claim by reading the cited file in full.\n\n**Verdict: CONFIRMED (high, race).**\n\nThe defect at `SpeechRecognitionService.swift:440-446` is real and reachable. The tap closure runs on AVAudioEngine's real-time render thread but defers consumption of the non-Sendable `AVAudioPCMBuffer` into an unstructured `Task` that hops to `@MainActor` (since `ModernSpeechEngine` is `@MainActor`). The buffer's samples are only read *after* that hop \u2014 at line 476 (`converter.convert` returning `buffer`) or line 483 (`AnalyzerInput(buffer: bufferToSend)`) \u2014 by which time the tap callback has returned and the engine may have recycled/overwritten the buffer's backing storage. `@preconcurrency import AVFAudio` (line 13) suppresses the Sendable diagnostic that would otherwise catch this.\n\nThe out-of-order risk (independent per-buffer Tasks with no FIFO scheduling guarantee onto the actor) and unbounded Task spawning are also accurate. The `LegacySpeechEngine` tap at lines 564-566 demonstrates the correct synchronous pattern (`request.append(buffer)` inside the tap), confirming the Modern engine deviates from it. The proposed fix is sound.\n\nOne precision note carried into the verdict: this is more accurately a data race / use-after-recycle (corrupted samples) than a literal use-after-free, since `AVAudioPCMBuffer` retains its allocated storage \u2014 so the dominant observable impact is garbled/dropped transcription rather than a guaranteed crash. Severity held at high.\n\nRelevant file: `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/SpeechRecognitionService.swift`",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "acd427ceb5fa9ea2a",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-acd427ceb5fa9ea2a.jsonl",
+    "last_assistant_message": "Verdict: **CONFIRMED** (severity adjusted from high to **medium**).\n\nThe claim holds up under independent verification:\n\n- `activitiesForLastDays` (LearningActivity.swift:214-225) produces a purely chronological array with no weekday alignment \u2014 `activities[0]` is `today-(days-1)`, an arbitrary weekday.\n- The grid formula `index = week * 7 + dayOfWeek` (StatsView.swift:911-912) maps each date to row `index % 7`, which only equals the real weekday when the start date coincidentally lands on row 0.\n- The labels are hardcoded `[\"\",\"M\",\"\",\"W\",\"\",\"F\",\"\"]` (line 899), and grep confirms there is no `component(.weekday)` or `firstWeekday` logic anywhere in the heatmap. So the M/W/F labels are correct only ~1/7 of the time.\n\nI lowered severity to medium: it is a genuine, reachable visual-correctness bug, but it is cosmetic and confined to one secondary stats widget. No data loss, no crash, and all numbers (scores, streaks, totals, month labels) remain correct \u2014 only the weekday row each cell sits in is mislabeled. The proposed fix (compute the first activity's weekday respecting `firstWeekday` and leading-pad the first column) is the correct remedy.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a0e39cf92fe831a2b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a0e39cf92fe831a2b.jsonl",
+    "last_assistant_message": "Verdict: **CONFIRMED**, severity adjusted **high \u2192 medium**.\n\nThe defect is real and reproducible. I located the actual Ollama package source at `.../SourcePackages/checkouts/ollama-swift/Sources/Ollama/Model.swift:44`, replicated its exact `init?(rawValue:)` body, and confirmed a hard \"Fatal error: Index out of range\" crash (exit 133) on degenerate inputs like `\"\"`, `\":\"`, and `\"::::\"`. All four cited force-unwraps in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/OllamaService.swift` (lines 171, 197, 230, 126) exist as described, and the callers in `AIWordExplanationService.swift` guard only `!isEmpty`, not parseability.\n\nOne material correction to the claim's reasoning: the library's `init?` never actually returns nil for these inputs \u2014 it traps *internally* on the out-of-bounds `String(modelAndTag[0])` subscript at Model.swift:50/55. So the proposed `guard let modelID = ... else { throw }` fix would NOT prevent the crash for empty/\":\"/\"::::\"-style values; the fix must sanitize the string before calling the initializer.\n\nSeverity lowered to medium because the default `\"gpt-oss:20b\"` is safe, the UI Picker constrains selection to valid server-returned names, and the `!isEmpty` call-site guards block the most likely empty-string vector. The realistic triggers (a malformed persisted UserDefaults value, or a custom/misbehaving Ollama host returning a degenerate name via the `refreshModels()` line-126 path) are narrow and not attacker-controlled in typical use.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a9ecc4358ca9a3d71",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a9ecc4358ca9a3d71.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. All three structural sub-claims hold against the actual code, the defect is reachable in the live app, and I confirmed the issue while adjusting severity from high to medium since the feature degrades-but-functions rather than breaks.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a0e7d04a4bfd2ea06",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a0e7d04a4bfd2ea06.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. The claim is **not confirmed**.\n\n**Summary:** The claim alleges concurrent/unserialized mutation of `AVAudioConverter` with a \"wrong/stale buffer\" handed to the converter. This mechanism does not hold up against the actual code in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/SpeechRecognitionService.swift`:\n\n- `ModernSpeechEngine` is `@MainActor`-isolated (line 360), so `processAudioBuffer` invocations serialize on the MainActor \u2014 the serialization the claim says is absent actually exists (and the claim even concedes this mid-text, contradicting its own headline and \"race\" category).\n- `processAudioBuffer` (lines 458-485) has **no `await`/suspension point**: the converter read, buffer allocation, and synchronous `converter.convert(...)` (lines 473-476) run atomically before the final `yield`. No second invocation can interleave with an in-flight conversion.\n- The `buffer` returned by the inputBlock (line 475) is the per-call parameter of the currently-executing invocation, not a shared field \u2014 it can never be another task's buffer.\n\nThe only genuine residual issue is unrelated and narrower: each tap spawns an unstructured `Task` (lines 443-445), and unstructured tasks have no guaranteed scheduling order, so buffers could occasionally reach the converter slightly out of capture order. That is a different, low-impact defect (minor/inaudible resampling effects, no corruption, no concurrent converter access) \u2014 not the race the claim describes. Adjusted severity: low.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ad64446f6df8acd7e",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-ad64446f6df8acd7e.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. The claim is **confirmed** with severity adjusted from high to **medium**.\n\nSummary of findings:\n- The structural claim holds completely: `learningIsChinese`/`nativeIsChinese` (LocalizationManager.swift:106,110) derive purely from UI language, and `learnerMode`/`learningLanguageIsChinese` are read nowhere for content tailoring outside AppPreferences itself and the two settings pickers.\n- `.bilingual` is selectable (both pickers iterate `LearnerMode.allCases`) but its only effect is `defaultDirection`, which under an English UI is identical to the auto-derived `.englishToMandarin` \u2014 so it is genuinely decorative.\n- A contradictory state is reachable by manually overriding the Learner Mode picker against the UI language; headline side, pinyin, and AI explanation language remain UI-driven.\n\nThe one nuance that tempered severity: `syncLearnerMode` force-resets `learnerMode` to a monolingual mode whenever the UI-language picker changes, so for the normal single-gesture flow the two monolingual modes stay coherent. The bug only surfaces when the user independently drives the Learner Mode picker, and there's no crash or data loss \u2014 hence medium rather than high.\n\nRelevant files:\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/LocalizationManager.swift\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/AppPreferences.swift\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MoreView.swift\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MacOSSettingsView.swift\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/SavedTerm.swift",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aef0dcf0aa04649d6",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-aef0dcf0aa04649d6.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. The defect is confirmed as real but with adjusted severity.\n\n**Verdict: confirmed = true, severity adjusted from high/data-loss to medium.**\n\nThe core mechanism is genuine: `LearningCard.id` is the Chinese content string (`LearningCard.swift:13,22`), progress is keyed by that id in a `[String: CardProgress]` dictionary (`LearningCard.swift:158,180`), and the default `.combined` source merges `LearningDeck.cards + vocabularyCards` (`LearnView.swift:60`). A built-in card \"\u4f60\u597d\" and a saved Chinese-learner term with chineseSide \"\u4f60\u597d\" collide into the same `progress[\"\u4f60\u597d\"]` bucket, entangling their mastery/scheduling. Save-time dedup (`SavedTerm.swift:121-145`) only protects saved-term-vs-saved-term, not saved-term-vs-built-in, so this is reachable in default usage.\n\nHowever, two of the supporting evidence points are factually wrong:\n1. **The empty-string claim is false.** `vocabularyCards` uses `term.chineseSide.isEmpty ? term.chinese : term.chineseSide` (`LearnView.swift:42`), so English-learner cards fall back to the English headword \u2014 never `\"\"`. They do not all collapse to one bucket.\n2. **The SwiftUI ForEach-duplicate-id claim does not apply.** `sessionCards` is iterated by index (`sessionCards[currentCardIndex]`, `LearnView.swift:93`); there is no `ForEach` over the card list, so `LearningCard`'s `Identifiable` conformance is unused for rendering.\n\nBecause nothing is lost or deleted \u2014 only spaced-repetition metadata is entangled and statistics skewed \u2014 this is a correctness bug, not data-loss, hence medium rather than high. The proposed fix (`builtin:<chinese>` / `vocab:<term.id>` stable ids) is sound.\n\nRelevant files:\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/LearningCard.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/LearnView.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/SavedTerm.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/ChineseTextAnalyzer.swift`",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aff6516eb41472c55",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-aff6516eb41472c55.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. The claim is **confirmed** with severity adjusted from high to **medium**.\n\nKey findings from the cited files:\n- **One-way coupling is real**: `LocalizationManager.swift:96-103` forces `learnerMode` to follow `language`, but `AppPreferences.swift:151-157` `learnerMode.didSet` only persists `defaultDirection` and never writes back to `LocalizationManager.language`.\n- **Independent pickers are real**: `MoreView.swift:185` (App Language) and `MoreView.swift:197` (Learner Mode) bind to different observables with no cross-guard.\n- **The contradictory state is reachable in two taps and consumed divergently**: translation direction comes from the `defaultDirection` key (`TranslateView.swift:1025-1031`), while ~10 tailoring surfaces derive the learning language from `LocalizationManager.learningIsChinese`/`nativeIsChinese` \u2014 so the two subsystems genuinely disagree.\n\nI lowered severity to medium because the bug is an internal inconsistency that yields confusing-but-recoverable UX (no crash, no data loss, no security impact, and the user can self-correct via either picker).",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a6c370f92d61fd8c3",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a6c370f92d61fd8c3.jsonl",
+    "last_assistant_message": "Confirmed the defect. The claim holds up under independent verification.\n\nVerdict: **confirmed = true**, severity adjusted **high \u2192 medium**.\n\nKey findings from `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Intents/TranslateScreenshotsIntent.swift:50`:\n- `od -c` on line 50 proves the literal source is `Summary(\"Translate \\\\(\\\\.$images) to \\\\(\\\\.$targetLanguage)\")` \u2014 two backslashes before each `(` and `.`.\n- In Swift, `\\\\(` is an escaped backslash followed by `(`, not interpolation. The compiled `String` is the plain literal `Translate \\(\\.$images) to \\(\\.$targetLanguage)`; the key-path parameter references never bind.\n- All 9 other `Summary(...)` call sites in `SwiftMandarin/Intents/` use the correct single-backslash form (e.g. `TranslateTextIntent.swift:25`, `GetRandomPhraseIntent.swift:26`). This file is the sole diverging one.\n- No custom `Summary` overload exists, so the standard AppIntents builder applies.\n\nSeverity downgraded to medium because the bug is purely cosmetic/discoverability: `perform()` and the intent's runtime behavior are unaffected; only the Shortcuts editor / Spotlight summary renders the raw unsubstituted text instead of parameter chips. The proposed fix is correct.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a0389e5a7fccddbd7",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a0389e5a7fccddbd7.jsonl",
+    "last_assistant_message": "Verdict: CONFIRMED at high severity. The defect is real and reachable on every iOS 17 iPhone. The `legacyTabView` in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/ContentView.swift` (lines 147-181) emits 8 tabs in a plain UIKit-backed `TabView`, with no size-class/idiom guards; iOS 17 reaches this path (lines 97-103) and the deployment target is confirmed iOS 17.0 in the project file. iPhone compact width caps the tab bar at 5 items, collapsing learn/phrases/stats and the app's own `.more` tab into the system \"More\" overflow \u2014 producing the described nested-\"More\" collision. The file's own header comment (\"iOS: Bottom tab bar (5 tabs)\") corroborates that 8 tabs is unintended.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aaf7fb8a2062de9d7",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-aaf7fb8a2062de9d7.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. \n\n**Verdict: CONFIRMED (severity adjusted high \u2192 medium)**\n\nThe defect is real and reachable. All cited line numbers and code content check out exactly:\n\n- `AppRouteStore.swift:17` \u2014 single shared `pendingAction`, set together with `selectedTab` in one synchronous `trigger()` call.\n- `LearnView.swift:189-201` \u2014 `applyPendingAction()` hits `case .openCameraScanner, .translateScreenshots: break` (line 196) doing nothing, but **still** calls `clearPendingAction()` (line 199) and returns true, swallowing a photo-targeted action.\n- `PhotoTranslateView.swift:787-800` \u2014 symmetrically clears unconditionally (line 799), so it also drops `.startReview` if it wins the race. The bug is bidirectional, not just LearnView\u2192photo.\n\nBoth consumers observe the same `.task(id: routeStore.pendingAction?.id)` and neither checks ownership before consuming/clearing, so whichever task body runs first wins.\n\nI downgraded to **medium** because reachability is genuinely intermittent and low-impact:\n- macOS is immune (`detailView` is a `switch selectedTab` \u2014 only one view exists at a time).\n- It requires the non-target tab (Learn) to have been visited and kept alive in the TabView.\n- Ordering between two `.task(id:)` restarts triggered by one state change is nondeterministic.\n- Impact is a silently dropped App Intent \u2014 no crash, no data loss, recoverable by re-running.\n\nThe proposed fix is sound: gate consumption/clearing by ownership (each view acts on and clears only the kinds it owns) or split `pendingAction` into per-feature slots / route by target.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "adeb338be627cfcd8",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-adeb338be627cfcd8.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. Verdict: **not confirmed (invalid)**.\n\nThe claim's code citations are textually accurate, but its central premise \u2014 that the cache is mutated *off the main actor* \u2014 does not hold against this project's build configuration. The Xcode project sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` for both Debug and Release of the app target (project.pbxproj:352 and :425), so every unannotated declaration is implicitly `@MainActor`. I confirmed via grep that none of the three cited files carry any `nonisolated`, `@concurrent`, `actor`, `Sendable`, or explicit override.\n\nThat makes `WordTranslationService`, its `translationCache`, all its async methods, and the calling `.task` closures MainActor-isolated. The dictionary reads/writes always execute on the main actor (the code only suspends off-actor at the `await` on the translation API, then resumes on-main before mutating the cache). No concurrent mutation, no data race, no `EXC_BAD_ACCESS` path. The proposed `@MainActor`/`actor` fix is redundant since MainActor isolation is already in force module-wide.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ab4f16ef6a2a8299f",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-ab4f16ef6a2a8299f.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. The claim is **confirmed** with severity adjusted from high to **medium**.\n\nThe defect is real and reachable: all 14 cited settings keys have zero readers outside the settings views, and the backing OS-level behaviors (SMAppService, MenuBarExtra/NSStatusBar, global hotkey registration, UNUserNotificationCenter scheduling) are entirely absent from the codebase. I verified this both by exact-string greps and by auditing the indirect `UserDefaults.standard` reads, which proves the app does consume some settings keys (hapticFeedback, maxHistoryEntries, etc.) \u2014 just not these 14.\n\nKey file: `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MacOSSettingsView.swift` (toggles/sliders at lines 90-92, 98-107, 284-305, 326-363).\n\nI lowered severity to medium because the failure mode is \"control silently does nothing\" \u2014 a real false-affordance/trust defect with genuine breadth, but with no crash, data loss, corruption, or security impact, and a notable fraction (13 of 14) are macOS-only (only `fontSize` is dead on both platforms via MoreView.swift:273).",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a67e7dea8758786d1",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_786853a1-821/agent-a67e7dea8758786d1.jsonl",
+    "last_assistant_message": "I've completed the architectural audit synthesis and returned it via StructuredOutput. Here's a summary of what I verified and delivered:\n\n**Verified against live code (not just the audit JSON):**\n- Persistence fragility \u2014 confirmed `PersistentCodableStore.swift` decodes whole collections at once with a same-schema `.backup`, and grep confirms zero schema-evolution code in `Models/`.\n- History-direction bug \u2014 confirmed `TranslateView.swift:889` computes `actualDirection` but `:959`/`:975` snapshot and record `sharedState.direction` (the UI toggle) instead.\n- iOS 17 tab overflow \u2014 confirmed `ContentView.swift:148-179` emits 8 ungated tabs on the legacy path, colliding with the app's own `.more`.\n- Workbook discoverability \u2014 confirmed reachable from exactly one place (`PhotoTranslateView.swift:210`).\n- More-tab clutter \u2014 confirmed 601-line file with duplicate `HistoryView`/`HistoryRow` (lines 66-163), placeholder App Store ID `id123456789`, and an `apple.com/privacy` link.\n\n**Delivered:**\n1. Executive summary framing the three structural risk clusters (persistence fragility, core-flow correctness bugs, IA/discoverability debt) with a recommended sequencing.\n2. Ten prioritized issues (1 critical, 3 high, 6 medium) each with why-it-matters and a concrete fix.\n3. Six architecture recommendations centered on the data layer (versioned resilient envelope), IA (5-tab + real More hub), a single direction model, centralized AI capability gating, a unified TranslationBackend, and declarative cross-platform settings.\n4. Five workflow enhancements making the learning loop more capable (real spaced repetition, persistent workbook gradings, streaming/cancellation, a fast resumable OCR pipeline, app-wide discoverability).\n5. Ten quick wins \u2014 small, high-leverage fixes ranging from the one-line intent backslash fix to the history-direction fix to pre-submission placeholder cleanup.",
+    "background_tasks": [
+      {
+        "id": "woxhxbs0v",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for bugs/bottlenecks/errors + architecture & UX improvement suggestions",
+        "name": "swiftmandarin-audit"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a1ff0733a53d49af3",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a1ff0733a53d49af3.jsonl",
+    "last_assistant_message": "I completed a focused runtime/logic review of the bank, generator, and history views. After tracing the data flow through `WorkbookBank.swift` (the stores and `WorkbookQuestion`), `AIWordExplanationService.generateReviewQuestions`, `GeneratedReviewQuestion`, and the presentation contexts in `PhotoTranslateView`/`WorkbookGradingView`, I verified that the headline concerns from the review lens are actually handled correctly:\n\n- **onDelete under a filter** (`WorkbookQuestionBankView.swift:110-116`) is correct \u2014 it maps filtered offsets to ids first, then removes by id, so there's no stale-index hazard.\n- **Async image loading** in `SessionPhotoThumbnail`/`PhotoViewer` is sound \u2014 file IO runs in `Task.detached` off-main and the value-type `Image` is assigned back on the MainActor view; no Sendable violation.\n- **`fullScreenCoverCompat`** correctly degrades to `.sheet(item:)` on macOS; `PhotoViewer`'s dismiss works in both presentations.\n- **Generator provider gating** (`canGenerate`, `providerBanner`) and error handling in `generate()` are correct, including `MainActor.run` hops and the empty-result message.\n- **Nested sheets / NavigationStack** are well-formed; image IDs in `ForEach(id: \\.self)` are distinct UUIDs so no collision.\n\nThe substantiated issues I found are all **low severity** and center on one theme: the Save/\"Added to Bank\" UI states ignore the `@discardableResult Bool` from `WorkbookQuestionBankStore.add(...)`, which dedups by `prompt+answer`. So a re-save or a textually-identical regenerated question silently no-ops while the UI claims it was saved (findings 1-3). Finding 4 is a dead-code nit in the `.task` closures.\n\nNo critical, high, or medium runtime bugs, data-loss, concurrency hazards, or cross-platform breakage were found in these specific changes. Full details are in the structured output.\n\nRelevant files:\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookQuestionBankView.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingHistoryView.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WorkbookBank.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/AIWordExplanationService.swift`",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aa7d85a97b89f5add",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-aa7d85a97b89f5add.jsonl",
+    "last_assistant_message": "I reviewed the WorkbookGradingView changes and the new CameraImagePicker against the requested focus areas. Findings are returned via the structured output. Summary of what I verified and found:\n\n**Verified clean (no issue):**\n- Camera button gating: `cameraAction(for:)` correctly returns nil on macOS (`#if os(iOS)`) and when `CameraImagePicker.isAvailable` is false (Simulator/camera-less), so the button is hidden and there's no path to present the picker without a camera.\n- `NSCameraUsageDescription` is present in both build configs (project.pbxproj lines 320/393), so the camera presentation won't crash on first use. The `makeUIViewController` fallback to `.photoLibrary` is also covered by `NSPhotoLibraryUsageDescription`.\n- UIImagePickerController in `.fullScreenCover` with empty `updateUIViewController` is a correct presentation pattern.\n- `Task.detached { WorkbookImageStore.saveAll(...) }` captures `[Data]` (Sendable value types) by value and calls a nonisolated enum method \u2014 no data race or Sendable violation.\n- `savedToBankIDs` keyed on `question.id` is stable within a single `result` lifetime (decoded `GradedQuestion` objects persist), so the per-card in-bank tracking is internally consistent.\n\n**Reported issues (4):**\n- **High** \u2014 Re-tapping Grade double-counts `recordQuestionsGraded`, duplicates history sessions (no dedup in `WorkbookGradingHistoryStore.add`), and re-writes all scanned images to disk. The button stays enabled after grading since inputs remain and `isGrading` is false. All three persistence side-effects are new this session.\n- **Medium** \u2014 The camera path downscales a full-resolution photo synchronously on the MainActor in `addCapturedImage`, unlike every other ingestion path which downscales off-main; causes a UI hitch during cover dismissal.\n- **Low** \u2014 `addToBank`/`addAllToBank` mark a question as \"In Bank\" even when `bank.add` rejected it (empty dedup key), so the button lies about empty-prompt-and-answer questions.\n- **Low** \u2014 The \"Add all to Review Bank\" bulk button has no added-state feedback and never disables, inconsistent with the per-question card and the history view's equivalent button.\n\nThe most load-bearing finding is the high-severity re-grade path in `grade()` (lines 571-619 of WorkbookGradingView.swift), which causes stat/history/disk pollution on a reachable user action.",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a267b955c2a699c8c",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a267b955c2a699c8c.jsonl",
+    "last_assistant_message": "I completed the data-layer and persistence review of the uncommitted WorkbookBank.swift and LearningActivity.swift changes.\n\nSummary of what I verified as correct (no findings):\n- The `DailyActivity.questionsGraded` migration is sound: all 6 fields are in `CodingKeys`, old payloads (lacking `questionsGraded`) decode tolerantly to 0, and `activityScore` does NOT double-count because `questionsGraded` is an independent new counter that adds 0 for legacy data. The tolerant `init(from:)` is strictly safer than the old synthesized decoder, which would throw on any missing key.\n- `WorkbookQuestionBankStore` dedup (prompt + correctAnswer, lowercased/trimmed) is correct, and the filtered `onDelete` in WorkbookQuestionBankView maps offsets back to ids before removal, avoiding the classic filtered-list index misalignment bug.\n- `WorkbookGradingHistoryStore.remove(at:)` aligns offsets with the same `sessions` array the ForEach iterates, and both `remove`/`clear` paths call `WorkbookImageStore.deleteAll` so on-disk scans are not orphaned.\n- `WorkbookImageStore` file IO is sound: directory creation is idempotent (`withIntermediateDirectories: true`), writes are atomic, the heavy `saveAll` runs off the main actor, and thumbnail/viewer loads are concurrent reads (safe).\n\nThree substantiated findings returned via StructuredOutput:\n1. medium \u2014 Re-grading the same still-loaded photos in WorkbookGradingView.grade() duplicates the GradedSession, re-writes the images to disk under new UUIDs, and double-counts `recordQuestionsGraded` (no idempotency guard, button stays enabled after the first run).\n2. low \u2014 `WorkbookImageStore.saveAll`'s `compactMap` silently drops scans that fail to write, persisting a history session with missing photos and no user-facing warning.\n3. low \u2014 `DailyActivity.init(from:)` falls back to today's date for a missing/corrupt `dateKey`, which can desync the internal field from its authoritative dictionary key (latent edge case).\n\nRelevant files: /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WorkbookBank.swift, /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/LearningActivity.swift, /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingView.swift",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a41ace76839753486",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a41ace76839753486.jsonl",
+    "last_assistant_message": "I completed the integration/regression review of the uncommitted changes across `PhotoTranslateView.swift`, `StatsView.swift`, `MoreView.swift`, and the four new files.\n\nWhat I verified as clean (no findings warranted):\n- **MoreView rewrite**: `HistoryView` and `SettingsView` were removed, but they are referenced only in `MandarinKit.md` docs, never in live code. The split into `GeneralSettingsView` / `TranslationSettingsView` / `DisplaySettingsView` / `DataManagementView` preserves every `@AppStorage` key verbatim (`autoTranslate`, `autoSpeak`, `showPinyin`, `pinyinPosition`, `toneColors`, `defaultDirection`, `hapticFeedback`, `fontSize`, `translateOnPaste`, `copyTranslationAutomatically`, `saveToHistoryAutomatically`). Translation history correctly lives in its own tab and is intentionally not duplicated. macOS/iOS conditionals are intact.\n- **Photo-tab menu/sheet wiring**: the new `Section(\"\u4f5c\u4e1a \u00b7 Workbook\")` with three buttons each drives its own `@State` flag and matching `.sheet`, all correctly bound.\n- **StatsView Overview**: `totalQuestionsGraded` exists on the store; the 3-column `LazyVGrid` now holds 7 cells (no crowding issue in that grid).\n- **New persistence model** (`WorkbookBank.swift`): tolerant Codable decoders, `@MainActor`-isolated stores, off-main file IO, and history deletion that also purges disk images \u2014 all sound. `recordQuestionsGraded` / `LearningActivity` tolerant decode are correct.\n\nTwo substantiated findings reported via StructuredOutput:\n1. **High** \u2014 `WorkbookGradingView.grade()` is not idempotent: re-tapping Grade (the button stays enabled when `result != nil`) writes a duplicate history session, a duplicate on-disk photo copy (new UUID each time), and double-counts today's `questionsGraded`. This is a data-integrity + storage-leak regression.\n2. **Low** \u2014 `selectedDateDetail` now packs four metric labels + Spacer + date into one non-wrapping HStack with no scaling/truncation handling, which can clip on narrow iPhones.\n\nRelevant absolute paths:\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingView.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/StatsView.swift`",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a6104a40ef78c3087",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a6104a40ef78c3087.jsonl",
+    "last_assistant_message": "I've verified the claim. It is real \u2014 the code matches the description exactly: `WorkbookImageStore.saveAll` uses `compactMap` which silently drops any image that fails to write, and `grade()` passes the (possibly shorter) ID arrays into `GradedSession` with no count check or user feedback. Severity is correctly rated low, since the failure path is uncommon (writes to the app sandbox), causes no crash or corruption of the grading result, and only leaves a cosmetic gap in history thumbnails. The proposed count-comparison fix is appropriate and minimal.",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8855489e4a077b5f",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a8855489e4a077b5f.jsonl",
+    "last_assistant_message": "I've completed my adversarial verification. \n\n**Verdict: NOT a real bug (invalid).**\n\nThe claim that `let id = imageID` at `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingHistoryView.swift` lines 318-319 and 359-360 is \"dead code\" is factually wrong. On the immediately following line, `id` is read inside `Task.detached { WorkbookImageStore.load(id) }.value` \u2014 so the variable is live, produces no compiler warning, and is not subject to dead-code elimination.\n\nBeyond being mislabeled, the alias actually serves a small but legitimate purpose: it makes the `Task.detached` closure capture the `String` value rather than capturing `self` (the view). That is an idiomatic minimal-capture pattern. Because the view is a value type with an immutable `let` property, the practical difference is negligible \u2014 but that makes the line harmless and defensible, not a defect or a misleading hazard. The claim itself concedes the load is correct and the change is \"style-only with no runtime effect.\" No fix is warranted.",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a52d4eefe265a7c6b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a52d4eefe265a7c6b.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. The claim is **real** at **low severity**, as documented in my structured output.\n\nSummary of findings from `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingHistoryView.swift`:\n\n- The button (lines 217-229) discards each `bank.add()` Bool and unconditionally sets `addedAll = true`, so the \"Added to Bank\" label appears even when zero net-new items were inserted.\n- `addedAll` initializes to `false` (line 144) with no reconciliation against bank membership, so the un-added label always shows on first open even if everything is already banked.\n- This contradicts the live grading screen (`WorkbookGradingView.swift` lines 625-627), which uses content-based `bank.containsGraded(question)`.\n\nThe dedup logic confirms membership is genuinely cross-screen content-based (`WorkbookBank.swift` lines 183-195, 228-232). It's purely a label-accuracy/state-reflection nit \u2014 no data corruption (re-adds are safe no-ops, dedup-guarded) and no functional loss \u2014 which correctly maps to low severity. The proposed fix (derive `allInBank` via `session.questions.allSatisfy { bank.contains($0) }` and drop the `addedAll` flag) is sound and consistent with the existing API.",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8a3d9f87df0ae856",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a8a3d9f87df0ae856.jsonl",
+    "last_assistant_message": "Verified the claim against the cited code. It is a real but low-severity UX consistency gap, and I've recorded the verdict and a concrete minimal fix via the StructuredOutput tool.\n\nKey file: `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingView.swift` (bulk button lines 442-450, `addAllToBank()` lines 634-640), with the established pattern to mirror in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingHistoryView.swift` (lines 215-230).",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a3210cc4c6815e216",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a3210cc4c6815e216.jsonl",
+    "last_assistant_message": "I've completed my adversarial verification of the claim.\n\n**Verdict: NOT REAL (invalid)**\n\nThe claim's central premise is factually incorrect. It assumes that for a question with empty `question` and `correctAnswer`, the `dedupKey` would be empty, causing `add()` to return false via the `guard !key.isEmpty` check at WorkbookBank.swift line 185.\n\nThe key fact the claim missed: the dedup separator at line 229 is `\"\u2223\"` (U+2223 DIVIDES), a math symbol that is **not whitespace**. So for an empty/empty question the key is `\"\" + \"\u2223\" + \"\"` = `\"\u2223\"`, which survives `.trimmingCharacters(in: .whitespacesAndNewlines)` intact as a non-empty `\"\u2223\"`. I confirmed via a Unicode check that U+2223 is category Sm and not whitespace.\n\nTherefore `add()` passes its guard, inserts the question, and returns true \u2014 the fully-empty question genuinely enters the bank. The `addToBank`/`isInBank` UI state (\"\u5df2\u5728\u9898\u5e93 \u00b7 In Bank\") is honest, and the question does appear in WorkbookQuestionBankView. The empty-key branch is effectively unreachable for any question built via `init(graded:)`, so the proposed fix would only add dead defensive code.\n\nRelevant files inspected:\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingView.swift (addToBank/addAllToBank/isInBank, lines 625-640)\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WorkbookBank.swift (add() line 183-190; dedupKey lines 228-232)",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a9d21798716bf4028",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a9d21798716bf4028.jsonl",
+    "last_assistant_message": "I've verified the claim against the cited code and the related store/grading-view logic. Verdict: not a real bug (invalid).\n\nKey files inspected:\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookQuestionBankView.swift` \u2014 `save(_:)` lines 408\u2013412, `saveAll()` 414\u2013416, card `isSaved` at 368/479/486\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WorkbookBank.swift` \u2014 `add(_:)` line 183, `contains(_:)` 192, `dedupKey` 228\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingView.swift` \u2014 `isInBank()` 625, `addToBank` 629\n\nThe mechanics the claim describes are accurate (the `Bool` return of `bank.add(...)` is ignored, badge flips unconditionally), but the asserted harm is impossible. `add()` returns `false` exactly when a content-equivalent question (same prompt+answer) already exists in the bank, so the \"\u5df2\u4fdd\u5b58 \u00b7 Saved\" badge is truthful \u2014 the learner's question is in the bank. There is no scenario where the badge shows \"Saved\" while the bank lacks an equivalent question. The only residual \"desync\" is an internal UUID mismatch with zero user-visible effect, since the card matches by `question.id` within the freshly-reset current batch. The grading view's `isInBank()` pattern solves a different multi-button/cross-regrade problem and would here only add an optional pre-disable nicety, not fix a correctness defect.",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "af36fdcacaea2c573",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-af36fdcacaea2c573.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. The claim is **real** (severity: medium).\n\n**Summary of findings:**\n\nThe bug is confirmed by reading the cited code in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingView.swift` plus the backing stores in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WorkbookBank.swift` and `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/LearningActivity.swift`.\n\nAfter a successful `grade()`, `isGrading` is reset to `false` (line 611) but the `workbookImages`/`answerImages` arrays are never cleared \u2014 the only places that clear them are the manual Clear buttons (lines 85, 97). So `canGrade` (lines 65-67) returns `true` again and the Grade button (`.disabled(!canGrade)`, line 373) is re-enabled with the same photos loaded.\n\nA second tap re-runs the full success path with no idempotency guard:\n- `WorkbookImageStore.saveAll` writes a second physical copy (fresh `UUID().uuidString` per `save()`, line 386).\n- `WorkbookGradingHistoryStore.shared.add` inserts a second `GradedSession` (plain `sessions.insert`, line 319, no dedup).\n- `LearningActivityStore.shared.recordQuestionsGraded` does `+= count` (line 238, no guard), inflating today's `questionsGraded` which feeds `activityScore` (line 34) and the heatmap.\n\nThe contrast the claim draws holds: `WorkbookQuestionBankStore.add()` dedups on prompt+answer (lines 183-190), while the history and activity paths do not.\n\nThe concrete minimal fix is to gate the persistence block on the existing `didSaveSession` latch, add `!didSaveSession` to `canGrade`, and reset that latch whenever the input images change (or simply clear the image arrays after a successful grade).",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ad25f9fedd53f359b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-ad25f9fedd53f359b.jsonl",
+    "last_assistant_message": "I've verified the claim and confirmed it is a real, reachable bug. Full analysis is in the StructuredOutput call.\n\nSummary: After a successful grade in `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingView.swift`, `grade()` (lines 571-619) resets `isGrading` to false without clearing `workbookImages`/`answerImages`, so `canGrade` (lines 65-67) becomes true again and the Grade button (line 373) re-enables. Re-tapping unconditionally re-runs all three new persistence side effects \u2014 `LearningActivityStore.recordQuestionsGraded` (LearningActivity.swift:235-242), `WorkbookGradingHistoryStore.add` (WorkbookBank.swift:318-321, no dedup), and `WorkbookImageStore.saveAll` (WorkbookBank.swift:397-399, fresh UUIDs each call) \u2014 inflating stats, duplicating history entries, and rewriting duplicate image files to disk. `git show HEAD` confirms none of these calls existed in the prior `grade()`, so this is a regression introduced this session.",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a0f2ebfdf64b20e2d",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a0f2ebfdf64b20e2d.jsonl",
+    "last_assistant_message": "I've verified the claim against the actual code. Summary of my finding:\n\n**Verdict: Not a real bug (invalid).**\n\nThe mechanics the claim describes are accurate \u2014 `GeneratedReviewQuestion.id` is a fresh `UUID()` per decode (`AIWordExplanationService.swift:1376`), `generate()` clears `savedIDs`/`revealed` on regenerate (`WorkbookQuestionBankView.swift:391-399`), and `WorkbookQuestionBankStore.add` returns `false` on a dedup-key hit (`WorkbookBank.swift:183-190`).\n\nBut it does not constitute a defect:\n\n1. The \"cannot survive a Regenerate\" framing implies a broken intent that doesn't exist. `savedIDs` is by design a per-batch tracker; it is intentionally reset because the displayed results are replaced. No code tries to persist it across regenerate and fails.\n\n2. The claimed \"silent no-op\" is benign and self-correcting. In `save()` (`WorkbookQuestionBankView.swift:408-412`), even though `bank.add(...)` returns `false` (correctly preventing a duplicate), `savedIDs.insert(question.id)` runs unconditionally \u2014 so the button still flips Save\u2192Saved and disables (`card lines 479-486`). The UI ends consistent with reality: no error, no duplicate, no data loss, no stuck state.\n\nThe only real effect is cosmetic: a textually-identical regenerated question briefly shows \"Save\" instead of \"Saved\" until one tap resolves it \u2014 and only when a non-deterministic AI happens to emit byte-identical prompt+answer after a regenerate. That is a minor UX-polish enhancement, not a bug. The proposed fix (pre-seeding `savedIDs` via `bank.contains`) is reasonable as polish but not a correctness fix.\n\nRelevant files: `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookQuestionBankView.swift`, `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WorkbookBank.swift`, `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/AIWordExplanationService.swift`.",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a871d435795bb2e3b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a871d435795bb2e3b.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. The claim is real and verified.\n\nSummary: The bug is genuine and reachable. After a successful grade, `canGrade` (WorkbookGradingView.swift:65-67) re-enables the Grade button because it depends only on loaded images + provider + `!isGrading`, never on whether a `result` already exists, and the images are never auto-cleared. Re-tapping re-runs `grade()`, which unconditionally (a) writes fresh-UUID on-disk copies of the same photos via `WorkbookImageStore.save` (no dedup/overwrite, WorkbookBank.swift:385-394), (b) inserts a duplicate history row via `WorkbookGradingHistoryStore.add` (no dedup, line 318-321), and (c) additively bumps the `questionsGraded` stat via `recordQuestionsGraded` (LearningActivity.swift:235-242).\n\nI rated it **high** rather than critical, with one correction to the claim: the duplicate session's images are not strictly \"orphaned/undeletable\" \u2014 they stay owned by the duplicate `GradedSession` and are cleaned up by `WorkbookGradingHistoryStore.remove`/`remove(at:)` when that row is deleted. The truly unremediable part is the double-counted activity stat/heatmap, which has no UI to fix.\n\nRelevant files:\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingView.swift (`canGrade` 65-67, `gradeButton` 363-374, `grade()` 571-619)\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WorkbookBank.swift (`WorkbookGradingHistoryStore.add` 318-321, `WorkbookImageStore.save` 385-394)\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/LearningActivity.swift (`recordQuestionsGraded` 235-242)",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a2259a0b104bfbec6",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a2259a0b104bfbec6.jsonl",
+    "last_assistant_message": "I've completed my adversarial verification of the claim.\n\n**Verdict: Not a real bug (invalid severity)**\n\nThe claim describes a theoretically coherent desync but is not reachable under normal operation, and even the writeup itself concedes it is \"a latent edge case rather than a live bug.\"\n\nKey findings from reading `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/LearningActivity.swift` (line 82), `PersistentCodableStore.swift`, and the consumers in `StatsView.swift`:\n\n1. **The desync mechanism is near-impossible to trigger.** `dateKey` is written in lockstep with the dictionary key on every persist (`activities[activity.dateKey] = activity`, lines 211/220/229/239). The line-82 fallback only fires when `c.decode(String.self, forKey: .dateKey)` *throws*, which requires the stored `dateKey` to be a non-string/null/absent JSON value. App-written data always contains a valid string `dateKey` (the original synthesized decoder required it as a non-optional `let`). A merely garbled-but-still-string value decodes successfully into the field, so the fallback does not fire \u2014 there's no desync. Triggering it requires externally tampered, type-mismatched JSON the app never produces.\n\n2. **The impact would be cosmetic even if it fired.** The heatmap grid positions counts by computing a key from each real calendar date and indexing the dictionary (the authoritative map key) via `activity(for:)` (line 245-248). So `activityScore`/intensity always lands in the correct cell regardless of the field. The desync only affects display of `activity.date` in `selectedDateDetail` (StatsView line 281) and month labels (line 1011) \u2014 a label mismatch on tap, not data loss or miscounted intensity.\n\nThe proposed hardening (re-derive `dateKey` from the authoritative map key after load) is sound and I included a concrete minimal implementation, but it's defensive cleanup rather than a fix for a reachable live bug.",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ae3d5c3aa9e536a8f",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-ae3d5c3aa9e536a8f.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. The claim is **real but low severity**.\n\nSummary: The cited code at `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/StatsView.swift:270-289` matches the claim, and `git diff HEAD` confirms this is an uncommitted regression \u2014 the 4th Label (`questionsGraded`) was added to the non-wrapping `HStack`, spacing dropped 20\u219216, with no `lineLimit`/`minimumScaleFactor`/`fixedSize` guards. Overflow math on iPhone SE (~256pt usable width vs. ~270-300pt rigid content) confirms the trailing date `Text` truncates on the narrowest devices, and the vertical-only outer ScrollView doesn't relieve it. It's purely cosmetic with no data impact. The claim slightly overstates the mechanism (SF Symbols don't compress; short numbers rarely truncate \u2014 the date is the element that clips), but the core symptom and root cause are correct. A minimal fix gives the date `.layoutPriority(1)` + `.fixedSize(horizontal:)` and adds `.minimumScaleFactor` to the Labels.",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a47323767a7cc2eeb",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/workflows/wf_202c04bd-714/agent-a47323767a7cc2eeb.jsonl",
+    "last_assistant_message": "I've completed the adversarial verification. \n\nSummary of my finding: the claim is **not real as described** (severity low).\n\nThe verifiable facts check out \u2014 `addCapturedImage` at WorkbookGradingView.swift:161-167 does call `downscaledJPEG` synchronously on the MainActor, and the `CameraImagePicker` delegate fires on the main thread. However, the claim's central thesis is false: it asserts the camera path is *uniquely* blocking the main actor while Photos/Files/drag-drop run the downscale \"OFF the main actor.\" \n\nThe project sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` (project.pbxproj:352/425), and nothing in WorkbookGradingView.swift is marked `nonisolated` or uses `Task.detached`. Under module-wide MainActor default isolation, the free function `downscaledJPEG`, the static `loadDownscaled`/`loadDownscaledFiles` helpers, and the unstructured `Task` in `handleDrop` are all MainActor-isolated \u2014 so the CPU-bound decode/re-encode runs on the main actor in every path, not just the camera one. The async paths only suspend at their `await` points and show a spinner; they do not actually offload the encode.\n\nThe proposed fix is also non-functional for this codebase: `Task.detached { downscaledJPEG(data) }` would hop back to the MainActor because `downscaledJPEG` is MainActor-isolated by default; it would need `nonisolated` first.\n\nThere is a genuine but broader concern (all ingestion paths downscale on the main actor here, and the camera path lacks a spinner), and I included a concrete corrected fix for it in the structured output, but it is a different issue than the one claimed.\n\nRelevant files:\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WorkbookGradingView.swift\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/Components/CameraImagePicker.swift\n- /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin.xcodeproj/project.pbxproj",
+    "background_tasks": [
+      {
+        "id": "wo4nv8u9g",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially review this session's new workbook/analytics/More-tab code for bugs and regressions",
+        "name": "review-workbook-features"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a0139fb915cde78d0",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/agent-a0139fb915cde78d0.jsonl",
+    "last_assistant_message": "Built the Photo-tab workbook suite (camera capture, question bank, AI review-question generation, grading history with photos, heatmap analytics, decluttered More tab) plus EXECPLAN2.md audit; both platforms build clean. Next: commit the 12 files if you want.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a9eb9de33359872f6",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/agent-a9eb9de33359872f6.jsonl",
+    "last_assistant_message": "Built the Photo-tab workbook suite (camera capture, question bank, AI review-question generation, grading history), analytics heatmap integration, and More-tab declutter, plus the EXECPLAN2.md audit. Everything builds clean and is committed as b3511b8. Next action: push when you're ready.",
+    "background_tasks": [],
+    "session_crons": []
+  },
+  {
+    "session_id": "6f348236-e861-4ad7-a32d-911800a79621",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a53110a92c3525160",
+    "agent_type": "",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/6f348236-e861-4ad7-a32d-911800a79621/subagents/agent-a53110a92c3525160.jsonl",
+    "last_assistant_message": "Goal was to add Photo-tab workbook features (camera, question bank, AI review generation, grading history), analytics, and a decluttered More tab, plus an audit. All done, built clean, committed, and merged to main. Nothing pending; awaiting your next request.",
+    "background_tasks": [],
+    "session_crons": []
+  }
+]

@@ -123,18 +123,10 @@ struct iOSContentView: View {
                 VocabularyView()
             }
 
-            Tab(AppTab.learn.titleKey, systemImage: AppTab.learn.icon, value: .learn) {
-                LearnView()
-            }
-
-            Tab(AppTab.phrases.titleKey, systemImage: AppTab.phrases.icon, value: .phrases) {
-                PhrasesView()
-            }
-
-            Tab(AppTab.stats.titleKey, systemImage: AppTab.stats.icon, value: .stats) {
-                StatsView()
-            }
-
+            // Learn / Phrases / Stats live inside the More hub on iOS so the
+            // tab bar stays at five items — declaring all eight would make iOS
+            // collapse the overflow into a redundant system "More" alongside
+            // this app's own More tab.
             Tab(AppTab.more.titleKey, systemImage: AppTab.more.icon, value: .more) {
                 MoreView()
             }
@@ -162,18 +154,9 @@ struct iOSContentView: View {
                 .tabItem { Label(AppTab.vocabulary.titleKey, systemImage: AppTab.vocabulary.icon) }
                 .tag(AppTab.vocabulary)
 
-            LearnView()
-                .tabItem { Label(AppTab.learn.titleKey, systemImage: AppTab.learn.icon) }
-                .tag(AppTab.learn)
-
-            PhrasesView()
-                .tabItem { Label(AppTab.phrases.titleKey, systemImage: AppTab.phrases.icon) }
-                .tag(AppTab.phrases)
-
-            StatsView()
-                .tabItem { Label(AppTab.stats.titleKey, systemImage: AppTab.stats.icon) }
-                .tag(AppTab.stats)
-
+            // Learn / Phrases / Stats are reached from the More hub (see
+            // modernTabView) so iOS doesn't fold the overflow into its own
+            // system "More" next to this app's More tab.
             MoreView()
                 .tabItem { Label(AppTab.more.titleKey, systemImage: AppTab.more.icon) }
                 .tag(AppTab.more)

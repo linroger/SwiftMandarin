@@ -175,6 +175,11 @@ struct AISettingsTab: View {
             } footer: {
                 Text("When on, scanned photos are sent to the selected AI provider to fix OCR errors before translation. Vision-capable providers also receive the image.")
             }
+
+            // Batch AI word analysis (background, cancellable, live progress).
+            // Shares state with the iOS hub via BatchExplanationController.shared,
+            // so progress survives closing and reopening this Settings window.
+            BatchAIAnalysisControls()
         }
         .formStyle(.grouped)
         .padding()
@@ -383,8 +388,9 @@ struct DataSettingsTab: View {
     @State private var showingImportResult: Bool = false
     @State private var importResult: ImportResult?
     @State private var selectedExportFormat: VocabularyExportFormat = .json
+    @State private var includeAIAnalysis: Bool = true
     @State private var showExportSuccess: Bool = false
-    
+
     var body: some View {
         Form {
             Section {
@@ -413,11 +419,14 @@ struct DataSettingsTab: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                
+
+                Toggle("Include AI Analysis", isOn: $includeAIAnalysis)
+
                 Button {
                     VocabularyImportExportService.shared.exportToFile(
                         terms: savedTermsStore.terms,
-                        format: selectedExportFormat
+                        format: selectedExportFormat,
+                        includeAIAnalysis: includeAIAnalysis
                     )
                     showExportSuccess = true
                 } label: {

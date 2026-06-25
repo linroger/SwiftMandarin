@@ -15,13 +15,18 @@
 		0CE424F641498140B5E3AC63 /* subagent_stop.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = subagent_stop.json; path = "logs/b5f41151-0aed-461b-8504-2e6443986013/subagent_stop.json"; sourceTree = SOURCE_ROOT; };
 		3ADBBE7983753D70DD8096B9 /* user_prompt_submit.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = user_prompt_submit.json; path = logs/user_prompt_submit.json; sourceTree = SOURCE_ROOT; };
 		487BC7874F5804D4C6E50AFB /* post_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = post_tool_use.json; path = "logs/b5f41151-0aed-461b-8504-2e6443986013/post_tool_use.json"; sourceTree = SOURCE_ROOT; };
+		4BF0E5BD16A435932D397B29 /* pre_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = pre_tool_use.json; path = "logs/90f110be-2760-48a2-9a2f-eea29a3995f5/pre_tool_use.json"; sourceTree = SOURCE_ROOT; };
 		728BABF87D4D0781A673D362 /* post_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = post_tool_use.json; path = "logs/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc/post_tool_use.json"; sourceTree = SOURCE_ROOT; };
 		88E71205BBAE1623A2BFB78B /* pre_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = pre_tool_use.json; path = "logs/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc/pre_tool_use.json"; sourceTree = SOURCE_ROOT; };
+		8DB3228B2EFE6AE3820B5D36 /* chat.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = chat.json; path = "logs/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/chat.json"; sourceTree = SOURCE_ROOT; };
+		92958022F7FEE88A914DD280 /* post_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = post_tool_use.json; path = "logs/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/post_tool_use.json"; sourceTree = SOURCE_ROOT; };
 		931810793F85E43BA3C4D72F /* cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = "cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.json"; path = ".claude/data/sessions/cf517dd1-c093-4676-a7cd-d0a1bd8b57fc.json"; sourceTree = SOURCE_ROOT; };
 		99CE0F9F0041752A9ECC6D81 /* pre_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = pre_tool_use.json; path = "logs/b5f41151-0aed-461b-8504-2e6443986013/pre_tool_use.json"; sourceTree = SOURCE_ROOT; };
+		A33CE4FAEC68599F4AB625EC /* post_tool_use.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = post_tool_use.json; path = "logs/90f110be-2760-48a2-9a2f-eea29a3995f5/post_tool_use.json"; sourceTree = SOURCE_ROOT; };
 		A76501F52F3B9F5800D18A7C /* SwiftMandarin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftMandarin.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A76502072F3BA18A00D18A7C /* handoff.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = handoff.md; sourceTree = "<group>"; };
 		C6CFAA409C761EF26DB7CFF4 /* last-ndc.ts */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.typescript; name = "last-ndc.ts"; path = ".remember/tmp/last-ndc.ts"; sourceTree = SOURCE_ROOT; };
+		FCA315278436A72F8C74DE97 /* stop.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = stop.json; path = "logs/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/stop.json"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -73,6 +78,11 @@
 				99CE0F9F0041752A9ECC6D81 /* pre_tool_use.json */,
 				0CE424F641498140B5E3AC63 /* subagent_stop.json */,
 				0427A9B0BBAFAF5798E3677B /* session_end.json */,
+				92958022F7FEE88A914DD280 /* post_tool_use.json */,
+				FCA315278436A72F8C74DE97 /* stop.json */,
+				8DB3228B2EFE6AE3820B5D36 /* chat.json */,
+				4BF0E5BD16A435932D397B29 /* pre_tool_use.json */,
+				A33CE4FAEC68599F4AB625EC /* post_tool_use.json */,
 			);
 			sourceTree = "<group>";
 		};

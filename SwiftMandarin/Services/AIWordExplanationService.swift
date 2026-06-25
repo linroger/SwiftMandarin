@@ -130,8 +130,10 @@ struct Collocation {
 
 // MARK: - Fallback Models (for when FoundationModels is not available)
 
-/// Fallback struct that mirrors WordExplanation for non-AI scenarios
-struct WordExplanationResult: Equatable {
+/// Fallback struct that mirrors WordExplanation for non-AI scenarios.
+/// `Codable` so generated explanations can be persisted in the explanation
+/// cache and re-served without another AI round-trip.
+struct WordExplanationResult: Equatable, Codable {
     let definition: String
     let partOfSpeech: String
     let nuances: String
@@ -150,11 +152,17 @@ struct WordExplanationResult: Equatable {
 
 /// An example sentence in the word's own language with a translation in the
 /// learner's native language. `pinyin` is empty for English sentences.
-struct ExampleSentenceResult: Identifiable, Equatable {
+/// The `id` is a transient view-identity value, regenerated on decode rather
+/// than persisted, so it is omitted from the `Codable` keys.
+struct ExampleSentenceResult: Identifiable, Equatable, Codable {
     let id = UUID()
     let sentence: String
     let pinyin: String
     let translation: String
+
+    private enum CodingKeys: String, CodingKey {
+        case sentence, pinyin, translation
+    }
 
     static func == (lhs: ExampleSentenceResult, rhs: ExampleSentenceResult) -> Bool {
         lhs.sentence == rhs.sentence
@@ -163,12 +171,16 @@ struct ExampleSentenceResult: Identifiable, Equatable {
 
 /// A related word (synonym/antonym) in the word's own language with its
 /// meaning and usage difference in the learner's native language.
-struct RelatedWordResult: Identifiable, Equatable {
+struct RelatedWordResult: Identifiable, Equatable, Codable {
     let id = UUID()
     let word: String
     let pinyin: String
     let meaning: String
     let difference: String
+
+    private enum CodingKeys: String, CodingKey {
+        case word, pinyin, meaning, difference
+    }
 
     static func == (lhs: RelatedWordResult, rhs: RelatedWordResult) -> Bool {
         lhs.word == rhs.word
@@ -176,11 +188,15 @@ struct RelatedWordResult: Identifiable, Equatable {
 }
 
 /// A collocation in the word's own language with a native-language translation.
-struct CollocationResult: Identifiable, Equatable {
+struct CollocationResult: Identifiable, Equatable, Codable {
     let id = UUID()
     let phrase: String
     let pinyin: String
     let translation: String
+
+    private enum CodingKeys: String, CodingKey {
+        case phrase, pinyin, translation
+    }
 
     static func == (lhs: CollocationResult, rhs: CollocationResult) -> Bool {
         lhs.phrase == rhs.phrase
