@@ -24,6 +24,19 @@ struct RubySegment: Identifiable {
         self.partOfSpeech = analyzedWord.partOfSpeech
         self.translation = nil
     }
+
+    /// Build a segment from an AI-identified word. The model supplies the word
+    /// boundary, pinyin, part of speech, and an English meaning. Pinyin falls
+    /// back to the local converter if the model omitted it; the meaning is kept
+    /// in `translation` so the detail popover can show it without a re-lookup.
+    init(aiWord: IdentifiedWord) {
+        self.text = aiWord.word
+        let trimmedPinyin = aiWord.pinyin.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.pinyin = trimmedPinyin.isEmpty ? PinyinConverter.convert(aiWord.word) : trimmedPinyin
+        self.partOfSpeech = PartOfSpeech(aiLabel: aiWord.partOfSpeech)
+        let trimmedMeaning = aiWord.meaning.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.translation = trimmedMeaning.isEmpty ? nil : trimmedMeaning
+    }
     
     /// Check if segment is valid for display (has actual content)
     var isValidForDisplay: Bool {
@@ -42,16 +55,27 @@ struct RubySegment: Identifiable {
 struct RubyTextView: View {
     let chineseText: String
     let englishMeaning: String
+    /// Pre-computed segments from the AI. When non-empty these are used
+    /// verbatim (proper word boundaries, pinyin, meaning); when nil/empty the
+    /// view falls back to local NLTokenizer segmentation.
+    let aiSegments: [RubySegment]?
     let onWordTap: ((RubySegment) -> Void)?
-    
+
     @State private var segments: [RubySegment] = []
-    
-    init(chineseText: String, englishMeaning: String = "", onWordTap: ((RubySegment) -> Void)? = nil) {
+
+    init(chineseText: String, englishMeaning: String = "", aiSegments: [RubySegment]? = nil, onWordTap: ((RubySegment) -> Void)? = nil) {
         self.chineseText = chineseText
         self.englishMeaning = englishMeaning
+        self.aiSegments = aiSegments
         self.onWordTap = onWordTap
     }
-    
+
+    /// Stable, Equatable token so `onChange` re-segments when AI results arrive
+    /// asynchronously even though `chineseText` itself hasn't changed.
+    private var aiSegmentsToken: String {
+        (aiSegments ?? []).map(\.text).joined(separator: "\u{1F}")
+    }
+
     var body: some View {
         FlowLayout(spacing: 4) {
             ForEach(segments.filter { $0.isValidForDisplay }) { segment in
@@ -71,11 +95,20 @@ struct RubyTextView: View {
         .onChange(of: chineseText) { _, _ in
             updateSegments()
         }
+        .onChange(of: aiSegmentsToken) { _, _ in
+            updateSegments()
+        }
     }
-    
+
     private func updateSegments() {
-        let analyzed = ChineseTextAnalyzer.shared.segmentWithPartsOfSpeech(chineseText)
-        segments = analyzed.map { RubySegment(from: $0) }
+        // Prefer AI-identified word boundaries when available; otherwise fall
+        // back to local segmentation.
+        if let aiSegments, !aiSegments.isEmpty {
+            segments = aiSegments
+        } else {
+            let analyzed = ChineseTextAnalyzer.shared.segmentWithPartsOfSpeech(chineseText)
+            segments = analyzed.map { RubySegment(from: $0) }
+        }
     }
 }
 
@@ -434,9 +467,15 @@ struct WordDetailPopover: View {
                 // Input is Chinese: use as-is for Chinese, translate to English for definition
                 chineseWord = segment.text
                 pinyinText = segment.pinyin
-                
-                let translation = try await WordTranslationService.shared.translateToEnglish(segment.text)
-                englishDefinition = translation
+
+                // Prefer the AI-identified meaning (already contextual) so the
+                // popover opens instantly without a second translation call.
+                if let aiMeaning = segment.translation, !aiMeaning.isEmpty {
+                    englishDefinition = aiMeaning
+                } else {
+                    let translation = try await WordTranslationService.shared.translateToEnglish(segment.text)
+                    englishDefinition = translation
+                }
             } else {
                 // Input is English: translate to Chinese, get pinyin, use original as definition
                 englishDefinition = segment.text
