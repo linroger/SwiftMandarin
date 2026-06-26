@@ -14,5 +14,21 @@
     "hook_event_name": "PreCompact",
     "trigger": "manual",
     "custom_instructions": null
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "PreCompact",
+    "trigger": "manual",
+    "custom_instructions": null
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "hook_event_name": "PreCompact",
+    "trigger": "manual",
+    "custom_instructions": null
   }
 ]
