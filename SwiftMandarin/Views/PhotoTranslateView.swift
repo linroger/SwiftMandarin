@@ -821,17 +821,21 @@ struct PhotoTranslateView: View {
 
     private func applyPendingRouteAction() {
         guard let action = routeStore.pendingAction else { return }
+        // Clear only the actions this view actually handles. A `.startReview`
+        // belongs to the Learn view, so leaving it pending lets that view
+        // consume it instead of having it silently dropped here.
         switch action.kind {
         case .openCameraScanner:
             #if os(iOS)
             showCameraScanner = true
             #endif
+            routeStore.clearPendingAction()
         case .translateScreenshots:
             showScreenshotTranslation = true
-        default:
+            routeStore.clearPendingAction()
+        case .startReview:
             break
         }
-        routeStore.clearPendingAction()
     }
     
     // MARK: - Actions

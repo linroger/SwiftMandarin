@@ -49,7 +49,7 @@ final class ScreenshotStitchingService {
     static let shared = ScreenshotStitchingService()
     
     /// Configuration for overlap detection
-    struct Configuration {
+    struct Configuration: Sendable {
         /// Maximum overlap to search for (in pixels)
         var maxOverlapPixels: Int = 300
         
@@ -269,55 +269,74 @@ final class ScreenshotStitchingService {
     }
     #endif
     
-    /// Core overlap detection algorithm using pixel comparison
+    /// Core overlap detection. The CPU-heavy pixel scan (and the full-image
+    /// pixel-buffer allocation it needs) runs off the main actor so large
+    /// screenshots don't stall the UI; only the Sendable `Configuration` and the
+    /// (Sendable) CGImages are captured across the boundary.
     private func findOverlapHeight(topCG: CGImage, bottomCG: CGImage) async -> Int {
+        let config = configuration
+        return await Task.detached(priority: .userInitiated) {
+            Self.computeOverlapHeight(topCG: topCG, bottomCG: bottomCG, configuration: config)
+        }.value
+    }
+
+    nonisolated private static func computeOverlapHeight(
+        topCG: CGImage,
+        bottomCG: CGImage,
+        configuration: Configuration
+    ) -> Int {
         let topHeight = topCG.height
         let bottomHeight = bottomCG.height
         let width = min(topCG.width, bottomCG.width)
-        
+
         // Calculate the center strip to compare
         let stripStart = Int(CGFloat(width) * (1.0 - configuration.comparisonStripWidthRatio) / 2.0)
         let stripEnd = Int(CGFloat(width) * (1.0 + configuration.comparisonStripWidthRatio) / 2.0)
-        
-        // Get pixel data for both images
-        guard let topData = getPixelData(from: topCG),
-              let bottomData = getPixelData(from: bottomCG) else {
+
+        // Get pixel data for both images, along with each buffer's true stride.
+        guard let top = getPixelData(from: topCG),
+              let bottom = getPixelData(from: bottomCG) else {
             return 0
         }
-        
+
+        let topData = top.bytes
+        let bottomData = bottom.bytes
         let bytesPerPixel = 4
-        let topBytesPerRow = topCG.bytesPerRow
-        let bottomBytesPerRow = bottomCG.bytesPerRow
-        
+        // Use the stride of the buffer we actually rendered (tightly packed,
+        // 4 * width), NOT the source CGImage's `bytesPerRow`, which may include
+        // row padding and would mis-index this buffer.
+        let topBytesPerRow = top.bytesPerRow
+        let bottomBytesPerRow = bottom.bytesPerRow
+
         var bestOverlap = 0
         var bestSimilarity: Float = 0
-        
+
         // Search for the best overlap
         let maxOverlap = min(configuration.maxOverlapPixels, min(topHeight, bottomHeight) / 2)
-        
+
         for overlap in stride(from: configuration.minOverlapPixels, to: maxOverlap, by: configuration.rowSampleInterval) {
             var matchingPixels = 0
             var totalPixels = 0
-            
+
             // Compare rows
             for row in stride(from: 0, to: overlap, by: configuration.rowSampleInterval) {
                 let topRow = topHeight - overlap + row
                 let bottomRow = row
-                
+
                 for col in stride(from: stripStart, to: stripEnd, by: 2) {
                     let topOffset = topRow * topBytesPerRow + col * bytesPerPixel
                     let bottomOffset = bottomRow * bottomBytesPerRow + col * bytesPerPixel
-                    
+
                     guard topOffset + 2 < topData.count,
                           bottomOffset + 2 < bottomData.count else {
                         continue
                     }
-                    
+
                     // Compare RGB values (ignore alpha)
                     let rDiff = abs(Int(topData[topOffset]) - Int(bottomData[bottomOffset]))
                     let gDiff = abs(Int(topData[topOffset + 1]) - Int(bottomData[bottomOffset + 1]))
                     let bDiff = abs(Int(topData[topOffset + 2]) - Int(bottomData[bottomOffset + 2]))
-                    
+
                     // Consider pixels matching if color difference is small
                     if rDiff < 30 && gDiff < 30 && bDiff < 30 {
                         matchingPixels += 1
@@ -325,30 +344,32 @@ final class ScreenshotStitchingService {
                     totalPixels += 1
                 }
             }
-            
+
             guard totalPixels > 0 else { continue }
-            
+
             let similarity = Float(matchingPixels) / Float(totalPixels)
-            
+
             if similarity > bestSimilarity && similarity >= configuration.similarityThreshold {
                 bestSimilarity = similarity
                 bestOverlap = overlap
             }
         }
-        
+
         return bestOverlap
     }
-    
-    /// Extract raw pixel data from a CGImage
-    private func getPixelData(from image: CGImage) -> [UInt8]? {
+
+    /// Extract raw pixel data from a CGImage, returning both the tightly-packed
+    /// RGBA buffer and the exact stride (`bytesPerRow`) it was rendered with so
+    /// callers index rows correctly regardless of the source image's padding.
+    nonisolated private static func getPixelData(from image: CGImage) -> (bytes: [UInt8], bytesPerRow: Int)? {
         let width = image.width
         let height = image.height
         let bytesPerPixel = 4
         let bytesPerRow = bytesPerPixel * width
         let bitsPerComponent = 8
-        
+
         var pixelData = [UInt8](repeating: 0, count: height * bytesPerRow)
-        
+
         guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
               let context = CGContext(
                   data: &pixelData,
@@ -361,9 +382,9 @@ final class ScreenshotStitchingService {
               ) else {
             return nil
         }
-        
+
         context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-        
-        return pixelData
+
+        return (bytes: pixelData, bytesPerRow: bytesPerRow)
     }
 }

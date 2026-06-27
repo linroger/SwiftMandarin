@@ -27,8 +27,9 @@ struct VocabularyView: View {
     /// Term selected for AI explanation
     @State private var aiExplanationTerm: SavedTerm?
 
-    /// Font size for Chinese characters in the vocabulary list (persisted)
-    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 22
+    /// Font size for Chinese characters in the vocabulary list (persisted).
+    /// Also driven by the "Text Size" slider in Settings.
+    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 20
     @AppStorage("vocabularyDetailUsesInspector") private var vocabularyDetailUsesInspector: Bool = true
     
     enum SortOrder: String, CaseIterable {
@@ -460,7 +461,7 @@ struct VocabularyView: View {
 
 struct VocabularyRow: View {
     let term: SavedTerm
-    var chineseFontSize: Double = 22
+    var chineseFontSize: Double = 20
     var isSelected: Bool = false
     var onMasteredToggle: (() -> Void)?
     var onAIExplainTap: (() -> Void)?
@@ -488,8 +489,12 @@ struct VocabularyRow: View {
                 // Pinyin with tone colors — a learner aid, shown only when
                 // the user is learning Chinese.
                 if term.showsPinyin {
+                    // Scale the pinyin with the headword so enlarging the
+                    // character also enlarges the pinyin and its tone marks
+                    // (previously a fixed size, which stayed hard to read).
+                    // Kept noticeably smaller than the headword for balance.
                     Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                        .font(.subheadline)
+                        .font(.system(size: chineseFontSize * 0.5))
                 }
 
                 // Native-language gloss, kept small.
@@ -541,14 +546,54 @@ struct VocabularyRow: View {
 
 // MARK: - Term Detail Sheet
 
+/// Tiny −/+ control for adjusting the detail view's headword + pinyin size.
+/// Shared by the sheet and inspector presentations; persists via AppStorage.
+struct DetailFontSizeStepper: View {
+    @Binding var size: Double
+    var range: ClosedRange<Double> = 56...144
+    var step: Double = 8
+
+    var body: some View {
+        HStack(spacing: 18) {
+            Button {
+                size = max(range.lowerBound, size - step)
+            } label: {
+                Image(systemName: "minus")
+                    .frame(width: 20, height: 20)
+                    .contentShape(Rectangle())
+            }
+            .disabled(size <= range.lowerBound)
+            .accessibilityLabel(Text("Decrease character size"))
+
+            Button {
+                size = min(range.upperBound, size + step)
+            } label: {
+                Image(systemName: "plus")
+                    .frame(width: 20, height: 20)
+                    .contentShape(Rectangle())
+            }
+            .disabled(size >= range.upperBound)
+            .accessibilityLabel(Text("Increase character size"))
+        }
+        // Bare symbols, no button chrome, equal square hit areas so the two
+        // sit evenly.
+        .font(.system(size: 15, weight: .semibold))
+        .foregroundStyle(.secondary)
+        .buttonStyle(.plain)
+    }
+}
+
 struct TermDetailSheet: View {
     @Binding var selectedTerm: SavedTerm?
     @Environment(\.dismiss) private var dismiss
     @Environment(SavedTermsStore.self) private var savedTermsStore
-    
+
     @State private var fetchedTranslation: String = ""
     @State private var isLoadingTranslation: Bool = false
     @State private var showCopiedFeedback: Bool = false
+    /// Persisted size of the Chinese headword in the detail view; the −/+
+    /// buttons adjust it and the pinyin scales with it.
+    @AppStorage("vocabularyDetailChineseFontSize") private var detailFontSize: Double = 96
     
     /// The current term being displayed
     private var term: SavedTerm {
@@ -577,7 +622,7 @@ struct TermDetailSheet: View {
                     // English headwords can be long, so allow shrinking.
                     VStack(spacing: 12) {
                         Text(term.headlineText)
-                            .font(.system(size: 80, weight: .medium))
+                            .font(.system(size: detailFontSize, weight: .medium))
                             .lineLimit(2)
                             .minimumScaleFactor(0.35)
                             .multilineTextAlignment(.center)
@@ -585,7 +630,7 @@ struct TermDetailSheet: View {
 
                         if term.showsPinyin {
                             Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                                .font(.title)
+                                .font(.system(size: detailFontSize * 0.45))
                         }
 
                         if !term.partOfSpeech.isEmpty {
@@ -597,6 +642,14 @@ struct TermDetailSheet: View {
                                 .padding(.vertical, 4)
                                 .background(Capsule().fill(.blue))
                         }
+
+                        // Size control tucked into the bottom-right of the
+                        // headword block rather than centered beneath it.
+                        HStack {
+                            Spacer()
+                            DetailFontSizeStepper(size: $detailFontSize)
+                        }
+                        .padding(.trailing, 4)
                     }
                     .padding(.top, 20)
                     
@@ -855,10 +908,13 @@ struct TermDetailInspector: View {
     let term: SavedTerm
     @Binding var selectedTerm: SavedTerm?
     var savedTermsStore: SavedTermsStore
-    
+
     @State private var fetchedTranslation: String = ""
     @State private var isLoadingTranslation: Bool = false
     @State private var showCopiedFeedback: Bool = false
+    /// Persisted size of the Chinese headword in the detail view; shared with
+    /// the sheet presentation so the −/+ buttons behave identically.
+    @AppStorage("vocabularyDetailChineseFontSize") private var detailFontSize: Double = 96
     
     private var displayDefinition: String {
         if !fetchedTranslation.isEmpty {
@@ -891,7 +947,7 @@ struct TermDetailInspector: View {
                 // Large headword display — the language being learned.
                 VStack(spacing: 10) {
                     Text(term.headlineText)
-                        .font(.system(size: 64, weight: .medium))
+                        .font(.system(size: detailFontSize, weight: .medium))
                         .lineLimit(2)
                         .minimumScaleFactor(0.35)
                         .multilineTextAlignment(.center)
@@ -899,7 +955,7 @@ struct TermDetailInspector: View {
 
                     if term.showsPinyin {
                         Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                            .font(.title2)
+                            .font(.system(size: detailFontSize * 0.45))
                     }
 
                     if !term.partOfSpeech.isEmpty {
@@ -911,6 +967,14 @@ struct TermDetailInspector: View {
                             .padding(.vertical, 3)
                             .background(Capsule().fill(.blue))
                     }
+
+                    // Size control tucked into the bottom-right of the
+                    // headword block rather than centered beneath it.
+                    HStack {
+                        Spacer()
+                        DetailFontSizeStepper(size: $detailFontSize)
+                    }
+                    .padding(.trailing, 4)
                 }
                 
                 Divider()
@@ -1134,7 +1198,7 @@ struct ExportSheet: View {
     /// How many of the exported words have a saved AI analysis to bundle.
     private var aiAnalysisCount: Int {
         let cache = WordExplanationCacheStore.shared
-        return terms.filter { !cache.explanations(forWords: $0.aiCacheCandidateWords).isEmpty }.count
+        return terms.filter { cache.hasAnyExplanation(forWords: $0.aiCacheCandidateWords) }.count
     }
 
     private var exportPreview: String {

@@ -150,9 +150,25 @@ final class AppPreferences {
     /// translation direction used across the app.
     var learnerMode: LearnerMode {
         didSet {
+            guard oldValue != learnerMode else { return }
             UserDefaults.standard.set(learnerMode.rawValue, forKey: Keys.learnerMode)
             // Adapt the shared default translation direction so all features follow.
             UserDefaults.standard.set(learnerMode.defaultDirection.rawValue, forKey: "defaultDirection")
+            // Bidirectional sync: a single-direction mode also re-orients the
+            // interface (= native) language, so the many views that key off
+            // `LocalizationManager.learningIsChinese` actually follow the picker
+            // instead of diverging from it. `.bilingual` keeps whatever
+            // interface language is currently active (treated explicitly).
+            // `LocalizationManager.language`'s own `didSet` is guarded against
+            // no-op assignments, so this cannot loop.
+            switch learnerMode {
+            case .englishToMandarin:
+                LocalizationManager.shared.language = .english
+            case .mandarinToEnglish:
+                LocalizationManager.shared.language = .chinese
+            case .bilingual:
+                break
+            }
         }
     }
 
@@ -175,6 +191,9 @@ final class AppPreferences {
     /// follows from it). Called by `LocalizationManager` whenever the in-app
     /// language toggle changes, so one gesture re-orients the whole app.
     func syncLearnerMode(toInterfaceLanguage language: AppLanguage) {
+        // Preserve an explicit bilingual choice: toggling the interface language
+        // must not silently collapse `.bilingual` into a single direction.
+        guard learnerMode != .bilingual else { return }
         let target: LearnerMode = (language == .chinese) ? .mandarinToEnglish : .englishToMandarin
         if learnerMode != target {
             learnerMode = target

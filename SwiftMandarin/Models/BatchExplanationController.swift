@@ -104,7 +104,11 @@ final class BatchExplanationController {
     func start(concurrency: Int) {
         guard !isRunning else { return }
 
+        // Newest-added first: when the user adds a batch of words and runs this,
+        // the words they just added are analyzed before the older backlog, so
+        // they can stop early once the new ones are done. Stable for equal dates.
         let pending = unprocessedTerms(from: SavedTermsStore.shared.terms)
+            .sorted { $0.dateAdded > $1.dateAdded }
         guard !pending.isEmpty else {
             // Nothing to do — report a clean, zero-work finish.
             resetCounters(total: 0)

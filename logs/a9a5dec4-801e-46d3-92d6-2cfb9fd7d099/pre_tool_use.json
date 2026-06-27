@@ -3,311 +3,2509 @@
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MacOSSettingsView.swift"
+    },
+    "tool_use_id": "toolu_0164VikkmAHdbgYC4wAjTDtD"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -r \"processed\" /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts --include=\"*.swift\" | grep -i \"userdefaults\\|defaults\\|key\\|save\\|persist\" | head -20"
+    },
+    "tool_use_id": "toolu_011EJYYoQXLd6SdbqRcPvrKK"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "find /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts -type f -name \"*.swift\" | xargs grep -l \"SavedTermsStore\" | head -5"
+    },
+    "tool_use_id": "toolu_01XGzcqQ4hehr2rVhrMKTVa8"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "find /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts -type f -name \"*SavedTermsStore*\" -o -name \"*SavedTerm*\" | head -10"
+    },
+    "tool_use_id": "toolu_01NppPBqXPAhwJtWSwvq5mXJ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -r \"class SavedTermsStore\\|struct SavedTermsStore\" /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts --include=\"*.swift\""
+    },
+    "tool_use_id": "toolu_01Lc1zmMRginv95cvX1dXMRG"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/SavedTerm.swift"
+    },
+    "tool_use_id": "toolu_01Vig3GoDuPLUAF4esB6oRqW"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/AIWordExplanationService.swift"
+    },
+    "tool_use_id": "toolu_01S6nDFtJESjC679JMRNz2GQ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -n \"maxEntries\\|batchConcurrency\\|400\" /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift"
+    },
+    "tool_use_id": "toolu_018TsjWyagpKjddW1PdyEJVP"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "find /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts -type f -name \"*AIModelSettings*\""
+    },
+    "tool_use_id": "toolu_01WP93M7pqNjfugg2rbiZrn1"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/AIModelSettings.swift",
+      "limit": 200
+    },
+    "tool_use_id": "toolu_014EJtryC3MQPHZGtJ7dw3Fo"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -n \"batchConcurrency\\|Batch\" /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/AIModelSettings.swift | head -20"
+    },
+    "tool_use_id": "toolu_01LRVpndHEHhKG6TLrxGqsPn"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -rn \"PersistentCodableStore\\|wordExplanationCache\" /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/ --include=\"*.swift\" | head -20"
+    },
+    "tool_use_id": "toolu_013GwUALjtQuVfDZVajLcLg5"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aed43bfe34f2d67df",
+    "agent_type": "Explore",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift"
+    },
+    "tool_use_id": "toolu_015EYD1Te1JL2o3eZ9uU85CB"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift"
+    },
+    "tool_use_id": "toolu_01FqEzQjB4x95wmHPKJeg9Xk"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/BatchExplanationController.swift"
+    },
+    "tool_use_id": "toolu_016WrFbgvbxzcks1Ydc7RFx7"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift"
+    },
+    "tool_use_id": "toolu_0164QH1CmvyesLJbm3rDCgQH"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
     "tool_name": "Bash",
     "tool_input": {
-      "command": "git status && echo \"=== BRANCH ===\" && git branch -vv && echo \"=== LOG ===\" && git log --oneline -15",
-      "description": "Check git status, branches, and recent log"
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngrep -rn \"struct WordExplanationResult\\|struct ExampleSentence\\|struct RelatedWord\\|struct Collocation\\|WordExplanationResult: \\|: Codable\" SwiftMandarin/Services/AIWordExplanationService.swift | head -40",
+      "description": "Find WordExplanationResult and nested types"
     },
-    "tool_use_id": "toolu_01JsSQjrwHEn8mYvYPCZFjAd"
+    "tool_use_id": "toolu_01SgqcqVgEYBJRswFVYKpwBJ"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/AIWordExplanationService.swift",
+      "offset": 136,
+      "limit": 75
+    },
+    "tool_use_id": "toolu_01X9LCjGLBcoTGXekjYjP2VF"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/AIWordExplanationService.swift",
+      "old_string": "struct WordExplanationResult: Equatable, Codable {\n    let definition: String",
+      "new_string": "struct WordExplanationResult: Equatable, Codable, Sendable {\n    let definition: String",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01X4JzMrmCzYW8goKLzkHuyR"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/AIWordExplanationService.swift",
+      "old_string": "struct ExampleSentenceResult: Identifiable, Equatable, Codable {\n    let id = UUID()",
+      "new_string": "struct ExampleSentenceResult: Identifiable, Equatable, Codable, Sendable {\n    let id = UUID()",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01B1G2b4utVaRBDiqU9z2MwB"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/AIWordExplanationService.swift",
+      "old_string": "struct RelatedWordResult: Identifiable, Equatable, Codable {\n    let id = UUID()",
+      "new_string": "struct RelatedWordResult: Identifiable, Equatable, Codable, Sendable {\n    let id = UUID()",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01K9qZLEdDEVFjzcRnhrxZsu"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/AIWordExplanationService.swift",
+      "old_string": "struct CollocationResult: Identifiable, Equatable, Codable {\n    let id = UUID()",
+      "new_string": "struct CollocationResult: Identifiable, Equatable, Codable, Sendable {\n    let id = UUID()",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01TuratR9dZmMPjEbTXexL6E"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift",
+      "old_string": "    // MARK: - Save\n\n    /// Encode and store `value` under `key`, logging encode failures\n    /// (which would otherwise silently skip the write).\n    static func save<T: Codable>(_ value: T, key: String) {\n        do {\n            let data = try JSONEncoder().encode(value)\n            UserDefaults.standard.set(data, forKey: key)\n        } catch {\n            log.error(\"Encode failed for \\(key, privacy: .public): \\(error.localizedDescription, privacy: .public)\")\n        }\n    }\n}",
+      "new_string": "    // MARK: - Save\n\n    /// Encode and store `value` under `key`, logging encode failures\n    /// (which would otherwise silently skip the write).\n    static func save<T: Codable>(_ value: T, key: String) {\n        do {\n            let data = try JSONEncoder().encode(value)\n            UserDefaults.standard.set(data, forKey: key)\n        } catch {\n            log.error(\"Encode failed for \\(key, privacy: .public): \\(error.localizedDescription, privacy: .public)\")\n        }\n    }\n\n    // MARK: - File-backed (for large stores)\n\n    /// URL for a JSON store kept in Application Support, creating the directory\n    /// if needed. Used for stores too large for UserDefaults (which is loaded\n    /// wholesale into memory at launch), e.g. the word-explanation cache.\n    /// `nonisolated`/pure so it is safe to call from a background write task.\n    static func appSupportFileURL(_ name: String) -> URL? {\n        guard let dir = try? FileManager.default.url(\n            for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true\n        ) else {\n            log.error(\"Could not resolve Application Support directory for \\(name, privacy: .public)\")\n            return nil\n        }\n        return dir.appendingPathComponent(name)\n    }\n\n    /// Resilient array load from an Application Support JSON file: missing file\n    /// \u2192 nil; a single corrupt row is dropped rather than discarding the rest.\n    static func loadArrayFromFile<Element: Decodable>(_ type: [Element].Type, fileName: String) -> [Element]? {\n        guard let url = appSupportFileURL(fileName),\n              FileManager.default.fileExists(atPath: url.path),\n              let data = try? Data(contentsOf: url) else {\n            return nil\n        }\n        do {\n            return try JSONDecoder().decode([FailableDecodable<Element>].self, from: data).compactMap(\\.value)\n        } catch {\n            log.error(\"Decode failed for file \\(fileName, privacy: .public): \\(error.localizedDescription, privacy: .public)\")\n            return nil\n        }\n    }\n}",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01SHUtVAQrZGYH8Di1bDfd8R"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "/// MainActor-isolated, UserDefaults-backed cache of word explanations. Bounded\n/// to `maxEntries` on a most-recently-used basis so it can't grow without\n/// limit. Persistence is performed once per mutation (never per element), to\n/// avoid the write-amplification that an O(n) save loop would cause.\n@Observable\n@MainActor\nfinal class WordExplanationCacheStore {\n    static let shared = WordExplanationCacheStore()\n\n    /// Most-recently-used first; trimmed from the tail when over capacity.\n    /// The `didSet` keeps `lookupIndex` in lockstep so membership tests never\n    /// rescan the array \u2014 critical because the batch UI calls `hasExplanation`\n    /// once per saved term on every render, which would otherwise be\n    /// O(terms \u00d7 entries) and saturate the main thread during a batch run.\n    private(set) var entries: [CachedWordExplanation] = [] {\n        didSet { rebuildLookupIndex() }\n    }\n\n    /// O(1) membership set of `\"<directionToken>\\u{1}<normalizedWord>\"` for the\n    /// current `entries`. Observed (not ignored) so the live \"remaining\" count\n    /// updates as analyses are stored.\n    private var lookupIndex: Set<String> = []\n\n    private let saveKey = \"wordExplanationCache\"\n    private let maxEntries = 400\n\n    private init() {\n        load()\n    }",
+      "new_string": "/// MainActor-isolated cache of word explanations, persisted to a JSON file in\n/// Application Support. There is **no capacity limit** \u2014 every word the user\n/// analyzes is retained, so a batch run's progress is permanent and the\n/// \"analyzed\" count reflects reality rather than a cache ceiling. (An earlier\n/// version capped this at 400 entries on an MRU basis, which silently evicted\n/// older analyses and made the batch-progress count stick at 400.)\n///\n/// Two design points keep it fast at thousands of entries: the `lookupIndex`\n/// membership set is maintained incrementally (never rebuilt per mutation), and\n/// disk writes are coalesced and performed off the main thread.\n@Observable\n@MainActor\nfinal class WordExplanationCacheStore {\n    static let shared = WordExplanationCacheStore()\n\n    /// All cached explanations. Order is insignificant \u2014 lookups go through\n    /// `lookupIndex` (membership) or a linear scan (single-word reads, rare).\n    private(set) var entries: [CachedWordExplanation] = []\n\n    /// O(1) membership set of `\"<directionToken>\\u{1}<normalizedWord>\"`.\n    /// Maintained incrementally alongside `entries`: rebuilding it on every\n    /// mutation would make a batch over N words O(N\u00b2) and saturate the main\n    /// thread. Observed (not ignored) so the live \"remaining\" count updates as\n    /// analyses are stored.\n    private var lookupIndex: Set<String> = []\n\n    /// Legacy UserDefaults key, read once at launch to migrate into the file.\n    private let legacyDefaultsKey = \"wordExplanationCache\"\n    /// On-disk JSON store in Application Support.\n    private let fileName = \"word-explanation-cache.json\"\n\n    /// Coalesced single-writer persistence: a running write task drains\n    /// `needsWrite`, so many rapid mutations collapse into the minimum number of\n    /// off-main writes while still guaranteeing the final state reaches disk.\n    private var writeTask: Task<Void, Never>?\n    private var needsWrite = false\n\n    private init() {\n        load()\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01UXcJvNHqZgLMPZ99QGSU8N"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "struct CachedWordExplanation: Codable, Equatable {",
+      "new_string": "struct CachedWordExplanation: Codable, Equatable, Sendable {",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01PTWuokVvXDxqNE8AXWxcoU"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "    /// Insert or replace the explanation for `(word, directionToken)`, moving it\n    /// to the front (most-recently-used) and trimming the cache to capacity.\n    func store(\n        word: String,\n        pinyin: String,\n        directionToken: String,\n        providerName: String,\n        result: WordExplanationResult,\n        generatedAt: Date = Date()\n    ) {\n        let key = Self.normalizedKey(word)\n        var updated = entries.filter {\n            !($0.directionToken == directionToken && Self.normalizedKey($0.word) == key)\n        }\n        updated.insert(\n            CachedWordExplanation(\n                word: word,\n                pinyin: pinyin,\n                directionToken: directionToken,\n                providerName: providerName,\n                generatedAt: generatedAt,\n                result: result\n            ),\n            at: 0\n        )\n        if updated.count > maxEntries {\n            updated.removeLast(updated.count - maxEntries)\n        }\n        entries = updated\n        save()\n    }",
+      "new_string": "    /// Insert or replace the explanation for `(word, directionToken)`. A new\n    /// word is appended (O(1) \u2014 the batch hot path); re-analyzing an existing\n    /// word replaces it in place. There is no capacity trimming.\n    func store(\n        word: String,\n        pinyin: String,\n        directionToken: String,\n        providerName: String,\n        result: WordExplanationResult,\n        generatedAt: Date = Date()\n    ) {\n        let entry = CachedWordExplanation(\n            word: word,\n            pinyin: pinyin,\n            directionToken: directionToken,\n            providerName: providerName,\n            generatedAt: generatedAt,\n            result: result\n        )\n        upsert(entry)\n        scheduleSave()\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_018rqojP9pChM3LF5A2wSHZj"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "    /// Merge imported explanations into the cache in a single pass (one save).\n    /// Each incoming entry replaces any existing entry with the same\n    /// (word, direction) key and is promoted to the front (most-recently-used),\n    /// then the cache is trimmed to capacity. Used by vocabulary import so a\n    /// restore of N analyses costs one write, not N.\n    func merge(_ incoming: [CachedWordExplanation]) {\n        guard !incoming.isEmpty else { return }\n        var result = entries\n        // Newest-imported-first: iterate in reverse so the first incoming entry\n        // ends up at the front after each prepend.\n        for entry in incoming.reversed() {\n            let key = Self.normalizedKey(entry.word)\n            result.removeAll {\n                $0.directionToken == entry.directionToken && Self.normalizedKey($0.word) == key\n            }\n            result.insert(entry, at: 0)\n        }\n        if result.count > maxEntries {\n            result.removeLast(result.count - maxEntries)\n        }\n        entries = result\n        save()\n    }",
+      "new_string": "    /// Merge imported explanations into the cache in a single pass (one save).\n    /// Each incoming entry replaces any existing entry with the same\n    /// (word, direction) key. Used by vocabulary import so a restore of N\n    /// analyses costs one write, not N.\n    func merge(_ incoming: [CachedWordExplanation]) {\n        guard !incoming.isEmpty else { return }\n        for entry in incoming {\n            upsert(entry)\n        }\n        scheduleSave()\n    }\n\n    /// Insert `entry`, or replace the existing entry with the same\n    /// (word, direction) key in place, keeping `lookupIndex` in lockstep. Does\n    /// not persist \u2014 callers invoke `scheduleSave()` once after a batch of\n    /// upserts.\n    private func upsert(_ entry: CachedWordExplanation) {\n        let lk = Self.lookupKey(directionToken: entry.directionToken, word: entry.word)\n        if lookupIndex.contains(lk) {\n            let key = Self.normalizedKey(entry.word)\n            if let idx = entries.firstIndex(where: {\n                $0.directionToken == entry.directionToken && Self.normalizedKey($0.word) == key\n            }) {\n                entries[idx] = entry\n                return\n            }\n        }\n        entries.append(entry)\n        lookupIndex.insert(lk)\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01MFWgdtpbPJVNbNTsmRc2LL"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "        let updated = entries.filter {\n            !($0.directionToken == directionToken && Self.normalizedKey($0.word) == key)\n        }\n        guard updated.count != entries.count else { return }\n        entries = updated\n        save()\n    }\n\n    /// Remove every cached explanation for `word`, regardless of direction.\n    func removeAll(forWord word: String) {\n        let key = Self.normalizedKey(word)\n        let updated = entries.filter { Self.normalizedKey($0.word) != key }\n        guard updated.count != entries.count else { return }\n        entries = updated\n        save()\n    }\n\n    func clear() {\n        guard !entries.isEmpty else { return }\n        entries = []\n        save()\n    }",
+      "new_string": "        let updated = entries.filter {\n            !($0.directionToken == directionToken && Self.normalizedKey($0.word) == key)\n        }\n        guard updated.count != entries.count else { return }\n        entries = updated\n        rebuildLookupIndex()\n        scheduleSave()\n    }\n\n    /// Remove every cached explanation for `word`, regardless of direction.\n    func removeAll(forWord word: String) {\n        let key = Self.normalizedKey(word)\n        let updated = entries.filter { Self.normalizedKey($0.word) != key }\n        guard updated.count != entries.count else { return }\n        entries = updated\n        rebuildLookupIndex()\n        scheduleSave()\n    }\n\n    func clear() {\n        guard !entries.isEmpty else { return }\n        entries = []\n        lookupIndex = []\n        scheduleSave()\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01YU5SBESbwoYXnmbnpW8kbQ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "    private func save() {\n        PersistentCodableStore.save(entries, key: saveKey)\n    }\n\n    private func load() {\n        if let decoded = PersistentCodableStore.load([CachedWordExplanation].self, key: saveKey) {\n            entries = decoded\n        }\n    }\n}",
+      "new_string": "    // MARK: Persistence (file-backed, coalesced, off the main thread)\n\n    /// Request a persist. Encoding the (potentially large) entries array and\n    /// writing it happen off the main thread; writes are coalesced so a batch\n    /// that stores thousands of words doesn't re-encode the file thousands of\n    /// times on the main actor.\n    private func scheduleSave() {\n        needsWrite = true\n        guard writeTask == nil else { return }\n        writeTask = Task { [weak self] in\n            guard let self else { return }\n            while self.needsWrite {\n                self.needsWrite = false\n                let snapshot = self.entries      // value-type COW snapshot (cheap)\n                let name = self.fileName\n                // Encode + write off the main actor; only Sendable values cross.\n                await Task.detached(priority: .utility) {\n                    Self.writeToDisk(snapshot, fileName: name)\n                }.value\n            }\n            self.writeTask = nil\n        }\n    }\n\n    nonisolated private static func writeToDisk(_ entries: [CachedWordExplanation], fileName: String) {\n        guard let url = PersistentCodableStore.appSupportFileURL(fileName) else { return }\n        do {\n            let data = try JSONEncoder().encode(entries)\n            try data.write(to: url, options: .atomic)\n        } catch {\n            // The cache is regenerable; a failed write just means a word may be\n            // re-analyzed later. Don't crash or block on it.\n            print(\"WordExplanationCache write failed: \\(error.localizedDescription)\")\n        }\n    }\n\n    private func load() {\n        // Preferred: the file-backed store.\n        if let loaded = PersistentCodableStore.loadArrayFromFile([CachedWordExplanation].self, fileName: fileName) {\n            entries = loaded\n            rebuildLookupIndex()\n            return\n        }\n        // One-time migration from the old UserDefaults-backed cache (\u2264 the old\n        // 400-entry cap). Adopt it, write it to the file, then clear the\n        // UserDefaults keys so the bounded blob no longer bloats the prefs plist.\n        if let legacy = PersistentCodableStore.load([CachedWordExplanation].self, key: legacyDefaultsKey) {\n            entries = legacy\n            rebuildLookupIndex()\n            Self.writeToDisk(legacy, fileName: fileName)   // small; fine during init\n            UserDefaults.standard.removeObject(forKey: legacyDefaultsKey)\n            UserDefaults.standard.removeObject(forKey: legacyDefaultsKey + \".backup\")\n        }\n    }\n}",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01Ak22nv12UGFLY2DFAbVQdZ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
     "tool_name": "Bash",
     "tool_input": {
-      "command": "echo \"=== remote ===\" && git remote -v && echo \"=== main vs branch ===\" && git log --oneline main..jun-12-2026-ios17-compat 2>/dev/null | head -30 && echo \"=== files in SwiftMandarin/logs ===\" && ls -la SwiftMandarin/logs 2>/dev/null | head && echo \"=== SwiftMandarin/.claude ===\" && ls -la SwiftMandarin/.claude 2>/dev/null | head && echo \"=== .gitignore ===\" && cat .gitignore 2>/dev/null",
-      "description": "Check remote, branch divergence, log dirs, gitignore"
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts; grep -n \"let dateAdded\\|var dateAdded\\|dateAdded:\" SwiftMandarin/Models/SavedTerm.swift | head",
+      "description": "Confirm dateAdded field"
     },
-    "tool_use_id": "toolu_01QxJ7DXdt9NAMxfruMtU2dv"
+    "tool_use_id": "toolu_01GXC6g7acg4ok6rpR55mF6U"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/BatchExplanationController.swift",
+      "old_string": "        let pending = unprocessedTerms(from: SavedTermsStore.shared.terms)\n        guard !pending.isEmpty else {",
+      "new_string": "        // Newest-added first: when the user adds a batch of words and runs this,\n        // the words they just added are analyzed before the older backlog, so\n        // they can stop early once the new ones are done. Stable for equal dates.\n        let pending = unprocessedTerms(from: SavedTermsStore.shared.terms)\n            .sorted { $0.dateAdded > $1.dateAdded }\n        guard !pending.isEmpty else {",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01GmZEM7BJC3iQ5ECegjMtmH"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
     "tool_name": "Bash",
     "tool_input": {
-      "command": "cat .remember/remember.md 2>/dev/null | head -60; echo \"=== handoff ===\"; ls -la handoff.md 2>/dev/null; cat handoff.md 2>/dev/null | head -40",
-      "description": "Read remember and handoff files"
+      "command": "export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer\ncd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== iOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"\necho \"=== macOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=macOS,arch=arm64' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"",
+      "description": "Build both platforms",
+      "run_in_background": true
     },
-    "tool_use_id": "toolu_01NjMdaMXthMinW4gSd5VsoC"
+    "tool_use_id": "toolu_018RtG3wdTyCm6taw3ySpjes"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/Components/BatchAIAnalysisView.swift",
+      "offset": 19,
+      "limit": 75
+    },
+    "tool_use_id": "toolu_01AQdTp8Uq113AjQZiadf7cX"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/bn2ipn7qw.output"
+    },
+    "tool_use_id": "toolu_01Njps49u1cf3W9bebFEd8Gi"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift",
+      "old_string": "    private static let log = Logger(subsystem: \"com.rogerlin.SwiftMandarin\", category: \"Persistence\")",
+      "new_string": "    nonisolated private static let log = Logger(subsystem: \"com.rogerlin.SwiftMandarin\", category: \"Persistence\")",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01Mtj5q3zczog8aWTVv8wT95"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift",
+      "old_string": "    static func appSupportFileURL(_ name: String) -> URL? {",
+      "new_string": "    nonisolated static func appSupportFileURL(_ name: String) -> URL? {",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01Djv6JYRdzkV7pMYbeKg7EZ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift",
+      "old_string": "    static func loadArrayFromFile<Element: Decodable>(_ type: [Element].Type, fileName: String) -> [Element]? {",
+      "new_string": "    nonisolated static func loadArrayFromFile<Element: Decodable>(_ type: [Element].Type, fileName: String) -> [Element]? {",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_017XbKd4v3dL3Xiw8vGGwFf3"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
     "tool_name": "Bash",
     "tool_input": {
-      "command": "echo \"=== project.pbxproj working diff ===\"; git diff SwiftMandarin.xcodeproj/project.pbxproj | head -80",
-      "description": "Show working diff of project.pbxproj"
+      "command": "export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer\ncd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== iOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"\necho \"=== macOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=macOS,arch=arm64' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"",
+      "description": "Rebuild after nonisolated fix",
+      "run_in_background": true
     },
-    "tool_use_id": "toolu_01K9JWVWWtySJD1X7f5EAbbc"
+    "tool_use_id": "toolu_01Hzc11PoVP1jjN7WkWMZStp"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
     "tool_name": "Bash",
     "tool_input": {
-      "command": "grep -n \"FileSystemSynchronized\\|membershipExceptions\\|MandarinKit.md\\|logs\\|\\.claude\" SwiftMandarin.xcodeproj/project.pbxproj | head -40",
-      "description": "Find file-system synchronized exception set in pbxproj"
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\nls SwiftMandarin/Views/ | grep -i vocab\necho \"--- row/term view candidates ---\"\ngrep -rln \"headlineText\\|glossText\\|showsPinyin\" SwiftMandarin/Views/ | head",
+      "description": "Find vocabulary row view"
     },
-    "tool_use_id": "toolu_015QxfdNxdzCTK8EZCswkTvq"
+    "tool_use_id": "toolu_01CYdQtz3BNJCShY1e3TnjAE"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/bixv1mw4q.output"
+    },
+    "tool_use_id": "toolu_01BsjJvheyduvNiuqP8Qbpm4"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift",
+      "old_string": "    nonisolated static func loadArrayFromFile<Element: Decodable>(_ type: [Element].Type, fileName: String) -> [Element]? {",
+      "new_string": "    static func loadArrayFromFile<Element: Decodable>(_ type: [Element].Type, fileName: String) -> [Element]? {",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01XH5D5X5kMGqoeMcC4iHniU"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
     "tool_name": "Bash",
     "tool_input": {
-      "command": "sed -n '34,120p' SwiftMandarin.xcodeproj/project.pbxproj",
-      "description": "Inspect exception set, root group, and groups in pbxproj"
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngrep -n \"\\.font(\\|struct .*Row\\|struct .*Card\\|headlineText\\|glossText\\|pinyin\\|TermRow\\|VocabularyRow\\|private func.*[Rr]ow\" SwiftMandarin/Views/VocabularyView.swift | head -50",
+      "description": "Find row layout and fonts in VocabularyView"
     },
-    "tool_use_id": "toolu_01DdkKsTNVS4G8F5gLuz3LLo"
+    "tool_use_id": "toolu_01CN7BkdtxHNs6wbRcHdQE5h"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "offset": 461,
+      "limit": 75
+    },
+    "tool_use_id": "toolu_01VEe26rMpTjJfPHaQbdk3uJ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "offset": 375,
+      "limit": 45
+    },
+    "tool_use_id": "toolu_01Ji1drNjN4UiLTTf5TmDYBA"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
     "tool_name": "Bash",
     "tool_input": {
-      "command": "echo \"=== HEAD pbxproj exception set ===\"; git show HEAD:SwiftMandarin.xcodeproj/project.pbxproj | grep -n \"membershipExceptions\" -A4 ; echo \"=== does SOURCE_ROOT logs exist on disk (root) ===\"; ls -d logs 2>/dev/null; echo \"=== synchronized root group path ===\"; git show HEAD:SwiftMandarin.xcodeproj/project.pbxproj | grep -n \"PBXFileSystemSynchronizedRootGroup\" -A6",
-      "description": "Compare HEAD exception set and root group path"
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngrep -n \"chineseFontSize\" SwiftMandarin/Views/VocabularyView.swift",
+      "description": "Find chineseFontSize declaration and stepping"
     },
-    "tool_use_id": "toolu_01AWM7mDonhUwfhDz7fFwNm4"
+    "tool_use_id": "toolu_01CRjBpJ6NRVX1cF3Rn5v6eb"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
-    "tool_name": "ToolSearch",
+    "tool_name": "Read",
     "tool_input": {
-      "query": "select:TaskCreate,TaskUpdate,TaskList",
-      "max_results": 5
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "offset": 29,
+      "limit": 4
     },
-    "tool_use_id": "toolu_01NeYtDQBzz9zfxSyAgdPXy5"
+    "tool_use_id": "toolu_01BmEVMgLZ5N9o6YsM5HV3Zq"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
-    "tool_name": "TaskCreate",
+    "tool_name": "Edit",
     "tool_input": {
-      "subject": "Git flow: commit current work, merge to main, branch",
-      "description": "Revert accidental pbxproj regression, remove stray bundled dirs, commit current log-sync state, push branch, merge jun-12-2026-ios17-compat into main, push main, create new feature branch for audit fixes.",
-      "activeForm": "Running git flow (commit/merge/branch)"
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "    /// Font size for Chinese characters in the vocabulary list (persisted)\n    @AppStorage(\"vocabularyChineseFontSize\") private var chineseFontSize: Double = 22",
+      "new_string": "    /// Font size for Chinese characters in the vocabulary list (persisted)\n    @AppStorage(\"vocabularyChineseFontSize\") private var chineseFontSize: Double = 26",
+      "replace_all": false
     },
-    "tool_use_id": "toolu_01PBQBEthU5F9ctrVAwFN8k8"
+    "tool_use_id": "toolu_018B4KvJXaGuxiEbhcdsK2gR"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
-    "tool_name": "TaskCreate",
+    "tool_name": "Edit",
     "tool_input": {
-      "subject": "P0-1: Stop bundling session logs/.claude into app",
-      "description": "Keep `logs` in PBXFileSystemSynchronizedBuildFileExceptionSet, delete SwiftMandarin/logs and SwiftMandarin/.claude from source, add SwiftMandarin/.claude to .gitignore.",
-      "activeForm": "Fixing log/.claude bundling (P0-1)"
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "struct VocabularyRow: View {\n    let term: SavedTerm\n    var chineseFontSize: Double = 22",
+      "new_string": "struct VocabularyRow: View {\n    let term: SavedTerm\n    var chineseFontSize: Double = 26",
+      "replace_all": false
     },
-    "tool_use_id": "toolu_01HsAQJfqeSM8spM9QUWb8V6"
+    "tool_use_id": "toolu_01CZLsjPAtijFKwcy8ueFgHd"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
-    "tool_name": "TaskCreate",
+    "tool_name": "Edit",
     "tool_input": {
-      "subject": "P0-2: Fix translation-history direction metadata",
-      "description": "TranslateView triggerAITranslation/performTranslation record directionSnapshot from UI toggle instead of detected direction. Use detectedTranslationDirection for history metadata; keep source-text stale guard.",
-      "activeForm": "Fixing translation-history direction (P0-2)"
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "                if term.showsPinyin {\n                    Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                        .font(.subheadline)\n                }",
+      "new_string": "                if term.showsPinyin {\n                    // Scale the pinyin with the headword so enlarging the\n                    // character also enlarges the pinyin and its tone marks\n                    // (previously a fixed size, which stayed hard to read).\n                    Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                        .font(.system(size: chineseFontSize * 0.7))\n                }",
+      "replace_all": false
     },
-    "tool_use_id": "toolu_01NbHDreTGNfaBjiUmFKM8ic"
+    "tool_use_id": "toolu_01SyiTt4gVFrpdqv7RJD9W3c"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
-    },
-    "hook_event_name": "PreToolUse",
-    "tool_name": "TaskCreate",
-    "tool_input": {
-      "subject": "P0-3: Fix unsafe audio-buffer async boundary in speech",
-      "description": "SpeechRecognitionService audio tap captures AVAudioPCMBuffer into unstructured Task; converter returns same buffer. Convert/yield synchronously or deep-copy; one-shot converter input block (.haveData then .endOfStream).",
-      "activeForm": "Fixing speech audio buffer boundary (P0-3)"
-    },
-    "tool_use_id": "toolu_01BzoKVmnuoDmKWEu9se6J6E"
-  },
-  {
-    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
-    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
-    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
-    "effort": {
-      "level": "xhigh"
-    },
-    "hook_event_name": "PreToolUse",
-    "tool_name": "TaskCreate",
-    "tool_input": {
-      "subject": "P1: Persistence, Vision/stitching off-main, stride, intent routing, intent race",
-      "description": "P1-1 versioned tolerant decoding in PersistentCodableStore + models; P1-2 move Vision OCR + pixel compare off-main; P1-3 correct pixel stride in stitching; P1-4 clear only handled pending actions; P1-5 intent summary + re-entry guard + snapshot inputs.",
-      "activeForm": "Fixing P1 reliability issues"
-    },
-    "tool_use_id": "toolu_014Ea3RoJg7UALejkEAhVVpP"
-  },
-  {
-    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
-    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
-    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
-    "effort": {
-      "level": "xhigh"
-    },
-    "hook_event_name": "PreToolUse",
-    "tool_name": "TaskCreate",
-    "tool_input": {
-      "subject": "P2: Ollama IDs, reasoning models, learner-mode sync, SRS, About",
-      "description": "P2-1 guard Ollama model IDs; P2-2 reasoning-model request body; P2-3 bidirectional learner-mode/app-language; P2-4 route sessions through getCardsForReview + namespace IDs + persist interval/lapse; P2-5 derive version/build from Bundle + fix About text/links.",
-      "activeForm": "Fixing P2 correctness issues"
-    },
-    "tool_use_id": "toolu_01CnTasESXMrPTHdTrMxZHbk"
-  },
-  {
-    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
-    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
-    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
-    "effort": {
-      "level": "xhigh"
-    },
-    "hook_event_name": "PreToolUse",
-    "tool_name": "TaskCreate",
-    "tool_input": {
-      "subject": "Build-verify (iOS+macOS), adversarial review, commit",
-      "description": "Build iOS Simulator + macOS Debug with zero warnings; run adversarial review workflow over the diff; fix confirmed issues; commit + push branch; update handoff.",
-      "activeForm": "Build-verifying and reviewing"
-    },
-    "tool_use_id": "toolu_014UUV9qe2HCHfc5fPQEJLrQ"
-  },
-  {
-    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
-    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
-    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
-    "effort": {
-      "level": "xhigh"
-    },
-    "hook_event_name": "PreToolUse",
-    "tool_name": "TaskUpdate",
-    "tool_input": {
-      "taskId": "1",
-      "status": "in_progress"
-    },
-    "tool_use_id": "toolu_01Aje7MRQoDXFzpQ1v7ePPic"
-  },
-  {
-    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
-    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
-    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
-    "effort": {
-      "level": "xhigh"
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
     "tool_name": "Bash",
     "tool_input": {
-      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit checkout -- SwiftMandarin.xcodeproj/project.pbxproj\nSCRATCH=\"/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/scratchpad/removed-bundled-dirs\"\nmkdir -p \"$SCRATCH\"\n[ -d SwiftMandarin/logs ] && mv SwiftMandarin/logs \"$SCRATCH/SwiftMandarin-logs\" && echo \"moved SwiftMandarin/logs\"\n[ -d SwiftMandarin/.claude ] && mv SwiftMandarin/.claude \"$SCRATCH/SwiftMandarin-dotclaude\" && echo \"moved SwiftMandarin/.claude\"\necho \"=== exception set after revert ===\"\ngrep -n \"membershipExceptions\" -A4 SwiftMandarin.xcodeproj/project.pbxproj\necho \"=== remaining SwiftMandarin dotdirs ===\"\nls -la SwiftMandarin | grep -E \"logs|\\.claude\" || echo \"none\"",
-      "description": "Revert pbxproj and relocate stray bundled dirs"
+      "command": "export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer\ncd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== iOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"\necho \"=== macOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=macOS,arch=arm64' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"",
+      "description": "Final build both platforms",
+      "run_in_background": true
     },
-    "tool_use_id": "toolu_017thyPunvVwbdqmiYyH8UKc"
+    "tool_use_id": "toolu_01JgncBGAfkys75oX6Txb5PU"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
-    "tool_name": "Bash",
+    "tool_name": "Agent",
     "tool_input": {
-      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit status --short\necho \"=== is root logs/ tracked? ===\"\ngit ls-files logs | head -3\necho \"=== is .claude/data/sessions tracked? ===\"\ngit ls-files .claude/data/sessions | head -3\necho \"=== is .remember tracked? ===\"\ngit ls-files .remember | head -3",
-      "description": "Check git status and which dirs are tracked"
+      "description": "Review batch cache fix",
+      "prompt": "Adversarial code review of a bug fix in the SwiftMandarin iOS/macOS SwiftUI app (Swift 6 concurrency, project uses MainActor as the DEFAULT actor isolation, and SWIFT_APPROACHABLE_CONCURRENCY=YES so a plain `nonisolated async` adopts the caller's executor). Working dir: /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts, branch jun-27-2026-ai-word-identification (uncommitted working changes).\n\nThe bug: the batch AI word-analysis \"processed\" count was stuck at 400 because `WordExplanationCacheStore` capped itself at 400 entries (MRU eviction), silently discarding the user's analyzed results. The fix removes the cap and moves persistence from UserDefaults to a JSON file in Application Support, written off the main thread and coalesced, with incremental lookup-index maintenance and a one-time migration.\n\nRun `git diff` to see all changes. Focus files:\n- `SwiftMandarin/Models/WordExplanationCacheStore.swift` (the main rewrite: removed maxEntries cap, added `upsert`, incremental `lookupIndex`, `scheduleSave`/`writeToDisk`/`load` with migration, made CachedWordExplanation Sendable)\n- `SwiftMandarin/Models/PersistentCodableStore.swift` (added `appSupportFileURL` (nonisolated) and `loadArrayFromFile`, made `log` nonisolated)\n- `SwiftMandarin/Models/BatchExplanationController.swift` (sorts pending newest-first by dateAdded)\n- `SwiftMandarin/Services/AIWordExplanationService.swift` (added Sendable to WordExplanationResult and the 3 nested *Result structs)\n\nScrutinize for REAL defects (not style):\n1. **Coalesced writer correctness** (`scheduleSave`): trace the `writeTask` + `needsWrite` loop. Can a mutation be lost (not persisted)? Can two writes run concurrently? Is there a window where `needsWrite` is set but no task drains it? Is the `[weak self]` + MainActor `Task { }` + inner `Task.detached { writeToDisk }.value` isolation correct (only Sendable values cross to the detached task \u2014 confirm `[CachedWordExplanation]` is Sendable and nothing else is captured)? Does the final state always reach disk after the last mutation?\n2. **Index integrity**: does `upsert` keep `lookupIndex` exactly in sync with `entries` in all paths (new word append, re-analysis replace-in-place)? Do `remove`/`removeAll`/`clear` keep it in sync (they rebuild)? After removing the `didSet` on `entries`, is there ANY mutation path that updates `entries` without updating `lookupIndex`?\n3. **Migration correctness** (`load`): file-first, then legacy UserDefaults \u2192 file, then delete the UserDefaults keys. Any data-loss risk? What if the file write during migration fails \u2014 are the UserDefaults keys still deleted (losing data)? Is calling the nonisolated `writeToDisk` synchronously during `init` on the MainActor OK?\n4. **Performance at scale**: with ~7200 rich entries, is there any remaining O(n\u00b2) or main-thread hot path during a batch run? Check `store`\u2192`upsert` (per-word) and the UI's `remainingCount`/`hasExplanation` (called per render). Is encoding ~10-20MB JSON off-main acceptable, and does the coalescing actually prevent re-encoding per word?\n5. **Atomic write / corruption**: `data.write(to:options:.atomic)` \u2014 fine? Any risk the readers (loadArrayFromFile) see a partial file?\n6. **Sendable**: confirm CachedWordExplanation + WordExplanationResult + ExampleSentenceResult + RelatedWordResult + CollocationResult are all genuinely Sendable (all stored props Sendable). Any retroactive/duplicate conformance issue?\n7. Behavioral: after the fix, does the displayed \"Analyzed\" count update live as the batch stores results (the controller's remainingCount reads hasExplanation, which reads the observed lookupIndex)? Does the user's existing 400 cached entries survive the migration?\n\nFor each issue: severity (P0/P1/P2), file:line, concrete explanation, recommended fix. Don't invent problems. Do NOT modify files \u2014 report only.",
+      "subagent_type": "general-purpose"
     },
-    "tool_use_id": "toolu_015jN9ZdeUKZL9Ypua2pfRDB"
+    "tool_use_id": "toolu_01TAf2qZMRsjM3JAXYzj6aYd"
   },
   {
     "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
     "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
     "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
-    "permission_mode": "bypassPermissions",
+    "permission_mode": "auto",
+    "agent_id": "aa2dd2fa48c731310",
+    "agent_type": "general-purpose",
     "effort": {
-      "level": "xhigh"
+      "level": "high"
     },
     "hook_event_name": "PreToolUse",
     "tool_name": "Bash",
     "tool_input": {
-      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit add logs .claude/data/sessions\ngit status --short | head -30\necho \"=== staged file count ===\"\ngit diff --cached --name-only | wc -l",
-      "description": "Stage session log/data sync changes"
+      "command": "git diff --stat && echo \"=====\" && git status",
+      "description": "Show diff stat and status"
     },
-    "tool_use_id": "toolu_01Aor6W1D5yimhxYad4kzVWn"
+    "tool_use_id": "toolu_01UXYYb5AxFQZoxYA5Ltf9sj"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aa2dd2fa48c731310",
+    "agent_type": "general-purpose",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git diff -- SwiftMandarin/Models/WordExplanationCacheStore.swift SwiftMandarin/Models/PersistentCodableStore.swift SwiftMandarin/Models/BatchExplanationController.swift SwiftMandarin/Services/AIWordExplanationService.swift SwiftMandarin/Views/VocabularyView.swift",
+      "description": "Full diff of focus files"
+    },
+    "tool_use_id": "toolu_01UFjzjmqHu6kprqHuPuSZbX"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aa2dd2fa48c731310",
+    "agent_type": "general-purpose",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift"
+    },
+    "tool_use_id": "toolu_01Bw4o1nkbKTJ8F9peLoPrAz"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aa2dd2fa48c731310",
+    "agent_type": "general-purpose",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/BatchExplanationController.swift"
+    },
+    "tool_use_id": "toolu_01UiRnJNzei3HrneyaMN6E5r"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aa2dd2fa48c731310",
+    "agent_type": "general-purpose",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PersistentCodableStore.swift"
+    },
+    "tool_use_id": "toolu_012xqxtjbLkpmmsqX1nypcZX"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aa2dd2fa48c731310",
+    "agent_type": "general-purpose",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/AIWordExplanationService.swift",
+      "offset": 120,
+      "limit": 90
+    },
+    "tool_use_id": "toolu_01WsKKvWJZWYUp5PUeBggFs6"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aa2dd2fa48c731310",
+    "agent_type": "general-purpose",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -rn \"WordExplanationCacheStore\\|\\.entries\\b\\|maxEntries\\|wordExplanationCache\" SwiftMandarin --include=*.swift | grep -v \"WordExplanationCacheStore.swift\" | head -50",
+      "description": "Find other consumers of the cache store"
+    },
+    "tool_use_id": "toolu_01PUw6ohj6WYDDLdjTMvaXYv"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aa2dd2fa48c731310",
+    "agent_type": "general-purpose",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -rn \"WordExplanationCacheStore\\|maxEntries\\|wordExplanationCache\\|\\.entries\" --include=\"*.swift\" SwiftMandarin | grep -v \"Models/WordExplanationCacheStore.swift\"",
+      "description": "Find external consumers"
+    },
+    "tool_use_id": "toolu_01XRj4yUR5pForzGs8GAaNq6"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aa2dd2fa48c731310",
+    "agent_type": "general-purpose",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -n \"explanationCache\" SwiftMandarin/Views/MoreView.swift; echo \"---vocab1139---\"; sed -n '1135,1150p' SwiftMandarin/Views/VocabularyView.swift",
+      "description": "Check explanationCache usage"
+    },
+    "tool_use_id": "toolu_01Fo31yK95eqiQVoHAsksnSa"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "agent_id": "aa2dd2fa48c731310",
+    "agent_type": "general-purpose",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "find . -name \"*.entitlements\" -not -path \"*/build/*\" 2>/dev/null | head; echo \"---\"; grep -rl \"app-sandbox\" --include=\"*.entitlements\" . 2>/dev/null | head; echo \"---grep aiAnalysisCount---\"; grep -n \"aiAnalysisCount\" SwiftMandarin/Views/VocabularyView.swift",
+      "description": "Check sandbox entitlements and aiAnalysisCount usage"
+    },
+    "tool_use_id": "toolu_01ENbbKdCJ5yuQNQpBc4cPyk"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/bdpnoa1j8.output"
+    },
+    "tool_use_id": "toolu_017yeHAd9ZQVpMmmwtJzTnwz"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "offset": 1133,
+      "limit": 12
+    },
+    "tool_use_id": "toolu_01NqHHoRn5m5TdaLzJzNzpdz"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "offset": 86,
+      "limit": 50
+    },
+    "tool_use_id": "toolu_01QPnrquBi2TrDEaMGJDjLtz"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "    private var lookupIndex: Set<String> = []\n\n    /// Legacy UserDefaults key, read once at launch to migrate into the file.\n    private let legacyDefaultsKey = \"wordExplanationCache\"\n    /// On-disk JSON store in Application Support.\n    private let fileName = \"word-explanation-cache.json\"\n\n    /// Coalesced single-writer persistence: a running write task drains\n    /// `needsWrite`, so many rapid mutations collapse into the minimum number of\n    /// off-main writes while still guaranteeing the final state reaches disk.\n    private var writeTask: Task<Void, Never>?\n    private var needsWrite = false",
+      "new_string": "    private var lookupIndex: Set<String> = []\n\n    /// O(1) membership set of normalized headwords across ALL directions, so\n    /// \"does this word have any analysis?\" (used by the export count) is O(1)\n    /// instead of an O(entries) scan per term.\n    private var normalizedWordIndex: Set<String> = []\n\n    /// Legacy UserDefaults key, read once at launch to migrate into the file.\n    private let legacyDefaultsKey = \"wordExplanationCache\"\n    /// On-disk JSON store in Application Support.\n    private let fileName = \"word-explanation-cache.json\"\n\n    /// Coalesced + throttled single-writer persistence: a running write task\n    /// drains `needsWrite`, collapsing bursts of mutations into at most one\n    /// off-main write per `writeThrottle` while still guaranteeing the final\n    /// state reaches disk. Throttling matters because a batch over thousands of\n    /// words re-encodes the whole (growing) file each write \u2014 without it that is\n    /// O(n\u00b2) bytes of disk I/O.\n    private var writeTask: Task<Void, Never>?\n    private var needsWrite = false\n    private static let writeThrottle: Duration = .seconds(10)\n\n    nonisolated private static let log = Logger(subsystem: \"com.rogerlin.SwiftMandarin\", category: \"WordExplanationCache\")",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01St3p7STuTqUmkW9VtBTBXp"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "import Foundation\n\n// MARK: - Cached Entry",
+      "new_string": "import Foundation\nimport os.log\n\n// MARK: - Cached Entry",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01JWZNg1k12bdgaAGxhd4XM9"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "    private func rebuildLookupIndex() {\n        lookupIndex = Set(entries.map { Self.lookupKey(directionToken: $0.directionToken, word: $0.word) })\n    }",
+      "new_string": "    private func rebuildLookupIndex() {\n        lookupIndex = Set(entries.map { Self.lookupKey(directionToken: $0.directionToken, word: $0.word) })\n        normalizedWordIndex = Set(entries.map { Self.normalizedKey($0.word) })\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01GRKWTNYHQLQBTqKqHxgcqA"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "    func explanations(forWords words: [String]) -> [CachedWordExplanation] {\n        let keys = Set(words.map(Self.normalizedKey)).subtracting([\"\"])\n        guard !keys.isEmpty else { return [] }\n        return entries.filter { keys.contains(Self.normalizedKey($0.word)) }\n    }",
+      "new_string": "    func explanations(forWords words: [String]) -> [CachedWordExplanation] {\n        let keys = Set(words.map(Self.normalizedKey)).subtracting([\"\"])\n        guard !keys.isEmpty else { return [] }\n        return entries.filter { keys.contains(Self.normalizedKey($0.word)) }\n    }\n\n    /// Whether any of `words` has a cached explanation in any direction. O(1) per\n    /// word via `normalizedWordIndex` \u2014 used by the export count, which would\n    /// otherwise scan all entries once per term.\n    func hasAnyExplanation(forWords words: [String]) -> Bool {\n        for word in words {\n            let key = Self.normalizedKey(word)\n            if !key.isEmpty && normalizedWordIndex.contains(key) { return true }\n        }\n        return false\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_012Ed51ADWMbwEyu22Meozk1"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "        entries.append(entry)\n        lookupIndex.insert(lk)\n    }",
+      "new_string": "        entries.append(entry)\n        lookupIndex.insert(lk)\n        normalizedWordIndex.insert(Self.normalizedKey(entry.word))\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01EYCdB3AyoJp5nAbyc8Wsns"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "    func clear() {\n        guard !entries.isEmpty else { return }\n        entries = []\n        lookupIndex = []\n        scheduleSave()\n    }",
+      "new_string": "    func clear() {\n        guard !entries.isEmpty else { return }\n        entries = []\n        lookupIndex = []\n        normalizedWordIndex = []\n        scheduleSave()\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01AcL8SeQsWaZZ7TCfnnh3eJ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/WordExplanationCacheStore.swift",
+      "old_string": "    private func scheduleSave() {\n        needsWrite = true\n        guard writeTask == nil else { return }\n        writeTask = Task { [weak self] in\n            guard let self else { return }\n            while self.needsWrite {\n                self.needsWrite = false\n                let snapshot = self.entries      // value-type COW snapshot (cheap)\n                let name = self.fileName\n                // Encode + write off the main actor; only Sendable values cross.\n                await Task.detached(priority: .utility) {\n                    Self.writeToDisk(snapshot, fileName: name)\n                }.value\n            }\n            self.writeTask = nil\n        }\n    }\n\n    nonisolated private static func writeToDisk(_ entries: [CachedWordExplanation], fileName: String) {\n        guard let url = PersistentCodableStore.appSupportFileURL(fileName) else { return }\n        do {\n            let data = try JSONEncoder().encode(entries)\n            try data.write(to: url, options: .atomic)\n        } catch {\n            // The cache is regenerable; a failed write just means a word may be\n            // re-analyzed later. Don't crash or block on it.\n            print(\"WordExplanationCache write failed: \\(error.localizedDescription)\")\n        }\n    }\n\n    private func load() {\n        // Preferred: the file-backed store.\n        if let loaded = PersistentCodableStore.loadArrayFromFile([CachedWordExplanation].self, fileName: fileName) {\n            entries = loaded\n            rebuildLookupIndex()\n            return\n        }\n        // One-time migration from the old UserDefaults-backed cache (\u2264 the old\n        // 400-entry cap). Adopt it, write it to the file, then clear the\n        // UserDefaults keys so the bounded blob no longer bloats the prefs plist.\n        if let legacy = PersistentCodableStore.load([CachedWordExplanation].self, key: legacyDefaultsKey) {\n            entries = legacy\n            rebuildLookupIndex()\n            Self.writeToDisk(legacy, fileName: fileName)   // small; fine during init\n            UserDefaults.standard.removeObject(forKey: legacyDefaultsKey)\n            UserDefaults.standard.removeObject(forKey: legacyDefaultsKey + \".backup\")\n        }\n    }\n}",
+      "new_string": "    private func scheduleSave() {\n        needsWrite = true\n        guard writeTask == nil else { return }\n        writeTask = Task { [weak self] in\n            guard let self else { return }\n            while self.needsWrite {\n                self.needsWrite = false\n                let snapshot = self.entries      // value-type COW snapshot (cheap)\n                let name = self.fileName\n                // Encode + write off the main actor; only Sendable values cross.\n                _ = await Task.detached(priority: .utility) {\n                    Self.writeToDisk(snapshot, fileName: name)\n                }.value\n                // Throttle: if more mutations arrived, wait so a burst (e.g. a\n                // batch run) coalesces into one write per interval instead of\n                // re-encoding the whole growing file per word. A trailing write\n                // always follows the last mutation, so nothing is lost.\n                if self.needsWrite {\n                    try? await Task.sleep(for: Self.writeThrottle)\n                }\n            }\n            self.writeTask = nil\n        }\n    }\n\n    /// Encode and atomically write the cache. Returns whether it succeeded, so\n    /// the migration can avoid deleting its source on a failed write.\n    @discardableResult\n    nonisolated private static func writeToDisk(_ entries: [CachedWordExplanation], fileName: String) -> Bool {\n        guard let url = PersistentCodableStore.appSupportFileURL(fileName) else { return false }\n        do {\n            let data = try JSONEncoder().encode(entries)\n            try data.write(to: url, options: .atomic)\n            return true\n        } catch {\n            // The cache is regenerable; a failed write just means a word may be\n            // re-analyzed later. Don't crash or block on it.\n            log.error(\"WordExplanationCache write failed: \\(error.localizedDescription, privacy: .public)\")\n            return false\n        }\n    }\n\n    private func load() {\n        // Preferred: the file-backed store.\n        if let loaded = PersistentCodableStore.loadArrayFromFile([CachedWordExplanation].self, fileName: fileName) {\n            entries = loaded\n            rebuildLookupIndex()\n            return\n        }\n        // One-time migration from the old UserDefaults-backed cache (\u2264 the old\n        // 400-entry cap). Adopt it, write it to the file, and only when that\n        // write succeeds clear the UserDefaults keys \u2014 otherwise leave them so\n        // the migration retries next launch rather than losing the data.\n        if let legacy = PersistentCodableStore.load([CachedWordExplanation].self, key: legacyDefaultsKey) {\n            entries = legacy\n            rebuildLookupIndex()\n            if Self.writeToDisk(legacy, fileName: fileName) {   // small; fine during init\n                UserDefaults.standard.removeObject(forKey: legacyDefaultsKey)\n                UserDefaults.standard.removeObject(forKey: legacyDefaultsKey + \".backup\")\n            }\n        }\n    }\n}",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01G1sfEgimSnyLrNYFKJMjXZ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "    private var aiAnalysisCount: Int {\n        let cache = WordExplanationCacheStore.shared\n        return terms.filter { !cache.explanations(forWords: $0.aiCacheCandidateWords).isEmpty }.count\n    }",
+      "new_string": "    private var aiAnalysisCount: Int {\n        let cache = WordExplanationCacheStore.shared\n        return terms.filter { cache.hasAnyExplanation(forWords: $0.aiCacheCandidateWords) }.count\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01YUFQy9wh12yXy8XfPt5sqD"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer\ncd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== iOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"\necho \"=== macOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=macOS,arch=arm64' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"",
+      "description": "Rebuild after review fixes",
+      "run_in_background": true
+    },
+    "tool_use_id": "toolu_01LnaGkSGmtXpjEY3MeGmRXP"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/b77d95vzq.output"
+    },
+    "tool_use_id": "toolu_015tjz6EgcFLxXqf3Zdjqp9z"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ncat >> handoff.md <<'EOF'\n- 2026-06-27 (iter 14 \u2014 batch AI analysis count stuck at 400 + vocab font sizes, branch `jun-27-2026-ai-word-identification`): User: the Settings \u2192 Batch AI Analysis \"processed\" count was stuck at 400 even after analyzing ~6000 words; with 7200 saved words they want to process only the new ~1200, not reprocess. **Root cause:** `WordExplanationCacheStore` capped itself at `maxEntries = 400` with MRU tail-eviction, so as a batch ran past 400 the oldest analyses were silently discarded \u2014 the persistent cache (and thus the \"analyzed\" count = saved \u2212 uncached) could never exceed 400, and the older results were genuinely lost (only \u2264400 ever persisted). **Fix (`WordExplanationCacheStore.swift`):** removed the cap entirely; persistence moved from a UserDefaults blob to a JSON file in Application Support (`word-explanation-cache.json`), written **off the main thread** via a coalesced + throttled single-writer (`scheduleSave` \u2192 `writeTask`/`needsWrite` loop, `Self.writeThrottle = 10s`, trailing write guaranteed) so a multi-thousand-word batch doesn't re-encode the growing file per word on the main actor; `lookupIndex` is now maintained **incrementally** (via `upsert`) instead of a full rebuild per mutation (was the other latent O(n\u00b2)); added a second `normalizedWordIndex` set + `hasAnyExplanation(forWords:)` so the export count is O(terms) not O(terms\u00d7entries) (the cap removal made the old per-term scan ~18\u00d7 worse); one-time migration adopts the legacy UserDefaults cache into the file and only deletes the UserDefaults keys when the file write succeeds (no data-loss window). Made `CachedWordExplanation` + `WordExplanationResult`/`ExampleSentenceResult`/`RelatedWordResult`/`CollocationResult` `Sendable` (needed to snapshot across to the background write). Added `PersistentCodableStore.appSupportFileURL` (nonisolated) + `loadArrayFromFile`; made its `log` nonisolated. **`BatchExplanationController.start`** now sorts the pending queue newest-added first (`dateAdded` desc) so the just-added words are analyzed before the older backlog (user can cancel once the new ones finish). **Caveat (communicated):** the ~5600 results evicted by the old cap are unrecoverable (never persisted), so the app legitimately shows them as needing analysis; after this fix progress is permanent, so a one-time backfill sticks and only genuinely-new words are queued thereafter. **Font (`VocabularyView.swift`, user request):** bumped the vocabulary-list Chinese headword default size 22\u219226 (2 steps) and made the pinyin scale with it (`.system(size: chineseFontSize * 0.7)`) instead of a fixed `.subheadline`, so enlarging the character (A+) also enlarges the pinyin and tone marks. **Verification:** iOS Simulator + macOS Debug both **BUILD SUCCEEDED, 0 warnings**. Adversarial review (separate agent) confirmed the coalesced-writer correctness, index integrity, Sendable, and migration; its P1 (write amplification) and P2s (migration delete-before-confirm, export scan, print-vs-Logger) were all fixed. Known minor: no explicit flush on app-background, so a mid-batch kill loses \u226410s of words (cache is regenerable). Not device-tested (needs live provider/key).\nEOF\necho ok",
+      "description": "Append iter-14 handoff entry"
+    },
+    "tool_use_id": "toolu_012hC92AvKtXgp3ZR9W8BA3T"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit add SwiftMandarin/Models/WordExplanationCacheStore.swift \\\n        SwiftMandarin/Models/PersistentCodableStore.swift \\\n        SwiftMandarin/Models/BatchExplanationController.swift \\\n        SwiftMandarin/Services/AIWordExplanationService.swift \\\n        SwiftMandarin/Views/VocabularyView.swift \\\n        handoff.md\ngit status --short | grep -vE \"logs/|\\.claude/data/sessions/\"",
+      "description": "Stage batch-fix + font files"
+    },
+    "tool_use_id": "toolu_01XPq6YiToBN5hZBScE8s6gn"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit commit -q -F - <<'EOF'\nFix batch-analysis count stuck at 400; enlarge vocab font\n\nThe batch AI word-analysis \"Analyzed\" count was stuck at 400 because\nWordExplanationCacheStore capped itself at 400 entries with MRU eviction,\nsilently discarding analyzed results once a run passed 400. So the\npersistent cache (and the count derived from it) could never exceed 400.\n\nWordExplanationCacheStore:\n- Remove the 400-entry cap entirely \u2014 every analyzed word is retained, so\n  batch progress is permanent and the count reflects reality.\n- Move persistence from a UserDefaults blob to a JSON file in Application\n  Support, written off the main thread via a coalesced + throttled\n  single-writer (one write per ~10s during a burst, with a guaranteed\n  trailing write). Removing the cap would otherwise re-encode the whole\n  growing file per word on the main actor \u2014 O(n^2).\n- Maintain lookupIndex incrementally (upsert) instead of rebuilding it per\n  mutation (the other latent O(n^2)); add a normalizedWordIndex +\n  hasAnyExplanation(forWords:) so the export count is O(terms), not\n  O(terms x entries).\n- One-time migration adopts the legacy UserDefaults cache into the file,\n  deleting the UserDefaults keys only after the file write succeeds.\n- Make the cached result types Sendable (snapshot crosses to the writer).\n\nBatchExplanationController: process newest-added words first (dateAdded\ndesc) so words just added are analyzed before the older backlog.\n\nVocabularyView (font request): bump the list's Chinese headword default\n22->26 and scale the pinyin with it (was a fixed subheadline) so\nenlarging the character also enlarges the pinyin and tone marks.\n\niOS Simulator + macOS Debug both build clean, 0 warnings. Adversarial\nreview confirmed writer correctness, index integrity, Sendable, and\nmigration; its findings (write amplification, migration delete-before-\nconfirm, export scan, logging) are all addressed.\n\nNote: results evicted by the old 400 cap were never persisted and can't\nbe recovered; after this fix a one-time backfill sticks permanently.\nEOF\ngit log --oneline -1",
+      "description": "Commit batch fix + font change"
+    },
+    "tool_use_id": "toolu_015ALn2Ga41unzwxyRQeTofZ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit push 2>&1 | tail -4",
+      "timeout": 10000,
+      "description": "Push"
+    },
+    "tool_use_id": "toolu_01SzTt8LzwsuVrb18Pq7kQRg"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== Slider / font-size controls ===\"\ngrep -rn \"Slider\\|FontSize\\|fontSize\\|font size\\|vocabularyChineseFontSize\\|chineseFontSize\\|detailFontSize\" SwiftMandarin/Views/MacOSSettingsView.swift SwiftMandarin/Views/MoreView.swift 2>/dev/null\necho \"=== all vocabularyChineseFontSize refs ===\"\ngrep -rn \"vocabularyChineseFontSize\" SwiftMandarin/",
+      "description": "Find settings font slider and AppStorage key usage"
+    },
+    "tool_use_id": "toolu_01GiD7nhm2AZtqTeukaSn5s6"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== who READS fontSize (excluding the slider declarations) ===\"\ngrep -rn '\"fontSize\"\\|\\bfontSize\\b' SwiftMandarin/ | grep -v \"MacOSSettingsView.swift:263\\|MacOSSettingsView.swift:290\\|MacOSSettingsView.swift:293\\|MoreView.swift:292\\|MoreView.swift:316\"\necho \"=== detail view font usage in VocabularyView (around 570-595) ===\"\nsed -n '566,596p' SwiftMandarin/Views/VocabularyView.swift",
+      "description": "Check fontSize consumers and detail view fonts"
+    },
+    "tool_use_id": "toolu_01Ga5R2wTmBfvxSASHWP212S"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MacOSSettingsView.swift",
+      "offset": 261,
+      "limit": 40
+    },
+    "tool_use_id": "toolu_01PjVsGBAQmm5VB8BsrMcLUF"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MoreView.swift",
+      "offset": 288,
+      "limit": 40
+    },
+    "tool_use_id": "toolu_01PpaCmtz61ctTsChN4A48i9"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "    /// Font size for Chinese characters in the vocabulary list (persisted)\n    @AppStorage(\"vocabularyChineseFontSize\") private var chineseFontSize: Double = 26",
+      "new_string": "    /// Font size for Chinese characters in the vocabulary list (persisted).\n    /// Also driven by the \"Text Size\" slider in Settings.\n    @AppStorage(\"vocabularyChineseFontSize\") private var chineseFontSize: Double = 20",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01CyEZ6bycyanyGPCtbZv8aa"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "struct VocabularyRow: View {\n    let term: SavedTerm\n    var chineseFontSize: Double = 26",
+      "new_string": "struct VocabularyRow: View {\n    let term: SavedTerm\n    var chineseFontSize: Double = 20",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01P4Nag1N9sbVBvr7uGjtDM2"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "                        Text(term.headlineText)\n                            .font(.system(size: 80, weight: .medium))\n                            .lineLimit(2)\n                            .minimumScaleFactor(0.35)\n                            .multilineTextAlignment(.center)\n                            .padding(.horizontal)\n\n                        if term.showsPinyin {\n                            Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                                .font(.title)\n                        }",
+      "new_string": "                        Text(term.headlineText)\n                            .font(.system(size: 92, weight: .medium))\n                            .lineLimit(2)\n                            .minimumScaleFactor(0.35)\n                            .multilineTextAlignment(.center)\n                            .padding(.horizontal)\n\n                        if term.showsPinyin {\n                            Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                                .font(.largeTitle)\n                        }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01VKn5J4wTeKZBMgoFaAxrJk"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MacOSSettingsView.swift",
+      "old_string": "    @AppStorage(\"fontSize\") private var fontSize: Double = 1.0\n    @AppStorage(\"chineseFont\") private var chineseFont: String = \"System\"",
+      "new_string": "    @AppStorage(\"vocabularyChineseFontSize\") private var chineseFontSize: Double = 20\n    @AppStorage(\"chineseFont\") private var chineseFont: String = \"System\"",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01DjNiGADfPiywcNBzrnJxnJ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MacOSSettingsView.swift",
+      "old_string": "                LabeledContent(\"Text Size\") {\n                    Slider(value: $fontSize, in: 0.8...1.6, step: 0.1) {\n                        Text(\"Size\")\n                    }\n                    Text(\"\\(Int(fontSize * 100))%\")\n                        .foregroundStyle(.secondary)\n                        .frame(width: 50, alignment: .trailing)\n                }",
+      "new_string": "                LabeledContent(\"Vocabulary Text Size\") {\n                    Slider(value: $chineseFontSize, in: 14...40, step: 2) {\n                        Text(\"Size\")\n                    }\n                    Text(\"\\(Int(chineseFontSize)) pt\")\n                        .foregroundStyle(.secondary)\n                        .frame(width: 50, alignment: .trailing)\n                }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_0179HPE3rRP6PRsxxBFC7ZKV"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MoreView.swift",
+      "old_string": "    @AppStorage(\"toneColors\") private var toneColors: Bool = true\n    @AppStorage(\"fontSize\") private var fontSize: Double = 1.0\n    @AppStorage(\"hapticFeedback\") private var hapticFeedback: Bool = true",
+      "new_string": "    @AppStorage(\"toneColors\") private var toneColors: Bool = true\n    @AppStorage(\"vocabularyChineseFontSize\") private var chineseFontSize: Double = 20\n    @AppStorage(\"hapticFeedback\") private var hapticFeedback: Bool = true",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_016DFKqet2yQXz9EtMfDUata"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MoreView.swift",
+      "old_string": "                VStack(alignment: .leading) {\n                    Text(\"Text Size\")\n                    Slider(value: $fontSize, in: 0.8...1.4, step: 0.1) {\n                        Text(\"Text Size\")\n                    } minimumValueLabel: {\n                        Text(\"A\")\n                            .font(.caption)\n                    } maximumValueLabel: {\n                        Text(\"A\")\n                            .font(.title3)\n                    }\n                }",
+      "new_string": "                VStack(alignment: .leading) {\n                    HStack {\n                        Text(\"Vocabulary Text Size\")\n                        Spacer()\n                        Text(\"\\(Int(chineseFontSize)) pt\")\n                            .foregroundStyle(.secondary)\n                    }\n                    Slider(value: $chineseFontSize, in: 14...40, step: 2) {\n                        Text(\"Vocabulary Text Size\")\n                    } minimumValueLabel: {\n                        Text(\"A\")\n                            .font(.caption)\n                    } maximumValueLabel: {\n                        Text(\"A\")\n                            .font(.title3)\n                    }\n                }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01T4K8JHQvfn9tx2hrEm2fq3"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MacOSSettingsView.swift",
+      "old_string": "                    Text(\"\\(Int(chineseFontSize)) pt\")\n                        .foregroundStyle(.secondary)\n                        .frame(width: 50, alignment: .trailing)",
+      "new_string": "                    Text(verbatim: \"\\(Int(chineseFontSize)) pt\")\n                        .foregroundStyle(.secondary)\n                        .frame(width: 50, alignment: .trailing)",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01VWFVU44n2Y93zYQmCyc1w3"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/MoreView.swift",
+      "old_string": "                        Text(\"\\(Int(chineseFontSize)) pt\")\n                            .foregroundStyle(.secondary)",
+      "new_string": "                        Text(verbatim: \"\\(Int(chineseFontSize)) pt\")\n                            .foregroundStyle(.secondary)",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_012FuZ5Jv14ubPUqsAxJgGhn"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngrep -n '^    \"Vocabulary' SwiftMandarin/Localizable.xcstrings; echo \"--- nearby V keys ---\"; grep -n '^    \"V' SwiftMandarin/Localizable.xcstrings | head -20",
+      "description": "Find V keys for insertion"
+    },
+    "tool_use_id": "toolu_01QvSBMoHNxYA8dQHJPgL1mS"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Localizable.xcstrings",
+      "offset": 6306,
+      "limit": 14
+    },
+    "tool_use_id": "toolu_012FjeZfWPkfwEVnQFy3KV8H"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Localizable.xcstrings",
+      "old_string": "    \"Voice Translation\" : {\n      \"comment\" : \"The title of the view.\",",
+      "new_string": "    \"Vocabulary Text Size\" : {\n      \"comment\" : \"A slider label in Settings controlling the Chinese character size in the vocabulary list.\",\n      \"isCommentAutoGenerated\" : true,\n      \"localizations\" : {\n        \"zh-Hans\" : {\n          \"stringUnit\" : {\n            \"state\" : \"translated\",\n            \"value\" : \"\u8bcd\u6c47\u6587\u5b57\u5927\u5c0f\"\n          }\n        }\n      }\n    },\n    \"Voice Translation\" : {\n      \"comment\" : \"The title of the view.\",",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01B2gg7mUTcaUu73CiG14yXc"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\npython3 -c \"import json; d=json.load(open('SwiftMandarin/Localizable.xcstrings')); print('JSON OK, keys:', len(d['strings']), '| has Vocabulary Text Size:', 'Vocabulary Text Size' in d['strings'])\"",
+      "description": "Validate xcstrings JSON"
+    },
+    "tool_use_id": "toolu_014H1Wykt4UUFqcACE8Mj3vc"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer\ncd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== iOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"\necho \"=== macOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=macOS,arch=arm64' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"",
+      "description": "Build both platforms after font/slider changes",
+      "run_in_background": true
+    },
+    "tool_use_id": "toolu_01PCDhqbNaQoHLMQfRwBvRVm"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/bbarh1tlp.output"
+    },
+    "tool_use_id": "toolu_01HcBxsLk5ZjvwgPxHKm63rR"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ncat >> handoff.md <<'EOF'\n- 2026-06-27 (iter 14b \u2014 font targeting + fix dead font slider): Correcting iter 14's font change (wrong target). The Settings \"Text Size\" slider was bound to `@AppStorage(\"fontSize\")`, a key NOTHING in the app reads (only referenced in MandarinKit.md docs) \u2014 so it did nothing. Rebound both sliders (`MacOSSettingsView` + `MoreView` \u2192 renamed \"Vocabulary Text Size\", range 14\u201340 step 2, pt label via `Text(verbatim:)`) to `vocabularyChineseFontSize`, the key the vocab list actually uses (and that the list's A\u2212/A+ steppers already drive) \u2014 so the slider now works and all three controls share one value. Vocab LIST default lowered 26\u219220 (one size below the original 22, per request). Vocab DETAIL view (`VocabularyDetailView`) headword 80\u219292 and pinyin `.title`\u2192`.largeTitle` (bigger, per request). Added catalog key \"Vocabulary Text Size\"/\"\u8bcd\u6c47\u6587\u5b57\u5927\u5c0f\" (725 keys). Both platforms BUILD SUCCEEDED, 0 warnings.\nEOF\ngit add SwiftMandarin/Views/VocabularyView.swift \\\n        SwiftMandarin/Views/MacOSSettingsView.swift \\\n        SwiftMandarin/Views/MoreView.swift \\\n        SwiftMandarin/Localizable.xcstrings \\\n        handoff.md\ngit commit -q -F - <<'EOF'\nFix dead font-size slider; retarget vocab fonts (list down, detail up)\n\nThe Settings \"Text Size\" slider was bound to @AppStorage(\"fontSize\"), a\nkey nothing in the app reads, so it did nothing. Rebind both sliders\n(macOS + iOS) to vocabularyChineseFontSize \u2014 the value the vocabulary\nlist actually uses and that its A-/A+ steppers drive \u2014 as \"Vocabulary\nText Size\" (14-40pt, step 2). Now the slider works and all three\ncontrols share one value.\n\nPer the corrected request:\n- Vocabulary LIST: default size 26 -> 20 (one size below the original).\n- Vocabulary DETAIL view: headword 80 -> 92, pinyin .title ->\n  .largeTitle (character + pinyin one size larger).\n\nAdd catalog key \"Vocabulary Text Size\" / \u8bcd\u6c47\u6587\u5b57\u5927\u5c0f. Both platforms\nbuild clean, 0 warnings.\nEOF\ngit push 2>&1 | tail -3",
+      "timeout": 10000,
+      "description": "Commit and push font/slider fixes"
+    },
+    "tool_use_id": "toolu_011NDbrwRqgmcTCdpHysWiKb"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngrep -n \"struct VocabularyDetailView\\|@AppStorage\\|@State\\|@Environment\\|var body\" SwiftMandarin/Views/VocabularyView.swift | sed -n '1,60p' | grep -A40 \"struct VocabularyDetailView\"",
+      "description": "Find VocabularyDetailView properties"
+    },
+    "tool_use_id": "toolu_01KMNLjG1dWjKgJq3ZJfGmSi"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngrep -n \"struct VocabularyDetailView\" SwiftMandarin/Views/VocabularyView.swift",
+      "description": "Locate VocabularyDetailView"
+    },
+    "tool_use_id": "toolu_01NAYLvS7fn4zxUWSN6sYhyf"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngrep -n \"size: 92\\|struct .*View\\|\\.largeTitle\" SwiftMandarin/Views/VocabularyView.swift | sed -n '1,80p'",
+      "description": "Find detail struct containing the headword"
+    },
+    "tool_use_id": "toolu_01EVZ6gh69tpqCgWVPL3jULF"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "offset": 548,
+      "limit": 52
+    },
+    "tool_use_id": "toolu_016zGJ5VaEyuzNurg2TjwKG8"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "offset": 858,
+      "limit": 55
+    },
+    "tool_use_id": "toolu_01QnSMH2a1oy5TvhiD9vgLeW"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "struct TermDetailSheet: View {\n    @Binding var selectedTerm: SavedTerm?\n    @Environment(\\.dismiss) private var dismiss\n    @Environment(SavedTermsStore.self) private var savedTermsStore\n    \n    @State private var fetchedTranslation: String = \"\"\n    @State private var isLoadingTranslation: Bool = false\n    @State private var showCopiedFeedback: Bool = false",
+      "new_string": "/// Tiny \u2212/+ control for adjusting the detail view's headword + pinyin size.\n/// Shared by the sheet and inspector presentations; persists via AppStorage.\nstruct DetailFontSizeStepper: View {\n    @Binding var size: Double\n    var range: ClosedRange<Double> = 56...144\n    var step: Double = 8\n\n    var body: some View {\n        HStack(spacing: 6) {\n            Button {\n                size = max(range.lowerBound, size - step)\n            } label: {\n                Image(systemName: \"minus\")\n            }\n            .disabled(size <= range.lowerBound)\n            .accessibilityLabel(Text(\"Decrease character size\"))\n\n            Button {\n                size = min(range.upperBound, size + step)\n            } label: {\n                Image(systemName: \"plus\")\n            }\n            .disabled(size >= range.upperBound)\n            .accessibilityLabel(Text(\"Increase character size\"))\n        }\n        .font(.caption2)\n        .buttonStyle(.bordered)\n        .controlSize(.mini)\n        .labelStyle(.iconOnly)\n    }\n}\n\nstruct TermDetailSheet: View {\n    @Binding var selectedTerm: SavedTerm?\n    @Environment(\\.dismiss) private var dismiss\n    @Environment(SavedTermsStore.self) private var savedTermsStore\n\n    @State private var fetchedTranslation: String = \"\"\n    @State private var isLoadingTranslation: Bool = false\n    @State private var showCopiedFeedback: Bool = false\n    /// Persisted size of the Chinese headword in the detail view; the \u2212/+\n    /// buttons adjust it and the pinyin scales with it.\n    @AppStorage(\"vocabularyDetailChineseFontSize\") private var detailFontSize: Double = 96",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_018gtNTLxwuj22hskEQ1UhMU"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "                        Text(term.headlineText)\n                            .font(.system(size: 92, weight: .medium))\n                            .lineLimit(2)\n                            .minimumScaleFactor(0.35)\n                            .multilineTextAlignment(.center)\n                            .padding(.horizontal)\n\n                        if term.showsPinyin {\n                            Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                                .font(.largeTitle)\n                        }",
+      "new_string": "                        Text(term.headlineText)\n                            .font(.system(size: detailFontSize, weight: .medium))\n                            .lineLimit(2)\n                            .minimumScaleFactor(0.35)\n                            .multilineTextAlignment(.center)\n                            .padding(.horizontal)\n\n                        if term.showsPinyin {\n                            Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                                .font(.system(size: detailFontSize * 0.4))\n                        }\n\n                        DetailFontSizeStepper(size: $detailFontSize)\n                            .padding(.top, 2)",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01G8jJFARwizcY2Rp7UyUvux"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "struct TermDetailInspector: View {\n    let term: SavedTerm\n    @Binding var selectedTerm: SavedTerm?\n    var savedTermsStore: SavedTermsStore\n    \n    @State private var fetchedTranslation: String = \"\"\n    @State private var isLoadingTranslation: Bool = false\n    @State private var showCopiedFeedback: Bool = false",
+      "new_string": "struct TermDetailInspector: View {\n    let term: SavedTerm\n    @Binding var selectedTerm: SavedTerm?\n    var savedTermsStore: SavedTermsStore\n\n    @State private var fetchedTranslation: String = \"\"\n    @State private var isLoadingTranslation: Bool = false\n    @State private var showCopiedFeedback: Bool = false\n    /// Persisted size of the Chinese headword in the detail view; shared with\n    /// the sheet presentation so the \u2212/+ buttons behave identically.\n    @AppStorage(\"vocabularyDetailChineseFontSize\") private var detailFontSize: Double = 96",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01QLdDcq3bAjuBCZUChEXjmL"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "                    Text(term.headlineText)\n                        .font(.system(size: 64, weight: .medium))\n                        .lineLimit(2)\n                        .minimumScaleFactor(0.35)\n                        .multilineTextAlignment(.center)\n                        .padding(.horizontal)\n\n                    if term.showsPinyin {\n                        Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                            .font(.title2)\n                    }",
+      "new_string": "                    Text(term.headlineText)\n                        .font(.system(size: detailFontSize, weight: .medium))\n                        .lineLimit(2)\n                        .minimumScaleFactor(0.35)\n                        .multilineTextAlignment(.center)\n                        .padding(.horizontal)\n\n                    if term.showsPinyin {\n                        Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                            .font(.system(size: detailFontSize * 0.4))\n                    }\n\n                    DetailFontSizeStepper(size: $detailFontSize)\n                        .padding(.top, 2)",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01BNZ3kkbdAEeerMgcFAQL8W"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer\ncd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== iOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"\necho \"=== macOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=macOS,arch=arm64' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"",
+      "description": "Build both platforms",
+      "run_in_background": true
+    },
+    "tool_use_id": "toolu_01PzwbsM6kXd5EMwaGYY2j78"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/br0a7okl3.output"
+    },
+    "tool_use_id": "toolu_01D2a5dE5Pxv9jUeGyQgS6iV"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "sleep 1; echo waiting",
+      "description": "brief pause"
+    },
+    "tool_use_id": "toolu_012NTTbm1inM42VTpdkMocGG"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/br0a7okl3.output"
+    },
+    "tool_use_id": "toolu_01DjfH2cg4ZzitQk6obJ22qd"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit add SwiftMandarin/Views/VocabularyView.swift\ngit commit -q -m \"Add \u2212/+ font-size stepper to the vocabulary detail view\n\nAdd a small bordered minus/plus control to both detail presentations\n(TermDetailSheet and TermDetailInspector) that adjusts the Chinese\nheadword size; the pinyin scales with it (0.4\u00d7). The size is shared\nbetween both presentations and persisted via\n@AppStorage(\\\"vocabularyDetailChineseFontSize\\\") (default 96, 56\u2013144pt,\nstep 8). Both platforms build clean, 0 warnings.\" \ngit push 2>&1 | tail -3",
+      "timeout": 10000,
+      "description": "Commit and push stepper"
+    },
+    "tool_use_id": "toolu_01UfnudGcaV2pVttBKCLeBVH"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "                    // Scale the pinyin with the headword so enlarging the\n                    // character also enlarges the pinyin and its tone marks\n                    // (previously a fixed size, which stayed hard to read).\n                    Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                        .font(.system(size: chineseFontSize * 0.7))",
+      "new_string": "                    // Scale the pinyin with the headword so enlarging the\n                    // character also enlarges the pinyin and its tone marks\n                    // (previously a fixed size, which stayed hard to read).\n                    // Kept noticeably smaller than the headword for balance.\n                    Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                        .font(.system(size: chineseFontSize * 0.6))",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01NoUJWmiMj1LswxjsgePe6z"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer\ncd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== iOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"\necho \"=== macOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=macOS,arch=arm64' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"",
+      "description": "Build both platforms",
+      "run_in_background": true
+    },
+    "tool_use_id": "toolu_01TzUBGKevtDaLoCHe1zNANd"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/bcbv9ypi6.output"
+    },
+    "tool_use_id": "toolu_01UxQ7FcSt3Gadu1QqSZFcTm"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "sleep 2; echo done",
+      "description": "wait for macOS build"
+    },
+    "tool_use_id": "toolu_015sz2CCHkL7AXuYbSsxZ98j"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/bcbv9ypi6.output"
+    },
+    "tool_use_id": "toolu_01THZMQafws7FvVaXAe59AjS"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit add SwiftMandarin/Views/VocabularyView.swift\ngit commit -q -m \"Reduce vocab-list pinyin size one step for better balance\n\nThe list pinyin scaled at 0.7x the headword looked too large next to the\ncharacter; drop it to 0.6x so the pinyin sits a size smaller. Both\nplatforms build clean, 0 warnings.\"\ngit push 2>&1 | tail -3",
+      "timeout": 10000,
+      "description": "Commit and push pinyin tweak"
+    },
+    "tool_use_id": "toolu_01EtzQMm2RTaXnuprSMzHj48"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "                    Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                        .font(.system(size: chineseFontSize * 0.6))",
+      "new_string": "                    Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                        .font(.system(size: chineseFontSize * 0.5))",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01EbrEDFhemnmp5U9Ag6hxsM"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer\ncd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== iOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"\necho \"=== macOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=macOS,arch=arm64' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"",
+      "description": "Build both platforms",
+      "run_in_background": true
+    },
+    "tool_use_id": "toolu_01NS8fjsAF19DaSvB2eoJWa6"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/b3yyl08yk.output"
+    },
+    "tool_use_id": "toolu_011CgmjWhm15SUoR66ma4CE6"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit add SwiftMandarin/Views/VocabularyView.swift\ngit commit -q -m \"Drop vocab-list pinyin to 0.5x headword for better proportion\n\nPinyin at 0.6x still read a touch large next to the character; lower to\n0.5x. Both platforms build clean, 0 warnings.\"\ngit push 2>&1 | tail -2",
+      "timeout": 10000,
+      "description": "Commit and push pinyin tweak"
+    },
+    "tool_use_id": "toolu_01Qka8nYw8z7ekdS7J5y726A"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "SRC=\"/Users/rogerlin/Downloads/Screenshot 2026-06-27 at 10.38.15 PM.heic\"\nOUT=\"/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/scratchpad/detail.png\"\nsips -s format png \"$SRC\" --out \"$OUT\" >/dev/null 2>&1 && echo \"converted: $OUT\" || echo \"convert failed\"\nls -la \"$OUT\" 2>/dev/null",
+      "description": "Convert HEIC screenshot to PNG"
+    },
+    "tool_use_id": "toolu_011wqHcFUVDZUs6ctPmPkeXJ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/scratchpad/detail.png"
+    },
+    "tool_use_id": "toolu_01RX4RSfEodHVcUw2X6qdz3t"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -la \"/Users/rogerlin/Downloads/Screenshot 2026-06-27 at 10.38.15 PM.heic\" 2>&1 | head\nOUT=\"/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/scratchpad/detail.png\"\nsips -s format png \"/Users/rogerlin/Downloads/Screenshot 2026-06-27 at 10.38.15 PM.heic\" --out \"$OUT\" 2>&1 | tail -5\necho \"---\"; ls -la \"$OUT\" 2>&1",
+      "description": "Verify source and retry conversion"
+    },
+    "tool_use_id": "toolu_01VVQpF3WXQohDjezW659WGP"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -lat \"/Users/rogerlin/Downloads/\" 2>/dev/null | grep -iE \"screenshot|\\.heic|\\.png\" | head -10",
+      "description": "List recent screenshots in Downloads"
+    },
+    "tool_use_id": "toolu_01J5ADgptg3aHfjo5QbpSdCF"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/Downloads\nOUT=\"/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/scratchpad/detail.png\"\nsips -s format png \"Screenshot 2026-06-27 at 10.38.15 PM.heic\" --out \"$OUT\" 2>&1 | tail -3\nls -la \"$OUT\" 2>&1",
+      "description": "Convert HEIC from Downloads dir",
+      "dangerouslyDisableSandbox": true
+    },
+    "tool_use_id": "toolu_01Wer2nY7Hwd6HJFGCQ6F2Pf"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/Downloads\nf=$(ls -1 Screenshot*10.38.15*.heic 2>/dev/null | head -1)\necho \"matched: [$f]\"\nfile \"$f\" 2>&1\nOUT=\"/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/scratchpad/detail.png\"\nsips -s format png \"$f\" --out \"$OUT\" 2>&1 | tail -3\nls -la \"$OUT\" 2>&1",
+      "description": "Glob-match and convert",
+      "dangerouslyDisableSandbox": true
+    },
+    "tool_use_id": "toolu_017WR2vQUSyojLuE7fbPUYxM"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/scratchpad/detail.png"
+    },
+    "tool_use_id": "toolu_013ZxM5L6PqiXXewrbTkgLeZ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "offset": 609,
+      "limit": 40
+    },
+    "tool_use_id": "toolu_01MbkkapSyYiTriYSGxYZa9j"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "                    VStack(spacing: 12) {\n                        Text(term.headlineText)\n                            .font(.system(size: detailFontSize, weight: .medium))\n                            .lineLimit(2)\n                            .minimumScaleFactor(0.35)\n                            .multilineTextAlignment(.center)\n                            .padding(.horizontal)\n\n                        if term.showsPinyin {\n                            Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                                .font(.system(size: detailFontSize * 0.4))\n                        }\n\n                        DetailFontSizeStepper(size: $detailFontSize)\n                            .padding(.top, 2)\n\n                        if !term.partOfSpeech.isEmpty {\n                            Text(term.partOfSpeech)\n                                .font(.caption)\n                                .fontWeight(.semibold)\n                                .foregroundStyle(.white)\n                                .padding(.horizontal, 12)\n                                .padding(.vertical, 4)\n                                .background(Capsule().fill(.blue))\n                        }\n                    }\n                    .padding(.top, 20)",
+      "new_string": "                    VStack(spacing: 12) {\n                        Text(term.headlineText)\n                            .font(.system(size: detailFontSize, weight: .medium))\n                            .lineLimit(2)\n                            .minimumScaleFactor(0.35)\n                            .multilineTextAlignment(.center)\n                            .padding(.horizontal)\n\n                        if term.showsPinyin {\n                            Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                                .font(.system(size: detailFontSize * 0.45))\n                        }\n\n                        if !term.partOfSpeech.isEmpty {\n                            Text(term.partOfSpeech)\n                                .font(.caption)\n                                .fontWeight(.semibold)\n                                .foregroundStyle(.white)\n                                .padding(.horizontal, 12)\n                                .padding(.vertical, 4)\n                                .background(Capsule().fill(.blue))\n                        }\n\n                        // Size control tucked into the bottom-right of the\n                        // headword block rather than centered beneath it.\n                        HStack {\n                            Spacer()\n                            DetailFontSizeStepper(size: $detailFontSize)\n                        }\n                        .padding(.trailing, 4)\n                    }\n                    .padding(.top, 20)",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_014rBQHKT2ZfADXvV6aranY3"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "offset": 912,
+      "limit": 40
+    },
+    "tool_use_id": "toolu_018z3aeumymrdqukPpDFCugy"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "offset": 951,
+      "limit": 30
+    },
+    "tool_use_id": "toolu_016tfq8esrNmVzmjyZ55qynU"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "                    if term.showsPinyin {\n                        Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                            .font(.system(size: detailFontSize * 0.4))\n                    }\n\n                    DetailFontSizeStepper(size: $detailFontSize)\n                        .padding(.top, 2)\n\n                    if !term.partOfSpeech.isEmpty {\n                        Text(term.partOfSpeech)\n                            .font(.caption)\n                            .fontWeight(.semibold)\n                            .foregroundStyle(.white)\n                            .padding(.horizontal, 10)\n                            .padding(.vertical, 3)\n                            .background(Capsule().fill(.blue))\n                    }\n                }",
+      "new_string": "                    if term.showsPinyin {\n                        Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))\n                            .font(.system(size: detailFontSize * 0.45))\n                    }\n\n                    if !term.partOfSpeech.isEmpty {\n                        Text(term.partOfSpeech)\n                            .font(.caption)\n                            .fontWeight(.semibold)\n                            .foregroundStyle(.white)\n                            .padding(.horizontal, 10)\n                            .padding(.vertical, 3)\n                            .background(Capsule().fill(.blue))\n                    }\n\n                    // Size control tucked into the bottom-right of the\n                    // headword block rather than centered beneath it.\n                    HStack {\n                        Spacer()\n                        DetailFontSizeStepper(size: $detailFontSize)\n                    }\n                    .padding(.trailing, 4)\n                }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_011rCe17HM5huaAsVo9qx2B3"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/VocabularyView.swift",
+      "old_string": "    var body: some View {\n        HStack(spacing: 6) {\n            Button {\n                size = max(range.lowerBound, size - step)\n            } label: {\n                Image(systemName: \"minus\")\n            }\n            .disabled(size <= range.lowerBound)\n            .accessibilityLabel(Text(\"Decrease character size\"))\n\n            Button {\n                size = min(range.upperBound, size + step)\n            } label: {\n                Image(systemName: \"plus\")\n            }\n            .disabled(size >= range.upperBound)\n            .accessibilityLabel(Text(\"Increase character size\"))\n        }\n        .font(.caption2)\n        .buttonStyle(.bordered)\n        .controlSize(.mini)\n        .labelStyle(.iconOnly)\n    }\n}",
+      "new_string": "    var body: some View {\n        HStack(spacing: 18) {\n            Button {\n                size = max(range.lowerBound, size - step)\n            } label: {\n                Image(systemName: \"minus\")\n                    .frame(width: 20, height: 20)\n                    .contentShape(Rectangle())\n            }\n            .disabled(size <= range.lowerBound)\n            .accessibilityLabel(Text(\"Decrease character size\"))\n\n            Button {\n                size = min(range.upperBound, size + step)\n            } label: {\n                Image(systemName: \"plus\")\n                    .frame(width: 20, height: 20)\n                    .contentShape(Rectangle())\n            }\n            .disabled(size >= range.upperBound)\n            .accessibilityLabel(Text(\"Increase character size\"))\n        }\n        // Bare symbols, no button chrome, equal square hit areas so the two\n        // sit evenly.\n        .font(.system(size: 15, weight: .semibold))\n        .foregroundStyle(.secondary)\n        .buttonStyle(.plain)\n    }\n}",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01TWcEJJpQHx1vtpksvR8uDS"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer\ncd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== iOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"\necho \"=== macOS ===\"\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=macOS,arch=arm64' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"",
+      "description": "Build both platforms",
+      "run_in_background": true
+    },
+    "tool_use_id": "toolu_01PktaN9yDcLcWdZdu3VXgSH"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "sleep 3; echo done",
+      "description": "wait for build"
+    },
+    "tool_use_id": "toolu_01PKfJsTUpSWuLwmC8vgyTdf"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/bvix3en20.output"
+    },
+    "tool_use_id": "toolu_01A71bQyQUJxuD9YdhDoVwVh"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit add SwiftMandarin/Views/VocabularyView.swift\ngit commit -q -m \"Refine detail-view size stepper: plain symbols, bottom-right, balanced\n\n- DetailFontSizeStepper: drop the bordered button chrome (plain style),\n  bare minus/plus symbols with equal 20x20 hit areas so they sit evenly.\n- Move the stepper to a right-aligned row at the bottom of the headword\n  block instead of centered immediately under the pinyin.\n- Balance the headword/pinyin proportions: pinyin 0.4x -> 0.45x of the\n  character. Applied to both the sheet and inspector presentations.\n\nBoth platforms build clean, 0 warnings.\"\ngit push 2>&1 | tail -2",
+      "timeout": 10000,
+      "description": "Commit and push stepper refinement"
+    },
+    "tool_use_id": "toolu_01F7pxWJhC1oUb1JNFk5FbBL"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\necho \"=== branch ===\"; git branch --show-current\necho \"=== status ===\"; git status --short\necho \"=== local vs origin ===\"; git rev-parse --short HEAD @{u} 2>&1",
+      "description": "Check working tree and sync state"
+    },
+    "tool_use_id": "toolu_013uCYSgaeLMZnwaULnGz9HY"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit diff --stat SwiftMandarin/Localizable.xcstrings\necho \"=== diff (first 60 lines) ===\"\ngit diff SwiftMandarin/Localizable.xcstrings | head -60",
+      "description": "Inspect xcstrings changes"
+    },
+    "tool_use_id": "toolu_01S5C8d5yUyA3jv3GG2NiVnZ"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Localizable.xcstrings",
+      "offset": 1800,
+      "limit": 8
+    },
+    "tool_use_id": "toolu_0152kHsSQGHvqPboBCd93B4q"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Localizable.xcstrings",
+      "offset": 2795,
+      "limit": 8
+    },
+    "tool_use_id": "toolu_01RykB7TK2cvBKzh8WRhYJVw"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Localizable.xcstrings",
+      "old_string": "    \"Decrease character size\" : {\n      \"comment\" : \"A description of a button that decreases the size of the character in the detail view.\",\n      \"isCommentAutoGenerated\" : true\n    },",
+      "new_string": "    \"Decrease character size\" : {\n      \"comment\" : \"A description of a button that decreases the size of the character in the detail view.\",\n      \"isCommentAutoGenerated\" : true,\n      \"localizations\" : {\n        \"zh-Hans\" : {\n          \"stringUnit\" : {\n            \"state\" : \"translated\",\n            \"value\" : \"\u51cf\u5c0f\u5b57\u53f7\"\n          }\n        }\n      }\n    },",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_017geoiE7XDtPobnReH9Bkhd"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Localizable.xcstrings",
+      "old_string": "    \"Increase character size\" : {\n      \"comment\" : \"A label for a button that increases the size of the character in the detail view.\",\n      \"isCommentAutoGenerated\" : true\n    },",
+      "new_string": "    \"Increase character size\" : {\n      \"comment\" : \"A label for a button that increases the size of the character in the detail view.\",\n      \"isCommentAutoGenerated\" : true,\n      \"localizations\" : {\n        \"zh-Hans\" : {\n          \"stringUnit\" : {\n            \"state\" : \"translated\",\n            \"value\" : \"\u589e\u5927\u5b57\u53f7\"\n          }\n        }\n      }\n    },",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_019DUHUvteU9wpx8oYNVPL8y"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\npython3 -c \"import json; d=json.load(open('SwiftMandarin/Localizable.xcstrings')); print('JSON OK, keys:', len(d['strings']))\"",
+      "description": "Validate xcstrings JSON"
+    },
+    "tool_use_id": "toolu_019nzgjv9wimHjVieGLAv9kW"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer\ncd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\nxcodebuild -scheme SwiftMandarin -project SwiftMandarin.xcodeproj \\\n  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \\\n  -configuration Debug build 2>&1 | grep -iE \" error:| warning:|BUILD SUCCEEDED|BUILD FAILED\"",
+      "description": "Build iOS to validate catalog",
+      "run_in_background": true
+    },
+    "tool_use_id": "toolu_019TKJXsNFZmdoTsbSUeQQTN"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "sleep 5; echo done",
+      "description": "wait for build"
+    },
+    "tool_use_id": "toolu_01S6D9qaexgptsZTzsuBfJF2"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/private/tmp/claude-501/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099/tasks/byjpagkj7.output"
+    },
+    "tool_use_id": "toolu_019JtGBdDPZpjQr2F3qRBiGu"
+  },
+  {
+    "session_id": "a9a5dec4-801e-46d3-92d6-2cfb9fd7d099",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/a9a5dec4-801e-46d3-92d6-2cfb9fd7d099.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "permission_mode": "auto",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cd /Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts\ngit add SwiftMandarin/Localizable.xcstrings\ngit commit -q -m \"Localize detail size-stepper accessibility labels (zh-Hans)\n\nAdd \u51cf\u5c0f\u5b57\u53f7 / \u589e\u5927\u5b57\u53f7 for the auto-extracted \\\"Decrease character size\\\" /\n\\\"Increase character size\\\" button labels.\"\n# Sync remaining session-log/data churn\ngit add -A\ngit commit -q -m \"Sync session logs and Claude data\" || echo \"(nothing else to commit)\"\necho \"=== feature HEAD ===\"; git rev-parse --short HEAD\ngit push 2>&1 | tail -2",
+      "timeout": 10000,
+      "description": "Commit i18n + sync, push feature branch"
+    },
+    "tool_use_id": "toolu_015jjQ9ctiZabbXGZTsJvA9C"
   }
 ]

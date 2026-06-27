@@ -47,7 +47,7 @@ struct TranslateScreenshotsIntent: AppIntent {
     // MARK: - Parameter Summary
     
     static var parameterSummary: some ParameterSummary {
-        Summary("Translate \\(\\.$images) to \\(\\.$targetLanguage)")
+        Summary("Translate \(\.$images) to \(\.$targetLanguage)")
     }
     
     // MARK: - Perform

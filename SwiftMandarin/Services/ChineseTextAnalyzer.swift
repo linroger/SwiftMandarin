@@ -174,6 +174,43 @@ enum PartOfSpeech: String {
         default: self = .unknown
         }
     }
+
+    /// Map a free-form part-of-speech label from an AI provider (English or
+    /// Chinese, e.g. "verb" or "动词") to the enum. Matches on substrings so
+    /// minor wording differences ("proper noun", "measure word") still land on
+    /// a sensible case; unrecognized labels become `.unknown`.
+    init(aiLabel: String) {
+        let s = aiLabel.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.isEmpty { self = .unknown; return }
+        switch true {
+        case s.contains("noun"), s.contains("名词"), s.contains("名詞"):
+            self = .noun
+        case s.contains("verb"), s.contains("动词"), s.contains("動詞"):
+            self = .verb
+        case s.contains("adjective"), s.contains("形容词"), s.contains("形容詞"):
+            self = .adjective
+        case s.contains("adverb"), s.contains("副词"), s.contains("副詞"):
+            self = .adverb
+        case s.contains("pronoun"), s.contains("代词"), s.contains("代詞"):
+            self = .pronoun
+        case s.contains("preposition"), s.contains("介词"), s.contains("介詞"):
+            self = .preposition
+        case s.contains("conjunction"), s.contains("连词"), s.contains("連詞"):
+            self = .conjunction
+        case s.contains("particle"), s.contains("助词"), s.contains("助詞"), s.contains("语气"), s.contains("語氣"):
+            self = .particle
+        case s.contains("number"), s.contains("numeral"), s.contains("数词"), s.contains("數詞"):
+            self = .number
+        case s.contains("classifier"), s.contains("measure"), s.contains("量词"), s.contains("量詞"):
+            self = .classifier
+        case s.contains("interjection"), s.contains("exclamation"), s.contains("叹词"), s.contains("嘆詞"), s.contains("感叹"), s.contains("感嘆"):
+            self = .interjection
+        case s.contains("punctuation"), s.contains("标点"), s.contains("標點"):
+            self = .punctuation
+        default:
+            self = .unknown
+        }
+    }
     
     var displayName: String {
         rawValue.capitalized

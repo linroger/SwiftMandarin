@@ -50,6 +50,13 @@ struct TranslateView: View {
     @State private var isAITranslating: Bool = false
     @State private var aiTranslationError: String?
     @State private var aiSettings = AIModelSettings.shared
+
+    // State for AI word/phrase identification (powers the tap-to-learn view
+    // with proper word boundaries when a translation comes from an AI provider)
+    @State private var aiSegments: [RubySegment] = []
+    @State private var isIdentifyingWords: Bool = false
+    @State private var wordIdentificationTask: Task<Void, Never>?
+    @State private var wordIdGeneration: Int = 0
     
     // Track last detected direction to reset configuration when input language changes
     @State private var lastDetectedDirection: TranslationDirection?
@@ -183,6 +190,8 @@ struct TranslateView: View {
                         if transcript != translation {
                             handleCompletedTranslation(source: transcript, target: translation, direction: direction)
                         }
+                        // Identify words in the Chinese side for the tap-to-learn view.
+                        startWordIdentification(for: activeChineseText)
                     }
                 )
                 #if os(iOS)
@@ -213,7 +222,11 @@ struct TranslateView: View {
                         lastDetectedDirection = nil
                         sharedState.translationError = nil
                         aiTranslationError = nil
-                        
+                        // The swapped text invalidates any AI segmentation.
+                        wordIdentificationTask?.cancel()
+                        aiSegments = []
+                        isIdentifyingWords = false
+
                         sharedState.direction = sharedState.direction.opposite
                         // Swap texts if both exist
                         if !sharedState.sourceText.isEmpty && !sharedState.translatedText.isEmpty {
@@ -295,6 +308,10 @@ struct TranslateView: View {
                         sharedState.translationError = nil
                         additionalTranslation = ""
                         aiTranslationError = nil
+                        // Stale word identification no longer matches the input.
+                        wordIdentificationTask?.cancel()
+                        aiSegments = []
+                        isIdentifyingWords = false
                     }
 
                     if newValue.isEmpty {
@@ -747,11 +764,21 @@ struct TranslateView: View {
                 
                 // Chinese text with interleaved pinyin - always show
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("CHINESE (TAP WORDS FOR DETAILS)")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
-                    
+                    HStack(spacing: 8) {
+                        Text("CHINESE (TAP WORDS FOR DETAILS)")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+
+                        if isIdentifyingWords {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Identifying words…")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+
                     if isLoadingAdditionalTranslation && inputLanguageMismatch {
                         HStack(spacing: 8) {
                             ProgressView()
@@ -761,10 +788,13 @@ struct TranslateView: View {
                                 .foregroundStyle(.secondary)
                         }
                     } else {
-                        // Ruby text view with pinyin above each character
+                        // Ruby text view with pinyin above each character. When the
+                        // AI has identified word boundaries they drive the
+                        // segmentation; otherwise it falls back to local tokenizing.
                         RubyTextView(
                             chineseText: detectedChineseText,
-                            englishMeaning: detectedEnglishText
+                            englishMeaning: detectedEnglishText,
+                            aiSegments: aiSegments.isEmpty ? nil : aiSegments
                         ) { segment in
                             selectedSegment = segment
                         }
@@ -920,59 +950,120 @@ struct TranslateView: View {
 
     private func triggerAITranslation() async {
         let sourceSnapshot = sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let directionSnapshot = sharedState.direction
         guard !sourceSnapshot.isEmpty else { return }
-        
+
         isAITranslating = true
         aiTranslationError = nil
         sharedState.translationError = nil
-        
+
         do {
-            // Detect actual input language (not based on setting)
-            // EN input → ZH output, ZH input → EN output
+            // Detect actual input language (not based on the UI toggle).
+            // EN input → ZH output, ZH input → EN output. History must record
+            // the direction that actually happened, not what the toggle said.
             let sourceIsChinese = containsChinese(sourceSnapshot)
-            
+            let actualDirection: TranslationDirection = sourceIsChinese ? .chineseToEnglish : .englishToChinese
+
             let translation = try await AIWordExplanationService.shared.translateWithProvider(
                 sourceSnapshot,
                 sourceIsChinese: sourceIsChinese
             )
-            
-            guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot,
-                  sharedState.direction == directionSnapshot else {
+
+            // Only guard against a stale source text; the UI toggle is irrelevant
+            // because the direction is derived from the (unchanged) source content.
+            guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot else {
                 isAITranslating = false
                 return
             }
 
             sharedState.translatedText = translation
             isAITranslating = false
-            handleCompletedTranslation(source: sourceSnapshot, target: translation, direction: directionSnapshot)
+            handleCompletedTranslation(source: sourceSnapshot, target: translation, direction: actualDirection)
+            // Have the AI identify the words/phrases in the Chinese side so the
+            // tap-to-learn view uses real word boundaries, not NLTokenizer.
+            startWordIdentification(for: activeChineseText)
         } catch {
             isAITranslating = false
             sharedState.translationError = "AI Translation failed: \(error.localizedDescription)"
             print("AI Translation error: \(error)")
         }
     }
+
+    /// Ask the configured AI provider to identify the words/phrases in the
+    /// Chinese text, then feed them to the interactive ruby view. Cancels any
+    /// in-flight identification first. Silently falls back to local
+    /// segmentation (empty `aiSegments`) when no provider is available or the
+    /// request fails — the feature is additive, never blocking.
+    private func startWordIdentification(for chineseText: String) {
+        wordIdentificationTask?.cancel()
+        aiSegments = []
+
+        let trimmed = chineseText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, aiSettings.isAnyProviderAvailable else {
+            isIdentifyingWords = false
+            return
+        }
+
+        // Generation guard: only the latest request may flip the spinner off,
+        // so a superseded request's completion can't hide an in-flight one.
+        wordIdGeneration += 1
+        let generation = wordIdGeneration
+        isIdentifyingWords = true
+        wordIdentificationTask = Task {
+            let identified: [IdentifiedWord]?
+            do {
+                identified = try await WordIdentificationService.shared.identifyWords(in: trimmed)
+            } catch {
+                // Local segmentation remains in place; just log.
+                print("Word identification error: \(error)")
+                identified = nil
+            }
+
+            // A newer request superseded this one — it now owns the spinner and
+            // results, so this stale completion must not touch either.
+            guard generation == wordIdGeneration else { return }
+            // This is the current request: always stop the spinner, even when
+            // the result is dropped below (otherwise it could spin forever).
+            isIdentifyingWords = false
+
+            // Apply segments only if they're non-empty and the visible Chinese
+            // text hasn't moved on (e.g. a mismatch fetch replaced it).
+            guard !Task.isCancelled,
+                  let identified, !identified.isEmpty,
+                  activeChineseText.trimmingCharacters(in: .whitespacesAndNewlines) == trimmed else {
+                return
+            }
+            aiSegments = identified.map { RubySegment(aiWord: $0) }
+        }
+    }
     
     @available(iOS 18.0, macOS 15.0, *)
     private func performTranslation(session: TranslationSession) async {
         let sourceSnapshot = sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let directionSnapshot = sharedState.direction
 
         sharedState.isTranslating = true
         sharedState.translationError = nil
-        
+        // Apple Translation uses local word segmentation, so drop any AI
+        // segments from a previous AI translation of this text.
+        wordIdentificationTask?.cancel()
+        aiSegments = []
+        isIdentifyingWords = false
+
         do {
             let response = try await session.translate(sourceSnapshot)
             await MainActor.run {
                 sharedState.isTranslating = false
 
-                guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot,
-                      sharedState.direction == directionSnapshot else {
+                // Only guard against a stale source text, not the UI toggle.
+                guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot else {
                     return
                 }
 
+                // Record the direction actually performed, derived from the source content.
+                let sourceIsChinese = containsChinese(sourceSnapshot)
+                let actualDirection: TranslationDirection = sourceIsChinese ? .chineseToEnglish : .englishToChinese
+
                 sharedState.translatedText = response.targetText
-                handleCompletedTranslation(source: sourceSnapshot, target: response.targetText, direction: directionSnapshot)
+                handleCompletedTranslation(source: sourceSnapshot, target: response.targetText, direction: actualDirection)
             }
         } catch {
             await MainActor.run {
@@ -992,11 +1083,14 @@ struct TranslateView: View {
     private func clearAll() {
         pendingAutoTranslateTask?.cancel()
         aiTranslationTask?.cancel()
+        wordIdentificationTask?.cancel()
         // Reset the translation configuration to ensure next translation triggers properly
         translationConfiguration.clear()
         lastDetectedDirection = nil
         additionalTranslation = ""
         aiTranslationError = nil
+        aiSegments = []
+        isIdentifyingWords = false
         sharedState.clear()
     }
     

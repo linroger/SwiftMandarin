@@ -90,7 +90,7 @@ struct MoreView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("SwiftMandarin")
                         .font(.headline)
-                    Text("Version 1.0.0")
+                    Text(verbatim: "\(L("Version")) \(AppConfig.appVersion)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -180,15 +180,15 @@ struct MoreView: View {
                 Label("About", systemImage: "info.circle")
             }
 
-            Link(destination: URL(string: "https://www.apple.com/privacy/")!) {
+            Link(destination: AppConfig.privacyPolicyURL) {
                 Label("Privacy Policy", systemImage: "hand.raised")
             }
 
-            Link(destination: URL(string: "https://apps.apple.com/app/id123456789?action=write-review")!) {
+            Link(destination: AppConfig.reviewURL) {
                 Label("Rate App", systemImage: "star")
             }
 
-            ShareLink(item: URL(string: "https://apps.apple.com/app/id123456789")!) {
+            ShareLink(item: AppConfig.appStoreURL) {
                 Label("Share App", systemImage: "square.and.arrow.up")
             }
         } header: {
@@ -289,7 +289,7 @@ struct DisplaySettingsView: View {
     @AppStorage("showPinyin") private var showPinyin: Bool = true
     @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
     @AppStorage("toneColors") private var toneColors: Bool = true
-    @AppStorage("fontSize") private var fontSize: Double = 1.0
+    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 20
     @AppStorage("hapticFeedback") private var hapticFeedback: Bool = true
 
     var body: some View {
@@ -312,9 +312,14 @@ struct DisplaySettingsView: View {
                     .foregroundStyle(.secondary)
 
                 VStack(alignment: .leading) {
-                    Text("Text Size")
-                    Slider(value: $fontSize, in: 0.8...1.4, step: 0.1) {
-                        Text("Text Size")
+                    HStack {
+                        Text("Vocabulary Text Size")
+                        Spacer()
+                        Text(verbatim: "\(Int(chineseFontSize)) pt")
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(value: $chineseFontSize, in: 14...40, step: 2) {
+                        Text("Vocabulary Text Size")
                     } minimumValueLabel: {
                         Text("A")
                             .font(.caption)
@@ -560,7 +565,7 @@ struct AboutView: View {
                         .font(.title)
                         .fontWeight(.bold)
 
-                    Text("Version 1.0.0")
+                    Text(verbatim: "\(L("Version")) \(AppConfig.appVersion)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -603,7 +608,7 @@ struct AboutView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    Text("Translation powered by Apple Translation API")
+                    Text("Translation & AI powered by Apple Translation, on-device Ollama, and configured cloud providers including OpenAI, Claude, DeepSeek, and Qwen.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

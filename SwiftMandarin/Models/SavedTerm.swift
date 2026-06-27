@@ -38,6 +38,24 @@ struct SavedTerm: Identifiable, Codable, Equatable, Hashable {
         self.sortOrder = sortOrder
         self.isMastered = isMastered
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, chinese, pinyin, definition, partOfSpeech, dateAdded, sortOrder, isMastered
+    }
+
+    /// Tolerant decoder: a missing or malformed field falls back to a default
+    /// rather than throwing and dropping the whole saved term.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = (try? c.decode(UUID.self, forKey: .id)) ?? UUID()
+        chinese = (try? c.decode(String.self, forKey: .chinese)) ?? ""
+        pinyin = (try? c.decode(String.self, forKey: .pinyin)) ?? ""
+        definition = (try? c.decode(String.self, forKey: .definition)) ?? ""
+        partOfSpeech = (try? c.decode(String.self, forKey: .partOfSpeech)) ?? ""
+        dateAdded = (try? c.decode(Date.self, forKey: .dateAdded)) ?? Date()
+        sortOrder = (try? c.decode(Int.self, forKey: .sortOrder)) ?? 0
+        isMastered = (try? c.decode(Bool.self, forKey: .isMastered)) ?? false
+    }
 }
 
 // MARK: - Interface-language-aware display

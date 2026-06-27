@@ -160,11 +160,19 @@ final class ScreenshotTranslationStore {
     
     /// Process pending screenshots: stitch, OCR, and translate
     func processScreenshots() async {
+        // Re-entry guard: a second call (e.g. the intent firing again or a rapid
+        // "Try Again" tap) must not start a parallel stitch/OCR/translate
+        // pipeline that races to overwrite this run's results.
+        guard !state.isProcessing else { return }
+
+        // `images` is a value-type snapshot of `pendingImages`, so the rest of
+        // the pipeline operates on a stable copy even if the pending queue is
+        // replaced or cleared while these awaits are in flight.
         guard let images = pendingImages, !images.isEmpty else {
             state = .error("No images to process")
             return
         }
-        
+
         state = .stitching
         
         do {

@@ -23,7 +23,22 @@ struct TranslationHistoryEntry: Identifiable, Codable, Hashable {
         self.direction = direction
         self.date = date
     }
-    
+
+    private enum CodingKeys: String, CodingKey {
+        case id, source, target, direction, date
+    }
+
+    /// Tolerant decoder: a missing or malformed field falls back to a default
+    /// rather than throwing and dropping the whole row.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = (try? c.decode(UUID.self, forKey: .id)) ?? UUID()
+        source = (try? c.decode(String.self, forKey: .source)) ?? ""
+        target = (try? c.decode(String.self, forKey: .target)) ?? ""
+        direction = (try? c.decode(TranslationDirection.self, forKey: .direction)) ?? .englishToChinese
+        date = (try? c.decode(Date.self, forKey: .date)) ?? Date()
+    }
+
     var chineseText: String {
         direction == .englishToChinese ? target : source
     }
