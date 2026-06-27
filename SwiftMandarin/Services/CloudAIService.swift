@@ -124,7 +124,7 @@ final class CloudAIService {
             return
         }
 
-        guard let url = URL(string: settings.baseURL(for: provider) + modelsPath) else {
+        guard let url = Self.buildURL(base: settings.baseURL(for: provider), path: modelsPath) else {
             lastError[provider.rawValue] = CloudAIError.invalidURL.localizedDescription
             return
         }
@@ -230,7 +230,7 @@ final class CloudAIService {
 
         let base = settings.baseURL(for: provider)
         let style = settings.effectiveAPIStyle(for: provider)
-        guard let url = URL(string: base + settings.effectiveChatPath(for: provider)) else { throw CloudAIError.invalidURL }
+        guard let url = Self.buildURL(base: base, path: settings.effectiveChatPath(for: provider)) else { throw CloudAIError.invalidURL }
 
         // Combine the convenience single image with the multi-image array;
         // only send images at all for vision-capable providers.
@@ -370,6 +370,23 @@ final class CloudAIService {
             body["response_format"] = ["type": "json_object"]
         }
         return body
+    }
+
+    /// Join a base URL and a path, collapsing a duplicated version segment.
+    ///
+    /// Some hosts serve both an OpenAI-style API (base ends in `/v1`, path is
+    /// version-less like `/chat/completions`) and an Anthropic-style API (path
+    /// carries the version, e.g. `/v1/messages`) at the SAME host. Kimi's coding
+    /// endpoint is the case in point: `…/coding/v1/chat/completions` (OpenAI) and
+    /// `…/coding/v1/messages` (Anthropic). If the user keeps the default
+    /// `…/coding/v1` base but switches API Format to Anthropic, naive
+    /// concatenation yields `…/coding/v1/v1/messages` → 404. Collapse that.
+    private static func buildURL(base: String, path: String) -> URL? {
+        var b = base
+        if path.hasPrefix("/v1"), b.hasSuffix("/v1") {
+            b.removeLast(3)
+        }
+        return URL(string: b + path)
     }
 
     /// The bare model id with any provider prefix (e.g. "openai/", "openai:") stripped.
