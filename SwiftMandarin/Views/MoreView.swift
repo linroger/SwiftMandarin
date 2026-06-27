@@ -289,7 +289,7 @@ struct DisplaySettingsView: View {
     @AppStorage("showPinyin") private var showPinyin: Bool = true
     @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
     @AppStorage("toneColors") private var toneColors: Bool = true
-    @AppStorage("fontSize") private var fontSize: Double = 1.0
+    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 20
     @AppStorage("hapticFeedback") private var hapticFeedback: Bool = true
 
     var body: some View {
@@ -312,9 +312,14 @@ struct DisplaySettingsView: View {
                     .foregroundStyle(.secondary)
 
                 VStack(alignment: .leading) {
-                    Text("Text Size")
-                    Slider(value: $fontSize, in: 0.8...1.4, step: 0.1) {
-                        Text("Text Size")
+                    HStack {
+                        Text("Vocabulary Text Size")
+                        Spacer()
+                        Text(verbatim: "\(Int(chineseFontSize)) pt")
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(value: $chineseFontSize, in: 14...40, step: 2) {
+                        Text("Vocabulary Text Size")
                     } minimumValueLabel: {
                         Text("A")
                             .font(.caption)

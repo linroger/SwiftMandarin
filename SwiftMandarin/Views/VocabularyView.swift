@@ -27,8 +27,9 @@ struct VocabularyView: View {
     /// Term selected for AI explanation
     @State private var aiExplanationTerm: SavedTerm?
 
-    /// Font size for Chinese characters in the vocabulary list (persisted)
-    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 26
+    /// Font size for Chinese characters in the vocabulary list (persisted).
+    /// Also driven by the "Text Size" slider in Settings.
+    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 20
     @AppStorage("vocabularyDetailUsesInspector") private var vocabularyDetailUsesInspector: Bool = true
     
     enum SortOrder: String, CaseIterable {
@@ -460,7 +461,7 @@ struct VocabularyView: View {
 
 struct VocabularyRow: View {
     let term: SavedTerm
-    var chineseFontSize: Double = 26
+    var chineseFontSize: Double = 20
     var isSelected: Bool = false
     var onMasteredToggle: (() -> Void)?
     var onAIExplainTap: (() -> Void)?
@@ -580,7 +581,7 @@ struct TermDetailSheet: View {
                     // English headwords can be long, so allow shrinking.
                     VStack(spacing: 12) {
                         Text(term.headlineText)
-                            .font(.system(size: 80, weight: .medium))
+                            .font(.system(size: 92, weight: .medium))
                             .lineLimit(2)
                             .minimumScaleFactor(0.35)
                             .multilineTextAlignment(.center)
@@ -588,7 +589,7 @@ struct TermDetailSheet: View {
 
                         if term.showsPinyin {
                             Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                                .font(.title)
+                                .font(.largeTitle)
                         }
 
                         if !term.partOfSpeech.isEmpty {

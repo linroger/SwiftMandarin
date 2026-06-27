@@ -260,7 +260,7 @@ struct TranslationSettingsTab: View {
 struct AppearanceSettingsTab: View {
     @AppStorage("showPinyin") private var showPinyin: Bool = true
     @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
-    @AppStorage("fontSize") private var fontSize: Double = 1.0
+    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 20
     @AppStorage("chineseFont") private var chineseFont: String = "System"
     @AppStorage("toneColors") private var toneColors: Bool = true
     @AppStorage("wordBorders") private var wordBorders: Bool = true
@@ -286,11 +286,11 @@ struct AppearanceSettingsTab: View {
             }
             
             Section {
-                LabeledContent("Text Size") {
-                    Slider(value: $fontSize, in: 0.8...1.6, step: 0.1) {
+                LabeledContent("Vocabulary Text Size") {
+                    Slider(value: $chineseFontSize, in: 14...40, step: 2) {
                         Text("Size")
                     }
-                    Text("\(Int(fontSize * 100))%")
+                    Text(verbatim: "\(Int(chineseFontSize)) pt")
                         .foregroundStyle(.secondary)
                         .frame(width: 50, alignment: .trailing)
                 }
