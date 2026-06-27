@@ -9,18 +9,41 @@ import Foundation
 import SwiftUI
 
 enum PinyinConverter {
-    
+
     // MARK: - Basic Conversion
-    
+
+    /// Memoizes `convert(_:includeToneMarks:)` results. `CFStringTransform`
+    /// (via `applyingTransform`) is expensive and `convert` is called per
+    /// segment on every ruby-text layout, so repeated conversions of the same
+    /// word were a measurable hot spot. NSCache is thread-safe and evicts
+    /// under memory pressure, so this needs no locking or manual trimming.
+    private static let conversionCache: NSCache<NSString, NSString> = {
+        let cache = NSCache<NSString, NSString>()
+        cache.countLimit = 4096
+        return cache
+    }()
+
     static func convert(_ text: String, includeToneMarks: Bool = true) -> String {
         guard !text.isEmpty else { return "" }
         // Pinyin only applies to Chinese. For non-CJK input (e.g. an English
         // vocabulary term saved from workbook grading) return empty rather
         // than echoing the input back as a fake "pinyin" reading.
         guard text.contains(where: { $0.isChineseCharacter }) else { return "" }
+        // The flag is part of the key so tone-marked and stripped variants
+        // of the same text can't collide.
+        let cacheKey = "\(includeToneMarks ? "t" : "p")|\(text)" as NSString
+        if let cached = conversionCache.object(forKey: cacheKey) {
+            return cached as String
+        }
         let transformed = text.applyingTransform(.mandarinToLatin, reverse: false) ?? text
-        guard !includeToneMarks else { return transformed }
-        return transformed.applyingTransform(.stripDiacritics, reverse: false) ?? transformed
+        let result: String
+        if includeToneMarks {
+            result = transformed
+        } else {
+            result = transformed.applyingTransform(.stripDiacritics, reverse: false) ?? transformed
+        }
+        conversionCache.setObject(result as NSString, forKey: cacheKey)
+        return result
     }
     
     // MARK: - Tone Detection

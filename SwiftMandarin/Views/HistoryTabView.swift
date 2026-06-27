@@ -30,6 +30,14 @@ struct HistoryTabView: View {
         }
         return entries
     }
+
+    /// Whether the visible list is a filtered subset of the store. Reordering
+    /// is only allowed on the full list: `onMove` offsets are positions in the
+    /// FILTERED array, and handing those to the unfiltered store would move
+    /// the wrong rows.
+    private var isFilterActive: Bool {
+        directionFilter != nil || !searchText.isEmpty
+    }
     
     var body: some View {
         NavigationStack {
@@ -82,9 +90,11 @@ struct HistoryTabView: View {
                                     HistoryDragPreview(entry: entry)
                                 }
                         }
-                        .onMove { source, destination in
+                        // Passing nil disables the move handles while a
+                        // search/filter is active (see `isFilterActive`).
+                        .onMove(perform: isFilterActive ? nil : { source, destination in
                             historyStore.move(from: source, to: destination)
-                        }
+                        })
                     }
                     #if os(iOS)
                     .listStyle(.insetGrouped)
@@ -227,11 +237,10 @@ struct HistoryTabView: View {
     }
     
     private func duplicateEntry(_ entry: TranslationHistoryEntry) {
-        historyStore.add(
-            source: entry.source,
-            target: entry.target,
-            direction: entry.direction
-        )
+        // `add` would dedup the identical row away (a visual no-op) and record
+        // learning activity; `duplicate` inserts a real copy and leaves stats
+        // untouched.
+        historyStore.duplicate(entry)
     }
 }
 

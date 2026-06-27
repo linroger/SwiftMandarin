@@ -51,6 +51,42 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 
 ## Features
 
+### 🏠 Home — Your Daily Front Door
+
+- **Open with purpose**: a Home tab greets you with your streak, a daily-goal ring, and exactly what to do next
+- **Review Now**: one tap starts a smart session — genuinely due cards plus new cards within your daily budget
+- **Word of the Day**: a deterministic daily pick from your own vocabulary, with tone-colored pinyin and one-tap narration
+- **Continue Reading**: jump straight back into the last text you were reading
+- **First-run welcome**: three screens configure your learning direction, daily goal, and optional AI
+
+### 🗂️ Modern Spaced Repetition (FSRS)
+
+- **FSRS-4.5 scheduler**: the modern successor to SM-2 — per-card stability & difficulty, a real forgetting curve, and honest intervals
+- **Interval previews**: every grade button (Again / Hard / Good / Easy) shows exactly when you'll see the card next
+- **In-session relearn queue**: missed cards return within the same session until you get them right
+- **Daily new-card budget** and a 7-day review forecast after every session
+- **Seamless migration**: existing SM-2 progress converts automatically
+
+### 📖 Immersive Reader & AI Story Studio
+
+- **Read anything**: paste, write, or import text into your reading library
+- **Tap-to-define**: every word in the current paragraph is interactive with pinyin ruby text
+- **AI graded stories**: generate stories at your level that reuse the words you've already saved
+- **Per-paragraph translation & read-aloud**, reading progress, and a "~% known" vocabulary-coverage estimate
+
+### 💬 AI Conversation Partner
+
+- **Roleplay real scenes**: café, directions, shopping, introductions, travel, the doctor's office, or free chat
+- **Speak or type**: built-in voice input; replies come in the language you're learning
+- **Gentle corrections**: the partner flags mistakes in your native language
+- **Pinyin & translation reveal** on every message, with one-tap narration
+
+### 🎯 Practice Hub
+
+- **Quiz**: multiple choice from your vocabulary with smart same-part-of-speech distractors
+- **Dictation**: listen, type what you hear, and see a character-level diff
+- **Tone drills**: train your ear with two-syllable tone-pattern rounds and a personal confusion insight
+
 ### 🔤 Intelligent Translation
 
 <img align="right" src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-02-23%20at%2016.24.47@2x.png" width="400" alt="Translation View" />

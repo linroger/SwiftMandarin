@@ -181,17 +181,22 @@ final class SavedTermsStore {
     
     func remove(at offsets: IndexSet) {
         var updated = terms
+        let removed = offsets.compactMap { terms.indices.contains($0) ? terms[$0] : nil }
         updated.remove(atOffsets: offsets)
         terms = reindexed(updated)
+        purgeProgress(for: removed)
     }
 
     func remove(_ term: SavedTerm) {
         terms = reindexed(terms.filter { $0.id != term.id })
+        purgeProgress(for: [term])
     }
 
     func remove(chinese: String) {
         let key = Self.normalizedKey(chinese)
+        let removed = terms.filter { Self.normalizedKey($0.chinese) == key }
         terms = reindexed(terms.filter { Self.normalizedKey($0.chinese) != key })
+        purgeProgress(for: removed)
     }
 
     func term(withID id: UUID) -> SavedTerm? {
@@ -223,7 +228,9 @@ final class SavedTermsStore {
     }
     
     func clear() {
+        let removed = terms
         terms.removeAll()
+        purgeProgress(for: removed)
     }
     
     /// Toggle the mastered status of a term
@@ -244,7 +251,17 @@ final class SavedTermsStore {
     }
     
     // MARK: - Private Methods
-    
+
+    /// Purge the SRS review progress of removed terms. Vocabulary cards are
+    /// keyed "vocab:<uuid>" in `LearningProgressStore`, so without this a
+    /// deleted word would leave an orphaned card that keeps resurfacing in
+    /// due/review queues forever.
+    private func purgeProgress(for removed: [SavedTerm]) {
+        for term in removed {
+            LearningProgressStore.shared.removeProgress(forCardId: "vocab:\(term.id.uuidString)")
+        }
+    }
+
     /// Return a copy of `terms` with `sortOrder` renumbered to match array
     /// position. Callers assign the result to `terms` in a single statement so
     /// the `didSet` persistence hook fires exactly once. Renumbering in place

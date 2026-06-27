@@ -254,7 +254,9 @@ enum DetectedLanguage: Equatable, Sendable {
 
 extension Unicode.Scalar {
     /// Whether this scalar is a CJK (Han) ideograph across the common ranges.
-    var isCJKIdeograph: Bool {
+    /// Pure Unicode math — explicitly `nonisolated` so it is callable from any
+    /// context (this file defaults to `MainActor` isolation).
+    nonisolated var isCJKIdeograph: Bool {
         (0x4E00...0x9FFF).contains(value) ||   // CJK Unified Ideographs
         (0x3400...0x4DBF).contains(value) ||   // CJK Extension A
         (0xF900...0xFAFF).contains(value) ||   // CJK Compatibility Ideographs

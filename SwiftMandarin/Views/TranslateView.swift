@@ -40,6 +40,12 @@ struct TranslateView: View {
     @FocusState private var isInputFocused: Bool
     @State private var pendingAutoTranslateTask: Task<Void, Never>?
     @State private var preserveSourceTextDuringProgrammaticUpdate: Bool = false
+
+    // Debounced persistence of the in-progress draft, so an unfinished
+    // translation survives an app relaunch (state only lives across tab
+    // switches otherwise).
+    @State private var draftSaveTask: Task<Void, Never>?
+    private static let draftKey = "translationDraft"
     
     // State for additional translation when input language mismatches direction
     @State private var additionalTranslation: String = ""
@@ -140,8 +146,13 @@ struct TranslateView: View {
                 }
             }
             .task {
+                restoreDraftIfNeeded()
                 applyDefaultDirectionIfNeeded()
             }
+            // Persist the draft (debounced) whenever any of its parts change.
+            .onChange(of: sharedState.sourceText) { _, _ in scheduleDraftSave() }
+            .onChange(of: sharedState.translatedText) { _, _ in scheduleDraftSave() }
+            .onChange(of: sharedState.direction) { _, _ in scheduleDraftSave() }
             .navigationTitle("Translate")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -320,7 +331,11 @@ struct TranslateView: View {
                         sharedState.translatedText = ""
                         sharedState.translationError = nil
                         additionalTranslation = ""
-                    } else if autoTranslate {
+                    } else if autoTranslate && !preserveSourceTextDuringProgrammaticUpdate {
+                        // Programmatic updates (draft restore, live-speech
+                        // results) arrive with their translation already set —
+                        // re-translating them would waste a request and
+                        // double-count history/stats.
                         scheduleAutoTranslation(for: newValue)
                     }
                 }
@@ -1124,6 +1139,51 @@ struct TranslateView: View {
         sharedState.direction = storedDirection
     }
 
+    // MARK: - Draft Persistence
+
+    /// Restore the last persisted draft, but only when the editor is empty —
+    /// live content (including a restore from History) always wins.
+    private func restoreDraftIfNeeded() {
+        guard !sharedState.hasContent,
+              let draft = PersistentCodableStore.load(TranslationDraft.self, key: Self.draftKey),
+              !draft.isEmpty else { return }
+        // Programmatic restore: keep the source-text onChange from wiping the
+        // restored translation.
+        preserveCurrentTranslationDuringSourceUpdate {
+            sharedState.direction = draft.direction
+            sharedState.sourceText = draft.source
+            sharedState.translatedText = draft.translated
+        }
+    }
+
+    /// Persist the current draft, debounced 1s so keystrokes don't hammer
+    /// UserDefaults. Clearing is persisted immediately so a cleared draft
+    /// can't resurrect if the app quits inside the debounce window.
+    private func scheduleDraftSave() {
+        draftSaveTask?.cancel()
+        let draft = TranslationDraft(
+            source: sharedState.sourceText,
+            translated: sharedState.translatedText,
+            direction: sharedState.direction
+        )
+        guard !draft.isEmpty else {
+            PersistentCodableStore.save(draft, key: Self.draftKey)
+            return
+        }
+        draftSaveTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            PersistentCodableStore.save(
+                TranslationDraft(
+                    source: sharedState.sourceText,
+                    translated: sharedState.translatedText,
+                    direction: sharedState.direction
+                ),
+                key: Self.draftKey
+            )
+        }
+    }
+
     private func scheduleAutoTranslation(for text: String) {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedText.isEmpty else { return }
@@ -1160,12 +1220,30 @@ struct TranslateView: View {
     
     private func triggerHaptic() {
         #if os(iOS)
-        let hapticEnabled = UserDefaults.standard.bool(forKey: "hapticFeedback")
+        // The Settings toggle defaults to ON, so an unset key must read as
+        // true (`bool(forKey:)` would return false until the user ever
+        // touches the toggle).
+        let hapticEnabled = (UserDefaults.standard.object(forKey: "hapticFeedback") as? Bool) ?? true
         if hapticEnabled {
             let generator = UIImpactFeedbackGenerator(style: .medium)
             generator.impactOccurred()
         }
         #endif
+    }
+}
+
+// MARK: - Translation Draft
+
+/// Snapshot of the in-progress translation persisted to UserDefaults so an
+/// unfinished draft survives an app relaunch.
+private struct TranslationDraft: Codable {
+    var source: String
+    var translated: String
+    var direction: TranslationDirection
+
+    var isEmpty: Bool {
+        source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        translated.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
 

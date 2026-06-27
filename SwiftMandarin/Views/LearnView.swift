@@ -7,39 +7,56 @@
 
 import SwiftUI
 
-/// Flashcard learning view with spaced repetition
+/// Flashcard learning view with FSRS spaced repetition.
+///
+/// A review session is an honest queue: due cards first (most overdue
+/// first) plus today's remaining new-card budget. The four grade buttons
+/// show the exact interval each answer would schedule, and a card graded
+/// Again re-enters the current session a few cards later — it has to be
+/// answered correctly before the session lets it go.
 struct LearnView: View {
     @Environment(LearningProgressStore.self) private var learningStore
     @Environment(SavedTermsStore.self) private var savedTermsStore
     @Environment(AppRouteStore.self) private var routeStore
-    
+
     @State private var sessionCards: [LearningCard] = []
     @State private var currentCardIndex: Int = 0
     @State private var isFlipped: Bool = false
     @State private var showingStats: Bool = false
-    @State private var studyMode: StudyMode = .all
+    @State private var studyMode: StudyMode = .dueForReview
     @State private var cardSource: CardSource = .combined
-    
+
+    // Per-session bookkeeping, reset by `reloadSessionCards()`.
+    @State private var sessionDueCount: Int = 0
+    @State private var sessionNewCount: Int = 0
+    @State private var sessionGradeCount: Int = 0
+    @State private var sessionCorrectCount: Int = 0
+    @State private var reviewedCardIds: Set<String> = []
+    @State private var relearnCardIds: Set<String> = []
+
+    /// The four FSRS grades offered as answer buttons, in escalating order.
+    private static let gradeChoices: [ReviewQuality] = [.blackout, .hard, .good, .easy]
+
     enum CardSource: String, CaseIterable {
         case builtin = "Built-in Deck"
         case vocabulary = "My Vocabulary"
         case combined = "All Cards"
     }
-    
+
     enum StudyMode: String, CaseIterable {
         case all = "All Cards"
         case dueForReview = "Due for Review"
         case newOnly = "New Cards"
         case difficult = "Difficult"
     }
-    
+
     /// Convert saved terms to learning cards. Sides are detected by content
     /// because the headword field can hold either language depending on the
     /// learning direction the entry was saved under.
     private var vocabularyCards: [LearningCard] {
         savedTermsStore.terms.map { LearningCard(from: $0) }
     }
-    
+
     /// All available cards based on source selection
     private var allAvailableCards: [LearningCard] {
         switch cardSource {
@@ -51,39 +68,12 @@ struct LearnView: View {
             return LearningDeck.cards + vocabularyCards
         }
     }
-    
-    private var filteredStudyCards: [LearningCard] {
-        let baseCards = allAvailableCards
-        
-        switch studyMode {
-        case .all:
-            return baseCards
-        case .dueForReview:
-            return baseCards.filter { card in
-                if let progress = learningStore.progress[card.id] {
-                    return progress.nextReviewDate <= Date()
-                }
-                return false
-            }
-        case .newOnly:
-            return baseCards.filter { card in
-                learningStore.progress[card.id] == nil
-            }
-        case .difficult:
-            return baseCards.filter { card in
-                if let progress = learningStore.progress[card.id] {
-                    return progress.masteryLevel == .learning || progress.masteryLevel == .new
-                }
-                return false
-            }
-        }
-    }
-    
+
     private var currentCard: LearningCard? {
         guard currentCardIndex < sessionCards.count else { return nil }
         return sessionCards[currentCardIndex]
     }
-    
+
     var body: some View {
         NavigationStack {
             Group {
@@ -105,31 +95,31 @@ struct LearnView: View {
                         Section("Card Source") {
                             Picker("Source", selection: $cardSource) {
                                 ForEach(CardSource.allCases, id: \.self) { source in
-                                    Label(source.rawValue, systemImage: source == .vocabulary ? "text.book.closed" : source == .builtin ? "rectangle.stack" : "square.stack.3d.up")
+                                    Label(L(source.rawValue), systemImage: source == .vocabulary ? "text.book.closed" : source == .builtin ? "rectangle.stack" : "square.stack.3d.up")
                                         .tag(source)
                                 }
                             }
                         }
-                        
+
                         Section("Study Mode") {
                             Picker("Mode", selection: $studyMode) {
                                 ForEach(StudyMode.allCases, id: \.self) { mode in
-                                    Text(mode.rawValue).tag(mode)
+                                    Text(L(mode.rawValue)).tag(mode)
                                 }
                             }
                         }
-                        
+
                         Divider()
-                        
+
                         Button {
                             showingStats = true
                         } label: {
                             Label("Statistics", systemImage: "chart.bar")
                         }
-                        
+
                         Button {
                             learningStore.resetProgress()
-                            currentCardIndex = 0
+                            reloadSessionCards()
                         } label: {
                             Label("Reset Progress", systemImage: "arrow.counterclockwise")
                         }
@@ -173,7 +163,7 @@ struct LearnView: View {
         }
         .focusable()
     }
-    
+
     // MARK: - Pending Actions
 
     @discardableResult
@@ -188,7 +178,7 @@ struct LearnView: View {
             // screenshot action routed to the Photo tab isn't swallowed here.
             routeStore.clearPendingAction()
             return true
-        case .openCameraScanner, .translateScreenshots:
+        case .openCameraScanner, .translateScreenshots, .openStudyRoute:
             return false
         }
     }
@@ -210,53 +200,66 @@ struct LearnView: View {
         }
     }
 
+    // MARK: - Session Building
+
     private func reloadSessionCards() {
-        // For a review session, run the due cards through the spaced-repetition
-        // scheduler so they're ordered by urgency and capped at a sensible
-        // session size; other study modes keep their full filtered list.
-        if studyMode == .dueForReview {
-            sessionCards = learningStore.getCardsForReview(from: filteredStudyCards)
-        } else {
-            sessionCards = filteredStudyCards
+        let base = allAvailableCards
+        switch studyMode {
+        case .dueForReview:
+            // The real SRS session: due cards ordered by urgency plus new
+            // cards within today's remaining introduction budget.
+            sessionCards = learningStore.getCardsForReview(from: base)
+        case .all:
+            sessionCards = base
+        case .newOnly:
+            sessionCards = base.filter { (learningStore.progress[$0.id]?.reviewCount ?? 0) == 0 }
+        case .difficult:
+            sessionCards = base.filter { card in
+                guard let p = learningStore.progress[card.id] else { return false }
+                return p.masteryLevel == .learning || p.srsState == .relearning || p.lapse > 0
+            }
         }
+        sessionDueCount = sessionCards.filter { (learningStore.progress[$0.id]?.reviewCount ?? 0) > 0 }.count
+        sessionNewCount = sessionCards.count - sessionDueCount
         currentCardIndex = 0
         isFlipped = false
+        sessionGradeCount = 0
+        sessionCorrectCount = 0
+        reviewedCardIds = []
+        relearnCardIds = []
     }
 
     // MARK: - Keyboard Navigation
-    
+
     private func goToPreviousCard() {
-        guard !sessionCards.isEmpty else { return }
+        guard !sessionCards.isEmpty, currentCardIndex > 0 else { return }
         withAnimation {
             isFlipped = false
-            if currentCardIndex > 0 {
-                currentCardIndex -= 1
-            } else {
-                currentCardIndex = sessionCards.count - 1 // Wrap to last card
-            }
+            currentCardIndex -= 1
         }
     }
-    
+
     private func goToNextCard() {
-        guard !sessionCards.isEmpty else { return }
+        // Clamp at the last card (no wrap-around). Grading — not arrow keys — is
+        // what completes a review session; without this clamp a hardware
+        // keyboard could skip past a re-inserted relearn card and reach the end
+        // with it unpassed, defeating the must-pass relearn queue.
+        guard !sessionCards.isEmpty, currentCardIndex < sessionCards.count - 1 else { return }
         withAnimation {
             isFlipped = false
-            if currentCardIndex < sessionCards.count - 1 {
-                currentCardIndex += 1
-            } else {
-                currentCardIndex = 0 // Wrap to first card
-            }
+            currentCardIndex += 1
         }
     }
-    
+
     private func flipCard() {
+        guard currentCard != nil else { return }
         withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
             isFlipped.toggle()
         }
     }
-    
+
     // MARK: - Empty State
-    
+
     private var emptyState: some View {
         ContentUnavailableView {
             Label("No Cards Available", systemImage: "rectangle.on.rectangle.slash")
@@ -286,16 +289,16 @@ struct LearnView: View {
             }
         }
     }
-    
+
     // MARK: - Card Study View
-    
+
     private func cardStudyView(card: LearningCard) -> some View {
         VStack(spacing: 20) {
             // Progress indicator
             progressHeader
-            
+
             Spacer()
-            
+
             // Flashcard
             FlashcardView(card: card, isFlipped: $isFlipped)
                 .onTapGesture {
@@ -303,9 +306,9 @@ struct LearnView: View {
                         isFlipped.toggle()
                     }
                 }
-            
+
             Spacer()
-            
+
             // Controls
             if isFlipped {
                 reviewButtons(for: card)
@@ -317,80 +320,224 @@ struct LearnView: View {
         }
         .padding()
     }
-    
+
     // MARK: - Progress Header
-    
+
     private var progressHeader: some View {
         VStack(spacing: 8) {
             HStack {
+                if studyMode == .dueForReview {
+                    Text("\(sessionDueCount) due · \(sessionNewCount) new")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                } else {
+                    Text("\(sessionCards.count) cards")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+
+                Spacer()
+
+                if let card = currentCard {
+                    if relearnCardIds.contains(card.id) {
+                        // This card was missed earlier in the session and is
+                        // back for its must-pass relearn attempt.
+                        TagChip(text: L("Relearn"), tint: .red)
+                    } else if let progress = learningStore.progress[card.id] {
+                        MasteryBadge(level: progress.masteryLevel)
+                    }
+                }
+            }
+
+            SMProgressBar(progress: Double(currentCardIndex) / Double(max(sessionCards.count, 1)))
+
+            HStack {
                 Text("\(min(currentCardIndex + 1, sessionCards.count)) of \(sessionCards.count)")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
+                Spacer()
+            }
+        }
+    }
+
+    // MARK: - Review Buttons
+
+    /// Four FSRS grade buttons, each captioned with the exact interval that
+    /// grade would schedule — seeing "Good · 6d" vs "Easy · 3w" is what makes
+    /// the scheduler feel trustworthy instead of arbitrary.
+    private func reviewButtons(for card: LearningCard) -> some View {
+        let previews = learningStore.previewIntervals(cardId: card.id)
+        return HStack(spacing: 10) {
+            ForEach(Self.gradeChoices, id: \.self) { quality in
+                gradeButton(for: card, quality: quality, predictedInterval: previews[quality])
+            }
+        }
+    }
+
+    private func gradeButton(for card: LearningCard, quality: ReviewQuality, predictedInterval: TimeInterval?) -> some View {
+        Button {
+            recordReview(card: card, quality: quality)
+        } label: {
+            VStack(spacing: 3) {
+                Text(quality.label)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(quality.color)
+                    .fitSingleLine()
+                if let predictedInterval {
+                    Text(SRSEngine.formattedInterval(predictedInterval))
+                        .font(.caption2)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(quality.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Completion View
+
+    /// Session summary: what was accomplished, the streak it fed, and an
+    /// honest look at the week ahead so "done for today" means something.
+    private var completionView: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                ZStack {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 56))
+                        .foregroundStyle(.green)
+                    CelebrationBurst()
+                }
+                .padding(.top, 24)
+
+                Text("Session Complete!")
+                    .font(.title2.bold())
+
+                Text("Great work! Your next reviews are scheduled.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                
-                Spacer()
-                
-                if let card = currentCard, let progress = learningStore.progress[card.id] {
-                    MasteryBadge(level: progress.masteryLevel)
-                }
-            }
-            
-            ProgressView(value: Double(min(currentCardIndex + 1, sessionCards.count)), total: Double(max(sessionCards.count, 1)))
-                .tint(.blue)
-        }
-    }
-    
-    // MARK: - Review Buttons
-    
-    private func reviewButtons(for card: LearningCard) -> some View {
-        HStack(spacing: 12) {
-            ForEach([ReviewQuality.blackout, .incorrect, .difficult, .hard, .good, .easy], id: \.self) { quality in
-                Button {
-                    recordReview(card: card, quality: quality)
-                } label: {
-                    VStack(spacing: 4) {
-                        Text(quality.emoji)
-                            .font(.title2)
-                        Text(quality.label)
-                            .font(.caption2)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(quality.color.opacity(0.15))
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 12) {
+                    StatTile(
+                        icon: "rectangle.stack.fill",
+                        iconColor: .blue,
+                        value: "\(reviewedCardIds.count)",
+                        labelKey: "Cards Reviewed"
+                    )
+                    StatTile(
+                        icon: "target",
+                        iconColor: .green,
+                        value: sessionAccuracyText,
+                        labelKey: "Accuracy"
+                    )
+                    StatTile(
+                        icon: "flame.fill",
+                        iconColor: .orange,
+                        value: "\(LearningActivityStore.shared.currentStreak)",
+                        labelKey: "Day Streak"
                     )
                 }
-                .buttonStyle(.plain)
+
+                forecastCard
+
+                Button("Start New Session") {
+                    reloadSessionCards()
+                }
+                .buttonStyle(.borderedProminent)
+                .padding(.top, 4)
+            }
+            .padding()
+            .frame(maxWidth: 520)
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var sessionAccuracyText: String {
+        guard sessionGradeCount > 0 else { return "—" }
+        let percent = Int((Double(sessionCorrectCount) / Double(sessionGradeCount) * 100).rounded())
+        return "\(percent)%"
+    }
+
+    /// Seven-day due-count forecast so the learner sees tomorrow's workload
+    /// shrink as today's session lands.
+    private var forecastCard: some View {
+        let counts = SRSEngine.reviewForecast(progress: Array(learningStore.progress.values), days: 7)
+        let maxCount = max(counts.max() ?? 0, 1)
+        return SMCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Upcoming Reviews")
+                    .font(.headline)
+                HStack(alignment: .bottom, spacing: 8) {
+                    ForEach(Array(counts.enumerated()), id: \.offset) { dayOffset, count in
+                        VStack(spacing: 4) {
+                            Text("\(count)")
+                                .font(.caption2)
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(dayOffset == 0 ? AnyShapeStyle(SMTheme.heroGradient) : AnyShapeStyle(Color.accentColor.opacity(0.35)))
+                                .frame(height: 6 + 50 * CGFloat(count) / CGFloat(maxCount))
+                            forecastDayLabel(offset: dayOffset)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
             }
         }
     }
-    
-    // MARK: - Completion View
-    
-    private var completionView: some View {
-        ContentUnavailableView {
-            Label("Session Complete!", systemImage: "checkmark.circle")
-        } description: {
-            Text("You've reviewed all \(sessionCards.count) cards in this session")
-        } actions: {
-            Button("Start Over") {
-                reloadSessionCards()
+
+    private func forecastDayLabel(offset: Int) -> some View {
+        let date = Calendar.current.date(byAdding: .day, value: offset, to: Date()) ?? Date()
+        return Group {
+            if offset == 0 {
+                Text("Today")
+            } else {
+                // Weekday abbreviation localizes through the environment locale.
+                Text(date, format: .dateTime.weekday(.abbreviated))
             }
-            .buttonStyle(.borderedProminent)
         }
+        .font(.caption2)
+        .foregroundStyle(offset == 0 ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+        .fitSingleLine()
     }
-    
+
     // MARK: - Actions
-    
+
     private func recordReview(card: LearningCard, quality: ReviewQuality) {
         learningStore.recordReview(cardId: card.id, quality: quality)
-        
-        withAnimation {
+
+        sessionGradeCount += 1
+        reviewedCardIds.insert(card.id)
+        if quality.rawValue >= 3 {
+            sessionCorrectCount += 1
+            relearnCardIds.remove(card.id)
+        }
+
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
             isFlipped = false
-            if currentCardIndex < sessionCards.count - 1 {
-                currentCardIndex += 1
-            } else {
-                currentCardIndex = sessionCards.count // Trigger completion view
+            if quality.rawValue < 3 {
+                // In-session relearn queue: a missed card comes back 3–5
+                // positions later and must be answered correctly before the
+                // session releases it.
+                relearnCardIds.insert(card.id)
+                let reinsertIndex = min(currentCardIndex + Int.random(in: 3...5), sessionCards.count)
+                sessionCards.insert(card, at: reinsertIndex)
+            }
+            currentCardIndex += 1
+
+            // If advancing would end the session but cards are still awaiting a
+            // correct answer (e.g. one was navigated past with arrow keys), jump
+            // back to the first still-pending relearn card instead of completing.
+            if currentCardIndex >= sessionCards.count, !relearnCardIds.isEmpty,
+               let pendingIndex = sessionCards.firstIndex(where: { relearnCardIds.contains($0.id) }) {
+                currentCardIndex = pendingIndex
             }
         }
     }
@@ -479,7 +626,7 @@ struct FlashcardView: View {
             .rotation3DEffect(.degrees(isFlipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
         }
     }
-    
+
     private func cardFace<Content: View>(isFront: Bool, @ViewBuilder content: () -> Content) -> some View {
         content()
             .frame(maxWidth: .infinity, maxHeight: 400)
@@ -492,9 +639,9 @@ struct FlashcardView: View {
 
 struct MasteryBadge: View {
     let level: MasteryLevel
-    
+
     var body: some View {
-        Text(level.rawValue.capitalized)
+        Text(level.label)
             .font(.caption)
             .fontWeight(.semibold)
             .foregroundStyle(.white)
@@ -510,34 +657,23 @@ struct MasteryBadge: View {
 // MARK: - Review Quality Extensions
 
 extension ReviewQuality {
-    var emoji: String {
-        switch self {
-        case .blackout: return "❌"
-        case .incorrect: return "😕"
-        case .difficult: return "😐"
-        case .hard: return "🤔"
-        case .good: return "🙂"
-        case .easy: return "😄"
-        }
-    }
-    
     var label: String {
         switch self {
-        case .blackout: return "Again"
-        case .incorrect: return "Wrong"
-        case .difficult: return "Difficult"
-        case .hard: return "Hard"
-        case .good: return "Good"
-        case .easy: return "Easy"
+        case .blackout: return String(localized: "Again")
+        case .incorrect: return String(localized: "Wrong")
+        case .difficult: return String(localized: "Difficult")
+        case .hard: return String(localized: "Hard")
+        case .good: return String(localized: "Good")
+        case .easy: return String(localized: "Easy")
         }
     }
-    
+
     var color: Color {
         switch self {
         case .blackout: return .red
-        case .incorrect: return .orange
-        case .difficult: return .yellow
-        case .hard: return .mint
+        case .incorrect: return .red
+        case .difficult: return .orange
+        case .hard: return .orange
         case .good: return .green
         case .easy: return .blue
         }
@@ -564,7 +700,7 @@ struct LearningStatsSheet: View {
     @Environment(LearningProgressStore.self) private var learningStore
     @Environment(SavedTermsStore.self) private var savedTermsStore
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationStack {
             List {
@@ -575,22 +711,30 @@ struct LearningStatsSheet: View {
                         Text("\(LearningDeck.cards.count + savedTermsStore.terms.count)")
                             .foregroundStyle(.secondary)
                     }
-                    
+
                     HStack {
                         Text("Cards Studied")
                         Spacer()
                         Text("\(learningStore.progress.count)")
                             .foregroundStyle(.secondary)
                     }
-                    
+
                     HStack {
                         Text("Total Reviews")
                         Spacer()
                         Text("\(learningStore.progress.values.reduce(0) { $0 + $1.reviewCount })")
                             .foregroundStyle(.secondary)
                     }
+
+                    HStack {
+                        Text("New cards today")
+                        Spacer()
+                        Text("\(learningStore.newCardsIntroducedToday) / \(learningStore.dailyNewCardLimit)")
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
                 }
-                
+
                 Section("Mastery Breakdown") {
                     ForEach(MasteryLevel.allCases, id: \.self) { level in
                         HStack {
@@ -601,7 +745,7 @@ struct LearningStatsSheet: View {
                         }
                     }
                 }
-                
+
                 Section("Due for Review") {
                     let dueCount = learningStore.progress.values.filter { $0.nextReviewDate <= Date() }.count
                     HStack {
@@ -621,9 +765,13 @@ struct LearningStatsSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
+            // Roll the daily counters over before showing them: the app can
+            // stay open past midnight (especially on macOS), so the reset that
+            // otherwise only runs on the next review must be forced here.
+            .onAppear { learningStore.refreshDailyCounters() }
         }
     }
-    
+
     private func countCards(at level: MasteryLevel) -> Int {
         learningStore.progress.values.filter { $0.masteryLevel == level }.count
     }

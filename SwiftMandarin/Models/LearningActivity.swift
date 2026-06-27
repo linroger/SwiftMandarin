@@ -169,9 +169,41 @@ final class LearningActivityStore {
     var currentStreak: Int {
         calculateStreak()
     }
-    
+
     /// Longest streak ever achieved
     private(set) var longestStreak: Int = 0
+
+    /// Today's date key ("yyyy-MM-dd"), exposed as observable state so views
+    /// that display "today"-derived values (streak, today's reviews, week
+    /// strips) get invalidated when the calendar day rolls over while the app
+    /// stays open. `currentStreak` and `todayActivity` already compute against
+    /// the *current* date on every read, but @Observable views only re-read
+    /// them when some observed state changes — this token is that state.
+    /// Views should call `refreshDayRollover()` from `onAppear` / scene-phase
+    /// changes and read `dayChangeToken` somewhere in their body.
+    private(set) var dayChangeToken: String = DailyActivity.keyFormatter.string(from: Date())
+
+    /// Re-derive `dayChangeToken` from the current date. Cheap and idempotent:
+    /// mutates (and therefore invalidates observers) only when the local
+    /// calendar day actually changed since the last refresh.
+    func refreshDayRollover() {
+        let today = dateKey(for: Date())
+        if dayChangeToken != today {
+            dayChangeToken = today
+        }
+    }
+
+    /// Activity recorded today (a zeroed record when nothing happened yet).
+    /// Always computed against the current date so it never goes stale at
+    /// midnight.
+    var todayActivity: DailyActivity {
+        activity(for: Date())
+    }
+
+    /// Convenience: flashcard reviews completed today.
+    var reviewsToday: Int {
+        todayActivity.reviewsCompleted
+    }
     
     /// Total words learned all time
     var totalWordsLearned: Int {
@@ -201,7 +233,7 @@ final class LearningActivityStore {
     
     /// Record that a word was learned today with its part of speech
     func recordWordLearned(partOfSpeech: String = "") {
-        var activity = todayActivity()
+        var activity = todayActivity
         activity.wordsLearned += 1
         
         // Track by part of speech
@@ -215,7 +247,7 @@ final class LearningActivityStore {
     
     /// Record that a review was completed today
     func recordReviewCompleted() {
-        var activity = todayActivity()
+        var activity = todayActivity
         activity.reviewsCompleted += 1
         activities[activity.dateKey] = activity
         updateLongestStreak()
@@ -224,7 +256,7 @@ final class LearningActivityStore {
     
     /// Record that a translation was made today
     func recordTranslationMade() {
-        var activity = todayActivity()
+        var activity = todayActivity
         activity.translationsMade += 1
         activities[activity.dateKey] = activity
         updateLongestStreak()
@@ -234,7 +266,7 @@ final class LearningActivityStore {
     /// Record that workbook questions were graded today (Photo-tab grader).
     func recordQuestionsGraded(_ count: Int = 1) {
         guard count > 0 else { return }
-        var activity = todayActivity()
+        var activity = todayActivity
         activity.questionsGraded += count
         activities[activity.dateKey] = activity
         updateLongestStreak()
@@ -347,11 +379,6 @@ final class LearningActivityStore {
     
     // MARK: - Private Methods
     
-    private func todayActivity() -> DailyActivity {
-        let key = dateKey(for: Date())
-        return activities[key] ?? DailyActivity(dateKey: key)
-    }
-    
     private func dateKey(for date: Date) -> String {
         DailyActivity.keyFormatter.string(from: date)
     }
@@ -401,11 +428,48 @@ final class LearningActivityStore {
         }
     }
     
+    /// Longest run of consecutive active days across the full history.
+    /// Recomputed on load (rather than trusted from the cached high-water
+    /// mark alone) so a restore/reinstall — where the "longestStreak"
+    /// UserDefaults value may be missing or stale while the activity history
+    /// itself survived — still reports the true best streak. Single backwards
+    /// scan over the active dates sorted newest → oldest.
+    private func computeLongestStreak() -> Int {
+        let calendar = Calendar.current
+        let activeDates = activities.values
+            .filter { $0.activityScore > 0 }
+            .compactMap { DailyActivity.keyFormatter.date(from: $0.dateKey) }
+            .sorted(by: >)
+        guard !activeDates.isEmpty else { return 0 }
+
+        var best = 1
+        var run = 1
+        for index in 1..<activeDates.count {
+            // Calendar day-difference (not raw seconds) so DST transitions
+            // never break a run. Dates descend, so newer − older == 1 day.
+            let gap = calendar.dateComponents([.day], from: activeDates[index], to: activeDates[index - 1]).day ?? 0
+            if gap == 1 {
+                run += 1
+                best = max(best, run)
+            } else if gap > 1 {
+                run = 1
+            }
+            // gap == 0 (duplicate key, defensive) extends nothing and resets nothing.
+        }
+        return best
+    }
+
     private func loadActivities() {
         if let decoded = PersistentCodableStore.load([String: DailyActivity].self, key: userDefaultsKey) {
             activities = decoded
         }
-        longestStreak = UserDefaults.standard.integer(forKey: "longestStreak")
+        // Keep the incremental high-water mark, but never report less than
+        // what the full history proves (true best streak after restore).
+        let stored = UserDefaults.standard.integer(forKey: "longestStreak")
+        longestStreak = max(stored, computeLongestStreak())
+        if longestStreak > stored {
+            UserDefaults.standard.set(longestStreak, forKey: "longestStreak")
+        }
     }
 
     private func saveActivities() {

@@ -74,21 +74,41 @@ final class TranslationHistoryStore {
     
     func add(source: String, target: String, direction: TranslationDirection) {
         let entry = TranslationHistoryEntry(source: source, target: target, direction: direction)
-        
-        // Remove duplicates
-        entries.removeAll { $0.source == source && $0.target == target }
-        
+
+        // Remove duplicates. Direction is part of the identity: an EN→中 row
+        // and its 中→EN counterpart are distinct translations, so matching on
+        // source+target alone would delete a legitimate opposite-direction pair.
+        entries.removeAll { $0.source == source && $0.target == target && $0.direction == direction }
+
         // Insert at the beginning
         entries.insert(entry, at: 0)
-        
+
         // Trim to max entries
         if entries.count > maxEntries {
             entries = Array(entries.prefix(maxEntries))
         }
-        
+
         save()
         // Track activity
         LearningActivityStore.shared.recordTranslationMade()
+    }
+
+    /// Insert a true copy of an entry with a fresh id and timestamp, right
+    /// after the original when it is still present. Unlike `add`, this
+    /// deliberately bypasses dedup (which would delete the original, making
+    /// "Duplicate" a no-op) and does NOT record learning activity (duplicating
+    /// a row is not a new translation, so it must not inflate stats).
+    func duplicate(_ entry: TranslationHistoryEntry) {
+        let copy = TranslationHistoryEntry(source: entry.source, target: entry.target, direction: entry.direction)
+        if let index = entries.firstIndex(where: { $0.id == entry.id }) {
+            entries.insert(copy, at: index + 1)
+        } else {
+            entries.insert(copy, at: 0)
+        }
+        if entries.count > maxEntries {
+            entries = Array(entries.prefix(maxEntries))
+        }
+        save()
     }
     
     func remove(_ entry: TranslationHistoryEntry) {

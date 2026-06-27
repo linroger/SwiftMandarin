@@ -35,6 +35,10 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case kimi = "kimi"
     case zhipu = "zhipu"
     case minimax = "minimax"
+    /// Quotio — a local OpenAI-compatible proxy (CLI Proxy API Server) that
+    /// fronts many model backends behind one endpoint. Default base URL
+    /// http://localhost:8320/v1; live model list pulled from GET /v1/models.
+    case quotio = "quotio"
 
     var id: String { rawValue }
 
@@ -50,6 +54,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .kimi: return "Kimi 月之暗面"
         case .zhipu: return "Zhipu GLM 智谱"
         case .minimax: return "MiniMax"
+        case .quotio: return "Quotio"
         }
     }
 
@@ -65,6 +70,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .kimi: return "Moonshot Kimi models"
         case .zhipu: return "Zhipu GLM models"
         case .minimax: return "MiniMax abab models"
+        case .quotio: return "Local OpenAI-compatible proxy routing to many model backends"
         }
     }
 
@@ -81,6 +87,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .kimi: return "moon.stars"
         case .zhipu: return "brain"
         case .minimax: return "bolt.horizontal.circle"
+        case .quotio: return "point.3.connected.trianglepath.dotted"
         }
     }
 
@@ -111,7 +118,10 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     var supportsVision: Bool {
         switch self {
         case .openAI, .anthropic, .doubao, .qwen, .kimi, .zhipu: return true
-        case .appleIntelligence, .ollama, .deepseek, .minimax: return false
+        // Quotio can route to vision models, but reliability depends on which
+        // backends the user's proxy has configured, so don't auto-route image
+        // tasks to it; users can still pick a vision model manually.
+        case .appleIntelligence, .ollama, .deepseek, .minimax, .quotio: return false
         }
     }
 
@@ -123,7 +133,9 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .openAI, .deepseek, .qwen: return true
         // Kimi's coding-plan endpoint rejects the `response_format` field
         // (returns 401), so JSON is requested via the prompt + tolerant parsing.
-        case .anthropic, .doubao, .zhipu, .minimax, .kimi, .appleIntelligence, .ollama: return false
+        // Quotio fronts many backends (not all support response_format), so
+        // request JSON via the prompt + tolerant parsing instead.
+        case .anthropic, .doubao, .zhipu, .minimax, .kimi, .appleIntelligence, .ollama, .quotio: return false
         }
     }
 
@@ -158,6 +170,9 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         // MiniMax mainland-China host. International users override with
         // https://api.minimax.io/v1
         case .minimax: return "https://api.minimaxi.com/v1"
+        // Local CLI Proxy API Server. Override the host/port in Settings if the
+        // proxy runs elsewhere.
+        case .quotio: return "http://localhost:8320/v1"
         case .appleIntelligence, .ollama: return ""
         }
     }
@@ -178,11 +193,9 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     var modelsPath: String? {
         switch self {
         case .anthropic: return "/v1/models"
-        case .openAI, .deepseek, .qwen, .doubao, .zhipu, .minimax: return "/models"
-        // The Kimi coding-plan proxy exposes only the fixed `kimi-for-coding`
-        // model and has no `GET /models` route — listing it returns 401, so we
-        // skip live listing and use the curated default instead.
-        case .kimi: return nil
+        // Kimi's coding endpoint does expose `GET /coding/v1/models` (returns the
+        // single `kimi-for-coding` / "K2.7 Code" model), so live listing works.
+        case .openAI, .deepseek, .qwen, .doubao, .zhipu, .minimax, .quotio, .kimi: return "/models"
         case .appleIntelligence, .ollama: return nil
         }
     }
@@ -206,14 +219,21 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .qwen:
             return ["qwen-plus", "qwen-max", "qwen-turbo", "qwen-vl-max", "qwen-vl-plus", "qwen-max-latest"]
         case .kimi:
-            // The coding-plan endpoint (api.kimi.com/coding/v1) serves a single
-            // unified model id. Users on the Moonshot Open Platform can override
-            // the Base URL and type a kimi-k2.x / kimi-latest model id instead.
-            return ["kimi-for-coding"]
+            // The coding endpoint (api.kimi.com/coding/v1) serves the K2.7 model
+            // under the id `kimi-for-coding`; `kimi-k2.7` also resolves to it.
+            // Both are thinking-only (temperature must be 1, omitted by the
+            // client). Moonshot Open Platform users can override the Base URL and
+            // type a kimi-latest / kimi-k2.x id instead.
+            return ["kimi-for-coding", "kimi-k2.7"]
         case .zhipu:
             return ["glm-4.6", "glm-4.5", "glm-4-plus", "glm-4.5v", "glm-4v-plus", "glm-4-flash"]
         case .minimax:
             return ["MiniMax-M2.5", "MiniMax-M2.7", "MiniMax-M3", "MiniMax-Text-01"]
+        case .quotio:
+            // Starter hints only — Quotio exposes its live catalog via
+            // GET /v1/models, so use "Refresh Models" to pull what the running
+            // proxy actually serves. First entry doubles as the default.
+            return ["gpt-5-mini", "gpt-5", "claude-sonnet-4-6", "deepseek-v3.2-chat", "qwen3-max-preview", "glm-4.6", "gemini-3.5-flash-low"]
         case .appleIntelligence, .ollama:
             return []
         }
@@ -230,7 +250,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .doubao: return "doubao-1-5-vision-pro-32k-250115"
         case .zhipu: return "glm-4.5v"
         case .kimi: return "kimi-for-coding"
-        case .deepseek, .minimax, .appleIntelligence, .ollama: return nil
+        case .deepseek, .minimax, .appleIntelligence, .ollama, .quotio: return nil
         }
     }
 
@@ -250,6 +270,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .kimi: return "https://www.kimi.com/code/console"
         case .zhipu: return "https://open.bigmodel.cn/usercenter/apikeys"
         case .minimax: return "https://platform.minimaxi.com/user-center/basic-information/interface-key"
+        case .quotio: return "https://www.quotio.dev/docs"
         case .appleIntelligence, .ollama: return nil
         }
     }

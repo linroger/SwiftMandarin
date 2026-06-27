@@ -266,7 +266,8 @@ struct AppearanceSettingsTab: View {
     @AppStorage("wordBorders") private var wordBorders: Bool = true
     @AppStorage("compactMode") private var compactMode: Bool = false
     @AppStorage("vocabularyDetailUsesInspector") private var vocabularyDetailUsesInspector: Bool = true
-    
+    @State private var prefs = AppPreferences.shared
+
     var body: some View {
         Form {
             Section {
@@ -319,9 +320,39 @@ struct AppearanceSettingsTab: View {
             } footer: {
                 Text("Turn off to use popup details instead of the inspector.")
             }
+
+            Section {
+                LabeledContent("Speaking Speed") {
+                    Slider(value: $prefs.ttsRate, in: AppPreferences.ttsRateRange) {
+                        Text("Speaking Speed")
+                    } minimumValueLabel: {
+                        Image(systemName: "tortoise.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } maximumValueLabel: {
+                        Image(systemName: "hare.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Button {
+                        SpeechService.speakAuto(speechSample)
+                    } label: {
+                        Label("Preview", systemImage: "speaker.wave.2.fill")
+                    }
+                }
+            } header: {
+                Text("Speech")
+            } footer: {
+                Text("Applies to every read-aloud in the app.")
+            }
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    /// Sample sentence for previewing the speech rate, in the learning language.
+    private var speechSample: String {
+        LocalizationManager.shared.learningIsChinese ? "你好，很高兴认识你。" : "Hello, nice to meet you."
     }
 }
 

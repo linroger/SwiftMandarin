@@ -48,24 +48,34 @@ struct ContentView: View {
 // MARK: - App Tabs
 
 enum AppTab: String, CaseIterable, Identifiable {
+    case home
     case translate
     case photo
+    case reader
+    case study
+    case practice
+    case conversation
     case history
     case vocabulary
     case learn
     case phrases
     case stats
     case more
-    
+
     var id: String { rawValue }
-    
+
     /// Localized tab title. Using a `LocalizedStringKey` literal (rather than a
     /// plain `String`) means SwiftUI resolves it through the active language
     /// bundle, so tab labels switch with the in-app language toggle.
     var titleKey: LocalizedStringKey {
         switch self {
+        case .home: return "Home"
         case .translate: return "Translate"
         case .photo: return "Photo"
+        case .reader: return "Reader"
+        case .study: return "Study"
+        case .practice: return "Practice"
+        case .conversation: return "Conversation"
         case .history: return "History"
         case .vocabulary: return "Vocabulary"
         case .learn: return "Learn"
@@ -74,11 +84,16 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .more: return "More"
         }
     }
-    
+
     var icon: String {
         switch self {
+        case .home: return "house.fill"
         case .translate: return "character.bubble"
         case .photo: return "camera.viewfinder"
+        case .reader: return "book.pages"
+        case .study: return "graduationcap.fill"
+        case .practice: return "checklist"
+        case .conversation: return "bubble.left.and.bubble.right.fill"
         case .history: return "clock"
         case .vocabulary: return "text.book.closed"
         case .learn: return "brain.head.profile"
@@ -107,6 +122,10 @@ struct iOSContentView: View {
     @available(iOS 18.0, *)
     private var modernTabView: some View {
         TabView(selection: $selectedTab) {
+            Tab(AppTab.home.titleKey, systemImage: AppTab.home.icon, value: .home) {
+                HomeView(selectedTab: $selectedTab)
+            }
+
             Tab(AppTab.translate.titleKey, systemImage: AppTab.translate.icon, value: .translate) {
                 TranslateView()
             }
@@ -115,18 +134,13 @@ struct iOSContentView: View {
                 PhotoTranslateView()
             }
 
-            Tab(AppTab.history.titleKey, systemImage: AppTab.history.icon, value: .history) {
-                HistoryTabView(selectedTab: $selectedTab)
+            // Study is the hub for Learn / Practice / Conversation / Reader /
+            // Vocabulary / Phrases / History / Stats — the tab bar stays at
+            // five items so iOS never adds its own system "More".
+            Tab(AppTab.study.titleKey, systemImage: AppTab.study.icon, value: .study) {
+                StudyHubView(selectedTab: $selectedTab)
             }
 
-            Tab(AppTab.vocabulary.titleKey, systemImage: AppTab.vocabulary.icon, value: .vocabulary) {
-                VocabularyView()
-            }
-
-            // Learn / Phrases / Stats live inside the More hub on iOS so the
-            // tab bar stays at five items — declaring all eight would make iOS
-            // collapse the overflow into a redundant system "More" alongside
-            // this app's own More tab.
             Tab(AppTab.more.titleKey, systemImage: AppTab.more.icon, value: .more) {
                 MoreView()
             }
@@ -138,6 +152,10 @@ struct iOSContentView: View {
     /// "More" item on iPhone).
     private var legacyTabView: some View {
         TabView(selection: $selectedTab) {
+            HomeView(selectedTab: $selectedTab)
+                .tabItem { Label(AppTab.home.titleKey, systemImage: AppTab.home.icon) }
+                .tag(AppTab.home)
+
             TranslateView()
                 .tabItem { Label(AppTab.translate.titleKey, systemImage: AppTab.translate.icon) }
                 .tag(AppTab.translate)
@@ -146,17 +164,12 @@ struct iOSContentView: View {
                 .tabItem { Label(AppTab.photo.titleKey, systemImage: AppTab.photo.icon) }
                 .tag(AppTab.photo)
 
-            HistoryTabView(selectedTab: $selectedTab)
-                .tabItem { Label(AppTab.history.titleKey, systemImage: AppTab.history.icon) }
-                .tag(AppTab.history)
+            // Study is the hub for Learn / Practice / Conversation / Reader /
+            // Vocabulary / Phrases / History / Stats (see modernTabView).
+            StudyHubView(selectedTab: $selectedTab)
+                .tabItem { Label(AppTab.study.titleKey, systemImage: AppTab.study.icon) }
+                .tag(AppTab.study)
 
-            VocabularyView()
-                .tabItem { Label(AppTab.vocabulary.titleKey, systemImage: AppTab.vocabulary.icon) }
-                .tag(AppTab.vocabulary)
-
-            // Learn / Phrases / Stats are reached from the More hub (see
-            // modernTabView) so iOS doesn't fold the overflow into its own
-            // system "More" next to this app's More tab.
             MoreView()
                 .tabItem { Label(AppTab.more.titleKey, systemImage: AppTab.more.icon) }
                 .tag(AppTab.more)
@@ -169,17 +182,34 @@ struct iOSContentView: View {
 #if os(macOS)
 struct MacOSContentView: View {
     @Binding var selectedTab: AppTab
-    
-    /// Filter out "More" tab on macOS since Settings is in menu bar
-    private var macOSTabs: [AppTab] {
-        AppTab.allCases.filter { $0 != .more }
-    }
-    
+
+    /// Sidebar sections. `more` (iOS settings hub) and `study` (iOS hub for
+    /// what the sidebar already lists directly) are intentionally absent.
+    private static let toolTabs: [AppTab] = [.translate, .photo]
+    private static let studyTabs: [AppTab] = [.learn, .practice, .conversation, .reader]
+    private static let libraryTabs: [AppTab] = [.vocabulary, .phrases, .history, .stats]
+
     var body: some View {
         NavigationSplitView {
-            List(macOSTabs, selection: $selectedTab) { tab in
-                Label(tab.titleKey, systemImage: tab.icon)
-                    .tag(tab)
+            List(selection: $selectedTab) {
+                Label(AppTab.home.titleKey, systemImage: AppTab.home.icon)
+                    .tag(AppTab.home)
+
+                Section("Translate") {
+                    ForEach(Self.toolTabs) { tab in
+                        Label(tab.titleKey, systemImage: tab.icon).tag(tab)
+                    }
+                }
+                Section("Study") {
+                    ForEach(Self.studyTabs) { tab in
+                        Label(tab.titleKey, systemImage: tab.icon).tag(tab)
+                    }
+                }
+                Section("Library") {
+                    ForEach(Self.libraryTabs) { tab in
+                        Label(tab.titleKey, systemImage: tab.icon).tag(tab)
+                    }
+                }
             }
             .navigationTitle("SwiftMandarin")
             .navigationSplitViewColumnWidth(min: 180, ideal: 200)
@@ -196,14 +226,25 @@ struct MacOSContentView: View {
                 }
         }
     }
-    
+
     @ViewBuilder
     private var detailView: some View {
         switch selectedTab {
+        case .home:
+            HomeView(selectedTab: $selectedTab)
         case .translate:
             TranslateView()
         case .photo:
             PhotoTranslateView()
+        case .reader:
+            ReaderView()
+        case .study:
+            // Not in the sidebar; routing fallback lands on Home.
+            HomeView(selectedTab: $selectedTab)
+        case .practice:
+            PracticeHubView()
+        case .conversation:
+            ConversationView()
         case .history:
             HistoryTabView(selectedTab: $selectedTab)
         case .vocabulary:

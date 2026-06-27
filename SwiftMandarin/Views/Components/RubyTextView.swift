@@ -207,12 +207,24 @@ struct RubyWordView: View {
         }
     }
 
+    /// Pinyin line. With tone colors enabled, each SYLLABLE gets its own tone
+    /// color from the shared `PinyinConverter.Tone` palette — a multi-syllable
+    /// word like 学习 shows xué in orange and xí in orange/green per syllable,
+    /// instead of the whole word taking the first detected tone's color
+    /// (which gave learners wrong tone feedback on every polysyllabic word).
+    @ViewBuilder
     private var pinyinText: some View {
-        Text(segment.pinyin)
-            .font(.caption)
-            .foregroundStyle(toneColors ? pinyinColor : Color.secondary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
+        Group {
+            if toneColors {
+                Text(PinyinConverter.coloredPinyin(fromPinyin: segment.pinyin))
+            } else {
+                Text(segment.pinyin)
+                    .foregroundStyle(Color.secondary)
+            }
+        }
+        .font(.caption)
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
     }
 
     private var characterText: some View {
@@ -220,24 +232,6 @@ struct RubyWordView: View {
             .font(.title2)
             .fontWeight(.medium)
             .foregroundStyle(.primary)
-    }
-
-    /// Color for pinyin based on tone
-    private var pinyinColor: Color {
-        // Get the first tone mark to determine color
-        let pinyin = segment.pinyin.lowercased()
-        
-        if pinyin.contains("ā") || pinyin.contains("ē") || pinyin.contains("ī") || pinyin.contains("ō") || pinyin.contains("ū") || pinyin.contains("ǖ") {
-            return .red // First tone
-        } else if pinyin.contains("á") || pinyin.contains("é") || pinyin.contains("í") || pinyin.contains("ó") || pinyin.contains("ú") || pinyin.contains("ǘ") {
-            return .orange // Second tone
-        } else if pinyin.contains("ǎ") || pinyin.contains("ě") || pinyin.contains("ǐ") || pinyin.contains("ǒ") || pinyin.contains("ǔ") || pinyin.contains("ǚ") {
-            return .green // Third tone
-        } else if pinyin.contains("à") || pinyin.contains("è") || pinyin.contains("ì") || pinyin.contains("ò") || pinyin.contains("ù") || pinyin.contains("ǜ") {
-            return .blue // Fourth tone
-        } else {
-            return .secondary // Neutral tone
-        }
     }
 }
 

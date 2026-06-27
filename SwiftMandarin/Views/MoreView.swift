@@ -20,11 +20,13 @@ enum MoreRoute: Hashable {
     case learn
     case phrases
     case stats
+    case reader
+    case practice
+    case conversation
 }
 
 /// More tab — a streamlined learning, settings & about hub.
 struct MoreView: View {
-    @Environment(AppRouteStore.self) private var routeStore
     @State private var localization = LocalizationManager.shared
     @State private var prefs = AppPreferences.shared
     @State private var aiSettings = AIModelSettings.shared
@@ -48,15 +50,10 @@ struct MoreView: View {
                 case .learn: LearnView()
                 case .phrases: PhrasesView()
                 case .stats: StatsView()
+                case .reader: ReaderView()
+                case .practice: PracticeHubView()
+                case .conversation: ConversationView()
                 }
-            }
-        }
-        // A Siri "start review" intent routes to this tab on iOS; push the Learn
-        // screen so it can consume the pending action exactly as it did when it
-        // was a top-level tab.
-        .onChange(of: routeStore.pendingAction?.id) { _, _ in
-            if case .startReview = routeStore.pendingAction?.kind, path.last != .learn {
-                path.append(.learn)
             }
         }
     }
@@ -67,6 +64,15 @@ struct MoreView: View {
         Section {
             NavigationLink(value: MoreRoute.learn) {
                 Label(AppTab.learn.titleKey, systemImage: AppTab.learn.icon)
+            }
+            NavigationLink(value: MoreRoute.practice) {
+                Label(AppTab.practice.titleKey, systemImage: AppTab.practice.icon)
+            }
+            NavigationLink(value: MoreRoute.conversation) {
+                Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
+            }
+            NavigationLink(value: MoreRoute.reader) {
+                Label(AppTab.reader.titleKey, systemImage: AppTab.reader.icon)
             }
             NavigationLink(value: MoreRoute.phrases) {
                 Label(AppTab.phrases.titleKey, systemImage: AppTab.phrases.icon)
@@ -291,6 +297,12 @@ struct DisplaySettingsView: View {
     @AppStorage("toneColors") private var toneColors: Bool = true
     @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 20
     @AppStorage("hapticFeedback") private var hapticFeedback: Bool = true
+    @State private var prefs = AppPreferences.shared
+
+    /// Sample sentence for previewing the speech rate, in the learning language.
+    private var speechSample: String {
+        LocalizationManager.shared.learningIsChinese ? "你好，很高兴认识你。" : "Hello, nice to meet you."
+    }
 
     var body: some View {
         Form {
@@ -330,6 +342,38 @@ struct DisplaySettingsView: View {
                 }
             } header: {
                 Text("Display")
+            }
+
+            Section {
+                VStack(alignment: .leading) {
+                    HStack {
+                        Text("Speaking Speed")
+                        Spacer()
+                        Button {
+                            SpeechService.speakAuto(speechSample)
+                        } label: {
+                            Label("Preview", systemImage: "speaker.wave.2.fill")
+                                .font(.subheadline)
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    Slider(value: $prefs.ttsRate, in: AppPreferences.ttsRateRange) {
+                        Text("Speaking Speed")
+                    } minimumValueLabel: {
+                        Image(systemName: "tortoise.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } maximumValueLabel: {
+                        Image(systemName: "hare.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Text("Applies to every read-aloud in the app.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } header: {
+                Text("Speech")
             }
 
             Section {

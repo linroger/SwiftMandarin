@@ -1,0 +1,1183 @@
+[
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8295b0bcf2c34db3",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a8295b0bcf2c34db3.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "abeed3139e6359289",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-abeed3139e6359289.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ab6d905bc5c3c001b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-ab6d905bc5c3c001b.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ac5cc695f92f470b3",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-ac5cc695f92f470b3.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8322e22b03e2d523",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a8322e22b03e2d523.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ae8fefbfef4c71644",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-ae8fefbfef4c71644.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "af74f5415e94e299c",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-af74f5415e94e299c.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ac2d766a92db30f25",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-ac2d766a92db30f25.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a4c515fb9d747d556",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a4c515fb9d747d556.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a210de16da2f6cef1",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a210de16da2f6cef1.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a2a417539029d49f9",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a2a417539029d49f9.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a7cfbe9d8dea196c4",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a7cfbe9d8dea196c4.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a1edaf3402afef940",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a1edaf3402afef940.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aa8ebe453a96c8f1b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-aa8ebe453a96c8f1b.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a460782bd1ba38548",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a460782bd1ba38548.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8380c8b3defca0e2",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a8380c8b3defca0e2.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a209ef1ccd5c64bee",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a209ef1ccd5c64bee.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a684260c76d5f0733",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a684260c76d5f0733.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a4646879661a26e24",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a4646879661a26e24.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a9ea554e86644820d",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a9ea554e86644820d.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a5e8a0e880cb54d17",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-a5e8a0e880cb54d17.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "a0e426e4-5fb5-4843-a39d-6fdd69de9f3a",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ad08f62e670d5c170",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_f5abf463-374/agent-ad08f62e670d5c170.jsonl",
+    "background_tasks": [
+      {
+        "id": "w2dv2xi83",
+        "type": "workflow",
+        "status": "running",
+        "description": "Map every subsystem of SwiftMandarin in parallel, then generate step-change improvement ideas from 10 expert lenses",
+        "name": "study-and-ideate-swiftmandarin"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "c036b416-a3bf-4486-991c-1cbbb12cbe9d",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a6e82f2d354f13e31",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_96f43b04-94f/agent-a6e82f2d354f13e31.jsonl",
+    "last_assistant_message": "Parse check is clean (full type-check deferred to the central build pass, per instructions). Work complete.\n\n---\n\n## Report\n\n### Files created\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/HomeView.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/WelcomeView.swift`\n\n### Files edited\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/LearningActivity.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/StatsView.swift`\n\n### Public API exposed (exact signatures)\n```swift\n// HomeView.swift\nstruct HomeView: View { @Binding var selectedTab: AppTab }   // HomeView(selectedTab:) as ContentView expects\n@ViewBuilder var continueReadingSlot: some View               // EmptyView(); integration seam, marked \"// Integration: Reader continue-card is wired centrally\"\n\n// WelcomeView.swift\nstruct WelcomeView: View                                      // WelcomeView(), no-arg init\n\n// LearningActivityStore (additions)\nvar todayActivity: DailyActivity        // public computed (replaces the old private func todayActivity(); always computed against current date \u2014 matches contract API)\nvar reviewsToday: Int                   // today's reviewsCompleted\nprivate(set) var dayChangeToken: String // today's \"yyyy-MM-dd\", observable\nfunc refreshDayRollover()               // cheap; call onAppear / scenePhase .active\n```\n\n### Design decisions\n1. **Word-of-the-day seed**: spec said `dateKey.hashValue`, but `String.hashValue` is per-process seeded, so the pick would change every launch, defeating \"deterministic daily\". I used a stable FNV-1a hash of `activityStore.dayChangeToken` (documented in code); reading the token also gives midnight-rollover invalidation for free.\n2. **`todayActivity` promoted from private func to public computed var** \u2014 the integration contract lists it as shared API; record methods updated accordingly.\n3. **Longest streak on load**: `max(stored high-water, full-history scan)` \u2014 restore/reinstall shows the true best streak; incremental `updateLongestStreak()` untouched. Consecutive days measured via `Calendar.dateComponents(.day)`, DST-safe.\n4. **`currentStreak` verified fresh** (computed against `Date()` on every read); staleness was purely a view-invalidation problem, solved with `dayChangeToken` \u2014 HomeView calls `refreshDayRollover()` on appear + scenePhase active and keys its week strip on the token.\n5. **Heatmap alignment**: leading pad = `Calendar.current.component(.weekday, from: firstDate) - 1` (Sunday = row 0, matching the existing \"\", M, \"\", W, \"\", F, \"\" gutter). Pad slots render `Color.clear`; month-label positions account for the pad. Cells got `accessibilityLabel` (\"March 3: 12 activities\" pattern, locale-aware Date interpolation) + `.isButton` trait.\n6. **14-day bar chart**: switches x-labels to day-of-month (`.dateTime.day()`) for the two-week range; weekday abbreviations kept for 7 days.\n7. **Bilingual parity**: greeting flavor lines and Word of the Day key off `LocalizationManager.shared.learningIsChinese`; saved terms use `headlineText`/`glossText`/`showsPinyin`; built-in cards flip headline/gloss and only show pinyin (via `card.pinyin ?? PinyinConverter.convert`) when learning Chinese. Flavor lines and `LearnerMode.displayName` are rendered `Text(verbatim:)` \u2014 intentionally bilingual by construction, excluded from the catalog.\n8. **Goal storage**: `@AppStorage(\"dailyGoal\")` (default 20, `<= 0` treated as 20) shared by HomeView, GoalPickerSheet (10/20/30/50, `.localizedSurface()`, `.presentationDetents([.medium])`), and WelcomeView step 2 \u2014 all stay in sync automatically.\n9. **Welcome flow**: paged `TabView` on iOS (page dots), switch + Back/Continue buttons on macOS (min 520\u00d7580 sheet). Direction cards write `AppPreferences.shared.learnerMode` (bilingual as a smaller third option); \"Start learning\" sets `hasCompletedWelcome` and dismisses. Note: choosing the \u4e2d\u6587 direction flips the app language, which re-keys the root; HomeView's `.task` guard re-presents the sheet, so the flow recovers gracefully.\n10. Stats quick action routes to `.study` on iOS (Stats lives in the Study hub), `.stats` on macOS; Study routes to `.study` / `.learn`; Scan uses `AppRouteStore.shared.trigger(.openCameraScanner, preferredTab: .photo)`; review CTAs use `triggerReview(mode: \"due\", source: \"home\")` with a due-count badge from `getDueCards(from: LearningDeck.cards + terms.map(LearningCard.init(from:)))`.\n\n### New user-facing English string literals (for the central localization pass)\n- \"Good morning\"\n- \"Good afternoon\"\n- \"Good evening\"\n- \"Today\"\n- \"Change daily goal\"\n- \"%lld of %lld reviews today\"\n- \"Review now\"\n- \"Word of the Day\"\n- \"Speak\"\n- \"Practice this word\"\n- \"Scan\"\n- \"This Week\"\n- \"Words saved\"\n- \"Reviews today\"\n- \"Recent Saves\"\n- \"See All\"\n- \"Words you save will appear here.\"\n- \"%@: %lld activities\"  (date + activity-score accessibility label; used in both HomeView and StatsView)\n- \"%lld reviews\"\n- \"Daily Goal\"\n- \"Done\"\n- \"Welcome to SwiftMandarin\"\n- \"Translate anything, scan the world around you, read at your level, and remember it all with a few minutes of daily review.\"\n- \"Choose your learning direction\"\n- \"Set your daily goal\"\n- \"Small daily sessions beat marathon cramming. You can change this anytime from Home.\"\n- \"reviews a day\"\n- \"Optional AI superpowers\"\n- \"Word explanations, graded stories, conversation practice, and workbook grading come alive with AI. They work with Apple Intelligence, a local Ollama server, or any cloud key you add later in Settings \u2192 AI.\"\n- \"Deep word explanations\"\n- \"Stories at your level\"\n- \"A patient conversation partner\"\n- \"Workbook grading\"\n- \"No account needed \u2014 everything else works without AI.\"\n- \"Back\"\n- \"Continue\"\n- \"Start learning\"\n\nReused existing catalog keys (no action needed): \"Home\", \"Translate\", \"Study\", \"Stats\". Intentionally non-localized (verbatim, bilingual by design): the three flavor-line pairs and `LearnerMode.displayName` strings.",
+    "background_tasks": [
+      {
+        "id": "wfdm97t7e",
+        "type": "workflow",
+        "status": "running",
+        "description": "Six parallel feature agents implement the SwiftMandarin step-change overhaul with strict file ownership",
+        "name": "implement-overhaul-wave1"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "c036b416-a3bf-4486-991c-1cbbb12cbe9d",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a9185cbae3d50fa19",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_96f43b04-94f/agent-a9185cbae3d50fa19.jsonl",
+    "last_assistant_message": "All four files are complete and parse cleanly. Final report:\n\n## Files created/edited\n\n- **EDIT** `SwiftMandarin/Services/CloudAIService.swift` \u2014 additive only: `chatTurns(...)` + two private static body builders (`openAIBodyTurns`, `anthropicBodyTurns`). No existing method changed. Reuses `buildURL`/`applyAuthHeaders`/`parseOpenAIContent`/`parseAnthropicContent`; replicates `openAIBody`'s temperature rules (reasoning-model `max_completion_tokens` for o-series, plain `max_tokens` for other reasoners, Kimi temperature exception via `allowsCustomTemperature: provider != .kimi`), JSON prompt hint, and `response_format` only where `supportsJSONResponseFormat`.\n- **NEW** `SwiftMandarin/Services/ConversationService.swift`\n- **NEW** `SwiftMandarin/Models/ConversationStore.swift`\n- **NEW** `SwiftMandarin/Views/ConversationView.swift`\n\n## Public API exposed\n\n```swift\n// CloudAIService (added)\nfunc chatTurns(provider: AIProvider, model: String, system: String,\n               turns: [(role: String, content: String)],\n               jsonMode: Bool = false, maxTokens: Int = 2048) async throws -> String\n\n// ConversationService.swift\nenum ConversationScenario: String, CaseIterable, Codable, Identifiable, Sendable\n    // cases: freeChat, cafe, directions, shopping, introductions, travel, doctor\n    // members: var symbolName: String; var titleKey: String; var descriptionKey: String; var sceneSeed: String\nstruct PartnerReply: Codable, Sendable { var reply: String; var pinyin: String?; var translation: String; var feedback: String? }\n@MainActor final class ConversationService {\n    static let shared: ConversationService\n    func reply(scenario: ConversationScenario, history: [ConversationMessage], learningIsChinese: Bool) async throws -> PartnerReply\n}\n\n// ConversationStore.swift\nstruct ConversationMessage: Codable, Identifiable, Hashable, Sendable\n    // init(id: UUID = UUID(), isUser: Bool, text: String, pinyin: String? = nil, translation: String? = nil, feedback: String? = nil, date: Date = Date())\nstruct Conversation: Codable, Identifiable, Hashable, Sendable\n    // id, scenario, messages, dateStarted, dateUpdated (tolerant decodes; unknown scenario \u2192 .freeChat)\n@Observable @MainActor final class ConversationStore {\n    static let shared: ConversationStore\n    private(set) var conversations: [Conversation]                    // newest-updated first, capped at 50\n    func conversation(withID id: UUID) -> Conversation?\n    @discardableResult func startConversation(scenario: ConversationScenario) -> Conversation\n    func append(message: ConversationMessage, to conversationID: UUID)\n    func attachFeedback(_ feedback: String, toMessageID messageID: UUID, in conversationID: UUID)\n    func remove(_ conversation: Conversation)\n}\n\n// ConversationView.swift\nstruct ConversationView: View   // self-contained NavigationStack\n```\n\n## Design decisions\n\n- **Feedback lives on the learner's message** (`ConversationMessage.feedback`, set via `attachFeedback`), so the orange lightbulb banner renders directly under the bubble it corrects; `PartnerReply.feedback` is routed there when the reply lands.\n- **Anthropic turn constraints**: the greeting call has no user turn and history starts with the assistant greeting, so `ConversationService` inserts synthetic user cue turns (first-message-must-be-user, request-must-end-on-user); harmless for OpenAI-style providers.\n- **Graceful parse degradation**: tolerant `extractJSONObject` + tolerant `PartnerReply` decode; unparseable responses fall back to fence-stripped raw text as the reply. Missing pinyin for a Chinese reply is derived locally via `PinyinConverter.convert`; pinyin is force-nilled for English replies (bilingual parity \u2014 never native furniture in \u4e2d\u6587 UI). Pinyin toolbar toggle only appears when `learningIsChinese`, default on.\n- **`SpeechRecognitionService` has a `private init` singleton** (contract said instantiate, but the actual file forbids it) \u2014 I follow the existing `LiveSpeechTranslationView` pattern: `@State private var speech = SpeechRecognitionService.shared`, observing `completeTranscript` (no delegate; no existing code conforms to the delegate either). A `micSessionActive` flag plus `micBaseline` prevents stray transcripts and preserves typed text. Mic works on both platforms (service is cross-platform). Pulsing red mic while recording.\n- **Store persistence** copies `WordExplanationCacheStore`'s coalesced single-writer atomic off-main file write (2s throttle, `conversations.json` in Application Support).\n- **Greeting race guard**: re-entering the chat while the first greeting request is in flight can't produce a duplicate greeting.\n- No sheets/popovers are presented, so no `.localizedSurface()` sites were needed. Error banner is dismissible with Retry (re-runs `reply()` on current history without duplicating the user message).\n\n## New user-facing English string literals (for the central localization pass)\n\n\"Conversation\", \"Practice speaking with an AI partner\", \"Pick a scene and chat by voice or text. Your partner replies in the language you're learning and gently corrects your mistakes.\", \"New conversation\", \"Continue\", \"Delete\", \"No messages yet\", \"Free chat\", \"At the caf\u00e9\", \"Directions\", \"Shopping\", \"Introductions\", \"Travel\", \"At the doctor\", \"Chat about anything\", \"Order drinks and snacks\", \"Find your way around town\", \"Ask prices and haggle\", \"Meet someone new\", \"Airports, hotels, and tickets\", \"Describe how you feel\", \"Show pinyin\", \"Translation\", \"Message\", \"Retry\", \"Dismiss\", \"Send\", \"Dictate\", \"Stop recording\", \"Play audio\", \"Partner is typing\"\n\nReused existing key (not new): \"No AI provider is configured. Add one in Settings \u2192 AI (or run a local Ollama server).\" \u2014 via `String(localized:)`, identical to `WordIdentificationService`. The toolbar label \"\u62fc\u97f3\" uses `Text(verbatim:)` deliberately (it only appears in the English UI as a learning aid) and must NOT be added to the catalog.",
+    "background_tasks": [
+      {
+        "id": "wfdm97t7e",
+        "type": "workflow",
+        "status": "running",
+        "description": "Six parallel feature agents implement the SwiftMandarin step-change overhaul with strict file ownership",
+        "name": "implement-overhaul-wave1"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "c036b416-a3bf-4486-991c-1cbbb12cbe9d",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a1f16cc2535c229a8",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_96f43b04-94f/agent-a1f16cc2535c229a8.jsonl",
+    "last_assistant_message": "# Practice Hub \u2014 Implementation Report\n\n## Files created (all new, nothing else touched)\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/PracticeStore.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/PracticeHubView.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/QuizView.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/DictationView.swift`\n- `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/TonePairDrillView.swift`\n\nAll five pass `swiftc -parse` (type-checking deferred to the central build pass per instructions).\n\n## Public API exposed\n\n**PracticeStore.swift**\n```swift\nenum PracticeMode: String, Codable, CaseIterable, Identifiable, Hashable { case quiz, dictation, toneDrill }\n\nstruct PracticeSessionResult: Identifiable, Codable, Equatable {\n    let id: UUID; let mode: PracticeMode; let score: Int; let total: Int; let date: Date\n    var ratio: Double; var scoreText: String   // \"7/10\"\n    init(id: UUID = UUID(), mode: PracticeMode, score: Int, total: Int, date: Date = Date())\n    init(from decoder: Decoder) throws         // tolerant, field-level defaults\n}\n\nstruct PracticeItem: Identifiable, Hashable {\n    let id: String; let chinese: String; let english: String; let pinyin: String; let partOfSpeech: String\n    var promptText: String    // learning-language side (direction-aware)\n    var answerText: String    // native-language gloss\n    var showsPinyin: Bool\n    init?(term: SavedTerm)    // nil when either language side is missing\n    init(card: LearningCard)  // derives pinyin via PinyinConverter when the deck has none\n}\n\n@Observable @MainActor final class PracticeStore {\n    static let shared: PracticeStore\n    private(set) var results: [PracticeSessionResult]            // key \"practiceSessions\", capped 200\n    private(set) var toneConfusion: [String: Int]                // key \"toneConfusion\", \"expected-chosen\"\n    func record(_ result: PracticeSessionResult)\n    func bestScore(mode: PracticeMode) -> PracticeSessionResult?\n    func lastResult(mode: PracticeMode) -> PracticeSessionResult?\n    func recordToneAnswer(expected: Int, chosen: Int)\n    var mostConfusedTonePair: (expected: Int, chosen: Int, count: Int)?   // off-diagonal max\n    static func toneNumber(fromPinyinSyllable: String) -> Int   // 1\u20135, delegates to PinyinConverter.detectTone\n    static func tonePattern(fromPinyin: String) -> [Int]\n    static let minimumVocabularyForSoloPool = 4\n    static func vocabularyItems() -> [PracticeItem]\n    static func practicePool() -> [PracticeItem]                 // vocab; starter deck supplements when < 4\n    static func toneDrillPool() -> [PracticeItem]                // 2-char, diacritic tones on BOTH syllables\n}\n\nenum PracticeHaptics { static func success(); static func error() }   // iOS-only internally\n```\n\n**Views**: `PracticeHubView()`, `QuizView()`, `DictationView()`, `TonePairDrillView()` (all no-arg \u2014 matches existing call sites in ContentView/StudyHubView/MoreView), plus shared `PracticeRoundSummary(score:total:onPracticeAgain:detail:)` end-of-round component (GoalRing + CelebrationBurst at \u226590%).\n\n## Design decisions\n- **Direction-awareness centralized** in `PracticeItem.promptText/answerText/showsPinyin`, keyed off `LocalizationManager.shared.learningIsChinese` exactly like `SavedTerm.headlineText`; all three drills share the same pool builders. Tone drills hidden in the hub for \u4e2d\u6587-UI users AND guarded in-view with `SMEmptyState`.\n- **Tone parsing reuses** `PinyinConverter.detectTone/segment` (no duplicated diacritic tables). Neutral-tone words (\u8c22\u8c22) are excluded from tone drills since a neutral syllable carries no diacritic; the confusion matrix records diagonal entries too so per-tone accuracy stays derivable.\n- **Quiz distractors**: same-partOfSpeech preferred, case/whitespace-normalized dedupe, starter deck pads the supply so 3 distinct distractors always exist. Auto-advance 0.9s via cancel-before-replace stored `Task`.\n- **Dictation**: Chinese = exact character match after whitespace/punctuation strip; English = case-insensitive, punctuation-stripped, whitespace-collapsed. Char diff is a positional zip (green/red `Text` concatenation, red `\uff3f` for missing tail). Turtle button re-speaks via the same `SpeechService.speakAuto` (no rate dependency, per contract). Return-key submits; autocap/autocorrect off; iOS-only modifiers gated.\n- Round completion records `PracticeStore` result + `LearningActivityStore.shared.recordReviewCompleted()` exactly once (guard flag) in all three drills.\n- `LearningDeck` supplement dedupes builtin cards whose Chinese side matches a saved term. No sheets/popovers created, so no `.localizedSurface()` needed; all pushes are `navigationDestination(for: PracticeMode.self)` inside the hub's `NavigationStack`.\n\n## New user-facing English string literals (complete, for the localization pass)\n1. `Practice` (nav title; likely already in catalog from StudyHubView)\n2. `Quick rounds that turn your saved words into instinct.`\n3. `Quiz`\n4. `Multiple choice from your vocabulary` (via `L()`)\n5. `Dictation`\n6. `Listen and type what you hear` (via `L()`)\n7. `Tone Drills`\n8. `Train your ear for tones` (via `L()`)\n9. `Last played %@` (via `L()` + `String(format:)`)\n10. `Built-in starter phrases fill in while your vocabulary grows.`\n11. `correct` (caption under the score ring)\n12. `Outstanding round!`\n13. `Round complete`\n14. `Practice again`\n15. `Nothing to quiz yet`\n16. `Save a few vocabulary words and come back for a round.` (shared quiz/dictation)\n17. `Question %lld of %lld` (interpolated literal, quiz + tone drill)\n18. `Play audio` (accessibility label, all three drills)\n19. `Review these`\n20. `Nothing to dictate yet`\n21. `Item %lld of %lld` (interpolated literal)\n22. `Listen, then type what you hear`\n23. `Slow`\n24. `Replay slowly` (accessibility label)\n25. `Type what you hear` (TextField placeholder)\n26. `Correct!`\n27. `Not quite \u2014 try again`\n28. `Next`\n29. `Check`\n30. `Reveal`\n31. `Skip`\n32. `Listen again` (shared dictation/tone-drill summaries)\n33. `Tone drills are for Mandarin learners`\n34. `Tone practice unlocks when you are learning Chinese.`\n35. `No tone pairs yet`\n36. `Save some two-character Mandarin words to unlock tone drills.`\n37. `Which tone pattern do you hear?`\n38. `You most often hear tone %1$d as tone %2$d \u2014 listen for that contrast.` (via `L()` + `String(format:)`, positional specifiers for zh reordering)",
+    "background_tasks": [
+      {
+        "id": "wfdm97t7e",
+        "type": "workflow",
+        "status": "running",
+        "description": "Six parallel feature agents implement the SwiftMandarin step-change overhaul with strict file ownership",
+        "name": "implement-overhaul-wave1"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "c036b416-a3bf-4486-991c-1cbbb12cbe9d",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8f2d61de544ed79e",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_96f43b04-94f/agent-a8f2d61de544ed79e.jsonl",
+    "last_assistant_message": "All FSRS math validates: R(S,S)=0.9 exactly, initial stabilities map to 1d/1d/4d/14d first intervals, hard<good<easy stability growth, lapse loses stability, difficulty clamps to [1,10], max interval clamps at 365d, formatting produces \"10m/5h/1d/6d/3w/2mo/1y\", and forecast folds overdue into today while excluding never-reviewed cards. Work complete.\n\n---\n\n## Report: FSRS SRS engine + review session overhaul\n\n### Files created/edited\n- **Created** `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/SRSEngine.swift` \u2014 pure, `nonisolated`, Foundation-only FSRS-4.5 implementation; every formula documented; numerically validated via standalone harness (compiled + ran, all invariants pass).\n- **Edited** `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/LearningCard.swift` \u2014 CardProgress FSRS state + migration, mastery rederivation, store additions.\n- **Edited** `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/LearnView.swift` \u2014 4-grade buttons with interval previews, relearn queue, session header/progress, completion summary with forecast.\n\n### Public API exposed\n```swift\n// SRSEngine.swift (all nonisolated)\nenum SRSGrade: Int, CaseIterable { case again = 1, hard, good, easy; init(quality: ReviewQuality) } // 0/1/2\u2192again, 3\u2192hard, 4\u2192good, 5\u2192easy\nstruct SRSParameters { let w: [Double]; let decay: Double; let factor: Double; init(w: [Double] = /*17 FSRS-4.5 defaults*/); static var standard: SRSParameters }\nstruct SRSEngine {\n    static let secondsPerDay: TimeInterval // 86_400\n    static var relearningStepInterval: TimeInterval // 600s Again step\n    static func initialStability(grade: SRSGrade, parameters: SRSParameters = .standard) -> Double\n    static func initialDifficulty(grade: SRSGrade, parameters: SRSParameters = .standard) -> Double\n    static func nextDifficulty(current: Double, grade: SRSGrade, parameters: SRSParameters = .standard) -> Double // mean reversion to D0(good)\n    static func retrievability(elapsedDays: Double, stability: Double, parameters: SRSParameters = .standard) -> Double // (1+FACTOR\u00b7t/S)^DECAY\n    static func stabilityAfterRecall(stability: Double, difficulty: Double, retrievability: Double, grade: SRSGrade, parameters: SRSParameters = .standard) -> Double\n    static func stabilityAfterLapse(stability: Double, difficulty: Double, retrievability: Double, parameters: SRSParameters = .standard) -> Double // capped at prior S\n    static func nextInterval(stability: Double, desiredRetention: Double = 0.9, maximumIntervalDays: Double = 365, parameters: SRSParameters = .standard) -> TimeInterval // seconds, whole days, \u22651d\n    static func reviewForecast(progress: [CardProgress], days: Int) -> [Int] // index 0 = today incl. overdue\n    static func formattedInterval(_ seconds: TimeInterval) -> String // \"10m\"/\"3h\"/\"6d\"/\"3w\"/\"2mo\"/\"1y\"\n}\n\n// LearningCard.swift\nenum SRSState: String, Codable, CaseIterable { case new, learning, review, relearning }\n// CardProgress additions:\nvar stability: Double?; var difficulty: Double?; var srsState: SRSState?\nmutating func recordReview(correct: Bool, quality: ReviewQuality, at reviewDate: Date = Date()) // source-compatible with old 2-arg calls\n// LearningProgressStore additions:\nvar dailyNewCardLimit: Int                     // UserDefaults \"dailyNewCardLimit\", default 10\nprivate(set) var newCardsIntroducedToday: Int  // day rollover with todayReviewedCount\nfunc removeProgress(forCardId cardId: String)  // exact signature per contract\nfunc previewIntervals(cardId: String) -> [ReviewQuality: TimeInterval]\n// getCardsForReview(from:limit:) reworked: due-first (most overdue first) + new cards within remaining daily budget; getDueCards/getProgress/recordReview signatures unchanged\n```\n\n### Design decisions\n1. **Sub-day scheduling**: FSRS proper works in whole days; Again grades use a fixed 10-minute relearning step (`relearningStepInterval`), matching Anki practice.\n2. **Legacy migration** (lazy, on next review of a pre-FSRS card): `stability = max(interval/86400, 0.5)` days; `difficulty = clamp(11.9 \u2212 2.76\u00b7easeFactor, 1, 10)` \u2014 sends SM-2 default ease 2.5 \u2192 FSRS 5.0 and floor 1.3 \u2192 \u22488.3, preserving deck-relative ordering. `easeFactor` is kept in sync via the inverse map so older builds degrade gracefully.\n3. **Mastery** now derives from SRS lifecycle + interval (review-state \u226521d with lapse==0 \u2192 mastered; \u22657d \u2192 proficient; else familiar; (re)learning \u2192 learning), replacing the lifetime-accuracy heuristic and its duplicate branches.\n4. **Honest queue**: `getCardsForReview` no longer pads sessions with not-yet-due cards; empty due queue shows the \"Great job!\" empty state. Default study mode changed to `.dueForReview`.\n5. **Relearn queue**: quality<3 re-inserts the card 3\u20135 positions later (clamped); a red \"Relearn\" chip marks its return; only a correct answer removes it. FSRS handles the ~0-elapsed second review correctly (R\u22481 \u2192 negligible stability gain).\n6. **Concurrency**: engine types declared `nonisolated` (project has `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`); `reviewForecast` touches only Sendable stored properties of `CardProgress`.\n7. Grade buttons dropped emoji for Anki-style Again/Hard/Good/Easy (red/orange/green/blue) with predicted-interval captions; kept card flip, TTS, keyboard nav, `.startReview` pendingAction handling, and bilingual flashcard fronts exactly as before. Stats sheet gained a \"New cards today X / Y\" budget row.\n\n### New user-facing English string literals (for the central localization pass)\nFormat-key literals: `\"%lldm\"`, `\"%lldh\"`, `\"%lldd\"`, `\"%lldw\"`, `\"%lldmo\"`, `\"%lldy\"`, `\"%lld due \u00b7 %lld new\"`, `\"%lld cards\"`, `\"%lld / %lld\"`\nPlain literals: `\"New\"`, `\"Learning\"`, `\"Familiar\"`, `\"Proficient\"`, `\"Mastered\"`, `\"Again\"`, `\"Wrong\"`, `\"Difficult\"`, `\"Hard\"`, `\"Good\"`, `\"Easy\"`, `\"Relearn\"`, `\"Cards Reviewed\"`, `\"Accuracy\"`, `\"Day Streak\"`, `\"Great work! Your next reviews are scheduled.\"`, `\"Upcoming Reviews\"`, `\"Today\"`, `\"Start New Session\"`, `\"New cards today\"`\nPre-existing strings newly routed through `L()` (need catalog entries if absent): `\"Built-in Deck\"`, `\"My Vocabulary\"`, `\"All Cards\"`, `\"Due for Review\"`, `\"New Cards\"`\nRemoved literals: `\"You've reviewed all %lld cards in this session\"`, `\"Start Over\"` (superseded by the new completion summary).",
+    "background_tasks": [
+      {
+        "id": "wfdm97t7e",
+        "type": "workflow",
+        "status": "running",
+        "description": "Six parallel feature agents implement the SwiftMandarin step-change overhaul with strict file ownership",
+        "name": "implement-overhaul-wave1"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "c036b416-a3bf-4486-991c-1cbbb12cbe9d",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a02dd5238c6fcd53f",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_96f43b04-94f/agent-a02dd5238c6fcd53f.jsonl",
+    "last_assistant_message": "All four files parse cleanly. Final report:\n\n## Files created (all new, within owned scope)\n\n1. `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Models/ReaderStore.swift`\n2. `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/ReaderView.swift`\n3. `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Views/ReaderSessionView.swift`\n4. `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts/SwiftMandarin/Services/StoryGenerationService.swift`\n\nNo other files touched. `xcrun swiftc -parse` passes on all four (syntax-only; central build pass pending as instructed).\n\n## Public API exposed\n\n**ReaderStore.swift**\n```swift\nstruct ReaderText: Identifiable, Codable, Equatable, Hashable {\n    enum Source: String, Codable { case pasted, written, generated }\n    let id: UUID; var title: String; var content: String; var source: Source\n    let dateAdded: Date; var lastReadParagraphIndex: Int; var dateLastOpened: Date?\n    init(id: UUID = UUID(), title: String, content: String, source: Source,\n         dateAdded: Date = Date(), lastReadParagraphIndex: Int = 0, dateLastOpened: Date? = nil)\n    var paragraphs: [String]        // newline-split, trimmed, non-empty\n    var excerpt: String             // 160-char collapsed preview\n    var progressFraction: Double    // 0\u20261; never-opened = 0; single-paragraph opened = 1\n    var isChineseContent: Bool      // contains CJK\n    var wordCount: Int              // CJK chars for Chinese, whitespace tokens for English\n}\n\nenum ReaderVocabularyCoverage {\n    @MainActor static func knownPercent(for content: String) -> Int?  // nil when no words\n}\n\n@Observable @MainActor final class ReaderStore {\n    static let shared: ReaderStore\n    private(set) var texts: [ReaderText]            // newest-opened first (never-opened by dateAdded)\n    var isEmpty: Bool\n    func text(withID id: UUID) -> ReaderText?\n    var mostRecentlyRead: ReaderText?               // exact name for Home integration\n    func add(_ text: ReaderText)\n    @discardableResult func add(title: String, content: String, source: ReaderText.Source) -> ReaderText\n    func remove(_ text: ReaderText); func remove(id: UUID)\n    func updateProgress(id: UUID, paragraphIndex: Int)\n    func markOpened(id: UUID)\n}\n```\n\n**StoryGenerationService.swift**\n```swift\nenum StoryLevel: String, CaseIterable, Identifiable { case beginner, intermediate, advanced\n    @MainActor var displayName: String }\nenum StoryGenerationError: LocalizedError { case unavailable(reason: String), generationFailed(String) }\n@MainActor final class StoryGenerationService {\n    static let shared: StoryGenerationService\n    func generateStory(level: StoryLevel, topic: String?, learningIsChinese: Bool)\n        async throws -> (title: String, body: String)\n}\n```\n\n**Views**: `struct ReaderView: View { init() }` (no-arg, as ContentView/MoreView/StudyHubView already call), `struct ReaderSessionView: View { init(text: ReaderText) }`.\n\n## Design decisions\n\n- **Persistence**: file-backed JSON `reader-texts.json` via `PersistentCodableStore.appSupportFileURL` + `loadArrayFromFile`, cloning `WordExplanationCacheStore`'s coalesced single-writer/off-main/atomic-write pattern (2s throttle \u2014 progress updates fire per paragraph). Tolerant `init(from:)` on `ReaderText` (only content essential; unknown `source` raw value \u2192 `.pasted`).\n- **Library**: a `List` styled as free-floating `SMCard`s (clear row background, hidden separators) so rows get real `swipeActions` delete plus `contextMenu` delete for macOS parity. Coverage is computed lazily per row `.onAppear` and cached `[UUID: Int]` in-view. Sheet-created texts are opened via a `pendingOpen` + `onDismiss` handoff to avoid pushing while a sheet is still dismissing.\n- **Session**: paragraphs snapshotted in `init`; only the current paragraph renders the interactive component \u2014 `RubyTextView` for CJK material (word-detail via `WordDetailPopover` in the exact TranslateView presentation: iOS `sheet(item:)` + NavigationStack + detents, macOS `popover(item:)`, both `.localizedSurface()`), `EnglishRubyTextView` \u2192 `EnglishWordDetailSheet` for English material (PhotoTranslateView pattern). Neighbors are plain `Text` (read ones dimmed), tap-to-focus. Restore position from `lastReadParagraphIndex` in `init` + deferred `scrollTo`; progress written on every index change. Bottom glass bar (`glassEffectCapsuleCompat`): read-aloud (`SpeechService.speakAuto`), prev/next, translate toggle, A\u2212/A+ (clamped 15\u201333, `@AppStorage(\"readerFontSize\")`). Per-paragraph translations via `AIWordExplanationService.shared.translateWithProvider`, cached `[Int: String]`, spinner while in flight, dismissible top banner on error, cancel-before-replace on the stored task (with visible-toggle cleanup for the cancelled paragraph). Toolbar shows \"N% known\" + verbatim \"3/17\".\n- **Generation**: provider dispatch copied from `WordIdentificationService` (FoundationModels gated iOS 26/macOS 26 with `AIWordExplanationService.shared.isAvailable`, Ollama `enableThinking: false`, cloud `jsonMode: true` maxTokens 4096); tolerant parse via `AIWordExplanationService.extractJSONObject`; strict `{\"title\",\"story\"}` shape with tolerant title decode. Known words: up to 80 unique, \u226420-char, shuffled headwords from the learning-language side of `SavedTermsStore` (`chineseSide`/`englishSide`). Bilingual parity keys off `learningIsChinese` everywhere: \u4e2d\u6587 UI generates/translates English stories with Mandarin glosses (prompt explicitly forbids pinyin for Chinese stories only as annotation).\n- Coverage heuristic: unique NL-segmented Chinese words vs saved `chineseSide`, or unique lowercased English tokens vs saved lowercased `englishSide`; labeled \"~X% known\" to signal it's an estimate.\n\n## New user-facing English string literals (for the central localization pass)\n\nReaderView: `\"Reader\"`, `\"Your Reading Library\"`, `\"Read anything paragraph by paragraph \u2014 tap words for instant help, listen aloud, and see how much you already know.\"`, `\"Add Your First Text\"`, `\"Paste from Clipboard\"`, `\"Write or Paste Text\u2026\"`, `\"Generate a Story\u2026\"`, `\"Add Text\"`, `\"Delete\"`, `\"Clipboard Is Empty\"`, `\"OK\"`, `\"Copy some text first, then try again.\"`, `\"Untitled\"`, `\"Pasted\"`, `\"Written\"`, `\"Generated\"` (last three via `L()`), `\"\\(n) characters\"` (key `%lld characters`), `\"\\(n) words\"` (key `%lld words`), `\"~\\(n)% known\"` (key `~%lld% known`), `\"Title\"`, `\"Text\"`, `\"Cancel\"`, `\"Add\"`, `\"Level\"`, `\"Topic (optional)\"`, `\"The story reuses words you've already saved, so most of it will feel familiar.\"`, `\"Writing your story\u2026\"`, `\"Generate Story\"`, `\"Generate a Story\"`.\n\nReaderSessionView: `\"Nothing to Read\"`, `\"This text is empty.\"`, `\"Word Details\"` (already exists), `\"Done\"` (already exists), `\"Translating\u2026\"`, `\"Translation\"`, `\"Read Aloud\"`, `\"Previous Paragraph\"`, `\"Next Paragraph\"`, `\"Translate Paragraph\"`, `\"Smaller Text\"`, `\"Larger Text\"`, `\"Dismiss\"`, `\"\\(n)% known\"` (key `%lld% known`).\n\nStoryGenerationService: `\"Beginner\"`, `\"Intermediate\"`, `\"Advanced\"` (via `L()`), `String(localized:)` keys `\"Story generation failed: %@\"` (`\\(message)` interpolation), `\"No JSON object found in the response.\"`, `\"The response could not be read.\"`, `\"The model returned an empty story.\"`, `\"Generated Story\"`; reuses the existing catalog string `\"No AI provider is configured. Add one in Settings \u2192 AI (or run a local Ollama server).\"`. Internal non-localized error reasons matching the WordIdentificationService precedent: `\"Apple Intelligence unavailable\"`, `\"FoundationModels framework not available\"`, `\"No API key/model for \\(provider.displayName)\"`.",
+    "background_tasks": [
+      {
+        "id": "wfdm97t7e",
+        "type": "workflow",
+        "status": "running",
+        "description": "Six parallel feature agents implement the SwiftMandarin step-change overhaul with strict file ownership",
+        "name": "implement-overhaul-wave1"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "c036b416-a3bf-4486-991c-1cbbb12cbe9d",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aac2cdc7bae6b1613",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_96f43b04-94f/agent-aac2cdc7bae6b1613.jsonl",
+    "last_assistant_message": "REPORT \u2014 Cross-app polish agent\n\n## Files edited\n1. `SwiftMandarin/Views/Components/AIWordExplanationView.swift` \u2014 all 9 collapsible sections (`definition, nuances, grammar, contexts, examples, synonyms, antonyms, collocations, tip`) now start expanded via a single `allSectionIDs` source of truth; re-expanded on every freshly generated result; tap-to-collapse preserved. Regenerate/Try Again pass `force: true` \u2192 `bypassCache`. `AIExplainButton` availability now uses `AIModelSettings.shared.isAnyProviderAvailable`; \"AI Not Available\" copy mentions cloud providers.\n2. `SwiftMandarin/Services/AIWordExplanationService.swift` \u2014 `bypassCache: Bool = false` plumbed through `generateExplanationWithProvider`, `generateExplanation`, `generateExplanationWithOllama`, `generateExplanationWithCloud`; when true the in-memory cache key is evicted before regeneration. All existing callers unaffected (defaulted).\n3. `SwiftMandarin/Views/VocabularyView.swift` \u2014 prev/next word navigation on all platforms (details below); haptic-default read fixed (`object(forKey:) as? Bool ?? true`).\n4. `SwiftMandarin/Views/Components/RubyTextView.swift` \u2014 `RubyWordView` pinyin now rendered with `PinyinConverter.coloredPinyin(fromPinyin:)` (per-syllable tone colors from the shared palette); deleted the whole-word single-color `pinyinColor`; show/hide pinyin, position, and `toneColors` settings still honored.\n5. `SwiftMandarin/Services/PinyinConverter.swift` \u2014 `convert` memoized with a thread-safe `NSCache` (key includes the tone-marks flag, countLimit 4096).\n6. `SwiftMandarin/Services/SpeechService.swift` \u2014 now `@MainActor` (all existing callers, incl. App Intents `perform()`, are already MainActor); iOS audio session (`.playback`/`.spokenAudio`/`.duckOthers` + `setActive`) configured before each utterance; persisted `ttsRate` applied to every utterance; new `speakSlow`; enhanced/premium voice preference with per-language voice cache.\n7. `SwiftMandarin/Models/AppPreferences.swift` \u2014 new `ttsRate: Double` persisted to `\"tts_rate\"` (default 0.5, clamped) + `static ttsRateRange = 0.35...0.6`.\n8. `SwiftMandarin/Views/TranslateView.swift` (targeted) \u2014 draft (`source`+`translated`+`direction`) persisted via `PersistentCodableStore` under `\"translationDraft\"`, debounced 1 s (empty draft saved immediately so Clear can't resurrect); restored on appear only when both fields empty, wrapped in `preserveCurrentTranslationDuringSourceUpdate`; auto-translate skipped for programmatic updates (prevents launch-time re-translation/stat inflation); haptic-default read fixed.\n9. `SwiftMandarin/Views/HistoryTabView.swift` \u2014 `.onMove(perform:)` gets `nil` while search/direction filter is active (filtered offsets can no longer corrupt the store); Duplicate uses new `duplicate(_:)`.\n10. `SwiftMandarin/Models/TranslationHistory.swift` \u2014 `add` dedup now includes `direction`; new `duplicate(_:)` inserts a true copy (fresh id, after the original) bypassing dedup and stats.\n11. `SwiftMandarin/Views/WorkbookGradingView.swift` \u2014 added `.onChange(of: customInstructions) { _, _ in didSaveSession = false }`.\n12. `SwiftMandarin/Models/SavedTerm.swift` \u2014 `remove(at:)`, `remove(_:)`, `remove(chinese:)`, and `clear()` purge SRS progress via `LearningProgressStore.shared.removeProgress(forCardId: \"vocab:\\(term.id.uuidString)\")` (signature verified against the landed method at LearningCard.swift:425).\n\n## File created\n- `SwiftMandarin/Views/Components/MenuBarTranslateView.swift` \u2014 macOS-only (entire contents in `#if os(macOS)`), `@MainActor struct MenuBarTranslateView: View`, 320\u00d7420, self-contained state (cancel-before-replace task). Multiline TextField, auto-direction via `containsCJK` with a direction badge, translate via `AIWordExplanationService.shared.translateWithProvider`, inline provider-missing guidance (proactive hint + thrown-error display), selectable result with Copy/Speak, colored-pinyin line under Chinese results only when `learningIsChinese` (bilingual parity \u2014 never native furniture), Save to Vocabulary for single words (dedup-aware Saved state), \"Open SwiftMandarin\" via `NSApp.activate()` (non-deprecated form), `.localizedSurface()` on root. Uses singletons directly so the scene needs no environment wiring.\n\n## Public API exposed (exact signatures)\n- `func generateExplanationWithProvider(for word: String, pinyin: String? = nil, context: String? = nil, bypassCache: Bool = false) async throws -> WordExplanationResult` (same added param on `generateExplanation`)\n- `func duplicate(_ entry: TranslationHistoryEntry)` on `TranslationHistoryStore`\n- `var ttsRate: Double` + `static let ttsRateRange: ClosedRange<Double> = 0.35...0.6` on `AppPreferences` (key `\"tts_rate\"`) \u2014 ready for a Settings slider\n- `static func speakSlow(_ text: String, languageCode: String? = nil)` on `SpeechService` (enum is now `@MainActor`, matching the contract)\n- `TermDetailSheet(selectedTerm: Binding<SavedTerm?>, orderedTerms: [SavedTerm] = [])`, `TermDetailInspector(term:selectedTerm:savedTermsStore:orderedTerms: [SavedTerm] = [])`\n- `MenuBarTranslateView()` \u2014 plug into the MenuBarExtra scene\n\n## Vocab detail navigation design\nBoth detail surfaces receive `orderedTerms: filteredTerms` (the exact visible filtered/sorted order). Navigation sets `selectedTerm` so dismissal lands on the last-viewed term. iOS: `.highPriorityGesture(DragGesture(minimumDistance: 40))` firing only when |dx| > 2\u00b7|dy| (left = next); content keyed `.id(term.id)` with asymmetric slide+opacity transition \u2014 this also hard-resets the AI-explanation section and fetched-translation state per term (the existing `.task(id:)` resets sheet-level state). All platforms: chevron toolbar buttons (sheet toolbar; inspector header row on macOS), disabled at ends, `\u2318\u2190/\u2318\u2192` shortcuts, and a \"12 of 240\" indicator (`.principal` in the sheet toolbar; shown only when the term is still in the visible list and count > 1 \u2014 if the list changed underneath, navigation disables instead of jumping).\n\n## New user-facing English string literals (for the central localization pass)\n- \"Enable Apple Intelligence, connect to Ollama, or add a cloud provider API key (OpenAI, Claude, Qwen, and more) in Settings to use AI features.\"\n- \"%lld of %lld\" (from `Text(\"\\(index + 1) of \\(orderedTerms.count)\")`, sheet + inspector)\n- \"Word %lld of %lld\" (accessibility label)\n- \"Previous Word\" / \"Next Word\"\n- \"Previous word (\u2318\u2190)\" / \"Next word (\u2318\u2192)\" (.help)\n- \"Close\" (accessibility)\n- \"Quick Translate\"\n- \"Auto-detect\"\n- \"Enter text to translate\"\n- \"Translate\"\n- \"Clear\" (.help/accessibility)\n- \"No AI provider configured. Add one in SwiftMandarin's AI Settings, or run a local Ollama server.\"\n- \"Translating\u2026\"\n- \"Translation will appear here\"\n- \"Copy\" / \"Copied!\" / \"Speak\" / \"Saved\" (likely already in catalog from other views)\n- \"Save to Vocabulary\"\n- \"Open SwiftMandarin\"\n\nNote: the direction badge \"\u4e2d\u6587 \u2192 English\"/\"English \u2192 \u4e2d\u6587\" uses `Text(verbatim:)` deliberately (language names in their own scripts, not localizable keys). All edited/created files pass `swiftc -parse`; no xcodebuild run per instructions.",
+    "background_tasks": [
+      {
+        "id": "wfdm97t7e",
+        "type": "workflow",
+        "status": "running",
+        "description": "Six parallel feature agents implement the SwiftMandarin step-change overhaul with strict file ownership",
+        "name": "implement-overhaul-wave1"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ae2a5200219518731",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-ae2a5200219518731.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "abac84fe1bf745327",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-abac84fe1bf745327.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a3b9bb45f66a2a1d2",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a3b9bb45f66a2a1d2.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ac9d23d6fcbace4d1",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-ac9d23d6fcbace4d1.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a3796f8e3bf0ee4cc",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a3796f8e3bf0ee4cc.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a3e638053b3fac5b5",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a3e638053b3fac5b5.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a735e9d9d44654d0c",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a735e9d9d44654d0c.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a891411b427353d4d",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a891411b427353d4d.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a41a8414f0f4b669c",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a41a8414f0f4b669c.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "af09c0e1688ebde64",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-af09c0e1688ebde64.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a033926881f357f17",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a033926881f357f17.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a931470820199f61d",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a931470820199f61d.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a03ba54d698d9ae1b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a03ba54d698d9ae1b.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a1640d96f434d3970",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a1640d96f434d3970.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a3d409f3b627d9a61",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a3d409f3b627d9a61.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a0c2b29bc46e4fe4f",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a0c2b29bc46e4fe4f.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a18528f1c8faa0a8c",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a18528f1c8faa0a8c.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ae649b771c5d7975a",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-ae649b771c5d7975a.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "d5802697-cce4-412a-955d-458c998bd33f",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f.jsonl",
+    "cwd": "/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts",
+    "prompt_id": "9fe3cfb1-0979-4cf0-b22a-a66ad0fc940b",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a7dea18ccdf608653",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-XCode-Projects-SwiftMandarinShortcuts/d5802697-cce4-412a-955d-458c998bd33f/subagents/workflows/wf_767983cf-ae8/agent-a7dea18ccdf608653.jsonl",
+    "background_tasks": [
+      {
+        "id": "wkevdsqjv",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarial multi-lens review of the step-change overhaul diff with skeptic verification",
+        "name": "review-overhaul"
+      }
+    ],
+    "session_crons": []
+  }
+]
