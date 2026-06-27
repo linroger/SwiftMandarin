@@ -494,7 +494,7 @@ struct VocabularyRow: View {
                     // (previously a fixed size, which stayed hard to read).
                     // Kept noticeably smaller than the headword for balance.
                     Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                        .font(.system(size: chineseFontSize * 0.6))
+                        .font(.system(size: chineseFontSize * 0.5))
                 }
 
                 // Native-language gloss, kept small.
