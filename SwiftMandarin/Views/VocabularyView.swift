@@ -554,11 +554,13 @@ struct DetailFontSizeStepper: View {
     var step: Double = 8
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 18) {
             Button {
                 size = max(range.lowerBound, size - step)
             } label: {
                 Image(systemName: "minus")
+                    .frame(width: 20, height: 20)
+                    .contentShape(Rectangle())
             }
             .disabled(size <= range.lowerBound)
             .accessibilityLabel(Text("Decrease character size"))
@@ -567,14 +569,17 @@ struct DetailFontSizeStepper: View {
                 size = min(range.upperBound, size + step)
             } label: {
                 Image(systemName: "plus")
+                    .frame(width: 20, height: 20)
+                    .contentShape(Rectangle())
             }
             .disabled(size >= range.upperBound)
             .accessibilityLabel(Text("Increase character size"))
         }
-        .font(.caption2)
-        .buttonStyle(.bordered)
-        .controlSize(.mini)
-        .labelStyle(.iconOnly)
+        // Bare symbols, no button chrome, equal square hit areas so the two
+        // sit evenly.
+        .font(.system(size: 15, weight: .semibold))
+        .foregroundStyle(.secondary)
+        .buttonStyle(.plain)
     }
 }
 
@@ -625,11 +630,8 @@ struct TermDetailSheet: View {
 
                         if term.showsPinyin {
                             Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                                .font(.system(size: detailFontSize * 0.4))
+                                .font(.system(size: detailFontSize * 0.45))
                         }
-
-                        DetailFontSizeStepper(size: $detailFontSize)
-                            .padding(.top, 2)
 
                         if !term.partOfSpeech.isEmpty {
                             Text(term.partOfSpeech)
@@ -640,6 +642,14 @@ struct TermDetailSheet: View {
                                 .padding(.vertical, 4)
                                 .background(Capsule().fill(.blue))
                         }
+
+                        // Size control tucked into the bottom-right of the
+                        // headword block rather than centered beneath it.
+                        HStack {
+                            Spacer()
+                            DetailFontSizeStepper(size: $detailFontSize)
+                        }
+                        .padding(.trailing, 4)
                     }
                     .padding(.top, 20)
                     
@@ -945,11 +955,8 @@ struct TermDetailInspector: View {
 
                     if term.showsPinyin {
                         Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                            .font(.system(size: detailFontSize * 0.4))
+                            .font(.system(size: detailFontSize * 0.45))
                     }
-
-                    DetailFontSizeStepper(size: $detailFontSize)
-                        .padding(.top, 2)
 
                     if !term.partOfSpeech.isEmpty {
                         Text(term.partOfSpeech)
@@ -960,6 +967,14 @@ struct TermDetailInspector: View {
                             .padding(.vertical, 3)
                             .background(Capsule().fill(.blue))
                     }
+
+                    // Size control tucked into the bottom-right of the
+                    // headword block rather than centered beneath it.
+                    HStack {
+                        Spacer()
+                        DetailFontSizeStepper(size: $detailFontSize)
+                    }
+                    .padding(.trailing, 4)
                 }
                 
                 Divider()
