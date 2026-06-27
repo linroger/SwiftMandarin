@@ -28,7 +28,7 @@ struct VocabularyView: View {
     @State private var aiExplanationTerm: SavedTerm?
 
     /// Font size for Chinese characters in the vocabulary list (persisted)
-    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 22
+    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 26
     @AppStorage("vocabularyDetailUsesInspector") private var vocabularyDetailUsesInspector: Bool = true
     
     enum SortOrder: String, CaseIterable {
@@ -460,7 +460,7 @@ struct VocabularyView: View {
 
 struct VocabularyRow: View {
     let term: SavedTerm
-    var chineseFontSize: Double = 22
+    var chineseFontSize: Double = 26
     var isSelected: Bool = false
     var onMasteredToggle: (() -> Void)?
     var onAIExplainTap: (() -> Void)?
@@ -488,8 +488,11 @@ struct VocabularyRow: View {
                 // Pinyin with tone colors — a learner aid, shown only when
                 // the user is learning Chinese.
                 if term.showsPinyin {
+                    // Scale the pinyin with the headword so enlarging the
+                    // character also enlarges the pinyin and its tone marks
+                    // (previously a fixed size, which stayed hard to read).
                     Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                        .font(.subheadline)
+                        .font(.system(size: chineseFontSize * 0.7))
                 }
 
                 // Native-language gloss, kept small.
@@ -1134,7 +1137,7 @@ struct ExportSheet: View {
     /// How many of the exported words have a saved AI analysis to bundle.
     private var aiAnalysisCount: Int {
         let cache = WordExplanationCacheStore.shared
-        return terms.filter { !cache.explanations(forWords: $0.aiCacheCandidateWords).isEmpty }.count
+        return terms.filter { cache.hasAnyExplanation(forWords: $0.aiCacheCandidateWords) }.count
     }
 
     private var exportPreview: String {

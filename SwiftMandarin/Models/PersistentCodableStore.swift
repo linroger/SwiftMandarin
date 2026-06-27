@@ -28,7 +28,7 @@ private struct FailableDecodable<Element: Decodable>: Decodable {
 
 enum PersistentCodableStore {
 
-    private static let log = Logger(subsystem: "com.rogerlin.SwiftMandarin", category: "Persistence")
+    nonisolated private static let log = Logger(subsystem: "com.rogerlin.SwiftMandarin", category: "Persistence")
 
     // MARK: - Load
 
@@ -96,6 +96,38 @@ enum PersistentCodableStore {
             UserDefaults.standard.set(data, forKey: key)
         } catch {
             log.error("Encode failed for \(key, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    // MARK: - File-backed (for large stores)
+
+    /// URL for a JSON store kept in Application Support, creating the directory
+    /// if needed. Used for stores too large for UserDefaults (which is loaded
+    /// wholesale into memory at launch), e.g. the word-explanation cache.
+    /// `nonisolated`/pure so it is safe to call from a background write task.
+    nonisolated static func appSupportFileURL(_ name: String) -> URL? {
+        guard let dir = try? FileManager.default.url(
+            for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true
+        ) else {
+            log.error("Could not resolve Application Support directory for \(name, privacy: .public)")
+            return nil
+        }
+        return dir.appendingPathComponent(name)
+    }
+
+    /// Resilient array load from an Application Support JSON file: missing file
+    /// → nil; a single corrupt row is dropped rather than discarding the rest.
+    static func loadArrayFromFile<Element: Decodable>(_ type: [Element].Type, fileName: String) -> [Element]? {
+        guard let url = appSupportFileURL(fileName),
+              FileManager.default.fileExists(atPath: url.path),
+              let data = try? Data(contentsOf: url) else {
+            return nil
+        }
+        do {
+            return try JSONDecoder().decode([FailableDecodable<Element>].self, from: data).compactMap(\.value)
+        } catch {
+            log.error("Decode failed for file \(fileName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
         }
     }
 }

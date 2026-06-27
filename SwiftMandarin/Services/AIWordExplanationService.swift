@@ -133,7 +133,7 @@ struct Collocation {
 /// Fallback struct that mirrors WordExplanation for non-AI scenarios.
 /// `Codable` so generated explanations can be persisted in the explanation
 /// cache and re-served without another AI round-trip.
-struct WordExplanationResult: Equatable, Codable {
+struct WordExplanationResult: Equatable, Codable, Sendable {
     let definition: String
     let partOfSpeech: String
     let nuances: String
@@ -154,7 +154,7 @@ struct WordExplanationResult: Equatable, Codable {
 /// learner's native language. `pinyin` is empty for English sentences.
 /// The `id` is a transient view-identity value, regenerated on decode rather
 /// than persisted, so it is omitted from the `Codable` keys.
-struct ExampleSentenceResult: Identifiable, Equatable, Codable {
+struct ExampleSentenceResult: Identifiable, Equatable, Codable, Sendable {
     let id = UUID()
     let sentence: String
     let pinyin: String
@@ -171,7 +171,7 @@ struct ExampleSentenceResult: Identifiable, Equatable, Codable {
 
 /// A related word (synonym/antonym) in the word's own language with its
 /// meaning and usage difference in the learner's native language.
-struct RelatedWordResult: Identifiable, Equatable, Codable {
+struct RelatedWordResult: Identifiable, Equatable, Codable, Sendable {
     let id = UUID()
     let word: String
     let pinyin: String
@@ -188,7 +188,7 @@ struct RelatedWordResult: Identifiable, Equatable, Codable {
 }
 
 /// A collocation in the word's own language with a native-language translation.
-struct CollocationResult: Identifiable, Equatable, Codable {
+struct CollocationResult: Identifiable, Equatable, Codable, Sendable {
     let id = UUID()
     let phrase: String
     let pinyin: String
