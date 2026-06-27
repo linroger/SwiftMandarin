@@ -492,8 +492,9 @@ struct VocabularyRow: View {
                     // Scale the pinyin with the headword so enlarging the
                     // character also enlarges the pinyin and its tone marks
                     // (previously a fixed size, which stayed hard to read).
+                    // Kept noticeably smaller than the headword for balance.
                     Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                        .font(.system(size: chineseFontSize * 0.7))
+                        .font(.system(size: chineseFontSize * 0.6))
                 }
 
                 // Native-language gloss, kept small.
