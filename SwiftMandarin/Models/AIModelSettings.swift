@@ -193,11 +193,9 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     var modelsPath: String? {
         switch self {
         case .anthropic: return "/v1/models"
-        case .openAI, .deepseek, .qwen, .doubao, .zhipu, .minimax, .quotio: return "/models"
-        // The Kimi coding-plan proxy exposes only the fixed `kimi-for-coding`
-        // model and has no `GET /models` route — listing it returns 401, so we
-        // skip live listing and use the curated default instead.
-        case .kimi: return nil
+        // Kimi's coding endpoint does expose `GET /coding/v1/models` (returns the
+        // single `kimi-for-coding` / "K2.7 Code" model), so live listing works.
+        case .openAI, .deepseek, .qwen, .doubao, .zhipu, .minimax, .quotio, .kimi: return "/models"
         case .appleIntelligence, .ollama: return nil
         }
     }
@@ -221,10 +219,12 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .qwen:
             return ["qwen-plus", "qwen-max", "qwen-turbo", "qwen-vl-max", "qwen-vl-plus", "qwen-max-latest"]
         case .kimi:
-            // The coding-plan endpoint (api.kimi.com/coding/v1) serves a single
-            // unified model id. Users on the Moonshot Open Platform can override
-            // the Base URL and type a kimi-k2.x / kimi-latest model id instead.
-            return ["kimi-for-coding"]
+            // The coding endpoint (api.kimi.com/coding/v1) serves the K2.7 model
+            // under the id `kimi-for-coding`; `kimi-k2.7` also resolves to it.
+            // Both are thinking-only (temperature must be 1, omitted by the
+            // client). Moonshot Open Platform users can override the Base URL and
+            // type a kimi-latest / kimi-k2.x id instead.
+            return ["kimi-for-coding", "kimi-k2.7"]
         case .zhipu:
             return ["glm-4.6", "glm-4.5", "glm-4-plus", "glm-4.5v", "glm-4v-plus", "glm-4-flash"]
         case .minimax:

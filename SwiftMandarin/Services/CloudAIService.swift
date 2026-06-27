@@ -251,7 +251,9 @@ final class CloudAIService {
             body = Self.openAIBody(
                 model: model, system: system, user: user,
                 images: imagesToSend,
-                jsonMode: jsonMode, useResponseFormat: useResponseFormat, maxTokens: maxTokens
+                jsonMode: jsonMode, useResponseFormat: useResponseFormat, maxTokens: maxTokens,
+                // Kimi's coding (thinking-only) model rejects any temperature ≠ 1.
+                allowsCustomTemperature: provider != .kimi
             )
         case .anthropic:
             body = Self.anthropicBody(
@@ -316,7 +318,8 @@ final class CloudAIService {
 
     private static func openAIBody(
         model: String, system: String, user: String,
-        images: [Data], jsonMode: Bool, useResponseFormat: Bool, maxTokens: Int
+        images: [Data], jsonMode: Bool, useResponseFormat: Bool, maxTokens: Int,
+        allowsCustomTemperature: Bool = true
     ) -> [String: Any] {
         var systemPrompt = system
         var userContent: Any = user
@@ -354,6 +357,10 @@ final class CloudAIService {
             } else {
                 body["max_tokens"] = maxTokens
             }
+        } else if !allowsCustomTemperature {
+            // Some thinking-only models (e.g. Kimi's coding model) reject any
+            // temperature other than 1 — omit it so the model uses its default.
+            body["max_tokens"] = maxTokens
         } else {
             body["temperature"] = 0.3
             body["max_tokens"] = maxTokens
