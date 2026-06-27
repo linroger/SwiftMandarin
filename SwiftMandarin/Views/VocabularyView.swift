@@ -545,14 +545,49 @@ struct VocabularyRow: View {
 
 // MARK: - Term Detail Sheet
 
+/// Tiny −/+ control for adjusting the detail view's headword + pinyin size.
+/// Shared by the sheet and inspector presentations; persists via AppStorage.
+struct DetailFontSizeStepper: View {
+    @Binding var size: Double
+    var range: ClosedRange<Double> = 56...144
+    var step: Double = 8
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button {
+                size = max(range.lowerBound, size - step)
+            } label: {
+                Image(systemName: "minus")
+            }
+            .disabled(size <= range.lowerBound)
+            .accessibilityLabel(Text("Decrease character size"))
+
+            Button {
+                size = min(range.upperBound, size + step)
+            } label: {
+                Image(systemName: "plus")
+            }
+            .disabled(size >= range.upperBound)
+            .accessibilityLabel(Text("Increase character size"))
+        }
+        .font(.caption2)
+        .buttonStyle(.bordered)
+        .controlSize(.mini)
+        .labelStyle(.iconOnly)
+    }
+}
+
 struct TermDetailSheet: View {
     @Binding var selectedTerm: SavedTerm?
     @Environment(\.dismiss) private var dismiss
     @Environment(SavedTermsStore.self) private var savedTermsStore
-    
+
     @State private var fetchedTranslation: String = ""
     @State private var isLoadingTranslation: Bool = false
     @State private var showCopiedFeedback: Bool = false
+    /// Persisted size of the Chinese headword in the detail view; the −/+
+    /// buttons adjust it and the pinyin scales with it.
+    @AppStorage("vocabularyDetailChineseFontSize") private var detailFontSize: Double = 96
     
     /// The current term being displayed
     private var term: SavedTerm {
@@ -581,7 +616,7 @@ struct TermDetailSheet: View {
                     // English headwords can be long, so allow shrinking.
                     VStack(spacing: 12) {
                         Text(term.headlineText)
-                            .font(.system(size: 92, weight: .medium))
+                            .font(.system(size: detailFontSize, weight: .medium))
                             .lineLimit(2)
                             .minimumScaleFactor(0.35)
                             .multilineTextAlignment(.center)
@@ -589,8 +624,11 @@ struct TermDetailSheet: View {
 
                         if term.showsPinyin {
                             Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                                .font(.largeTitle)
+                                .font(.system(size: detailFontSize * 0.4))
                         }
+
+                        DetailFontSizeStepper(size: $detailFontSize)
+                            .padding(.top, 2)
 
                         if !term.partOfSpeech.isEmpty {
                             Text(term.partOfSpeech)
@@ -859,10 +897,13 @@ struct TermDetailInspector: View {
     let term: SavedTerm
     @Binding var selectedTerm: SavedTerm?
     var savedTermsStore: SavedTermsStore
-    
+
     @State private var fetchedTranslation: String = ""
     @State private var isLoadingTranslation: Bool = false
     @State private var showCopiedFeedback: Bool = false
+    /// Persisted size of the Chinese headword in the detail view; shared with
+    /// the sheet presentation so the −/+ buttons behave identically.
+    @AppStorage("vocabularyDetailChineseFontSize") private var detailFontSize: Double = 96
     
     private var displayDefinition: String {
         if !fetchedTranslation.isEmpty {
@@ -895,7 +936,7 @@ struct TermDetailInspector: View {
                 // Large headword display — the language being learned.
                 VStack(spacing: 10) {
                     Text(term.headlineText)
-                        .font(.system(size: 64, weight: .medium))
+                        .font(.system(size: detailFontSize, weight: .medium))
                         .lineLimit(2)
                         .minimumScaleFactor(0.35)
                         .multilineTextAlignment(.center)
@@ -903,8 +944,11 @@ struct TermDetailInspector: View {
 
                     if term.showsPinyin {
                         Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                            .font(.title2)
+                            .font(.system(size: detailFontSize * 0.4))
                     }
+
+                    DetailFontSizeStepper(size: $detailFontSize)
+                        .padding(.top, 2)
 
                     if !term.partOfSpeech.isEmpty {
                         Text(term.partOfSpeech)
