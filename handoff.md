@@ -183,8 +183,8 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 
 ## Iteration 19 — Privacy Manifest and Localized Permission Foundation (2026-07-10)
 
-**Last Updated (UTC):** 2026-07-10T12:15:48Z
-**Status:** In Progress
+**Last Updated (UTC):** 2026-07-10T12:16:48Z
+**Status:** Complete
 **Branch:** `codex/privacy-release-foundation` (created from and pushed at `2b99fa2`)
 **Current Focus:** Complete one Phase 0 recommendation slice: bundle an accurate privacy manifest and provide accurate English/Simplified Chinese permission disclosures, including Ollama local-network access.
 
@@ -213,7 +213,7 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - [x] Audit required-reason APIs and Xcode's synchronized-resource behavior against current Apple documentation.
 - [x] Add the minimal privacy manifest and localized permission catalog/build settings.
 - [x] Validate syntax, generated Info.plists, bundled resources, and both platform builds.
-- [ ] Request independent review, resolve findings, update this record, commit only scoped files, and push.
+- [x] Request independent review, resolve findings, update this record, commit only scoped files, and push.
 
 ### Findings, Decisions, Assumptions
 
@@ -252,10 +252,13 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - Debug/Release build-setting parity passed: each catalog English value has exactly two identical `INFOPLIST_KEY_*` definitions.
 - Independent review found one Important copy gap: Conversation dictation was omitted from the microphone/speech purposes. The reviewed fix now covers both live translation and conversation practice in both languages and both configurations.
 - Post-review macOS and iOS Simulator build commands both exited 0. The catalog compiler, configuration-parity check, and exact six-file bundle comparison were rerun and passed after the correction.
+- Follow-up review confirmed the Conversation disclosure issue is resolved and reported no remaining Critical or Important finding.
+- Scoped implementation commit `458bb74` was pushed to `origin/codex/privacy-release-foundation`; live `.claude/` and `logs/` modifications remained unstaged.
 
 ### Remaining Work & Next Steps
 
-- Complete independent review, fix any material finding, re-run affected checks, update this record, stage only the scoped files, commit, and push.
+- Release-time checks still required outside Simulator: generate the signed archive privacy report, validate through App Store Connect, and exercise English/zh-Hans permission prompts plus LAN allow/deny/Settings recovery on physical hardware.
+- The next implementation session SHOULD select one separate Phase 0 item. Strong candidates are RG-04 repository/session-log cleanup or RG-05 unified Shortcut privacy/history policy. The `.local` hostname ATS behavior also remains a dedicated tested transport slice.
 
 ### Updates to This File
 
@@ -263,3 +266,4 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - 2026-07-10T12:03:49Z: Completed the required-reason and permission-localization audit, implemented the source resources/build settings, and captured initial macOS bundle evidence.
 - 2026-07-10T12:09:19Z: Completed clean macOS/iOS builds and exact source-to-bundle manifest, fallback, localization, and build-configuration parity checks.
 - 2026-07-10T12:15:48Z: Applied the independent review correction for Conversation dictation and repeated all affected static, build, and bundle checks successfully.
+- 2026-07-10T12:16:48Z: Follow-up review passed, committed the scoped implementation as `458bb74`, pushed the GitHub branch, preserved live session logs unstaged, and marked Iteration 19 complete.
