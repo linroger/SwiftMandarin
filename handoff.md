@@ -267,3 +267,91 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - 2026-07-10T12:09:19Z: Completed clean macOS/iOS builds and exact source-to-bundle manifest, fallback, localization, and build-configuration parity checks.
 - 2026-07-10T12:15:48Z: Applied the independent review correction for Conversation dictation and repeated all affected static, build, and bundle checks successfully.
 - 2026-07-10T12:16:48Z: Follow-up review passed, committed the scoped implementation as `458bb74`, pushed the GitHub branch, preserved live session logs unstaged, and marked Iteration 19 complete.
+
+## Iteration 20 — Autonomous Product Loop Constitution (2026-07-10)
+
+**Last Updated (UTC):** 2026-07-10T13:37:26Z
+**Status:** In Progress
+**Branch:** `codex/autonomous-product-loop` (created from and pushed at `63c7b3a`)
+**Current Focus:** Create `CODEX_LOOP.md`: a first-principles description of SwiftMandarin's ideal integrated product plus an evidence-driven autonomous engineering loop that can converge on it without scope drift or false completion.
+
+### Request & Context
+
+- The user requested an idealized, enhanced, ready-to-ship definition of SwiftMandarin, including valuable features not present today, explicit integration among all subsystems, and a continuously running agentic loop that keeps improving the app autonomously.
+- The primary readers are future coding agents. Human maintainers and reviewers are the secondary readers. The document MUST therefore be both aspirational and executable: clear product intent, stable invariants, machine-actionable gates, authority boundaries, and concrete loop state.
+- The current code, README, `CODEX_RECOMMENDATIONS.md`, and prior handoff evidence define the starting point. `CODEX_LOOP.md` defines the destination and operating system; it MUST NOT pretend proposed capabilities already exist.
+- The loop MUST combine convergence and discovery. It should relentlessly close verified gaps while preventing endless speculative feature accumulation, success-criteria rewriting, unsafe external actions, and multi-agent edit conflicts.
+- Existing `.claude/` and `logs/` changes are live session artifacts. They MUST remain unstaged and untouched.
+
+### Requirements → Acceptance Checks
+
+| Requirement | Acceptance check | Expected outcome | Evidence |
+|---|---|---|---|
+| R20.1: Ideal product state | A fresh reader can explain the user promise, daily journey, target platforms, proposed capabilities, and what “perfected” means | The destination is coherent, learner-centered, privacy-aware, and broader than the current app without becoming a random feature list | Reader-agent questions and product-model sections |
+| R20.2: Integrated system | Trace capture → understanding → saved context → adaptive practice → conversation/reading → events → Home/Stats | Every major feature participates in shared domain models and feedback loops; no orphan silos | Architecture map, canonical entities, end-to-end journeys |
+| R20.3: Executable autonomous loop | A fresh coding agent can start from the repository and perform one complete iteration without hidden context | Loop defines bootstrap, observation, scoring, WIP=1 selection, acceptance, red/green verification, review, delivery, persistence, and continuation | Algorithm, state model, templates, canonical prompt |
+| R20.4: Safety and anti-drift | Adversarial review checks authority, irreversible operations, privacy, goalpost movement, false green tests, gold-plating, and infinite-loop behavior | The loop knows when to continue, stop, block, ask, or defer; it cannot declare success by weakening requirements | Invariants, authority matrix, stop/continue rules, failure recovery |
+| R20.5: Ready-to-ship definition | Release gates span product, correctness, data, security/privacy, accessibility, localization, performance, platform behavior, distribution, and support | “Ready” is evidence-backed and does not rely on a successful compile alone | Ship matrix and required artifacts |
+| R20.6: Reader usability | Fresh reader and adversarial agents answer realistic questions and identify no material ambiguity | Document works outside this conversation and survives context reset | Reader-test reports and corrections |
+
+### Plan & Progress Ledger
+
+- [x] Verify the current branch and protect live session-log changes.
+- [x] Create and push `codex/autonomous-product-loop` from the completed privacy-foundation branch.
+- [x] Synthesize current capabilities, known gaps, product principles, ideal journeys, and proposed features.
+- [x] Draft the integrated architecture, loop state machine, prioritization, authority, verification, and ready-to-ship gates.
+- [x] Run two fresh-reader/product/adversarial review waves and correct ambiguity, contradictions, unsafe autonomy, and overstated product claims.
+- [ ] Validate the final Markdown/references, update this record, commit only scoped documentation, and push.
+
+### Findings, Decisions, Assumptions
+
+- **Decision:** The first honest product position is an encounter-driven, private Mandarin-learning companion for adult English-speaking learners of Standard Mandarin; its integrated parts may behave like a learning operating system, but it does not claim a complete course, symmetrical English pedagogy, or proven real-world fluency.
+- **Decision:** The pre-release convergence loop and post-release learning loop are distinct. Before release, the backlog is driven by failed invariants and acceptance gates. After release, new work requires user evidence, product fit, and a measurable hypothesis.
+- **Decision:** Autonomous does not mean unbounded authority. The document may prescribe local implementation behavior, but runtime user/system instructions still govern merges, deployments, purchases, credentials, destructive migrations, and App Store actions.
+- **Decision:** Work in progress is limited to one vertical slice. Multi-agent work is for bounded research, review, and non-overlapping verification; the coordinator owns integration and re-verification.
+- **Assumption to test:** A fresh agent with only `CODEX_LOOP.md` plus repository files can distinguish current state from target state, pick the next eligible slice, and know exactly what evidence is required before continuing.
+- **Decision:** The ideal product is organized around completed learning-transfer loops, not feature count or engagement. Capture, translation, vocabulary, FSRS, practice, Reader, Conversation, Workbook, Home, and Stats share concepts, provenance, explicit prompt state, and a privacy-safe event ledger.
+- **Decision:** The event ledger is an integration/analytics seam, not full event sourcing; normal entities remain authoritative. Passive exposure is never promoted to successful active recall.
+- **Decision:** A document cannot self-execute. An external runner invokes one bounded Codex iteration at a time, persists the terminal outcome, enforces resource budgets/leases, and stops at human authority gates.
+- **Decision:** The target avoids premature knowledge graphs, universal untyped item models, sync before backup, simultaneous architecture rewrites, and speculative platform expansion.
+- **Decision:** `LOOP.md`, added concurrently in user-owned commit `52eeace`, is preserved as an earlier vision/idea inventory. `CODEX_LOOP.md` explicitly governs conflicts so its never-empty backlog, bidirectional-depth, knowledge-graph, or self-reprompt assumptions cannot bypass release convergence and evidence gates.
+- **Decision:** Mutable loop truth lives in Git-common-dir canonical state shared by worktrees; a tracked `CODEX_LOOP_STATE.json` is only a terminal checkpoint. The runner owns bootstrap/normal lease acquisition and injects fenced authority; the coordinator validates it.
+- **Decision:** Ready-to-ship is profile- and capability-scoped. A human-approved milestone supplies exact platforms, learner/age/linguistic profile, channels, schemas, numeric budgets, applicable gates, and scenario IDs.
+
+### Issues, Mistakes, Recoveries
+
+- **First reader wave:** The initial draft had conflicting terminal taxonomies, underdefined scoring/schemas/authority, ambiguous SHA bookkeeping, and a conceptual unfenced lease. The corrected draft now has one nine-value outcome schema, calibrated scoring, explicit schemas/migrations, runner-injected authority, candidate-source versus attestation commits, common-dir canonical state, fenced bootstrap/normal leases, and fail-closed reconciliation.
+- **First product wave:** The initial draft overstated a bilingual learning OS, real-world transfer, and pre-approved differentiators. It now narrows the shipping persona, operationalizes/version-controls transfer evidence, adds capability-scoped feature contracts and release profiles, preserves no-save utilities, defines FSRS correction/mastery semantics, and adds semantic, privacy, age, content, legal, usability, and resource gates.
+- **Validation command mistakes:** One `rg` command used unsafe Markdown backticks inside double-quoted zsh input; a follow-up tool call had a mismatched JavaScript quote; and the first new-file whitespace gate treated `git diff --no-index` status 1 (“different”) as an error despite no diagnostic. None executed a mutation. All were corrected and recorded in `.learnings/ERRORS.md`; subsequent validation uses literal-safe quoting, valid minimal tool-call objects, and explicit no-index exit handling.
+- **Concurrent committed work:** `LOOP.md` appeared in commit `52eeace` while this document was being written. It was treated as user-owned, inspected read-only, preserved, and explicitly integrated through a precedence rule rather than reset or rewritten.
+
+### Scenario-Focused Resolution Tests
+
+- **Reader scenario:** “Continue the SwiftMandarin loop” from a fresh context. The reader should identify the health gate, current-state artifacts, selection algorithm, required plan/acceptance record, safe authority, verification ladder, delivery rules, and next-loop transition.
+- **Product scenario:** A learner photographs a workbook error, saves a term, reviews it, encounters it in Reader and Conversation, and sees skill-specific progress. The document should trace one canonical data and UI flow across all relevant systems.
+- **Verdict:** Resolved. The final reader, product, and adversarial reviews all reported no remaining Critical or Important issue on the same stable document hash.
+
+### Verification Summary
+
+- Documentation co-authoring workflow selected: context synthesis → structured drafting → fresh-reader testing.
+- No relevant persistent Codex memory entry exists for this repository; current repository artifacts remain the evidence source.
+- Three parallel first-principles design lanes completed: learner/product model, technical architecture/ship matrix, and executable loop engineering.
+- `CODEX_LOOP.md` now has 23 major sections, two system diagrams, a feature-to-loop matrix, canonical learner scenario, domain/concurrency/data/privacy/semantic-safety contracts, release profiles, capability-scoped ship gates, versioned schemas, task scoring, canonical/fenced state transitions, authority boundaries, external runner, and reusable prompt.
+- First fresh-context wave completed on SHA `fde5b703...`; all reported product and loop issues were incorporated.
+- Second hash-stable wave completed on SHA `4627c75a...`. It confirmed the first corrections and exposed six remaining reader, eight product, and six runner-hardening gaps; all were corrected.
+- Current candidate SHA-256 is `7718724f76a12065cebf196d940e0b7b094e4991f96fe6df01c9107b74fec279`, 1,751 lines and 15,642 words before the final targeted review.
+- Static validation passes: `git diff --check`, all 26 Markdown fences balanced, and all three fenced JSON examples parse successfully. Validation was rerun with a clean system PATH and produced no warnings.
+- Final targeted reader review confirmed bootstrap/lease ordering, shared state versus verified source SHA, conditional bootstrap outcomes, outcome precedence, passive Reader semantics, and `LOOP.md` precedence; no Critical/Important issue remains.
+- Final targeted product review confirmed all eight product corrections; no Critical/Important issue remains.
+- Final targeted adversarial review confirmed common-dir state, bootstrap fencing, single-clone/read-only subagent constraints, stale-evidence handling, governance authenticity, and terminal/lease finalization; no Critical/Important issue remains.
+
+### Remaining Work & Next Steps
+
+- Rerun the final static/scope checks, commit only scoped documentation, push, and record remote parity.
+
+### Updates to This File
+
+- 2026-07-10T12:35:27Z: Created Iteration 20 brief, defined the dual human/agent audience, established anti-drift autonomy principles, and captured traceable document acceptance tests.
+- 2026-07-10T12:49:34Z: Completed the product, architecture, and loop-engineering synthesis; drafted `CODEX_LOOP.md`; and started three fresh-context reader/adversarial tests.
+- 2026-07-10T13:34:11Z: Incorporated two complete product/reader/adversarial review waves, reconciled the concurrent `LOOP.md` commit, added fail-closed transactional loop mechanics and product-evidence safeguards, recorded validation mistakes/recoveries, and started the final hash-stable targeted verification.
+- 2026-07-10T13:37:26Z: Final hash-stable reader, product, and adversarial reviews completed with no remaining Critical or Important finding; prepared the scoped documentation for final validation and delivery.
