@@ -30,8 +30,10 @@ struct PhrasesView: View {
         }
     }
     
+    // No own NavigationStack: this screen is presented inside an ambient
+    // navigation container (Study hub push on iOS, split-view detail on macOS).
+    // A nested stack broke `.searchable` on iOS. See VocabularyView for detail.
     var body: some View {
-        NavigationStack {
             List {
                 ForEach(filteredCategories) { category in
                     Section {
@@ -67,7 +69,6 @@ struct PhrasesView: View {
                     .presentationDragIndicator(.visible)
                     .localizedSurface()
             }
-        }
     }
 }
 
@@ -347,6 +348,8 @@ struct PhraseCategory: Identifiable {
 // MARK: - Preview
 
 #Preview {
-    PhrasesView()
-        .environment(SavedTermsStore.shared)
+    NavigationStack {
+        PhrasesView()
+            .environment(SavedTermsStore.shared)
+    }
 }

@@ -67,8 +67,13 @@ struct VocabularyView: View {
         selectedTerm = savedTermsStore.term(withID: currentID)
     }
     
+    // NOTE: No own NavigationStack here. This screen is always presented inside
+    // an ambient navigation container — pushed into the Study hub's
+    // NavigationStack on iOS, or shown in the NavigationSplitView detail column
+    // on macOS. Wrapping it in its own NavigationStack created a *nested* stack
+    // on iOS, and a nested `.searchable` there fails to lay out — which is why
+    // the vocabulary screen appeared unopenable when reached from the Study tab.
     var body: some View {
-        NavigationStack {
             Group {
                 if savedTermsStore.terms.isEmpty {
                     emptyState
@@ -323,9 +328,8 @@ struct VocabularyView: View {
                 return .handled
             }
             #endif
-        }
     }
-    
+
     // MARK: - Keyboard Navigation
     
     #if os(macOS)
@@ -1703,7 +1707,9 @@ struct AIExplanationSheet: View {
 // MARK: - Preview
 
 #Preview {
-    VocabularyView()
-        .environment(SavedTermsStore.shared)
-        .environment(AppRouteStore.shared)
+    NavigationStack {
+        VocabularyView()
+            .environment(SavedTermsStore.shared)
+            .environment(AppRouteStore.shared)
+    }
 }

@@ -39,8 +39,10 @@ struct HistoryTabView: View {
         directionFilter != nil || !searchText.isEmpty
     }
     
+    // No own NavigationStack: presented inside an ambient navigation container
+    // (Study hub push on iOS, split-view detail on macOS). A nested stack broke
+    // `.searchable` on iOS. See VocabularyView for detail.
     var body: some View {
-        NavigationStack {
             Group {
                 if historyStore.entries.isEmpty {
                     ContentUnavailableView {
@@ -151,9 +153,8 @@ struct HistoryTabView: View {
             } message: {
                 Text("This removes every saved translation and cannot be undone.")
             }
-        }
     }
-    
+
     // MARK: - Context Menu
     
     @ViewBuilder
@@ -342,6 +343,8 @@ private extension TranslationHistoryEntry {
 // MARK: - Preview
 
 #Preview {
-    HistoryTabView(selectedTab: .constant(.history))
-        .environment(TranslationHistoryStore.shared)
+    NavigationStack {
+        HistoryTabView(selectedTab: .constant(.history))
+            .environment(TranslationHistoryStore.shared)
+    }
 }
