@@ -21,6 +21,9 @@ struct TonePairDrillView: View {
         let item: PracticeItem
         /// The word's two tones, each 1–4.
         let tones: [Int]
+        /// The word's toneless base syllables (e.g. ["ni", "hao"]), used to
+        /// render every answer option in the actual word rather than "ma".
+        let baseSyllables: [String]
         /// Four tone patterns to choose from (contains `tones` once).
         let options: [[Int]]
         let correctIndex: Int
@@ -174,7 +177,7 @@ struct TonePairDrillView: View {
                     .font(.system(.title3, design: .rounded).weight(.bold))
                     .monospacedDigit()
                     .foregroundStyle(.primary)
-                exemplarText(pattern)
+                exemplarText(pattern, baseSyllables: question.baseSyllables)
                     .font(.headline)
             }
             .frame(maxWidth: .infinity)
@@ -219,8 +222,12 @@ struct TonePairDrillView: View {
         pattern.map(String.init).joined(separator: "-")
     }
 
-    /// "má·mǎ" exemplar, each syllable in its tone color.
-    private func exemplarText(_ pattern: [Int]) -> Text {
+    /// Exemplar for one answer option, rendered in the *actual word's*
+    /// syllables carrying that candidate tone pattern (你好 → "ní·hǎo"), each
+    /// syllable in its tone color. Falls back to the classic "ma" syllables
+    /// only when the word's base syllables can't be lined up with the pattern.
+    private func exemplarText(_ pattern: [Int], baseSyllables: [String]) -> Text {
+        let useWord = baseSyllables.count == pattern.count
         var result = AttributedString()
         for (index, tone) in pattern.enumerated() {
             if index > 0 {
@@ -229,14 +236,18 @@ struct TonePairDrillView: View {
                 result += dot
             }
             let toneCase = PinyinConverter.Tone(rawValue: tone) ?? .neutral
-            var syllable = AttributedString(Self.exemplars[tone] ?? "ma")
+            let text = useWord
+                ? PinyinConverter.applyTone(tone, to: baseSyllables[index])
+                : (Self.exemplars[tone] ?? "ma")
+            var syllable = AttributedString(text)
             syllable.foregroundColor = toneCase.color
             result += syllable
         }
         return Text(result)
     }
 
-    /// The classic "ma" demonstration syllable in each of the four tones.
+    /// The classic "ma" demonstration syllable in each of the four tones —
+    /// only used as a fallback when a word's syllables can't be paired up.
     private static let exemplars: [Int: String] = [1: "mā", 2: "má", 3: "mǎ", 4: "mà"]
 
     // MARK: - Round lifecycle
@@ -387,10 +398,15 @@ struct TonePairDrillView: View {
         }
 
         return picked.compactMap { item in
-            let tones = PracticeStore.tonePattern(fromPinyin: item.pinyin)
+            // Segment once so the tones and the base syllables that render each
+            // answer option stay index-aligned with the actual word.
+            let syllables = PinyinConverter.segment(item.pinyin)
+                .filter { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }
+            let tones = syllables.map { $0.tone.rawValue }
             // The pool already filters for two diacritic-marked syllables;
             // re-check here so a stale item can't produce a broken question.
             guard tones.count == 2, tones.allSatisfy({ (1...4).contains($0) }) else { return nil }
+            let baseSyllables = syllables.map { PinyinConverter.baseSyllable($0.text) }
 
             var wrongPatterns: [[Int]] = []
             for first in 1...4 {
@@ -400,7 +416,13 @@ struct TonePairDrillView: View {
             }
             let options = ([tones] + wrongPatterns.shuffled().prefix(3)).shuffled()
             guard let correctIndex = options.firstIndex(of: tones) else { return nil }
-            return ToneQuestion(item: item, tones: tones, options: options, correctIndex: correctIndex)
+            return ToneQuestion(
+                item: item,
+                tones: tones,
+                baseSyllables: baseSyllables,
+                options: options,
+                correctIndex: correctIndex
+            )
         }
     }
 }

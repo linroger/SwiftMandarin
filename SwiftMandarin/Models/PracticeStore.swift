@@ -259,19 +259,27 @@ final class PracticeStore {
         return vocab + builtinItems(excluding: vocab)
     }
 
-    /// Tone-drill candidates: two-character Chinese entries whose pinyin has
+    /// A tone-drill candidate is a two-character Chinese entry whose pinyin has
     /// a tone diacritic on BOTH syllables (neutral-tone syllables carry no
-    /// mark, so e.g. 谢谢 "xiè xie" is skipped). The starter deck is always
-    /// included — tone drills need audible material even for users whose
-    /// saved vocabulary happens to contain no two-character words.
-    static func toneDrillPool() -> [PracticeItem] {
-        let vocab = vocabularyItems()
-        return (vocab + builtinItems(excluding: vocab)).filter { item in
+    /// mark, so e.g. 谢谢 "xiè xie" is skipped).
+    private static func toneDrillCandidates(from items: [PracticeItem]) -> [PracticeItem] {
+        items.filter { item in
             guard item.chinese.count == 2,
                   item.chinese.allSatisfy(\.isChineseCharacter) else { return false }
             let tones = tonePattern(fromPinyin: item.pinyin)
             return tones.count == 2 && tones.allSatisfy { (1...4).contains($0) }
         }
+    }
+
+    /// Tone-drill candidates, drawn from the user's own saved vocabulary. The
+    /// starter deck is only mixed in when the vocabulary yields too few
+    /// two-character words to make a varied round — so a learner with a real
+    /// word list drills their own words, not a fixed built-in set.
+    static func toneDrillPool() -> [PracticeItem] {
+        let vocabCandidates = toneDrillCandidates(from: vocabularyItems())
+        guard vocabCandidates.count < minimumVocabularyForSoloPool else { return vocabCandidates }
+        let vocab = vocabularyItems()
+        return toneDrillCandidates(from: vocab + builtinItems(excluding: vocab))
     }
 
     /// Starter-deck items minus any whose Chinese side duplicates a saved

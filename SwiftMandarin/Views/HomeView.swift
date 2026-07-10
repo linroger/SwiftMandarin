@@ -29,8 +29,7 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    greetingHeader
-                    todayCard
+                    heroHeader
                     continueReadingSlot
                     wordOfTheDaySection
                     quickActionsRow
@@ -38,6 +37,11 @@ struct HomeView: View {
                     recentSavesSection
                 }
                 .padding()
+                // Cap the reading width and center it so Home reads as a tidy
+                // dashboard on a wide macOS/iPad window instead of a lonely
+                // strip hugging the left edge.
+                .frame(maxWidth: SMTheme.contentMaxWidth)
+                .frame(maxWidth: .infinity)
             }
             .background(SMTheme.pageBackground)
             .navigationTitle("Home")
@@ -154,81 +158,104 @@ struct HomeView: View {
         return lines[dailyIndex(count: lines.count)]
     }
 
-    private var greetingHeader: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(greetingKey)
-                    .font(.system(.largeTitle, design: .rounded).weight(.bold))
-                    .fitSingleLine()
-                Text(verbatim: flavorLine)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 8)
-            StreakBadge(
-                days: activityStore.currentStreak,
-                activeToday: activityStore.todayActivity.activityScore > 0
-            )
-        }
-    }
-
-    // MARK: - Today card
-
-    private var todayCard: some View {
-        SMCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    Text("Today")
-                        .font(.headline)
-                    Spacer()
-                    Button {
-                        showGoalPicker = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text("Change daily goal"))
+    /// A single colored hero that greets the learner and shows today's goal
+    /// ring plus the primary "Review now" call to action. Combining the
+    /// greeting and today's progress into one gradient surface gives Home a
+    /// focal point and color instead of a wall of same-tone gray cards.
+    private var heroHeader: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(greetingKey)
+                        .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                        .foregroundStyle(.white)
+                        .fitSingleLine()
+                    Text(verbatim: flavorLine)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.85))
                 }
+                Spacer(minLength: 8)
+                heroStreakBadge
+            }
 
-                HStack(spacing: 18) {
-                    ZStack {
-                        GoalRing(progress: Double(reviewsToday) / Double(dailyGoal))
-                        Text("\(reviewsToday)")
-                            .font(.system(.title2, design: .rounded).weight(.bold))
-                            .monospacedDigit()
-                    }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(Text("\(reviewsToday) of \(dailyGoal) reviews today"))
+            HStack(spacing: 18) {
+                ZStack {
+                    GoalRing(
+                        progress: Double(reviewsToday) / Double(dailyGoal),
+                        trackColor: .white.opacity(0.28),
+                        progressStyle: AnyShapeStyle(Color.white)
+                    )
+                    Text("\(reviewsToday)")
+                        .font(.system(.title2, design: .rounded).weight(.bold))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text("\(reviewsToday) of \(dailyGoal) reviews today"))
 
-                    VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 6) {
                         Text("\(reviewsToday) of \(dailyGoal) reviews today")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
-
+                            .foregroundStyle(.white.opacity(0.9))
                         Button {
-                            AppRouteStore.shared.triggerReview(mode: "due", source: "home")
+                            showGoalPicker = true
                         } label: {
-                            HStack(spacing: 6) {
-                                Text("Review now")
-                                    .fontWeight(.semibold)
-                                if dueCount > 0 {
-                                    Text("\(dueCount)")
-                                        .font(.caption.weight(.bold))
-                                        .monospacedDigit()
-                                        .padding(.horizontal, 7)
-                                        .padding(.vertical, 2)
-                                        .background(.white.opacity(0.25), in: Capsule())
-                                }
+                            Image(systemName: "gearshape")
+                                .font(.footnote)
+                                .foregroundStyle(.white.opacity(0.8))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("Change daily goal"))
+                    }
+
+                    Button {
+                        AppRouteStore.shared.triggerReview(mode: "due", source: "home")
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("Review now")
+                                .fontWeight(.semibold)
+                            if dueCount > 0 {
+                                Text("\(dueCount)")
+                                    .font(.caption.weight(.bold))
+                                    .monospacedDigit()
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 2)
+                                    .background(Color.accentColor.opacity(0.16), in: Capsule())
                             }
                         }
-                        .buttonStyle(.borderedProminent)
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 10)
+                        .background(.white, in: Capsule())
                     }
-                    Spacer(minLength: 0)
+                    .buttonStyle(.plain)
                 }
+                Spacer(minLength: 0)
             }
         }
+        .padding(22)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(SMTheme.heroGradient, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: Color.accentColor.opacity(0.25), radius: 14, x: 0, y: 6)
+    }
+
+    /// Streak flame + count styled for the colored hero (translucent white
+    /// capsule rather than the material capsule used on plain surfaces).
+    private var heroStreakBadge: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "flame.fill")
+                .foregroundStyle(activityStore.todayActivity.activityScore > 0 ? Color.orange : Color.white)
+            Text("\(activityStore.currentStreak)")
+                .font(.system(.headline, design: .rounded).weight(.bold))
+                .monospacedDigit()
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.white.opacity(0.18), in: Capsule())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Day streak: \(activityStore.currentStreak)"))
     }
 
     // MARK: - Continue reading
@@ -264,7 +291,7 @@ struct HomeView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .padding(SMTheme.cardPadding)
-                .background(SMTheme.cardFill, in: RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous))
+                .smCardSurface()
                 .contentShape(RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -498,7 +525,7 @@ struct HomeView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(SMTheme.cardFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .smCardSurface(cornerRadius: 12)
     }
 }
 

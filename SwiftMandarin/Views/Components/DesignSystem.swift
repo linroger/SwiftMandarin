@@ -34,11 +34,46 @@ enum SMTheme {
 
     static let cornerRadius: CGFloat = 16
     static let cardPadding: CGFloat = 16
+    /// Readable content column width — keeps Home from sprawling across a wide
+    /// macOS/iPad window into a lonely left-hugging strip.
+    static let contentMaxWidth: CGFloat = 700
     /// Accent gradient used for hero surfaces (goal ring, primary CTAs).
     static let heroGradient = LinearGradient(
         colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
         startPoint: .topLeading, endPoint: .bottomTrailing
     )
+
+    /// Hairline card border. Essential on macOS, where the card fill and the
+    /// window background are nearly identical and cards would otherwise be
+    /// invisible; a gentle definition on iOS too.
+    static var cardStroke: Color {
+        #if os(iOS)
+        Color(uiColor: .separator).opacity(0.5)
+        #else
+        Color(nsColor: .separatorColor).opacity(0.7)
+        #endif
+    }
+
+    /// Soft drop shadow that lifts cards off the page background.
+    static let cardShadow = Color.black.opacity(0.06)
+}
+
+// MARK: - Card surface
+
+extension View {
+    /// The standard elevated card surface — fill, a hairline border, and a
+    /// soft shadow — so cards read as distinct panels on every platform
+    /// (critical on macOS, where fill ≈ window background). Shared by `SMCard`
+    /// and the hand-rolled card rows so the whole app reads as one system.
+    func smCardSurface(cornerRadius: CGFloat = SMTheme.cornerRadius) -> some View {
+        self
+            .background(SMTheme.cardFill, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(SMTheme.cardStroke, lineWidth: 0.75)
+            )
+            .shadow(color: SMTheme.cardShadow, radius: 8, x: 0, y: 2)
+    }
 }
 
 // MARK: - Card
@@ -52,7 +87,7 @@ struct SMCard<Content: View>: View {
         content
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(padding)
-            .background(SMTheme.cardFill, in: RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous))
+            .smCardSurface()
     }
 }
 
@@ -106,7 +141,7 @@ struct StatTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(SMTheme.cardFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .smCardSurface(cornerRadius: 12)
     }
 }
 
@@ -118,15 +153,20 @@ struct GoalRing: View {
     let progress: Double
     var lineWidth: CGFloat = 10
     var size: CGFloat = 84
+    /// The unfilled track color.
+    var trackColor: Color = Color.accentColor.opacity(0.18)
+    /// The filled-progress style. Defaults to the accent gradient; hero
+    /// surfaces pass a solid white so the ring reads on a colored background.
+    var progressStyle: AnyShapeStyle = AnyShapeStyle(SMTheme.heroGradient)
 
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.accentColor.opacity(0.18), lineWidth: lineWidth)
+                .stroke(trackColor, lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: min(max(progress, 0), 1))
                 .stroke(
-                    SMTheme.heroGradient,
+                    progressStyle,
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
@@ -230,7 +270,7 @@ struct HeroActionRow: View {
                     .foregroundStyle(.tertiary)
             }
             .padding(SMTheme.cardPadding)
-            .background(SMTheme.cardFill, in: RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous))
+            .smCardSurface()
             .contentShape(RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)

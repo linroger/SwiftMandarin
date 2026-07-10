@@ -90,3 +90,93 @@ Secondary: `CameraScannerView:40` `.text()` no language hint; `VNImageRequestHan
 - 2026-07-08 (iter 16 progress): Study workflow completed — 22 agents, 10 subsystem maps, 140 raw ideas → 104 deduped recommendations in 10 themes + 12 critic additions → **RECOMMENDATIONS.md** (1,580 lines) written at repo root. User added mid-flight requirements (all folded into scope): vocab detail view must show ALL AI-explanation sections expanded by default (AIWordExplanationView expandedSections init); swipe left/right between prev/next word in vocab detail on iOS + iPadOS/macOS equivalents (toolbar chevrons + ⌘←/→); dual-perspective (EN↔中) audit of all surfaces. Foundation laid centrally: `Views/Components/DesignSystem.swift` (SMTheme/SMCard/SMSectionHeader/StatTile/GoalRing/StreakBadge/QuickActionButton/HeroActionRow/TagChip/SMProgressBar/SMEmptyState/CelebrationBurst), AppTab gains home/reader/study/practice/conversation cases, iOS tabs → Home·Translate·Photo·Study·More, macOS sidebar sections (Home; Translate: translate/photo; Study: learn/practice/conversation/reader; Library: vocabulary/phrases/history/stats), new `Views/StudyHubView.swift` (hub + startReview pendingAction handling w/ initial:true), AppRouteStore default tab .home + iOS triggerReview→.study, MoreView gains reader/practice/conversation routes. Wave-1 implementation workflow launched (6 parallel agents, strict file ownership): srs-engine (FSRS-4.5 SRSEngine + CardProgress migration + LearnView 4-button/relearn-queue/forecast), reader (ReaderStore/ReaderView/ReaderSessionView/StoryGenerationService), conversation (ConversationStore/View/Service + CloudAIService.chatTurns), practice (PracticeHub/Quiz/Dictation/TonePairDrill/PracticeStore), home-design (HomeView/WelcomeView + LearningActivity streak fixes + StatsView heatmap alignment), polish (expanded sections + prev/next nav + regenerate/availability/tone-color/TTS-session/draft-persist/history/workbook fixes + MenuBarTranslateView). NOTE: `dailyGoal` UserDefaults key is written as Double by the macOS slider — normalize reads via double(forKey:). Pending after wave 1: central integration (MenuBarExtra scene, settings wiring for ttsRate/dailyGoal, Home continue-reading card), xcstrings localization sweep, build loop both platforms, adversarial + dual-perspective review.
 - 2026-07-07 (iter 16 T0 — step-change overhaul kickoff, branch `jul-07-2026-step-change-overhaul`): Request: study the whole codebase with parallel subagents; write an exhaustive `RECOMMENDATIONS.md` (improvements + first-principles new features + UI redesign); then overhaul the app on a new branch — "a whole step change in the look, feel, features, and functions," not iterative tweaks. Baselines verified first: macOS Debug + iOS Simulator Debug both BUILD SUCCEEDED, 0 warnings (DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer required — CLT-only default). Launched a 22-agent workflow (10 subsystem mappers → 10 ideation lenses: pedagogy/UX-redesign/AI-native/Apple-platform/gamification/immersion-reading/listening-speaking/data-interop/a11y-i18n/architecture-perf → CPO synthesis + completeness critic). Implementation constraints re-confirmed from prior iters: new .swift files auto-include (synchronized group; pbxproj untouched, `grep -c "in Sources"` must stay 0), new user-facing strings need manual `Localizable.xcstrings` zh-Hans entries, every new sheet/popover needs `.localizedSurface()`, iOS 17.0 floor (Liquid Glass/FoundationModels = 26-only, `Tab` builder = 18-only → CompatModifiers or availability gates), keys in Keychain. Entry updated with results as phases complete.
 - 2026-06-28 (iter 15c — Kimi Test Connection 404 / URL version doubling): Kimi's coding host serves BOTH styles at the same host — OpenAI `…/coding/v1/chat/completions` (base `…/coding/v1`) and Anthropic `…/coding/v1/messages` (base `…/coding`). Verified via curl: both work at the correct URL; the OpenAI default base + Anthropic API Format yields `…/coding/v1/v1/messages` → 404 (doubled `/v1`). Added `CloudAIService.buildURL(base:path:)` used by both `chat()` and `listModels()`: when the path starts with `/v1` and the base ends with `/v1`, it drops the base's `/v1` so the version segment isn't duplicated (safe — only triggers on that exact overlap; api.anthropic.com and `…/anthropic` bases are unaffected). So Kimi now works whether the user leaves API Format on OpenAI Compatible (default, base `…/coding/v1`) or switches to Anthropic with the same default base. Recommended config for the user: API Format = OpenAI Compatible, base `https://api.kimi.com/coding/v1`, model `kimi-for-coding` (or `kimi-k2.7`). iOS + macOS both BUILD SUCCEEDED, 0 warnings.
+
+## Iteration 17 — Current-Code Recommendations Audit (2026-07-10)
+
+**Last Updated (UTC):** 2026-07-10T11:35:14Z
+**Status:** Complete
+**Current Focus:** Audit complete. `CODEX_RECOMMENDATIONS.md` is the source-anchored output; no recommendation has been implemented by this audit.
+
+### Request & Context
+
+- The user asked for a careful, full-codebase study and a new root-level `CODEX_RECOMMENDATIONS.md` covering confirmed issues, errors, bugs, product/UI enhancements, new features, and opportunities to connect the app's subsystems into a more coherent experience.
+- Existing `RECOMMENDATIONS.md`, `EXECPLAN2.md`, prior handoff entries, and screenshots provide historical leads. The live checkout is the source of truth; older findings MUST be re-checked before inclusion.
+- The worktree already contains user-owned modifications in `PracticeStore.swift`, `PinyinConverter.swift`, `LearnView.swift`, `TonePairDrillView.swift`, and session logs. This audit MUST NOT edit, stage, revert, or otherwise disturb them.
+- Scope boundary: create the requested recommendation document and update this continuity record. Do not implement recommendations, create issues, commit, push, or modify product code.
+
+### Requirements → Acceptance Checks
+
+| Requirement | Acceptance Check | Expected Outcome | Evidence |
+|---|---|---|---|
+| R17.1: Study the whole app | Inventory every tracked Swift source, project configuration, localization catalog, tests (if any), and relevant current documentation | Audit coverage spans app shell, UI, models, services, intents, persistence, concurrency, privacy/security, accessibility, localization, and platform behavior | Repository inventory and coverage matrix in `CODEX_RECOMMENDATIONS.md` |
+| R17.2: Identify real problems | Re-open every high-impact candidate in the current file and trace its callers/data flow; distinguish confirmed, probable, and validation-needed items | No stale finding is presented as confirmed | File/line references and confidence labels |
+| R17.3: Recommend improvements | Synthesize practical UI, feature, architecture, integration, testing, and product improvements tied to current capabilities | Recommendations are prioritized, non-duplicative, and explain user impact plus an implementation direction | Prioritized sections and phased roadmap |
+| R17.4: Preserve repository state | Compare `git status` before and after | Only `CODEX_RECOMMENDATIONS.md` and this required handoff update are newly changed by this audit | Final `git status --short` |
+| R17.5: Validate deliverable | Check Markdown structure, local code-reference targets, duplicate finding IDs, and fresh platform builds | Document is self-contained; references resolve; build results are reported accurately | Validation script output and `xcodebuild` exit codes |
+
+### Plan & Progress Ledger
+
+- [x] Read the existing continuity record, recent history, worktree status, and prior audit documents.
+- [x] Establish the audit-only scope and protection for pre-existing dirty files.
+- [x] Map the live architecture and inspect all source areas with parallel specialist review.
+- [x] Reproduce or statically prove high-risk findings and run fresh macOS/iOS build gates.
+- [x] Write `CODEX_RECOMMENDATIONS.md` with an executive summary, prioritized findings, cohesion opportunities, feature/UI enhancements, quality strategy, and phased roadmap.
+- [x] Run an independent evidence review, verify all paths/line anchors, and record final results here.
+
+### Findings, Decisions, Assumptions
+
+- **Finding:** No `feature_list.json`, `agent-progress.txt`, or `init.sh` exists, but this established repository already uses the much richer root `handoff.md` as its continuity harness. Because the present task is a read-only audit rather than a feature implementation shift, no parallel feature-spec harness will be introduced.
+- **Decision:** Existing audits are evidence sources, not copy sources. A recommendation is included only if it remains observable in the current checkout or is clearly labeled as an idea/validation gap.
+- **Decision:** A successful build proves compilation, not runtime correctness. Findings about live services, camera/microphone behavior, or on-device frameworks will retain explicit runtime-validation notes when they cannot be exercised safely without credentials or GUI interaction.
+- **Assumption:** The current branch intentionally targets both iOS and macOS from one target. This will be checked against `project.pbxproj` and conditional compilation before platform-specific recommendations are finalized.
+- **Finding:** A generic visionOS Simulator build fails because `TranslationSession` is unavailable at `ShortcutHelpers.swift:81`; the document treats advertised visionOS support as a release gate rather than assuming support from project settings.
+- **Finding:** Fresh isolated macOS and iOS Simulator Debug builds pass on the final shared working-tree snapshot when `DEVELOPER_DIR` points to `/Applications/Xcode-beta.app/Contents/Developer`.
+- **Concurrent-work note:** Iteration 18 modified `DesignSystem.swift`, `HomeView.swift`, and the other user-owned Swift files while this audit was active. The audit did not author, stage, revert, or otherwise modify those runtime changes.
+
+### Scenario-Focused Resolution Tests
+
+- **Audit scenario:** Starting from the current dirty worktree, review without changing runtime files; produce one new recommendations document; confirm the original dirty files have identical diffs afterward.
+- **Current verdict:** Passed for the audit scope. The only audit-authored files are the requested `CODEX_RECOMMENDATIONS.md` and this Iteration 17 continuity update. Runtime/log changes visible in `git status` belong to the pre-existing/concurrent project work.
+
+### Verification Summary
+
+- Initial repository state captured with `git status --short`, branch name, recent history, file inventory, and existing audit-document inventory.
+- Memory registry search returned no entry for this repository, so no prior Codex memory facts are being used as evidence.
+- All 90 Swift files plus project configuration, App Intents, entitlements, assets, localization, persistence/import/export, privacy/release documents, and the tracked DMG were reviewed.
+- Every Swift file/line anchor in `CODEX_RECOMMENDATIONS.md` resolves to an existing file and stays within its line count. Finding IDs were checked for duplicate headings, JSON catalogs/assets parse successfully, and Markdown whitespace checks pass.
+- Final macOS build: passed (`xcodebuild`, generic macOS, Debug, unsigned, isolated Derived Data).
+- Final iOS Simulator build: passed (`xcodebuild`, generic iOS Simulator, Debug, unsigned, isolated Derived Data).
+- visionOS Simulator build: failed as documented at `ShortcutHelpers.swift:81` because `TranslationSession` is unavailable on visionOS.
+- Independent evidence review corrected priority-index traceability, Xcode-log wording, Photo task anchors, workbook review wording, and nested-navigation confidence before delivery.
+
+### Remaining Work & Next Steps
+
+- No audit work remains. If implementation is requested, begin with Phase 0 release/privacy safety and take one source-anchored item through tests and acceptance evidence at a time.
+
+### Updates to This File
+
+- 2026-07-10T11:02:45Z: Added Iteration 17 audit brief, acceptance matrix, scope protections, plan, and initial evidence.
+- 2026-07-10T11:35:14Z: Completed the full source/platform audit, added `CODEX_RECOMMENDATIONS.md`, recorded build and visionOS evidence, incorporated independent review corrections, and marked the audit complete.
+
+## Iteration 18 — Home redesign, real tone-drill syllables, vocab-linked practice (2026-07-10)
+
+Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed and verified on a running build.
+
+**R1 — "The homescreen is very very ugly."** Root causes (from the user's macOS screenshot): content hugged the far-left with a vast empty void (no width cap/centering); cards were **invisible on macOS** because `SMTheme.cardFill` (`controlBackgroundColor`) ≈ `windowBackgroundColor` with no border/shadow, so every panel read as loose floating text; the empty goal ring looked broken; no color/focal point.
+  - `DesignSystem.swift`: added `SMTheme.contentMaxWidth` (700), `SMTheme.cardStroke` (platform separator) + `cardShadow`, and a shared `View.smCardSurface()` (fill + hairline border + soft shadow). `SMCard`, `StatTile`, and `HeroActionRow` now use it, so cards read as distinct panels on every platform. `GoalRing` gained `trackColor` / `progressStyle` params so it renders on a colored surface.
+  - `HomeView.swift`: replaced the flat greeting + `Today` card with one **gradient hero** (greeting + bilingual flavor + streak pill + white-on-gradient goal ring + white "Review now" CTA with due badge + goal-gear). Content column is capped at `contentMaxWidth` and centered (`.frame(maxWidth:700).frame(maxWidth:.infinity)`), killing the left-hug void. `continueReadingSlot` and `termChip` now use `smCardSurface`.
+  - **Evidence:** macOS screenshot `scratchpad/home_macos_after2.png` — blue hero, elevated cards, centered column, "Review now 25" (real due count). Before: user's screenshot (flat gray, left-hugging).
+
+**R2 — Tone drill only ever showed "mā/mǎ".** The four answer options rendered static "ma" exemplars, so the drill felt disconnected from the spoken word.
+  - `PinyinConverter.swift`: added `baseSyllable(_:)` (strip to plain letters, preserving ü) and `applyTone(_:to:)` (re-place a tone mark by the standard a>e>ou>last-vowel rule).
+  - `TonePairDrillView.swift`: `ToneQuestion` now carries `baseSyllables`; `exemplarText` renders each option in the **actual word's** syllables under that candidate tone (falls back to "ma" only if counts can't be paired). `makeRound` segments once so tones and base syllables stay index-aligned.
+  - **Evidence:** `scratchpad/tone_drill.png` — word 他家 with options `tā·jiā` / `tá·jiá` / `tà·jiá` / `tá·jiā`, tone-colored. No more "ma".
+
+**R3/R4 — Flashcards & practice should draw from the vocab list, not a fixed hardcoded set.**
+  - `LearnView.swift`: default `cardSource` is now `.vocabulary` (was `.combined`); `reloadSessionCards` falls back to the starter deck only when the user has **no** saved words, so learners study their own list by default and newcomers still get content.
+  - `PracticeStore.swift`: `toneDrillPool()` now prefers vocabulary-derived tone candidates and mixes in the built-in deck only when fewer than `minimumVocabularyForSoloPool` (4) exist. (Quiz/Dictation already used `practicePool()`, which prefers vocab.)
+  - **Evidence:** Practice hub subtitle "…turn your saved words into instinct"; the tone drill above drew 他家 (a saved word) with the built-in deck no longer padding a 7k-word list.
+
+**Builds:** macOS `platform=macOS` and iOS `platform=iOS Simulator` (iPhone 17 Pro) both **BUILD SUCCEEDED**. Runtime verified by launching the macOS Debug build against real user data (7,213 words). Not yet committed — awaiting user go-ahead.
+
+- 2026-07-10T23:16:00Z: Added Iteration 18 (Home hero redesign, visible macOS cards, real tone-drill syllables, vocab-default flashcards/tone pool). Both platforms clean; verified on running macOS build.

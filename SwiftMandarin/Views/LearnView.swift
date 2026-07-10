@@ -24,7 +24,9 @@ struct LearnView: View {
     @State private var isFlipped: Bool = false
     @State private var showingStats: Bool = false
     @State private var studyMode: StudyMode = .dueForReview
-    @State private var cardSource: CardSource = .combined
+    // Default to the learner's own saved words; `reloadSessionCards` falls back
+    // to the starter deck for newcomers who have not saved any vocabulary yet.
+    @State private var cardSource: CardSource = .vocabulary
 
     // Per-session bookkeeping, reset by `reloadSessionCards()`.
     @State private var sessionDueCount: Int = 0
@@ -203,6 +205,12 @@ struct LearnView: View {
     // MARK: - Session Building
 
     private func reloadSessionCards() {
+        // Newcomers with no saved words study the built-in starter deck rather
+        // than landing on an empty session; learners with vocabulary keep their
+        // own list as the default source.
+        if cardSource == .vocabulary && vocabularyCards.isEmpty {
+            cardSource = .builtin
+        }
         let base = allAvailableCards
         switch studyMode {
         case .dueForReview:
