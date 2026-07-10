@@ -270,10 +270,10 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 
 ## Iteration 20 — Autonomous Product Loop Constitution (2026-07-10)
 
-**Last Updated (UTC):** 2026-07-10T13:37:26Z
-**Status:** In Progress
+**Last Updated (UTC):** 2026-07-10T13:39:37Z
+**Status:** Complete
 **Branch:** `codex/autonomous-product-loop` (created from and pushed at `63c7b3a`)
-**Current Focus:** Create `CODEX_LOOP.md`: a first-principles description of SwiftMandarin's ideal integrated product plus an evidence-driven autonomous engineering loop that can converge on it without scope drift or false completion.
+**Current Focus:** Delivered `CODEX_LOOP.md`: the reviewed product constitution and bounded autonomous engineering loop is committed and pushed; the next separate iteration may bootstrap its executable harness.
 
 ### Request & Context
 
@@ -301,7 +301,7 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - [x] Synthesize current capabilities, known gaps, product principles, ideal journeys, and proposed features.
 - [x] Draft the integrated architecture, loop state machine, prioritization, authority, verification, and ready-to-ship gates.
 - [x] Run two fresh-reader/product/adversarial review waves and correct ambiguity, contradictions, unsafe autonomy, and overstated product claims.
-- [ ] Validate the final Markdown/references, update this record, commit only scoped documentation, and push.
+- [x] Validate the final Markdown/references, update this record, commit only scoped documentation, and push — implementation documentation commit `36d30a4` reached `origin/codex/autonomous-product-loop`.
 
 ### Findings, Decisions, Assumptions
 
@@ -344,10 +344,12 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - Final targeted reader review confirmed bootstrap/lease ordering, shared state versus verified source SHA, conditional bootstrap outcomes, outcome precedence, passive Reader semantics, and `LOOP.md` precedence; no Critical/Important issue remains.
 - Final targeted product review confirmed all eight product corrections; no Critical/Important issue remains.
 - Final targeted adversarial review confirmed common-dir state, bootstrap fencing, single-clone/read-only subagent constraints, stale-evidence handling, governance authenticity, and terminal/lease finalization; no Critical/Important issue remains.
+- Scoped commit `36d30a4` (`docs: add autonomous product loop constitution`) contains only `CODEX_LOOP.md`, `handoff.md`, and `.learnings/ERRORS.md`; it and the preserved concurrent `LOOP.md` commit were pushed to `origin/codex/autonomous-product-loop`. Live `.claude/` and `logs/` changes remained unstaged.
 
 ### Remaining Work & Next Steps
 
-- Rerun the final static/scope checks, commit only scoped documentation, push, and record remote parity.
+- This documentation task is complete. The next implementation iteration should execute Section 21 only: create and verify `BOOTSTRAP-0001`, the versioned schemas, canonical common-dir state, fenced runner lease, validator, milestone draft, and sandboxed health command. It must not begin product refactoring in the bootstrap iteration.
+- Product work then starts from the human-approved stabilization milestone and the highest eligible revalidated P0/P1 item; it must preserve the existing live runtime-log changes.
 
 ### Updates to This File
 
@@ -355,3 +357,4 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - 2026-07-10T12:49:34Z: Completed the product, architecture, and loop-engineering synthesis; drafted `CODEX_LOOP.md`; and started three fresh-context reader/adversarial tests.
 - 2026-07-10T13:34:11Z: Incorporated two complete product/reader/adversarial review waves, reconciled the concurrent `LOOP.md` commit, added fail-closed transactional loop mechanics and product-evidence safeguards, recorded validation mistakes/recoveries, and started the final hash-stable targeted verification.
 - 2026-07-10T13:37:26Z: Final hash-stable reader, product, and adversarial reviews completed with no remaining Critical or Important finding; prepared the scoped documentation for final validation and delivery.
+- 2026-07-10T13:39:37Z: Final validation passed; committed the scoped documentation as `36d30a4`, pushed `codex/autonomous-product-loop`, preserved live runtime logs unstaged, and marked Iteration 20 complete.
