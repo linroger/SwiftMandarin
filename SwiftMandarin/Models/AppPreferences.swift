@@ -144,7 +144,13 @@ final class AppPreferences {
         static let learnerMode = "learner_mode"
         static let photoScanLanguage = "photo_scan_language"
         static let dualNarration = "dual_narration"
+        static let ttsRate = "tts_rate"
     }
+
+    /// The allowed text-to-speech rate range. 0.5 is
+    /// `AVSpeechUtteranceDefaultSpeechRate`; below ~0.35 speech sounds broken
+    /// and above 0.6 it is too fast to shadow.
+    static let ttsRateRange: ClosedRange<Double> = 0.35...0.6
 
     /// The app's learner-centric mode. Changing it updates the default
     /// translation direction used across the app.
@@ -186,6 +192,19 @@ final class AppPreferences {
         }
     }
 
+    /// Text-to-speech rate applied to every utterance (see `SpeechService`).
+    /// Clamped to `ttsRateRange`; 0.5 matches the system default rate.
+    var ttsRate: Double {
+        didSet {
+            let clamped = min(max(ttsRate, Self.ttsRateRange.lowerBound), Self.ttsRateRange.upperBound)
+            if clamped != ttsRate {
+                ttsRate = clamped  // re-enters didSet once with a valid value
+                return
+            }
+            UserDefaults.standard.set(ttsRate, forKey: Keys.ttsRate)
+        }
+    }
+
     /// Align the learner mode with the interface language (the interface
     /// language is the user's native language, so the learning direction
     /// follows from it). Called by `LocalizationManager` whenever the in-app
@@ -213,5 +232,10 @@ final class AppPreferences {
 
         // Default ON: dual narration is purely additive and useful for both audiences.
         self.dualNarration = UserDefaults.standard.object(forKey: Keys.dualNarration) as? Bool ?? true
+
+        // Speech rate: default matches AVSpeechUtteranceDefaultSpeechRate (0.5),
+        // clamped in case a stale/out-of-range value was persisted.
+        let savedRate = UserDefaults.standard.object(forKey: Keys.ttsRate) as? Double ?? 0.5
+        self.ttsRate = min(max(savedRate, Self.ttsRateRange.lowerBound), Self.ttsRateRange.upperBound)
     }
 }

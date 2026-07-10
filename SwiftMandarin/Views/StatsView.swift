@@ -384,7 +384,12 @@ struct StatsView: View {
                     AxisMarks(values: .stride(by: .day)) { value in
                         if let date = value.as(Date.self) {
                             AxisValueLabel {
-                                Text(date, format: .dateTime.weekday(.abbreviated))
+                                // 14 days repeat every weekday label twice, so
+                                // the wider range switches to day-of-month
+                                // numbers to keep every label unambiguous.
+                                Text(date, format: barChartTimeRange == .twoWeeks
+                                     ? .dateTime.day()
+                                     : .dateTime.weekday(.abbreviated))
                                     .font(.caption2)
                             }
                         }
@@ -891,11 +896,22 @@ struct ContributionHeatmap: View {
     private let rows: Int = 7 // Days of week
     private var labelWidth: CGFloat { isCompact ? 16 : 20 }
     private var monthLabelHeight: CGFloat { isCompact ? 14 : 16 }
-    
+
+    /// Empty slots before the first activity so each row is a true calendar
+    /// weekday (GitHub-style). The gutter labels put Sunday at row 0 and
+    /// M/W/F at rows 1/3/5, so the first date is offset by `weekday − 1`
+    /// (`Calendar.weekday`: 1 = Sunday … 7 = Saturday). Without this padding
+    /// the grid just wrapped every 7 cells from an arbitrary start day and
+    /// the M/W/F labels lied.
+    private var leadingEmptyDays: Int {
+        guard let first = activities.first else { return 0 }
+        return Calendar.current.component(.weekday, from: first.date) - 1
+    }
+
     var body: some View {
         GeometryReader { geometry in
             let availableWidth = geometry.size.width - (isCompact ? 24 : 32) - labelWidth
-            let weeks = Int(ceil(Double(activities.count) / 7.0))
+            let weeks = Int(ceil(Double(activities.count + leadingEmptyDays) / 7.0))
             
             // Calculate cell size to fit all weeks in available width
             let totalSpacing = CGFloat(weeks - 1) * spacing
@@ -921,8 +937,9 @@ struct ContributionHeatmap: View {
                         ForEach(0..<weeks, id: \.self) { week in
                             VStack(spacing: spacing) {
                                 ForEach(0..<rows, id: \.self) { dayOfWeek in
-                                    let index = week * 7 + dayOfWeek
-                                    if index < activities.count {
+                                    // Shift by the leading pad so row == real weekday.
+                                    let index = week * 7 + dayOfWeek - leadingEmptyDays
+                                    if index >= 0 && index < activities.count {
                                         ContributionCell(
                                             activity: activities[index],
                                             size: cellSize,
@@ -938,6 +955,11 @@ struct ContributionHeatmap: View {
                                                 }
                                             }
                                         )
+                                    } else if index < 0 {
+                                        // Pad slot before the range begins: keep the
+                                        // column height without drawing a fake day.
+                                        Color.clear
+                                            .frame(width: cellSize, height: cellSize)
                                     } else {
                                         RoundedRectangle(cornerRadius: isCompact ? 1 : 2)
                                             .fill(Color.gray.opacity(0.15))
@@ -1009,10 +1031,12 @@ struct ContributionHeatmap: View {
         var lastYear: Int = -1
         
         for week in 0..<weeks {
-            // Check the first day of each week
-            let index = week * 7
+            // Check the first day of each week (the top row), accounting for
+            // the leading weekday-alignment pad; week 0 may start mid-column,
+            // so clamp to the first real day.
+            let index = max(0, week * 7 - leadingEmptyDays)
             guard index < activities.count else { continue }
-            
+
             let date = activities[index].date
             let month = calendar.component(.month, from: date)
             let year = calendar.component(.year, from: date)
@@ -1061,8 +1085,12 @@ struct ContributionCell: View {
             }
             .scaleEffect(isSelected ? 1.15 : 1.0)
             .onTapGesture(perform: onTap)
+            // "March 3: 12 activities" — the Date interpolation resolves via
+            // the environment locale, so VoiceOver reads the app language.
+            .accessibilityLabel(Text("\(activity.date, format: .dateTime.month(.wide).day()): \(activity.activityScore) activities"))
+            .accessibilityAddTraits(.isButton)
     }
-    
+
     private var colorForActivity: Color {
         colorForScore(activity.activityScore)
     }

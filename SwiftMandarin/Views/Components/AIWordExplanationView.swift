@@ -13,11 +13,22 @@ struct AIWordExplanationView: View {
     let word: String
     let pinyin: String
     let context: String?
-    
+
+    /// Every collapsible-section id the explanation card can render. Kept in
+    /// one place so the initial expansion state can't drift out of sync with
+    /// the sections themselves (previously only definition/examples started
+    /// expanded, hiding nuances/grammar/synonyms/collocations behind taps).
+    private static let allSectionIDs: Set<String> = [
+        "definition", "nuances", "grammar", "contexts", "examples",
+        "synonyms", "antonyms", "collocations", "tip"
+    ]
+
     @State private var explanation: WordExplanationResult?
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
-    @State private var expandedSections: Set<String> = ["definition", "examples"]
+    /// Sections currently expanded. Everything starts open; users collapse
+    /// what they don't need (tap-to-collapse is preserved).
+    @State private var expandedSections: Set<String> = AIWordExplanationView.allSectionIDs
     /// True when the currently shown explanation came from the persistent cache
     /// rather than a fresh generation, so the UI can label it.
     @State private var servedFromCache: Bool = false
@@ -104,8 +115,8 @@ struct AIWordExplanationView: View {
             
             Text("AI Not Available")
                 .font(.headline)
-            
-            Text("Enable Apple Intelligence or connect to Ollama in Settings to use AI features.")
+
+            Text("Enable Apple Intelligence, connect to Ollama, or add a cloud provider API key (OpenAI, Claude, Qwen, and more) in Settings to use AI features.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -150,7 +161,7 @@ struct AIWordExplanationView: View {
                 .multilineTextAlignment(.center)
             
             Button {
-                Task { await generateExplanation() }
+                Task { await generateExplanation(force: true) }
             } label: {
                 Label("Try Again", systemImage: "arrow.clockwise")
             }
@@ -213,9 +224,10 @@ struct AIWordExplanationView: View {
                 }
                 Spacer()
                 // Re-run the analysis with the currently selected AI model,
-                // replacing the saved result. Always bypasses the cache.
+                // replacing the saved result. Always bypasses the cache —
+                // including the service's in-memory one.
                 Button {
-                    Task { await generateExplanation() }
+                    Task { await generateExplanation(force: true) }
                 } label: {
                     Label("Regenerate", systemImage: "arrow.clockwise")
                         .font(.caption)
@@ -547,9 +559,11 @@ struct AIWordExplanationView: View {
         shownKey = currentKey
     }
 
-    /// Generate a fresh explanation (always bypasses the cache — this is also
-    /// the "regenerate" path) and persist the result for instant reuse later.
-    private func generateExplanation() async {
+    /// Generate a fresh explanation and persist the result for instant reuse
+    /// later. `force` additionally evicts the service's in-memory cache entry
+    /// (the "Regenerate"/"Try Again" path) so the model actually re-runs
+    /// instead of instantly echoing the previous result back.
+    private func generateExplanation(force: Bool = false) async {
         isLoading = true
         errorMessage = nil
         servedFromCache = false
@@ -559,9 +573,13 @@ struct AIWordExplanationView: View {
             let result = try await aiService.generateExplanationWithProvider(
                 for: word,
                 pinyin: pinyin,
-                context: context
+                context: context,
+                bypassCache: force
             )
             explanation = result
+            // A freshly generated explanation opens fully expanded so nothing
+            // the model produced is hidden behind collapsed sections.
+            expandedSections = Self.allSectionIDs
             shownKey = currentKey
             shownProviderName = nil  // fresh result → header shows the current provider
             cache.store(
@@ -606,7 +624,10 @@ struct AIExplainButton: View {
         .disabled(!isAvailable)
         .help(isAvailable ? "Explain with \(providerName)" : "AI not available")
         .onAppear {
-            isAvailable = AIModelSettings.shared.isAppleIntelligenceAvailable || OllamaService.shared.isConnected
+            // Any configured provider (including cloud ones) enables the
+            // button — checking only Apple Intelligence/Ollama wrongly
+            // disabled it for cloud-only users.
+            isAvailable = AIModelSettings.shared.isAnyProviderAvailable
         }
     }
 }

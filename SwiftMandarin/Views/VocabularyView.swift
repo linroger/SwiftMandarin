@@ -67,8 +67,13 @@ struct VocabularyView: View {
         selectedTerm = savedTermsStore.term(withID: currentID)
     }
     
+    // NOTE: No own NavigationStack here. This screen is always presented inside
+    // an ambient navigation container — pushed into the Study hub's
+    // NavigationStack on iOS, or shown in the NavigationSplitView detail column
+    // on macOS. Wrapping it in its own NavigationStack created a *nested* stack
+    // on iOS, and a nested `.searchable` there fails to lay out — which is why
+    // the vocabulary screen appeared unopenable when reached from the Study tab.
     var body: some View {
-        NavigationStack {
             Group {
                 if savedTermsStore.terms.isEmpty {
                     emptyState
@@ -90,7 +95,8 @@ struct VocabularyView: View {
                     TermDetailInspector(
                         term: term,
                         selectedTerm: $selectedTerm,
-                        savedTermsStore: savedTermsStore
+                        savedTermsStore: savedTermsStore,
+                        orderedTerms: filteredTerms
                     )
                     .id(term.id)
                     .inspectorColumnWidth(min: 280, ideal: 320, max: 400)
@@ -250,7 +256,7 @@ struct VocabularyView: View {
             }
             #if os(iOS)
             .sheet(item: $selectedTerm) { _ in
-                TermDetailSheet(selectedTerm: $selectedTerm)
+                TermDetailSheet(selectedTerm: $selectedTerm, orderedTerms: filteredTerms)
                     .localizedSurface()
             }
             #endif
@@ -322,9 +328,8 @@ struct VocabularyView: View {
                 return .handled
             }
             #endif
-        }
     }
-    
+
     // MARK: - Keyboard Navigation
     
     #if os(macOS)
@@ -446,7 +451,8 @@ struct VocabularyView: View {
                     TermDetailInspector(
                         term: term,
                         selectedTerm: $selectedTerm,
-                        savedTermsStore: savedTermsStore
+                        savedTermsStore: savedTermsStore,
+                        orderedTerms: filteredTerms
                     )
                     .localizedSurface()
                     .id(term.id)
@@ -585,19 +591,59 @@ struct DetailFontSizeStepper: View {
 
 struct TermDetailSheet: View {
     @Binding var selectedTerm: SavedTerm?
+    /// The visible (filtered + sorted) list this term was opened from, in
+    /// display order. Prev/next navigation walks exactly this order, so the
+    /// detail view flips through what the user was actually looking at.
+    var orderedTerms: [SavedTerm] = []
     @Environment(\.dismiss) private var dismiss
     @Environment(SavedTermsStore.self) private var savedTermsStore
 
     @State private var fetchedTranslation: String = ""
     @State private var isLoadingTranslation: Bool = false
     @State private var showCopiedFeedback: Bool = false
+    /// Which edge freshly navigated-to content slides in from (trailing for
+    /// "next", leading for "previous"), driving the slide+fade transition.
+    @State private var slideEdge: Edge = .trailing
     /// Persisted size of the Chinese headword in the detail view; the −/+
     /// buttons adjust it and the pinyin scales with it.
     @AppStorage("vocabularyDetailChineseFontSize") private var detailFontSize: Double = 96
-    
+
     /// The current term being displayed
     private var term: SavedTerm {
         selectedTerm ?? SavedTerm(chinese: "", pinyin: "", definition: "")
+    }
+
+    // MARK: Prev/Next Navigation
+
+    /// Position of the shown term in the visible list. Nil when the list has
+    /// changed under the sheet (e.g. the term was deleted), which disables
+    /// navigation and hides the position indicator.
+    private var currentIndex: Int? {
+        orderedTerms.firstIndex(where: { $0.id == term.id })
+    }
+
+    private var canGoPrevious: Bool {
+        guard let index = currentIndex else { return false }
+        return index > 0
+    }
+
+    private var canGoNext: Bool {
+        guard let index = currentIndex else { return false }
+        return index < orderedTerms.count - 1
+    }
+
+    /// Move the selection by `offset` within the visible list. Updating
+    /// `selectedTerm` keeps the list's selection in sync, so dismissing the
+    /// sheet lands on the last-viewed term.
+    private func navigateToNeighbor(offset: Int) {
+        guard let index = currentIndex else { return }
+        let target = index + offset
+        guard orderedTerms.indices.contains(target) else { return }
+        slideEdge = offset > 0 ? .trailing : .leading
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            selectedTerm = orderedTerms[target]
+        }
+        triggerHaptic()
     }
 
     /// The gloss to display — the native-language side of the entry, or a
@@ -826,12 +872,65 @@ struct TermDetailSheet: View {
 
                     Spacer()
                 }
+                // Fresh identity per term: resets the AI-explanation section,
+                // fetched-translation state, and any other per-term subview
+                // state, and lets the slide+fade transition run on navigation.
+                .id(term.id)
+                .transition(
+                    .asymmetric(
+                        insertion: .move(edge: slideEdge).combined(with: .opacity),
+                        removal: .move(edge: slideEdge == .trailing ? .leading : .trailing).combined(with: .opacity)
+                    )
+                )
             }
+            #if os(iOS)
+            // Horizontal swipe anywhere on the detail content flips to the
+            // neighboring word (left = next, right = previous). The gesture
+            // only claims clearly horizontal drags (|dx| > 2·|dy|), so
+            // vertical scrolling is unaffected.
+            .highPriorityGesture(
+                DragGesture(minimumDistance: 40)
+                    .onEnded { value in
+                        let dx = value.translation.width
+                        let dy = value.translation.height
+                        guard abs(dx) > 2 * abs(dy) else { return }
+                        navigateToNeighbor(offset: dx < 0 ? 1 : -1)
+                    }
+            )
+            #endif
             .navigationTitle("Word Details")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
+                if let index = currentIndex, orderedTerms.count > 1 {
+                    ToolbarItem(placement: .principal) {
+                        Text("\(index + 1) of \(orderedTerms.count)")
+                            .font(.caption)
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                            .accessibilityLabel(Text("Word \(index + 1) of \(orderedTerms.count)"))
+                    }
+                }
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button {
+                        navigateToNeighbor(offset: -1)
+                    } label: {
+                        Label("Previous Word", systemImage: "chevron.backward")
+                    }
+                    .disabled(!canGoPrevious)
+                    .keyboardShortcut(.leftArrow, modifiers: [.command])
+                    .help("Previous word (⌘←)")
+
+                    Button {
+                        navigateToNeighbor(offset: 1)
+                    } label: {
+                        Label("Next Word", systemImage: "chevron.forward")
+                    }
+                    .disabled(!canGoNext)
+                    .keyboardShortcut(.rightArrow, modifiers: [.command])
+                    .help("Next word (⌘→)")
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
@@ -892,7 +991,10 @@ struct TermDetailSheet: View {
 
     private func triggerHaptic() {
         #if os(iOS)
-        let hapticEnabled = UserDefaults.standard.bool(forKey: "hapticFeedback")
+        // The Settings toggle defaults to ON, so an unset key must read as
+        // true (`bool(forKey:)` would return false until the user ever
+        // touches the toggle).
+        let hapticEnabled = (UserDefaults.standard.object(forKey: "hapticFeedback") as? Bool) ?? true
         if hapticEnabled {
             let generator = UIImpactFeedbackGenerator(style: .light)
             generator.impactOccurred()
@@ -908,6 +1010,9 @@ struct TermDetailInspector: View {
     let term: SavedTerm
     @Binding var selectedTerm: SavedTerm?
     var savedTermsStore: SavedTermsStore
+    /// The visible (filtered + sorted) list this term was opened from, in
+    /// display order — prev/next navigation walks exactly this order.
+    var orderedTerms: [SavedTerm] = []
 
     @State private var fetchedTranslation: String = ""
     @State private var isLoadingTranslation: Bool = false
@@ -915,7 +1020,37 @@ struct TermDetailInspector: View {
     /// Persisted size of the Chinese headword in the detail view; shared with
     /// the sheet presentation so the −/+ buttons behave identically.
     @AppStorage("vocabularyDetailChineseFontSize") private var detailFontSize: Double = 96
-    
+
+    // MARK: Prev/Next Navigation
+
+    /// Position of the shown term in the visible list; nil when the list has
+    /// changed under the inspector (disables navigation + hides the indicator).
+    private var currentIndex: Int? {
+        orderedTerms.firstIndex(where: { $0.id == term.id })
+    }
+
+    private var canGoPrevious: Bool {
+        guard let index = currentIndex else { return false }
+        return index > 0
+    }
+
+    private var canGoNext: Bool {
+        guard let index = currentIndex else { return false }
+        return index < orderedTerms.count - 1
+    }
+
+    /// Move the selection by `offset` within the visible list. Updating
+    /// `selectedTerm` re-presents the inspector for the neighbor and keeps
+    /// the list selection highlight in sync.
+    private func navigateToNeighbor(offset: Int) {
+        guard let index = currentIndex else { return }
+        let target = index + offset
+        guard orderedTerms.indices.contains(target) else { return }
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            selectedTerm = orderedTerms[target]
+        }
+    }
+
     private var displayDefinition: String {
         if !fetchedTranslation.isEmpty {
             return fetchedTranslation
@@ -930,9 +1065,42 @@ struct TermDetailInspector: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Close button
-                HStack {
+                // Header: prev/next navigation + position + close. ⌘←/⌘→
+                // also work from the hardware keyboard.
+                HStack(spacing: 10) {
+                    Button {
+                        navigateToNeighbor(offset: -1)
+                    } label: {
+                        Image(systemName: "chevron.backward")
+                            .font(.body.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!canGoPrevious)
+                    .keyboardShortcut(.leftArrow, modifiers: [.command])
+                    .help("Previous word (⌘←)")
+                    .accessibilityLabel(Text("Previous Word"))
+
+                    Button {
+                        navigateToNeighbor(offset: 1)
+                    } label: {
+                        Image(systemName: "chevron.forward")
+                            .font(.body.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!canGoNext)
+                    .keyboardShortcut(.rightArrow, modifiers: [.command])
+                    .help("Next word (⌘→)")
+                    .accessibilityLabel(Text("Next Word"))
+
+                    if let index = currentIndex, orderedTerms.count > 1 {
+                        Text("\(index + 1) of \(orderedTerms.count)")
+                            .font(.caption)
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+
                     Spacer()
+
                     Button {
                         selectedTerm = nil
                     } label: {
@@ -941,6 +1109,7 @@ struct TermDetailInspector: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Close"))
                 }
                 .padding(.horizontal)
 
@@ -1538,7 +1707,9 @@ struct AIExplanationSheet: View {
 // MARK: - Preview
 
 #Preview {
-    VocabularyView()
-        .environment(SavedTermsStore.shared)
-        .environment(AppRouteStore.shared)
+    NavigationStack {
+        VocabularyView()
+            .environment(SavedTermsStore.shared)
+            .environment(AppRouteStore.shared)
+    }
 }

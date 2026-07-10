@@ -30,9 +30,19 @@ struct HistoryTabView: View {
         }
         return entries
     }
+
+    /// Whether the visible list is a filtered subset of the store. Reordering
+    /// is only allowed on the full list: `onMove` offsets are positions in the
+    /// FILTERED array, and handing those to the unfiltered store would move
+    /// the wrong rows.
+    private var isFilterActive: Bool {
+        directionFilter != nil || !searchText.isEmpty
+    }
     
+    // No own NavigationStack: presented inside an ambient navigation container
+    // (Study hub push on iOS, split-view detail on macOS). A nested stack broke
+    // `.searchable` on iOS. See VocabularyView for detail.
     var body: some View {
-        NavigationStack {
             Group {
                 if historyStore.entries.isEmpty {
                     ContentUnavailableView {
@@ -82,9 +92,11 @@ struct HistoryTabView: View {
                                     HistoryDragPreview(entry: entry)
                                 }
                         }
-                        .onMove { source, destination in
+                        // Passing nil disables the move handles while a
+                        // search/filter is active (see `isFilterActive`).
+                        .onMove(perform: isFilterActive ? nil : { source, destination in
                             historyStore.move(from: source, to: destination)
-                        }
+                        })
                     }
                     #if os(iOS)
                     .listStyle(.insetGrouped)
@@ -141,9 +153,8 @@ struct HistoryTabView: View {
             } message: {
                 Text("This removes every saved translation and cannot be undone.")
             }
-        }
     }
-    
+
     // MARK: - Context Menu
     
     @ViewBuilder
@@ -227,11 +238,10 @@ struct HistoryTabView: View {
     }
     
     private func duplicateEntry(_ entry: TranslationHistoryEntry) {
-        historyStore.add(
-            source: entry.source,
-            target: entry.target,
-            direction: entry.direction
-        )
+        // `add` would dedup the identical row away (a visual no-op) and record
+        // learning activity; `duplicate` inserts a real copy and leaves stats
+        // untouched.
+        historyStore.duplicate(entry)
     }
 }
 
@@ -333,6 +343,8 @@ private extension TranslationHistoryEntry {
 // MARK: - Preview
 
 #Preview {
-    HistoryTabView(selectedTab: .constant(.history))
-        .environment(TranslationHistoryStore.shared)
+    NavigationStack {
+        HistoryTabView(selectedTab: .constant(.history))
+            .environment(TranslationHistoryStore.shared)
+    }
 }

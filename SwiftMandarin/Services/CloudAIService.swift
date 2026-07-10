@@ -287,6 +287,79 @@ final class CloudAIService {
         return text
     }
 
+    /// Send a multi-turn chat request and return the assistant's text content.
+    ///
+    /// Mirrors `chat(provider:model:system:user:...)` exactly, but transmits the
+    /// whole conversation so the model keeps context across turns (used by the
+    /// AI conversation partner). `turns` are (role, content) pairs in
+    /// chronological order using the OpenAI role names ("user"/"assistant");
+    /// the system prompt is passed separately so each API style can place it
+    /// where its convention requires (leading message vs. top-level field).
+    func chatTurns(
+        provider: AIProvider,
+        model: String,
+        system: String,
+        turns: [(role: String, content: String)],
+        jsonMode: Bool = false,
+        maxTokens: Int = 2048
+    ) async throws -> String {
+        guard provider.isCloud else { throw CloudAIError.notCloudProvider }
+        let settings = AIModelSettings.shared
+        let key = settings.apiKey(for: provider)
+        guard !key.isEmpty else { throw CloudAIError.missingAPIKey(provider.displayName) }
+
+        let base = settings.baseURL(for: provider)
+        let style = settings.effectiveAPIStyle(for: provider)
+        guard let url = Self.buildURL(base: base, path: settings.effectiveChatPath(for: provider)) else { throw CloudAIError.invalidURL }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        applyAuthHeaders(&request, provider: provider, key: key)
+
+        // Only request the strict JSON response_format where the provider
+        // supports it; others still get JSON via the prompt + tolerant parsing.
+        let useResponseFormat = jsonMode && provider.supportsJSONResponseFormat
+
+        let body: [String: Any]
+        switch style {
+        case .openAICompatible:
+            body = Self.openAIBodyTurns(
+                model: model, system: system, turns: turns,
+                jsonMode: jsonMode, useResponseFormat: useResponseFormat, maxTokens: maxTokens,
+                // Kimi's coding (thinking-only) model rejects any temperature ≠ 1.
+                allowsCustomTemperature: provider != .kimi
+            )
+        case .anthropic:
+            body = Self.anthropicBodyTurns(
+                model: model, system: system, turns: turns, maxTokens: maxTokens
+            )
+        }
+
+        guard let httpBody = try? JSONSerialization.data(withJSONObject: body) else {
+            throw CloudAIError.requestEncodingFailed
+        }
+        request.httpBody = httpBody
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw CloudAIError.unexpectedResponse("No HTTP response")
+        }
+        guard (200...299).contains(http.statusCode) else {
+            throw CloudAIError.httpError(http.statusCode, String(data: data, encoding: .utf8) ?? "")
+        }
+
+        let content: String?
+        switch style {
+        case .openAICompatible: content = Self.parseOpenAIContent(from: data)
+        case .anthropic: content = Self.parseAnthropicContent(from: data)
+        }
+
+        guard let text = content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw CloudAIError.emptyResponse
+        }
+        return text
+    }
+
     /// Translate text using a cloud provider.
     func translate(_ text: String, sourceIsChinese: Bool, provider: AIProvider, model: String) async throws -> String {
         let system = """
@@ -370,6 +443,67 @@ final class CloudAIService {
             body["response_format"] = ["type": "json_object"]
         }
         return body
+    }
+
+    /// Multi-turn variant of `openAIBody` (text-only — the conversation partner
+    /// never sends images). Follows the same conventions: JSON hint appended to
+    /// the system prompt, reasoning-family token/temperature rules, optional
+    /// strict `response_format`.
+    private static func openAIBodyTurns(
+        model: String, system: String, turns: [(role: String, content: String)],
+        jsonMode: Bool, useResponseFormat: Bool, maxTokens: Int,
+        allowsCustomTemperature: Bool = true
+    ) -> [String: Any] {
+        var systemPrompt = system
+        if jsonMode, !systemPrompt.lowercased().contains("json") {
+            systemPrompt += "\n\nRespond with a single valid JSON object."
+        }
+
+        var messages: [[String: Any]] = [["role": "system", "content": systemPrompt]]
+        for turn in turns {
+            messages.append(["role": turn.role, "content": turn.content])
+        }
+
+        var body: [String: Any] = [
+            "model": model,
+            "messages": messages,
+            "stream": false,
+        ]
+
+        // Same reasoning-model parameter rules as `openAIBody` (see there for
+        // the full rationale): o-series wants `max_completion_tokens`, other
+        // reasoners keep `max_tokens`, both reject a custom `temperature`.
+        if isReasoningModel(model) {
+            if isOpenAIReasoningModel(model) {
+                body["max_completion_tokens"] = maxTokens
+            } else {
+                body["max_tokens"] = maxTokens
+            }
+        } else if !allowsCustomTemperature {
+            body["max_tokens"] = maxTokens
+        } else {
+            body["temperature"] = 0.3
+            body["max_tokens"] = maxTokens
+        }
+
+        if useResponseFormat {
+            body["response_format"] = ["type": "json_object"]
+        }
+        return body
+    }
+
+    /// Multi-turn variant of `anthropicBody` (text-only): system prompt stays a
+    /// top-level field, the turns become the messages array.
+    private static func anthropicBodyTurns(
+        model: String, system: String, turns: [(role: String, content: String)],
+        maxTokens: Int
+    ) -> [String: Any] {
+        [
+            "model": model,
+            "max_tokens": maxTokens,
+            "system": system,
+            "messages": turns.map { ["role": $0.role, "content": $0.content] },
+        ]
     }
 
     /// Join a base URL and a path, collapsing a duplicated version segment.

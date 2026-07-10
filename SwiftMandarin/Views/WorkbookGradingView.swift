@@ -128,10 +128,12 @@ struct WorkbookGradingView: View {
                 guard !items.isEmpty else { return }
                 Task { await addAnswerPhotos(items) }
             }
-            // Any change to the loaded images (add/remove/clear/camera) means a
-            // new input set, so a fresh grade is allowed again.
+            // Any change to the loaded images (add/remove/clear/camera) or to
+            // the custom instructions means a new input set, so a fresh grade
+            // is allowed again.
             .onChange(of: workbookImages) { _, _ in didSaveSession = false }
             .onChange(of: answerImages) { _, _ in didSaveSession = false }
+            .onChange(of: customInstructions) { _, _ in didSaveSession = false }
             // A single fileImporter routed by `fileImportTarget`. SwiftUI only
             // honors one fileImporter per view, so both buckets share this one.
             .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in

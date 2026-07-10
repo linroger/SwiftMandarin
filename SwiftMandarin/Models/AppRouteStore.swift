@@ -13,7 +13,7 @@ import Observation
 final class AppRouteStore {
     static let shared = AppRouteStore()
 
-    var selectedTab: AppTab = .translate
+    var selectedTab: AppTab = .home
     var pendingAction: AppPendingAction?
 
     private init() {}
@@ -26,14 +26,36 @@ final class AppRouteStore {
     }
 
     func triggerReview(mode: String, source: String) {
-        // On iOS the Learn screen lives inside the More hub, which pushes it
+        // On iOS the Learn screen lives inside the Study hub, which pushes it
         // when this action arrives; on macOS Learn is its own sidebar item.
         #if os(iOS)
-        selectedTab = .more
+        selectedTab = .study
         #else
         selectedTab = .learn
         #endif
         pendingAction = AppPendingAction(kind: .startReview(mode: mode, source: source))
+    }
+
+    /// Open a specific destination inside the Study hub. On iOS the hub is a
+    /// tab whose `NavigationStack` pushes the destination; on macOS the target
+    /// is its own sidebar item, so we select it directly. `route` values match
+    /// `StudyRoute` raw values (e.g. "stats", "vocabulary", "reader").
+    func openStudy(route: String) {
+        #if os(iOS)
+        selectedTab = .study
+        pendingAction = AppPendingAction(kind: .openStudyRoute(route))
+        #else
+        switch route {
+        case "vocabulary": selectedTab = .vocabulary
+        case "phrases": selectedTab = .phrases
+        case "history": selectedTab = .history
+        case "stats": selectedTab = .stats
+        case "reader": selectedTab = .reader
+        case "practice": selectedTab = .practice
+        case "conversation": selectedTab = .conversation
+        default: selectedTab = .learn
+        }
+        #endif
     }
 
     func clearPendingAction() {
@@ -46,6 +68,8 @@ struct AppPendingAction: Equatable, Identifiable {
         case openCameraScanner
         case startReview(mode: String, source: String)
         case translateScreenshots
+        /// Push a destination inside the Study hub (raw value of `StudyRoute`).
+        case openStudyRoute(String)
     }
 
     let id: UUID = UUID()

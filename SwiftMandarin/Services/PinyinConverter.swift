@@ -9,18 +9,41 @@ import Foundation
 import SwiftUI
 
 enum PinyinConverter {
-    
+
     // MARK: - Basic Conversion
-    
+
+    /// Memoizes `convert(_:includeToneMarks:)` results. `CFStringTransform`
+    /// (via `applyingTransform`) is expensive and `convert` is called per
+    /// segment on every ruby-text layout, so repeated conversions of the same
+    /// word were a measurable hot spot. NSCache is thread-safe and evicts
+    /// under memory pressure, so this needs no locking or manual trimming.
+    private static let conversionCache: NSCache<NSString, NSString> = {
+        let cache = NSCache<NSString, NSString>()
+        cache.countLimit = 4096
+        return cache
+    }()
+
     static func convert(_ text: String, includeToneMarks: Bool = true) -> String {
         guard !text.isEmpty else { return "" }
         // Pinyin only applies to Chinese. For non-CJK input (e.g. an English
         // vocabulary term saved from workbook grading) return empty rather
         // than echoing the input back as a fake "pinyin" reading.
         guard text.contains(where: { $0.isChineseCharacter }) else { return "" }
+        // The flag is part of the key so tone-marked and stripped variants
+        // of the same text can't collide.
+        let cacheKey = "\(includeToneMarks ? "t" : "p")|\(text)" as NSString
+        if let cached = conversionCache.object(forKey: cacheKey) {
+            return cached as String
+        }
         let transformed = text.applyingTransform(.mandarinToLatin, reverse: false) ?? text
-        guard !includeToneMarks else { return transformed }
-        return transformed.applyingTransform(.stripDiacritics, reverse: false) ?? transformed
+        let result: String
+        if includeToneMarks {
+            result = transformed
+        } else {
+            result = transformed.applyingTransform(.stripDiacritics, reverse: false) ?? transformed
+        }
+        conversionCache.setObject(result as NSString, forKey: cacheKey)
+        return result
     }
     
     // MARK: - Tone Detection
@@ -71,7 +94,63 @@ enum PinyinConverter {
     static func toneColor(for pinyin: String) -> Color {
         detectTone(pinyin).color
     }
-    
+
+    // MARK: - Tone Re-marking
+
+    /// The four tone-marked forms of each pinyin vowel, indexed by tone 1–4.
+    private static let tonedVowels: [Character: [Character]] = [
+        "a": ["ā", "á", "ǎ", "à"],
+        "e": ["ē", "é", "ě", "è"],
+        "i": ["ī", "í", "ǐ", "ì"],
+        "o": ["ō", "ó", "ǒ", "ò"],
+        "u": ["ū", "ú", "ǔ", "ù"],
+        "ü": ["ǖ", "ǘ", "ǚ", "ǜ"]
+    ]
+
+    /// Map any (possibly tone-marked) vowel to its plain base, preserving the
+    /// ü distinction so a stripped syllable can be re-marked faithfully.
+    private static let vowelBase: [Character: Character] = [
+        "a": "a", "ā": "a", "á": "a", "ǎ": "a", "à": "a",
+        "e": "e", "ē": "e", "é": "e", "ě": "e", "è": "e",
+        "i": "i", "ī": "i", "í": "i", "ǐ": "i", "ì": "i",
+        "o": "o", "ō": "o", "ó": "o", "ǒ": "o", "ò": "o",
+        "u": "u", "ū": "u", "ú": "u", "ǔ": "u", "ù": "u",
+        "ü": "ü", "ǖ": "ü", "ǘ": "ü", "ǚ": "ü", "ǜ": "ü", "v": "ü"
+    ]
+
+    /// Strip a syllable to plain lowercase letters, preserving ü, so a fresh
+    /// tone mark can be placed. ("hǎo" → "hao", "nǚ" → "nü").
+    static func baseSyllable(_ syllable: String) -> String {
+        String(syllable.lowercased().map { vowelBase[$0] ?? $0 })
+    }
+
+    /// Re-render a syllable carrying an explicit tone (1–4; any other value =
+    /// neutral / no mark). Places the mark by the standard rule: a and e always
+    /// win; otherwise the o of "ou"; otherwise the last vowel. Used by the tone
+    /// drill so each answer shows the *actual* word in that candidate tone
+    /// (e.g. 你好 → "ní·hǎo") instead of a generic "má·mǎ".
+    static func applyTone(_ tone: Int, to syllable: String) -> String {
+        var chars = Array(baseSyllable(syllable))
+        guard (1...4).contains(tone) else { return String(chars) }
+
+        let markIndex: Int?
+        if let i = chars.firstIndex(of: "a") {
+            markIndex = i
+        } else if let i = chars.firstIndex(of: "e") {
+            markIndex = i
+        } else if let i = chars.indices.dropLast().first(where: { chars[$0] == "o" && chars[$0 + 1] == "u" }) {
+            markIndex = i
+        } else {
+            markIndex = chars.lastIndex(where: { tonedVowels[$0] != nil })
+        }
+
+        guard let idx = markIndex, let toned = tonedVowels[chars[idx]]?[tone - 1] else {
+            return String(chars)
+        }
+        chars[idx] = toned
+        return String(chars)
+    }
+
     // MARK: - Syllable Segmentation
     
     struct PinyinSyllable: Identifiable {

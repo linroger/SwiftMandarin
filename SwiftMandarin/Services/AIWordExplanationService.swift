@@ -317,17 +317,24 @@ final class AIWordExplanationService {
     ///   - word: The word or phrase to explain
     ///   - pinyin: Optional pinyin for the word (helps with disambiguation)
     ///   - context: Optional sentence context where the word was encountered
+    ///   - bypassCache: When true, evicts and skips the in-memory cache so a
+    ///     "Regenerate" request truly re-runs the model instead of instantly
+    ///     echoing the previous result back
     /// - Returns: A structured WordExplanationResult with comprehensive information
     func generateExplanation(
         for word: String,
         pinyin: String? = nil,
-        context: String? = nil
+        context: String? = nil,
+        bypassCache: Bool = false
     ) async throws -> WordExplanationResult {
         let direction = ExplanationDirection.current(forWord: word)
 
-        // Check cache first (per direction, so a language toggle regenerates)
+        // Check cache first (per direction, so a language toggle regenerates).
+        // A forced regeneration evicts the stale entry instead.
         let cacheKey = "\(direction.cacheToken)_\(word)_\(pinyin ?? "")_\(context ?? "")"
-        if let cached = explanationCache[cacheKey] {
+        if bypassCache {
+            explanationCache.removeValue(forKey: cacheKey)
+        } else if let cached = explanationCache[cacheKey] {
             return cached
         }
 
@@ -470,22 +477,26 @@ final class AIWordExplanationService {
     ///   - word: The Chinese word or phrase to explain
     ///   - pinyin: Optional pinyin for the word
     ///   - context: Optional sentence context
+    ///   - bypassCache: When true, evicts the in-memory cache entry for this
+    ///     request and regenerates (used by the "Regenerate" button, which must
+    ///     never be answered from cache)
     /// - Returns: A structured WordExplanationResult
     func generateExplanationWithProvider(
         for word: String,
         pinyin: String? = nil,
-        context: String? = nil
+        context: String? = nil,
+        bypassCache: Bool = false
     ) async throws -> WordExplanationResult {
         let settings = AIModelSettings.shared
         let provider = settings.effectiveProvider
 
         switch provider {
         case .appleIntelligence:
-            return try await generateExplanation(for: word, pinyin: pinyin, context: context)
+            return try await generateExplanation(for: word, pinyin: pinyin, context: context, bypassCache: bypassCache)
         case .ollama:
-            return try await generateExplanationWithOllama(for: word, pinyin: pinyin, context: context)
+            return try await generateExplanationWithOllama(for: word, pinyin: pinyin, context: context, bypassCache: bypassCache)
         default:
-            return try await generateExplanationWithCloud(provider: provider, for: word, pinyin: pinyin, context: context)
+            return try await generateExplanationWithCloud(provider: provider, for: word, pinyin: pinyin, context: context, bypassCache: bypassCache)
         }
     }
     
@@ -527,23 +538,27 @@ final class AIWordExplanationService {
     private func generateExplanationWithOllama(
         for word: String,
         pinyin: String? = nil,
-        context: String? = nil
+        context: String? = nil,
+        bypassCache: Bool = false
     ) async throws -> WordExplanationResult {
         let settings = AIModelSettings.shared
-        
+
         guard OllamaService.shared.isConnected else {
             throw AIExplanationError.ollamaNotConnected
         }
-        
+
         guard !settings.ollamaModel.isEmpty else {
             throw AIExplanationError.ollamaNoModelSelected
         }
 
         let direction = ExplanationDirection.current(forWord: word)
 
-        // Check cache first (per direction, so a language toggle regenerates)
+        // Check cache first (per direction, so a language toggle regenerates).
+        // A forced regeneration evicts the stale entry instead.
         let cacheKey = "ollama_\(direction.cacheToken)_\(word)_\(pinyin ?? "")_\(context ?? "")"
-        if let cached = explanationCache[cacheKey] {
+        if bypassCache {
+            explanationCache.removeValue(forKey: cacheKey)
+        } else if let cached = explanationCache[cacheKey] {
             return cached
         }
 
@@ -683,7 +698,8 @@ final class AIWordExplanationService {
         provider: AIProvider,
         for word: String,
         pinyin: String? = nil,
-        context: String? = nil
+        context: String? = nil,
+        bypassCache: Bool = false
     ) async throws -> WordExplanationResult {
         let settings = AIModelSettings.shared
         let model = settings.selectedModel(for: provider)
@@ -697,8 +713,13 @@ final class AIWordExplanationService {
 
         let direction = ExplanationDirection.current(forWord: word)
 
+        // A forced regeneration evicts the stale entry instead of serving it.
         let cacheKey = "cloud_\(provider.rawValue)_\(direction.cacheToken)_\(word)_\(pinyin ?? "")_\(context ?? "")"
-        if let cached = explanationCache[cacheKey] { return cached }
+        if bypassCache {
+            explanationCache.removeValue(forKey: cacheKey)
+        } else if let cached = explanationCache[cacheKey] {
+            return cached
+        }
 
         var prompt = "Explain the \(direction.wordLanguageName) word: \(word)"
         if let pinyin, !pinyin.isEmpty, direction.wordIsChinese { prompt += " (\(pinyin))" }

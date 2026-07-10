@@ -833,11 +833,11 @@ struct PhotoTranslateView: View {
         case .translateScreenshots:
             showScreenshotTranslation = true
             routeStore.clearPendingAction()
-        case .startReview:
+        case .startReview, .openStudyRoute:
             break
         }
     }
-    
+
     // MARK: - Actions
     
     private func loadAndProcessImage(_ item: PhotosPickerItem?) async {
