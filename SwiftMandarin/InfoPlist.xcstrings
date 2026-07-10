@@ -1,0 +1,96 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSCameraUsageDescription" : {
+      "comment" : "Permission prompt explaining why SwiftMandarin needs camera access.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftMandarin uses the camera to capture text and workbook pages for translation and grading."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftMandarin 使用相机拍摄文本和练习册页面，以进行翻译和批改。"
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Permission prompt explaining why SwiftMandarin connects to user-configured AI services on the local network.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftMandarin connects to AI services you configure on your local network to translate text, explain words, and generate learning content."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftMandarin 会连接您在本地网络中配置的 AI 服务，以翻译文本、讲解词语并生成学习内容。"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Permission prompt explaining why SwiftMandarin needs microphone access.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftMandarin uses the microphone to capture speech for live translation and conversation practice."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftMandarin 使用麦克风采集语音，以进行实时翻译和对话练习。"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription" : {
+      "comment" : "Permission prompt explaining why SwiftMandarin needs photo library access.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftMandarin uses only the photos you select to translate text and grade workbook pages."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftMandarin 仅使用您选择的照片来翻译文本和批改练习册页面。"
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription" : {
+      "comment" : "Permission prompt explaining speech recognition and possible Apple server processing.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftMandarin uses Apple speech recognition to transcribe speech for live translation and conversation practice. Audio may be processed by Apple when on-device recognition is unavailable."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftMandarin 使用 Apple 语音识别，将语音转写为文字以进行实时翻译和对话练习。当设备端识别不可用时，音频可能由 Apple 处理。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

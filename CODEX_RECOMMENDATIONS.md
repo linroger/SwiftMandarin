@@ -68,7 +68,9 @@ Severity used in this document:
 
 ### RG-01 — Add and validate `PrivacyInfo.xcprivacy`
 
-**Evidence:** No `PrivacyInfo.xcprivacy` exists, while `UserDefaults` is used extensively, including `SwiftMandarin/Models/PersistentCodableStore.swift:62-69` and `:93-98`.
+**Implementation status (2026-07-10):** Source/build portion implemented on `codex/privacy-release-foundation`. `SwiftMandarin/PrivacyInfo.xcprivacy` now declares the verified app-only `UserDefaults` reason `CA92.1`; clean macOS and iOS Simulator bundles contain an identical manifest. A signed Release archive privacy report and App Store validation remain release-time checks.
+
+**Pre-fix evidence:** No `PrivacyInfo.xcprivacy` existed, while `UserDefaults` was used extensively, including `SwiftMandarin/Models/PersistentCodableStore.swift:62-69` and `:93-98`.
 
 Apple identifies `UserDefaults` as a required-reason API and requires the app bundle to declare an approved reason in a privacy manifest. See [Describing use of required reason API](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api) and [TN3183](https://developer.apple.com/documentation/technotes/tn3183-adding-required-reason-api-entries-to-your-privacy-manifest).
 
@@ -140,9 +142,11 @@ There are additional platform assumptions that will need attention after the fir
 
 ### RG-06 — Add the missing local-network and localized permission disclosures
 
-**Evidence:** Ollama accepts a LAN host in `SwiftMandarin/Models/AIModelSettings.swift:386-387` and `:614-617`, but the generated Info.plist has no `NSLocalNetworkUsageDescription`. Apple states that apps connecting directly to local hosts should provide this description: [NSLocalNetworkUsageDescription](https://developer.apple.com/documentation/bundleresources/information-property-list/nslocalnetworkusagedescription).
+**Implementation status (2026-07-10):** Source/build portion implemented on `codex/privacy-release-foundation`. Both build configurations now provide an accurate local-network purpose and revised permission fallbacks; `InfoPlist.xcstrings` compiles all five permission descriptions into matching English and Simplified Chinese tables on macOS and iOS. Physical-device allow/deny/Settings recovery and `.local` hostname ATS behavior remain release tests.
 
-Camera, photo, microphone, and speech purpose strings are injected as English-only build settings at `SwiftMandarin.xcodeproj/project.pbxproj:328-333`; there is no `InfoPlist.xcstrings`.
+**Pre-fix evidence:** Ollama accepted a LAN host in `SwiftMandarin/Models/AIModelSettings.swift:386-387` and `:614-617`, but the generated Info.plist had no `NSLocalNetworkUsageDescription`. Apple states that apps connecting directly to local hosts should provide this description: [NSLocalNetworkUsageDescription](https://developer.apple.com/documentation/bundleresources/information-property-list/nslocalnetworkusagedescription).
+
+Camera, photo, microphone, and speech purpose strings were injected as English-only build settings at `SwiftMandarin.xcodeproj/project.pbxproj:328-333`; there was no `InfoPlist.xcstrings`.
 
 **Recommendation:** Add localized English and Simplified Chinese permission strings, including an accurate local-network purpose. Test allow, deny, Settings recovery, and LAN reconnect on physical devices.
 

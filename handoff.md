@@ -180,3 +180,86 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 **Builds:** macOS `platform=macOS` and iOS `platform=iOS Simulator` (iPhone 17 Pro) both **BUILD SUCCEEDED**. Runtime verified by launching the macOS Debug build against real user data (7,213 words). Not yet committed — awaiting user go-ahead.
 
 - 2026-07-10T23:16:00Z: Added Iteration 18 (Home hero redesign, visible macOS cards, real tone-drill syllables, vocab-default flashcards/tone pool). Both platforms clean; verified on running macOS build.
+
+## Iteration 19 — Privacy Manifest and Localized Permission Foundation (2026-07-10)
+
+**Last Updated (UTC):** 2026-07-10T12:15:48Z
+**Status:** In Progress
+**Branch:** `codex/privacy-release-foundation` (created from and pushed at `2b99fa2`)
+**Current Focus:** Complete one Phase 0 recommendation slice: bundle an accurate privacy manifest and provide accurate English/Simplified Chinese permission disclosures, including Ollama local-network access.
+
+### Request & Context
+
+- The user asked for a new GitHub branch from the already committed Claude/Fable Home, tone-drill, and vocabulary-practice work, then requested implementation of the audited recommendations with maximum rigor.
+- The source branch and remote both point to `2b99fa2` (`Redesign Home, real tone-drill syllables, vocab-linked practice`). This iteration branches from that exact commit.
+- The worktree contains live `.claude/` and `logs/` session-file modifications. They MUST remain unstaged and MUST NOT be reverted, rewritten, or included in this feature commit.
+- `CODEX_RECOMMENDATIONS.md` Phase 0 is broad. In accordance with the repository's one-feature-at-a-time rule, this iteration implements RG-01 and the tightly coupled disclosure portion of RG-06. Other recommendations remain out of scope.
+- The existing `CODEX_RECOMMENDATIONS.md` and `handoff.md` serve as the feature ledger and continuity harness for this established repository; no duplicate feature-list/progress harness will be introduced.
+
+### Requirements → Acceptance Checks
+
+| Requirement | Scenario-level acceptance check | Expected outcome | Evidence |
+|---|---|---|---|
+| R19.1: Required-reason declaration | Validate `PrivacyInfo.xcprivacy`, inspect its values, build both app platforms, and inspect built bundles | The manifest declares the app's actual `UserDefaults` use with an approved app-only reason and is present in the built app resources | `plutil`, bundle `find`, manifest readback |
+| R19.2: Accurate base permission purposes | Inspect generated Info.plists for camera, photo library, microphone, speech, and local network | All five keys exist with specific, truthful English text; speech does not promise on-device-only processing | `xcodebuild -showBuildSettings`, built Info.plist readback |
+| R19.3: Simplified Chinese localization | Build and inspect localized resources, then read each key using the Chinese resource table | All five permission prompts have reviewed `zh-Hans` translations | built `zh-Hans.lproj/InfoPlist.strings` readback |
+| R19.4: No regression | Run fresh macOS and iOS Simulator Debug builds on the final diff | Both supported primary platforms compile; no unrelated runtime source is changed | `xcodebuild` exit codes and scoped diff |
+| R19.5: Reviewable delivery | Independent reviewer checks the diff against these requirements before commit | Critical/important feedback is fixed or technically rebutted; only scoped files are staged and pushed | review report, staged diff, remote SHA |
+
+### Plan & Progress Ledger
+
+- [x] Verify the Claude/Fable commit is present on its remote branch.
+- [x] Create and push `codex/privacy-release-foundation` from `2b99fa2`.
+- [x] Audit required-reason APIs and Xcode's synchronized-resource behavior against current Apple documentation.
+- [x] Add the minimal privacy manifest and localized permission catalog/build settings.
+- [x] Validate syntax, generated Info.plists, bundled resources, and both platform builds.
+- [ ] Request independent review, resolve findings, update this record, commit only scoped files, and push.
+
+### Findings, Decisions, Assumptions
+
+- **Finding:** The target uses an Xcode file-system-synchronized root group, so new resources inside `SwiftMandarin/` are expected to be automatically included; bundle inspection will prove this instead of relying on the project structure alone.
+- **Finding:** The generated Info.plist currently defines English-only camera, photo, microphone, and speech purposes in both Debug and Release build settings. No local-network purpose exists despite configurable Ollama LAN hosts.
+- **Decision:** The privacy manifest will declare only verified behavior. It will not claim tracking or collected-data categories merely because optional cloud processing exists; App Store privacy-label policy remains a separate release review.
+- **Decision:** The base English speech purpose will explicitly allow Apple Speech service processing when on-device recognition is unavailable, matching the current iOS 17 behavior.
+- **Assumption to falsify:** An `InfoPlist.xcstrings` file in the synchronized group will compile into localized `InfoPlist.strings` for both platforms. The built bundle, not the source catalog alone, is the acceptance authority.
+- **Finding:** All app preference access uses the app-only defaults domain (`UserDefaults.standard`/`@AppStorage`); there is no app-group suite, extension, or application-group entitlement. `CA92.1` is therefore the single evidenced UserDefaults reason; `1C8F.1` would be inaccurate.
+- **Finding:** A broad app/dependency scan found no source use of the other current required-reason categories (file timestamps, system uptime, disk space, or active keyboards). The pinned `ollama-swift` production source also has no candidate use.
+- **Finding:** The local-network disclosure must cover user-configured Ollama, Quotio, and custom provider base URLs, not only Ollama. No Bonjour service declaration is needed because the app makes direct URL connections and does not browse or advertise Bonjour services.
+- **Finding:** The first post-change macOS bundle contains exactly one manifest plus English and Simplified Chinese `InfoPlist.strings`, all with the intended five keys. This falsifies the resource-inclusion uncertainty for macOS; clean final builds will repeat the check for both platforms.
+- **Decision:** Do not add ATS changes to this slice. `NSLocalNetworkUsageDescription` discloses access but does not configure transport; `.local` hostname support needs a dedicated nested ATS plist change and real-host testing. A global `NSAllowsArbitraryLoads` exception is explicitly rejected.
+
+### Issues, Mistakes, Recoveries
+
+- **Review finding:** The first permission copy covered live translation but omitted Conversation dictation, which uses the same microphone and speech-recognition service. The independent review traced the permission trigger through `ConversationView.toggleMic()` and message submission.
+- **Recovery/guardrail:** Updated English/zh-Hans microphone and speech purposes plus both build-configuration fallbacks to name live translation and conversation practice. Final parity and bundle checks MUST be repeated after this copy correction.
+
+### Scenario-Focused Resolution Tests
+
+- **Repro:** Build the pre-change app and inspect resources: no bundled privacy manifest, no local-network purpose key, and no localized InfoPlist table.
+- **Change:** Added a minimal `PrivacyInfo.xcprivacy`, accurate Debug/Release base usage descriptions, a local-network purpose, and a five-key English/zh-Hans `InfoPlist.xcstrings` catalog.
+- **Post-change behavior:** Fresh macOS and iOS Simulator builds each contain exactly one semantic copy of the source manifest, the five English fallback values, and matching five-key English/zh-Hans InfoPlist resource tables.
+- **Verdict:** Resolved for build-time/resource acceptance. System permission prompts and LAN allow/deny recovery remain physical-device release checks because Simulator does not implement the local-network privacy prompt.
+
+### Verification Summary
+
+- Branch creation and initial GitHub push succeeded.
+- Apple documentation confirms that `UserDefaults` requires a declared reason in `PrivacyInfo.xcprivacy`, and that direct local-host connections require `NSLocalNetworkUsageDescription`.
+- Source manifest syntax passes `plutil`; the source string catalog parses with `jq`.
+- Initial macOS Debug build passed. Bundle readback confirms the manifest is compiled to `Contents/Resources/PrivacyInfo.xcprivacy`, base Info.plist has all five English keys, and both `en.lproj`/`zh-Hans.lproj` contain all five localized values.
+- Fresh final macOS Debug build passed with isolated Derived Data at `/tmp/swiftmandarin-privacy-final-macos`.
+- Fresh final iOS Simulator Debug build passed with isolated Derived Data at `/tmp/swiftmandarin-privacy-final-ios`.
+- Exact semantic comparisons passed: source vs. both built manifests; catalog English vs. both generated Info.plists and English tables; catalog zh-Hans vs. both Chinese tables; one manifest per bundle.
+- Debug/Release build-setting parity passed: each catalog English value has exactly two identical `INFOPLIST_KEY_*` definitions.
+- Independent review found one Important copy gap: Conversation dictation was omitted from the microphone/speech purposes. The reviewed fix now covers both live translation and conversation practice in both languages and both configurations.
+- Post-review macOS and iOS Simulator build commands both exited 0. The catalog compiler, configuration-parity check, and exact six-file bundle comparison were rerun and passed after the correction.
+
+### Remaining Work & Next Steps
+
+- Complete independent review, fix any material finding, re-run affected checks, update this record, stage only the scoped files, commit, and push.
+
+### Updates to This File
+
+- 2026-07-10T11:55:39Z: Created Iteration 19 brief, scoped the first implementation slice, recorded the protected dirty files, and captured traceable acceptance checks.
+- 2026-07-10T12:03:49Z: Completed the required-reason and permission-localization audit, implemented the source resources/build settings, and captured initial macOS bundle evidence.
+- 2026-07-10T12:09:19Z: Completed clean macOS/iOS builds and exact source-to-bundle manifest, fallback, localization, and build-configuration parity checks.
+- 2026-07-10T12:15:48Z: Applied the independent review correction for Conversation dictation and repeated all affected static, build, and bundle checks successfully.
