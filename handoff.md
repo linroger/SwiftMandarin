@@ -180,3 +180,124 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 **Builds:** macOS `platform=macOS` and iOS `platform=iOS Simulator` (iPhone 17 Pro) both **BUILD SUCCEEDED**. Runtime verified by launching the macOS Debug build against real user data (7,213 words). Not yet committed — awaiting user go-ahead.
 
 - 2026-07-10T23:16:00Z: Added Iteration 18 (Home hero redesign, visible macOS cards, real tone-drill syllables, vocab-default flashcards/tone pool). Both platforms clean; verified on running macOS build.
+
+## Iteration 19 — Native vocabulary-detail paging and 2027 UI alignment (2026-07-13)
+
+**Last Updated (UTC):** 2026-07-13T10:25:50Z
+
+**Status:** Complete
+
+**Current Focus:** This slice is delivered; the next bounded slice is adaptive `StatsView` layout in GitHub issue #4.
+
+### 1) Request & Context
+
+- **User request:** Continue improving the cross-platform app; on iOS, allow left/right swipes between adjacent vocabulary items in detail; update the UI for current iOS and macOS 27 Golden Gate design guidance.
+- **Operational constraints:** Work from clean `main` commit `6c3d9aa` in isolated branch/worktree `codex/vocab-detail-swipe-modernization`; preserve the dirty primary worktree and the separate autonomous-loop bootstrap worktree. Build with `/Applications/Xcode-beta.app` (Xcode 27.0 / Swift 6.4) without changing global `xcode-select` or preferences.
+- **Scope boundary:** This is one vertical slice: vocabulary list/detail navigation and the shared compatibility helpers it directly needs. It does not authorize an unbounded rewrite of every app screen.
+- **Design authority:** Apple’s 2027 SwiftUI guidance says system SwiftUI controls automatically gain the refined Liquid Glass appearance; custom glass should be sparse and restricted to the controls/navigation layer. The new toolbar visibility/minimization APIs are beta and MUST be availability-gated.
+- **Existing behavior:** `TermDetailSheet` already has a June 2026 high-priority `DragGesture`, toolbar chevrons, and a count. This is a partial implementation, not a completed acceptance result: its recognizer can preempt vertical scrolling before its end-only direction check, it has no native page tracking, and the sheet item’s identity changes with selection.
+
+### 2) Requirements → Acceptance Checks
+
+| Requirement | Acceptance Check (scenario steps) | Expected Outcome | Evidence to Capture |
+|---|---|---|---|
+| R19.1: Native adjacent paging | Open a middle row from a filtered/sorted vocabulary list; swipe left, then right | Detail settles on the exact next item and returns to the original; the sheet stays presented | Simulator interaction + selected ID/position evidence |
+| R19.2: Gesture coexistence | Vertically scroll a long AI explanation, then perform horizontal swipes | Vertical reading remains smooth; horizontal paging is deliberate and follows the finger | Simulator interaction / video or screenshots |
+| R19.3: Safe boundaries and mutations | Open first/last items; invoke both directions; master/update a term; remove the selected term from the store | No wraparound, crash, empty fabricated term, stale page state, or incorrect list order | Regression checks + scenario log |
+| R19.4: Accessible alternatives | Use previous/next controls, VoiceOver labels, and hardware shortcuts | Every paging action is available without a touch gesture; disabled states are announced | Accessibility/source audit + simulator check |
+| R19.5: 2027 platform UI | Run on iOS 27 and macOS 27; inspect navigation, toolbars, content surfaces, resizing, dark mode | System Liquid Glass appears in controls/navigation; content remains legible and semantic; crowded actions adapt | Screenshots + Apple-guidance mapping |
+| R19.6: Backward compatibility | Build against iOS 17 and macOS 26.2 deployment floors using Xcode 27 | Availability gates compile and fallbacks remain present | iOS/macOS build logs, zero new warnings |
+| R19.7: Reviewable delivery | Review diff, localizations, docs, tests; commit and push one branch | Cohesive commit, no unrelated files, clean branch | Git diff/status and remote branch SHA |
+
+### 3) Plan & Decomposition
+
+- **Critical path:** First prove the current implementation and SDK constraints, then separate stable presentation identity from page selection, then adopt native paging, then polish only the affected controls. This orders the work around gesture and state risks before cosmetic changes.
+- [x] Read current handoff/history, `LOOP.md`, recommendations, vocabulary/store/navigation code, and relevant skills.
+- [x] Create isolated branch/worktree and capture the Xcode 27 / SDK 27 environment.
+- [x] Verify the current partial swipe implementation and research current Apple primary guidance.
+- [x] Complete clean baseline iOS/macOS builds.
+- [x] Implement stable native paging and per-page async state isolation.
+- [x] Apply adaptive toolbar/action/content polish and current-platform compatibility gates.
+- [x] Add deterministic regression checks and localization/accessibility coverage.
+- [x] Run build, scenario, visual, and independent review gates; resolve findings.
+- [x] Commit, push, and record the exact next slice.
+
+### 4) To-Do & Progress Ledger
+
+- [x] Branch `codex/vocab-detail-swipe-modernization` created from `main@6c3d9aa`; evidence: `git worktree add` succeeded.
+- [x] Xcode environment confirmed: Xcode 27.0 build 27A5194q, iOS SDK 27.0, macOS SDK 27.0, Swift 6.4.
+- [x] Current source traced: `VocabularyView` owns selection, iOS sheet receives `filteredTerms`, and the detail uses end-only high-priority drag arbitration.
+- [x] Product changes complete: stable detail-session identity, exact visible-order snapshot, previous/current/next native page window, independent per-word state, adaptive controls, and accessible alternatives.
+- [x] Regression evidence complete: deterministic helper checks (18/18), real iOS vertical + horizontal gestures, boundaries, toolbar navigation, dismissal, and 7,000-word stress scenario.
+- [x] Three independent reviews completed; all Critical/Important implementation findings were resolved and re-reviewed.
+- [x] Remaining work reconciled without duplicates and filed as GitHub issues [#4](https://github.com/linroger/SwiftMandarin/issues/4) and [#5](https://github.com/linroger/SwiftMandarin/issues/5).
+- [x] Final clean gates and version-control delivery on `codex/vocab-detail-swipe-modernization`.
+
+### 5) Findings, Decisions, Assumptions
+
+- **Finding:** Apple officially names the release macOS 27 Golden Gate; the installed SDK and Apple release notes confirm it, so this is not a speculative codename.
+- **Finding:** Xcode 27’s refreshed Liquid Glass look is automatic for standard SwiftUI controls. Apple explicitly advises against using Liquid Glass in the content layer and recommends system toolbars, sparse important actions, and adaptive overflow/visibility behavior.
+- **Decision:** Use a system page-style `TabView`, but expose only the previous/current/next terms. The Xcode 27 ID-bound horizontal `ScrollView` let its selected ID and rendered offset diverge on initial non-first selection, while an unbounded page-style `TabView` stalled with 7,000 words. The three-page window preserves native gesture arbitration and stable initial selection with constant page-view cost.
+- **Decision:** Keep the existing iOS 17 and macOS 26.2 deployment floors. New 2027 APIs will refine behavior only when available.
+- **Finding:** No beta-only Xcode 27 API was needed. Standard `NavigationStack`, toolbars, menus, page-style `TabView`, semantic backgrounds, and native buttons adopt the current Liquid Glass control treatment while keeping content out of the decorative glass layer.
+- **Assumption falsified and replaced with evidence:** Cross-axis gesture arbitration was not assumed. A headless iOS 27 UI scenario scrolled the current detail vertically, restored it, paged left and right, and then used the toolbar; all visible-state assertions passed.
+
+### 6) Issues, Mistakes, Recoveries
+
+- **Existing symptom → root cause:** Swipe code exists but may feel absent/unreliable → a high-priority drag recognizer claims drags before checking direction only in `onEnded` → replace it with system paging and retain explicit alternatives.
+- **Regression guardrail:** Navigation will be keyed by stable term IDs and boundary behavior will be checked independently of UI rendering.
+- **Runtime mistake → detection → recovery:** The first native `ScrollView` implementation set `visibleTermID` to the tapped middle term, but Xcode 27 rendered page one. The UI test detected the counter/pixel mismatch. Delaying the binding and adding `ScrollViewReader.scrollTo` still left the rendered offset stale, so that implementation was rejected.
+- **Performance mistake → detection → recovery:** A full page-style `TabView` fixed initial selection and gestures, but the 7,000-word stress run took about 60 seconds to report an idle event and created every detail page. The pager was windowed to three terms; the retained repeat log proves the former 60-second stall is gone, the complete stress UI case finishes in 20.08 seconds, and adjacent paging succeeds. Earlier interactive `ps` samples were not retained, so approximate app-RSS numbers are deliberately omitted from the final evidence claim.
+- **Review finding → fix:** Preloaded neighbor pages could auto-translate empty glosses. Automatic translation is now keyed and gated by `isCurrent`; changing pages cancels the structured task, and manual work is canceled when its page ceases to be current.
+- **Review finding → fix:** The vocabulary page and `AIWordExplanationView` both owned same-axis scroll views. The explanation now has a reusable embedded mode, so vocabulary detail/inspector screens have exactly one vertical scroll owner while the standalone AI sheet remains independently scrollable.
+- **Review finding → fix:** macOS Copy All displayed feedback on the neighboring Copy button. Per-action cancellable feedback now updates only the invoked control.
+- **Runtime-harness mistakes → recovery:** The transient test wrapper initially used zsh's read-only `status` variable, then exposed a Swift 6 actor-isolation error and a duplicate Study-button query. The wrapper now uses a non-reserved exit variable, main-actor test methods, and `firstMatch`; the final scenario passed. The transient project was removed after evidence capture.
+- **Guardrail added:** `VocabularyPaging` centralizes order-preserving de-duplication, bounded neighbor selection, constant-size page windows, and missing-ID reconciliation; `scripts/test-vocabulary-paging.sh` validates 18 deterministic cases, including a 7,000-ID session.
+
+### 7) Scenario-Focused Resolution Tests
+
+- **Current reproduction:** Open a vocabulary detail with long vertically scrollable content. The current `highPriorityGesture(DragGesture)` competes with the vertical `ScrollView`; the view does not track the finger like a page and discoverability depends on tiny toolbar symbols.
+- **Change applied:** The sheet now has a stable session ID and snapshots the current filtered/sorted term IDs. A native page-style container hosts only previous/current/next pages, each with its own vertical scroll view and term-specific translation/copy tasks. System bottom-toolbar controls expose previous/count/next, while Done remains in the top confirmation slot.
+- **Post-change behavior:** Opening the middle of a three-word ordered list displayed the middle term; vertical scrolling did not change pages; a left swipe displayed the next term; a right swipe returned; the previous toolbar button reached the first term; both terminal controls disabled at their respective bounds; Done returned to the Vocabulary screen.
+- **Mutation coverage:** Store resolution and ID-reconciliation paths were verified by source review and deterministic helpers. The retained UI scenario does not claim to exercise mastering, definition updates, or deletion; those mutations belong in the durable UI target tracked by issue #5.
+- **Verdict:** Resolved on the iOS 27 iPhone 17 Pro simulator, including the Study → Vocabulary route that previously exposed the nested-navigation failure.
+
+### 8) Verification Summary
+
+- Source and history inspection complete. The earlier nested-`NavigationStack` defect remains fixed on `main` and must not be reintroduced.
+- Official Apple sources and installed SwiftUI interfaces confirm the 2027 automatic design refresh plus `visibilityPriority`, `ToolbarOverflowMenu`, `topBarPinnedTrailing`, and `toolbarMinimizeBehavior` APIs. No beta-only API has yet been added.
+- Baseline iOS Simulator Debug build passed with `** BUILD SUCCEEDED **` and no `warning:`/`error:` lines in `/tmp/SwiftMandarin-vocab-baseline-ios.log`.
+- Baseline macOS Debug build passed with `** BUILD SUCCEEDED **` and no `warning:`/`error:` lines in `/tmp/SwiftMandarin-vocab-baseline-macos.log`.
+- Production-diff iOS Simulator Debug build passed with `** BUILD SUCCEEDED **` and no compiler warnings/errors in `/tmp/SwiftMandarin-vocab-production-ios.log`.
+- Production-diff macOS Debug build passed with `** BUILD SUCCEEDED **` and no compiler warnings/errors in `/tmp/SwiftMandarin-vocab-production-macos.log`.
+- Final stable-snapshot iOS Simulator Debug build passed with `** BUILD SUCCEEDED **`, 0 `warning:` diagnostics, and 0 `error:` diagnostics in `/tmp/SwiftMandarin-vocab-final2-ios.log`.
+- Final stable-snapshot macOS arm64 Debug build passed with `** BUILD SUCCEEDED **`, 0 `warning:` diagnostics, and 0 `error:` diagnostics in `/tmp/SwiftMandarin-vocab-final2-macos.log`.
+- Deterministic paging checks passed 18/18 via `scripts/test-vocabulary-paging.sh`, including first/middle/last windows and a 7,000-ID constant-window case; `jq empty SwiftMandarin/Localizable.xcstrings` and `git diff --check` passed.
+- Headless iOS UI acceptance passed with 0 failures in `/tmp/SwiftMandarin-vocab-uiqa-production2.log`. It covered Study navigation, selected-page identity, vertical scrolling, left/right swipes, previous control, both boundary states, and Done dismissal.
+- A fresh post-review iOS UI acceptance passed with 0 failures in `/tmp/SwiftMandarin-vocab-uiqa-final.log` after installing the newly built app. It repeated selected identity, vertical scrolling, left/right swipes, toolbar navigation, boundaries, and dismissal after the performance/refactor changes.
+- The 7,000-word windowed-pager stress acceptance passed with 0 failures in `/tmp/SwiftMandarin-vocab-uiqa-large-windowed2.log`; it proves prompt presentation without the former 60-second idle stall and successful adjacent paging. The temporary synthetic-data hook and temporary UI test project were removed before production builds.
+- The standalone UI harness emits an expected App Intents metadata message because it does not link AppIntents, plus an iOS 27 simulator duplicate `UIAccessibilityLoaderWebShared` runtime warning. Neither warning is emitted by app source compilation; final app builds are assessed separately.
+- Independent correctness, UI/accessibility, and performance/test reviewers found no remaining Critical or Important implementation issue after fixes. Minor recommendations addressed in the slice include resolving the visible term list once per render, localized sort titles, Dynamic Type scaling, a fixed macOS inspector header, and a contextual macOS position label.
+- `README.md` and `README.zh-Hans.md` document swipe/Previous/Next continuous browsing in the vocabulary detail flow.
+
+### Repeated-Workflow Packaging Review (last 30 days)
+
+| Workflow | Evidence / confidence | Form | Decision |
+|---|---|---|---|
+| Cross-platform Swift feature slice with Xcode builds, runtime acceptance, review, and handoff | Recurred across June/July iterations; high confidence | Extend existing | Already covered by `source-command-build-test-deploy-v2` and the separate bootstrap agent-loop worktree; do not create a duplicate global skill. This slice adds only the narrow reusable `scripts/test-vocabulary-paging.sh`. |
+| Broad Swift codebase audit and recommendation roadmap | `CODEX_RECOMMENDATIONS.md` plus multiple prior audits; high confidence | Extend existing | Existing codebase-research/review skills and project recommendation docs are adequate; no duplicate asset created. |
+| Durable simulator regression tests for critical UI flows | Temporary harnesses were needed repeatedly in this slice and earlier work; high confidence | Project feature | Missing and valuable, but too broad for this one-feature commit; filed as issue #5 rather than creating an overlapping ad-hoc global skill. |
+| Scheduled app-quality monitor | No stable cadence or external signal specified; low confidence | Skip | More evidence is required before an automation would have a trustworthy stopping/reporting condition. |
+
+### 9) Remaining Work & Next Steps
+
+- No implementation work remains in this slice. GitHub issue #5 tracks the durable unit/UI test target and CI needed to make the temporary simulator acceptance permanently repeatable.
+- **Exact next-session prompt:** “Work only on GitHub issue #4: refactor `StatsView` to respond to available width rather than device idiom. Begin from the latest main branch, preserve existing analytics behavior, verify iPhone portrait/landscape, iPad half/full Split View, narrow/wide macOS windows, and accessibility text sizes, then run both platform builds and update `handoff.md` with evidence.”
+
+### 10) Updates to This File (append-only)
+
+- 2026-07-13T08:51:49Z: Created Iteration 19 task brief, traceability matrix, constrained plan, initial findings, and baseline evidence record immediately before product edits.
+- 2026-07-13T08:58:00Z: Recorded green Xcode 27 baseline builds for generic iOS Simulator and macOS; no compiler warnings or errors were found in either filtered log.
+- 2026-07-13T09:58:15Z: Recorded implementation, the rejected ID-bound ScrollView and unbounded TabView attempts, the three-page-window recovery, 13/13 deterministic checks, clean production builds, passing gesture/boundary/dismissal UI acceptance, and the passing 7,000-word stress gate.
+- 2026-07-13T10:15:53Z: Recorded independent-review fixes (translation gating, single scroll ownership, native mastery semantics, per-action macOS copy feedback, adaptive/accessibility refinements), corrected stress-test evidence to retained-log claims, expanded the paging suite to 18/18, recorded the fresh post-review UI pass and transient-harness recoveries, filed issues #4/#5, and added the repeated-workflow packaging decision plus exact next-session prompt.
+- 2026-07-13T10:25:50Z: Recorded final stable-snapshot Xcode 27 builds (both platforms, zero source diagnostics), three clean adversarial re-reviews, bilingual README updates, complete delivery state, and the bounded issue #4 continuation prompt.

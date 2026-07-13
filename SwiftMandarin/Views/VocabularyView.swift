@@ -19,6 +19,10 @@ struct VocabularyView: View {
     @State private var showingImportResult: Bool = false
     @State private var importResult: ImportResult?
     @State private var selectedTerm: SavedTerm?
+    /// Stable presentation identity for the iOS detail session. The selected
+    /// word changes while paging, so using `selectedTerm` itself as the sheet
+    /// item can make SwiftUI replace the presentation on every page.
+    @State private var detailSession: VocabularyDetailSession?
     @FocusState private var isVocabularyFocused: Bool
     @State private var showingImportPicker: Bool = false
     @State private var importFileURL: URL?
@@ -36,6 +40,14 @@ struct VocabularyView: View {
         case dateAdded = "Date Added"
         case alphabetical = "Alphabetical"
         case pinyin = "Pinyin"
+
+        var title: LocalizedStringKey {
+            switch self {
+            case .dateAdded: "Date Added"
+            case .alphabetical: "Alphabetical"
+            case .pinyin: "Pinyin"
+            }
+        }
     }
     
     private var filteredTerms: [SavedTerm] {
@@ -54,18 +66,76 @@ struct VocabularyView: View {
         // which is the learning-language side)
         switch sortOrder {
         case .dateAdded:
-            return terms.sorted { sortAscending ? $0.dateAdded < $1.dateAdded : $0.dateAdded > $1.dateAdded }
+            return terms.sorted { lhs, rhs in
+                if lhs.dateAdded == rhs.dateAdded {
+                    return lhs.id.uuidString < rhs.id.uuidString
+                }
+                return sortAscending ? lhs.dateAdded < rhs.dateAdded : lhs.dateAdded > rhs.dateAdded
+            }
         case .alphabetical:
-            return terms.sorted { sortAscending ? $0.headlineText < $1.headlineText : $0.headlineText > $1.headlineText }
+            return terms.sorted { lhs, rhs in
+                let comparison = lhs.headlineText.localizedStandardCompare(rhs.headlineText)
+                if comparison == .orderedSame {
+                    return lhs.id.uuidString < rhs.id.uuidString
+                }
+                return sortAscending ? comparison == .orderedAscending : comparison == .orderedDescending
+            }
         case .pinyin:
-            return terms.sorted { sortAscending ? $0.pinyin < $1.pinyin : $0.pinyin > $1.pinyin }
+            return terms.sorted { lhs, rhs in
+                let comparison = lhs.pinyin.localizedStandardCompare(rhs.pinyin)
+                if comparison == .orderedSame {
+                    return lhs.id.uuidString < rhs.id.uuidString
+                }
+                return sortAscending ? comparison == .orderedAscending : comparison == .orderedDescending
+            }
         }
+    }
+
+    private var sortDirectionTitle: LocalizedStringKey {
+        switch sortOrder {
+        case .dateAdded:
+            sortAscending ? "Oldest First" : "Newest First"
+        case .alphabetical, .pinyin:
+            sortAscending ? "A to Z" : "Z to A"
+        }
+    }
+
+    private var sortDirectionSymbol: String {
+        sortAscending ? "arrow.up" : "arrow.down"
     }
 
     private func syncSelectedTerm() {
         guard let currentID = selectedTerm?.id else { return }
         selectedTerm = savedTermsStore.term(withID: currentID)
+        if selectedTerm == nil {
+            detailSession = nil
+        }
     }
+
+    private func openDetail(for term: SavedTerm) {
+        selectedTerm = term
+        #if os(iOS)
+        detailSession = VocabularyDetailSession(
+            initialTermID: term.id,
+            orderedTermIDs: filteredTerms.map(\.id)
+        )
+        #else
+        isVocabularyFocused = true
+        #endif
+    }
+
+    #if os(macOS)
+    private var isInspectorPresented: Binding<Bool> {
+        Binding(
+            get: { vocabularyDetailUsesInspector && selectedTerm != nil },
+            set: { isPresented in
+                if !isPresented {
+                    selectedTerm = nil
+                }
+            }
+        )
+    }
+    #endif
     
     // NOTE: No own NavigationStack here. This screen is always presented inside
     // an ambient navigation container — pushed into the Study hub's
@@ -77,6 +147,8 @@ struct VocabularyView: View {
             Group {
                 if savedTermsStore.terms.isEmpty {
                     emptyState
+                } else if filteredTerms.isEmpty {
+                    noSearchResultsState
                 } else {
                     vocabularyList
                 }
@@ -90,7 +162,7 @@ struct VocabularyView: View {
                 syncSelectedTerm()
             }
             #if os(macOS)
-            .inspector(isPresented: .constant(vocabularyDetailUsesInspector && selectedTerm != nil)) {
+            .inspector(isPresented: isInspectorPresented) {
                 if vocabularyDetailUsesInspector, let term = selectedTerm {
                     TermDetailInspector(
                         term: term,
@@ -154,7 +226,7 @@ struct VocabularyView: View {
                     Menu {
                         Picker("Sort by", selection: $sortOrder) {
                             ForEach(SortOrder.allCases, id: \.self) { order in
-                                Text(order.rawValue).tag(order)
+                                Text(order.title).tag(order)
                             }
                         }
                         
@@ -164,10 +236,7 @@ struct VocabularyView: View {
                         Button {
                             sortAscending.toggle()
                         } label: {
-                            Label(
-                                sortAscending ? "Oldest First" : "Newest First",
-                                systemImage: sortAscending ? "arrow.up" : "arrow.down"
-                            )
+                            Label(sortDirectionTitle, systemImage: sortDirectionSymbol)
                         }
                         
                         Divider()
@@ -185,29 +254,13 @@ struct VocabularyView: View {
                 }
                 #else
                 ToolbarItemGroup(placement: .primaryAction) {
-                    // Font size controls for iOS
-                    Button {
-                        if chineseFontSize > 14 {
-                            chineseFontSize -= 2
-                        }
-                    } label: {
-                        Image(systemName: "textformat.size.smaller")
-                    }
-                    .disabled(chineseFontSize <= 14)
-                    
-                    Button {
-                        if chineseFontSize < 48 {
-                            chineseFontSize += 2
-                        }
-                    } label: {
-                        Image(systemName: "textformat.size.larger")
-                    }
-                    .disabled(chineseFontSize >= 48)
-                    
+                    // Keep the compact iPhone toolbar focused. Less-frequent
+                    // text-size and data actions live in the system menu, which
+                    // adopts the current Liquid Glass treatment automatically.
                     Menu {
                         Picker("Sort by", selection: $sortOrder) {
                             ForEach(SortOrder.allCases, id: \.self) { order in
-                                Text(order.rawValue).tag(order)
+                                Text(order.title).tag(order)
                             }
                         }
 
@@ -217,11 +270,24 @@ struct VocabularyView: View {
                         Button {
                             sortAscending.toggle()
                         } label: {
-                            Label(
-                                sortAscending ? "Oldest First" : "Newest First",
-                                systemImage: sortAscending ? "arrow.up" : "arrow.down"
-                            )
+                            Label(sortDirectionTitle, systemImage: sortDirectionSymbol)
                         }
+
+                        Divider()
+
+                        Button {
+                            chineseFontSize = max(14, chineseFontSize - 2)
+                        } label: {
+                            Label("Decrease Headword Size", systemImage: "textformat.size.smaller")
+                        }
+                        .disabled(chineseFontSize <= 14)
+
+                        Button {
+                            chineseFontSize = min(48, chineseFontSize + 2)
+                        } label: {
+                            Label("Increase Headword Size", systemImage: "textformat.size.larger")
+                        }
+                        .disabled(chineseFontSize >= 48)
 
                         Divider()
 
@@ -255,8 +321,10 @@ struct VocabularyView: View {
                 #endif
             }
             #if os(iOS)
-            .sheet(item: $selectedTerm) { _ in
-                TermDetailSheet(selectedTerm: $selectedTerm, orderedTerms: filteredTerms)
+            .sheet(item: $detailSession, onDismiss: {
+                selectedTerm = nil
+            }) { session in
+                TermDetailSheet(session: session, selectedTerm: $selectedTerm)
                     .localizedSurface()
             }
             #endif
@@ -322,11 +390,6 @@ struct VocabularyView: View {
                 toggleSelectedMastered()
                 return .handled
             }
-            .onKeyPress(.return) {
-                guard isVocabularyFocused else { return .ignored }
-                toggleSelectedMastered()
-                return .handled
-            }
             #endif
     }
 
@@ -383,6 +446,10 @@ struct VocabularyView: View {
             .buttonStyle(.borderedProminent)
         }
     }
+
+    private var noSearchResultsState: some View {
+        ContentUnavailableView.search(text: searchText)
+    }
     
     // MARK: - Vocabulary List
     
@@ -403,11 +470,14 @@ struct VocabularyView: View {
                 )
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    selectedTerm = term
-                    #if os(macOS)
-                    isVocabularyFocused = true
-                    #endif
+                    openDetail(for: term)
                 }
+                .accessibilityAction(named: Text("Open Word Details")) {
+                    openDetail(for: term)
+                }
+                #if os(iOS)
+                .hoverEffect(.highlight)
+                #endif
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button(role: .destructive) {
                             savedTermsStore.remove(term)
@@ -420,7 +490,7 @@ struct VocabularyView: View {
                             savedTermsStore.toggleMastered(term)
                         } label: {
                             Label(
-                                term.isMastered ? "Unmaster" : "Mastered",
+                                term.isMastered ? "Unmaster" : "Mark as Mastered",
                                 systemImage: term.isMastered ? "xmark.circle" : "checkmark.circle"
                             )
                         }
@@ -471,27 +541,55 @@ struct VocabularyRow: View {
     var isSelected: Bool = false
     var onMasteredToggle: (() -> Void)?
     var onAIExplainTap: (() -> Void)?
+    @ScaledMetric(relativeTo: .title2) private var dynamicTypeScale: CGFloat = 1
+
+    private var renderedChineseFontSize: CGFloat {
+        CGFloat(chineseFontSize) * min(dynamicTypeScale, 1.5)
+    }
+
+    private var secondaryControlSize: CGFloat {
+        #if os(iOS)
+        44
+        #else
+        28
+        #endif
+    }
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .center, spacing: 10) {
             // Clickable mastered checkbox
             Button {
                 onMasteredToggle?()
             } label: {
                 Image(systemName: term.isMastered ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(term.isMastered ? .green : .secondary)
-                    .font(.system(size: 20))
+                    .font(.title3)
+                    .frame(width: secondaryControlSize, height: secondaryControlSize)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(Text(term.isMastered ? "Unmaster" : "Mark as Mastered"))
 
-            // Headword — the side in the language being learned — with the
-            // adjustable font size (中文 UI: the English word; English UI:
-            // the Chinese characters).
-            Text(term.headlineText)
-                .font(.system(size: chineseFontSize, weight: .medium))
-                .frame(minWidth: max(60, chineseFontSize * 2.5), alignment: .leading)
-
+            // Keep each word's related text in one flexible column so long
+            // English headwords and accessibility text do not collide with
+            // the row's secondary actions on narrow, resizable windows.
             VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(term.headlineText)
+                        .font(.system(size: renderedChineseFontSize, weight: .medium))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+
+                    if !term.partOfSpeech.isEmpty {
+                        Text(term.partOfSpeech)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.quaternary, in: Capsule())
+                    }
+                }
+
                 // Pinyin with tone colors — a learner aid, shown only when
                 // the user is learning Chinese.
                 if term.showsPinyin {
@@ -500,7 +598,7 @@ struct VocabularyRow: View {
                     // (previously a fixed size, which stayed hard to read).
                     // Kept noticeably smaller than the headword for balance.
                     Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                        .font(.system(size: chineseFontSize * 0.5))
+                        .font(.system(size: renderedChineseFontSize * 0.5))
                 }
 
                 // Native-language gloss, kept small.
@@ -511,8 +609,7 @@ struct VocabularyRow: View {
                         .lineLimit(2)
                 }
             }
-
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // AI Explain button
             if let onAIExplainTap = onAIExplainTap {
@@ -522,23 +619,8 @@ struct VocabularyRow: View {
                     onTap: onAIExplainTap
                 )
             }
-            
-            // Part of speech badge
-            if !term.partOfSpeech.isEmpty {
-                Text(term.partOfSpeech)
-                    .font(.caption2)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(
-                        Capsule()
-                            .fill(.quaternary)
-                    )
-            }
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 4)
+        .padding(.vertical, 2)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
@@ -559,91 +641,289 @@ struct DetailFontSizeStepper: View {
     var range: ClosedRange<Double> = 56...144
     var step: Double = 8
 
+    private var controlSize: CGFloat {
+        #if os(iOS)
+        44
+        #else
+        24
+        #endif
+    }
+
     var body: some View {
         HStack(spacing: 18) {
             Button {
                 size = max(range.lowerBound, size - step)
             } label: {
                 Image(systemName: "minus")
-                    .frame(width: 20, height: 20)
+                    .frame(width: controlSize, height: controlSize)
                     .contentShape(Rectangle())
             }
             .disabled(size <= range.lowerBound)
-            .accessibilityLabel(Text("Decrease character size"))
+            .accessibilityLabel(Text("Decrease headword size"))
 
             Button {
                 size = min(range.upperBound, size + step)
             } label: {
                 Image(systemName: "plus")
-                    .frame(width: 20, height: 20)
+                    .frame(width: controlSize, height: controlSize)
                     .contentShape(Rectangle())
             }
             .disabled(size >= range.upperBound)
-            .accessibilityLabel(Text("Increase character size"))
+            .accessibilityLabel(Text("Increase headword size"))
         }
-        // Bare symbols, no button chrome, equal square hit areas so the two
-        // sit evenly.
+        // Bare symbols with equal square hit areas. iOS uses the 44-point
+        // minimum target from Apple's current button guidance.
         .font(.system(size: 15, weight: .semibold))
         .foregroundStyle(.secondary)
         .buttonStyle(.plain)
     }
 }
 
+/// One modal browsing session. Its identity remains stable while the selected
+/// term changes, and its ordered ID snapshot preserves the exact filtered and
+/// sorted list the learner opened.
+struct VocabularyDetailSession: Identifiable, Equatable {
+    let id: UUID
+    let initialTermID: SavedTerm.ID
+    let orderedTermIDs: [SavedTerm.ID]
+
+    init(
+        id: UUID = UUID(),
+        initialTermID: SavedTerm.ID,
+        orderedTermIDs: [SavedTerm.ID]
+    ) {
+        self.id = id
+        self.initialTermID = initialTermID
+        self.orderedTermIDs = VocabularyPaging.uniqueIDs(orderedTermIDs)
+    }
+}
+
+#if os(iOS)
+private struct VocabularyDetailPageEntry: Identifiable {
+    let position: Int
+    let term: SavedTerm
+
+    var id: SavedTerm.ID { term.id }
+}
+
 struct TermDetailSheet: View {
+    let session: VocabularyDetailSession
     @Binding var selectedTerm: SavedTerm?
-    /// The visible (filtered + sorted) list this term was opened from, in
-    /// display order. Prev/next navigation walks exactly this order, so the
-    /// detail view flips through what the user was actually looking at.
-    var orderedTerms: [SavedTerm] = []
     @Environment(\.dismiss) private var dismiss
+    @Environment(SavedTermsStore.self) private var savedTermsStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var visibleTermID: SavedTerm.ID?
+
+    init(session: VocabularyDetailSession, selectedTerm: Binding<SavedTerm?>) {
+        self.session = session
+        self._selectedTerm = selectedTerm
+        // Page-style TabView honors its initial selection, so the pixels and
+        // toolbar begin on the exact row the learner opened.
+        self._visibleTermID = State(initialValue: session.initialTermID)
+    }
+
+    /// Resolve the snapshot through the live store so edits/mastery changes
+    /// appear immediately and deleted terms disappear without stale pages.
+    private var orderedTerms: [SavedTerm] {
+        var termsByID: [SavedTerm.ID: SavedTerm] = [:]
+        for term in savedTermsStore.terms {
+            termsByID[term.id] = term
+        }
+        return session.orderedTermIDs.compactMap { termsByID[$0] }
+    }
+
+    private func currentIndex(in terms: [SavedTerm]) -> Int? {
+        guard let visibleTermID else { return nil }
+        return terms.firstIndex { $0.id == visibleTermID }
+    }
+
+    private func canGoPrevious(in terms: [SavedTerm]) -> Bool {
+        guard let currentIndex = currentIndex(in: terms) else { return false }
+        return currentIndex > terms.startIndex
+    }
+
+    private func canGoNext(in terms: [SavedTerm]) -> Bool {
+        guard !terms.isEmpty,
+              let currentIndex = currentIndex(in: terms) else { return false }
+        return currentIndex < terms.index(before: terms.endIndex)
+    }
+
+    /// Keep the native page controller bounded to the current word and its two
+    /// neighbors. A TabView containing an entire multi-thousand-word library
+    /// eagerly creates enough page state to stall presentation and consume
+    /// hundreds of megabytes. Re-centering this three-page window after each
+    /// completed selection preserves the same swipe interaction with O(1) page
+    /// view cost, while `position` still refers to the full ordered session.
+    private func pageWindow(in terms: [SavedTerm]) -> [VocabularyDetailPageEntry] {
+        let indices = VocabularyPaging.pageWindowIndices(
+            currentID: visibleTermID,
+            orderedIDs: terms.map(\.id)
+        )
+        return indices.map { pageIndex in
+            VocabularyDetailPageEntry(position: pageIndex + 1, term: terms[pageIndex])
+        }
+    }
+
+    private func navigateToNeighbor(offset: Int, in terms: [SavedTerm]) {
+        guard let targetID = VocabularyPaging.neighborID(
+            currentID: visibleTermID,
+            offset: offset,
+            orderedIDs: terms.map(\.id)
+        ) else { return }
+
+        if reduceMotion {
+            visibleTermID = targetID
+        } else {
+            withAnimation(.snappy(duration: 0.3)) {
+                visibleTermID = targetID
+            }
+        }
+    }
+
+    var body: some View {
+        let terms = orderedTerms
+        let visibleIndex = currentIndex(in: terms)
+
+        NavigationStack {
+            Group {
+                if terms.isEmpty {
+                    ContentUnavailableView(
+                        "Word No Longer Available",
+                        systemImage: "text.book.closed",
+                        description: Text("This word was removed from your vocabulary.")
+                    )
+                } else {
+                    nativePager(terms: terms)
+                }
+            }
+            .navigationTitle("Word Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if terms.count > 1 {
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        Button {
+                            navigateToNeighbor(offset: -1, in: terms)
+                        } label: {
+                            Label("Previous Word", systemImage: "chevron.backward")
+                        }
+                        .disabled(!canGoPrevious(in: terms))
+                        .keyboardShortcut(.leftArrow, modifiers: [.command])
+                        .help("Previous word (⌘←)")
+
+                        Spacer()
+
+                        if let visibleIndex {
+                            Text("\(visibleIndex + 1) of \(terms.count)")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                                .accessibilityLabel(
+                                    Text("Word \(visibleIndex + 1) of \(terms.count)")
+                                )
+                        }
+
+                        Spacer()
+
+                        Button {
+                            navigateToNeighbor(offset: 1, in: terms)
+                        } label: {
+                            Label("Next Word", systemImage: "chevron.forward")
+                        }
+                        .disabled(!canGoNext(in: terms))
+                        .keyboardShortcut(.rightArrow, modifiers: [.command])
+                        .help("Next word (⌘→)")
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDragIndicator(.visible)
+        .onAppear {
+            reconcileVisibleTerm(in: terms)
+        }
+        .onChange(of: terms.map(\.id)) { _, _ in
+            // This observer lives outside the conditional pager so deleting
+            // the final visible term still reconciles and closes the sheet.
+            reconcileVisibleTerm(in: terms)
+        }
+    }
+
+    private func nativePager(terms: [SavedTerm]) -> some View {
+        TabView(selection: $visibleTermID) {
+            ForEach(pageWindow(in: terms)) { entry in
+                TermDetailPage(
+                    term: entry.term,
+                    position: entry.position,
+                    totalCount: terms.count,
+                    isCurrent: visibleTermID == entry.id
+                )
+                .tag(Optional(entry.id))
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .background(SMTheme.pageBackground)
+        .onChange(of: visibleTermID) { _, newID in
+            guard let newID,
+                  let term = terms.first(where: { $0.id == newID }) else { return }
+            selectedTerm = term
+        }
+        .accessibilityAction(named: Text("Previous Word")) {
+            navigateToNeighbor(offset: -1, in: terms)
+        }
+        .accessibilityAction(named: Text("Next Word")) {
+            navigateToNeighbor(offset: 1, in: terms)
+        }
+    }
+
+    private func reconcileVisibleTerm(in terms: [SavedTerm]) {
+        guard !terms.isEmpty else {
+            selectedTerm = nil
+            dismiss()
+            return
+        }
+
+        let reconciledID = VocabularyPaging.reconciledID(
+            preferredID: visibleTermID,
+            initialID: session.initialTermID,
+            orderedIDs: terms.map(\.id)
+        )
+        guard let reconciledID else {
+            selectedTerm = nil
+            dismiss()
+            return
+        }
+        visibleTermID = reconciledID
+        selectedTerm = terms.first { $0.id == reconciledID }
+    }
+}
+
+private struct TermDetailPage: View {
+    let term: SavedTerm
+    let position: Int
+    let totalCount: Int
+    let isCurrent: Bool
     @Environment(SavedTermsStore.self) private var savedTermsStore
 
     @State private var fetchedTranslation: String = ""
     @State private var isLoadingTranslation: Bool = false
-    @State private var showCopiedFeedback: Bool = false
-    /// Which edge freshly navigated-to content slides in from (trailing for
-    /// "next", leading for "previous"), driving the slide+fade transition.
-    @State private var slideEdge: Edge = .trailing
+    @State private var copiedAction: CopyAction?
+    @State private var translationTask: Task<Void, Never>?
+    @State private var copyResetTask: Task<Void, Never>?
+    @AccessibilityFocusState private var isHeadwordFocused: Bool
     /// Persisted size of the Chinese headword in the detail view; the −/+
     /// buttons adjust it and the pinyin scales with it.
     @AppStorage("vocabularyDetailChineseFontSize") private var detailFontSize: Double = 96
+    @ScaledMetric(relativeTo: .largeTitle) private var dynamicTypeScale: CGFloat = 1
 
-    /// The current term being displayed
-    private var term: SavedTerm {
-        selectedTerm ?? SavedTerm(chinese: "", pinyin: "", definition: "")
+    private enum CopyAction: Equatable {
+        case headword
+        case all
     }
 
-    // MARK: Prev/Next Navigation
-
-    /// Position of the shown term in the visible list. Nil when the list has
-    /// changed under the sheet (e.g. the term was deleted), which disables
-    /// navigation and hides the position indicator.
-    private var currentIndex: Int? {
-        orderedTerms.firstIndex(where: { $0.id == term.id })
-    }
-
-    private var canGoPrevious: Bool {
-        guard let index = currentIndex else { return false }
-        return index > 0
-    }
-
-    private var canGoNext: Bool {
-        guard let index = currentIndex else { return false }
-        return index < orderedTerms.count - 1
-    }
-
-    /// Move the selection by `offset` within the visible list. Updating
-    /// `selectedTerm` keeps the list's selection in sync, so dismissing the
-    /// sheet lands on the last-viewed term.
-    private func navigateToNeighbor(offset: Int) {
-        guard let index = currentIndex else { return }
-        let target = index + offset
-        guard orderedTerms.indices.contains(target) else { return }
-        slideEdge = offset > 0 ? .trailing : .leading
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-            selectedTerm = orderedTerms[target]
-        }
-        triggerHaptic()
+    private var renderedDetailFontSize: CGFloat {
+        CGFloat(detailFontSize) * min(dynamicTypeScale, 1.4)
     }
 
     /// The gloss to display — the native-language side of the entry, or a
@@ -660,23 +940,37 @@ struct TermDetailSheet: View {
         term.glossText.isEmpty || term.glossText.count > 100
     }
 
+    private var masteredBinding: Binding<Bool> {
+        Binding(
+            get: { term.isMastered },
+            set: { isMastered in
+                guard savedTermsStore.term(withID: term.id)?.isMastered != isMastered else { return }
+                savedTermsStore.setMastered(term, isMastered: isMastered)
+                triggerHaptic()
+            }
+        )
+    }
+
     var body: some View {
-        NavigationStack {
-            ScrollView {
+        ScrollView {
                 VStack(spacing: 24) {
                     // Large headword display — the language being learned.
                     // English headwords can be long, so allow shrinking.
                     VStack(spacing: 12) {
                         Text(term.headlineText)
-                            .font(.system(size: detailFontSize, weight: .medium))
+                            .font(.system(size: renderedDetailFontSize, weight: .medium))
                             .lineLimit(2)
                             .minimumScaleFactor(0.35)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
+                            .accessibilityFocused($isHeadwordFocused)
+                            .accessibilityLabel(Text(term.headlineText))
+                            .accessibilityValue(Text("Word \(position) of \(totalCount)"))
+                            .accessibilityIdentifier("vocabulary-detail-headword-\(term.id.uuidString)")
 
                         if term.showsPinyin {
                             Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                                .font(.system(size: detailFontSize * 0.45))
+                                .font(.system(size: renderedDetailFontSize * 0.45))
                         }
 
                         if !term.partOfSpeech.isEmpty {
@@ -717,7 +1011,7 @@ struct TermDetailSheet: View {
                                     .controlSize(.small)
                             } else if shouldOfferTranslation && fetchedTranslation.isEmpty {
                                 Button {
-                                    Task { await fetchTranslation() }
+                                    startTranslation()
                                 } label: {
                                     Label("Translate", systemImage: "arrow.triangle.2.circlepath")
                                         .font(.caption)
@@ -757,77 +1051,57 @@ struct TermDetailSheet: View {
                     }
                     .padding(.horizontal)
                     
-                    // Actions
-                    HStack(spacing: 24) {
+                    // Adaptive action grid: two columns on compact phones,
+                    // expanding naturally on iPad and at smaller text sizes.
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 130), spacing: 12)],
+                        spacing: 12
+                    ) {
                         Button {
                             SpeechService.speakAuto(term.headlineText)
                             triggerHaptic()
                         } label: {
-                            VStack(spacing: 4) {
-                                Image(systemName: "speaker.wave.2")
-                                    .font(.title2)
-                                Text("Speak")
-                                    .font(.caption)
-                            }
+                            Label("Speak", systemImage: "speaker.wave.2")
+                                .frame(maxWidth: .infinity, minHeight: 44)
                         }
                         .buttonStyle(.bordered)
 
                         Button {
-                            ClipboardService.copy(term.headlineText)
-                            showCopiedFeedback = true
-                            triggerHaptic()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                showCopiedFeedback = false
-                            }
+                            performCopy(.headword)
                         } label: {
-                            VStack(spacing: 4) {
-                                Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
-                                    .font(.title2)
-                                Text(showCopiedFeedback ? "Copied!" : "Copy")
-                                    .font(.caption)
-                            }
+                            Label(
+                                copiedAction == .headword ? "Copied!" : "Copy",
+                                systemImage: copiedAction == .headword ? "checkmark" : "doc.on.doc"
+                            )
+                            .frame(maxWidth: .infinity, minHeight: 44)
                         }
                         .buttonStyle(.bordered)
-                        .tint(showCopiedFeedback ? .green : nil)
+                        .tint(copiedAction == .headword ? .green : nil)
 
                         Button {
-                            let parts = [
-                                term.headlineText,
-                                term.showsPinyin ? term.pinyin : "",
-                                displayDefinition
-                            ].filter { !$0.isEmpty }
-                            let text = parts.joined(separator: "\n")
-                            ClipboardService.copy(text)
-                            showCopiedFeedback = true
-                            triggerHaptic()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                showCopiedFeedback = false
-                            }
+                            performCopy(.all)
                         } label: {
-                            VStack(spacing: 4) {
-                                Image(systemName: "doc.on.doc.fill")
-                                    .font(.title2)
-                                Text("Copy All")
-                                    .font(.caption)
-                            }
+                            Label(
+                                copiedAction == .all ? "Copied!" : "Copy All",
+                                systemImage: copiedAction == .all ? "checkmark" : "doc.on.doc.fill"
+                            )
+                            .frame(maxWidth: .infinity, minHeight: 44)
                         }
                         .buttonStyle(.bordered)
+                        .tint(copiedAction == .all ? .green : nil)
                         
-                        Button {
-                            savedTermsStore.toggleMastered(term)
-                            selectedTerm = savedTermsStore.term(withID: term.id)
-                            triggerHaptic()
-                        } label: {
-                            VStack(spacing: 4) {
-                                Image(systemName: term.isMastered ? "checkmark.circle.fill" : "checkmark.circle")
-                                    .font(.title2)
-                                Text(term.isMastered ? "Mastered" : "Master")
-                                    .font(.caption)
-                            }
+                        Toggle(isOn: masteredBinding) {
+                            Label(
+                                "Mastered",
+                                systemImage: term.isMastered ? "checkmark.circle.fill" : "checkmark.circle"
+                            )
+                            .frame(maxWidth: .infinity, minHeight: 44)
                         }
+                        .toggleStyle(.button)
                         .buttonStyle(.bordered)
                         .tint(term.isMastered ? .green : nil)
                     }
+                    .padding(.horizontal)
                     
                     // Update definition button if we have a better translation
                     if !fetchedTranslation.isEmpty && fetchedTranslation != term.definition {
@@ -866,107 +1140,92 @@ struct TermDetailSheet: View {
                         AIWordExplanationView(
                             word: term.headlineText,
                             pinyin: term.pinyin,
-                            context: term.glossText.isEmpty ? nil : term.glossText
+                            context: term.glossText.isEmpty ? nil : term.glossText,
+                            contentLayout: .embedded
                         )
                     }
 
                     Spacer()
                 }
-                // Fresh identity per term: resets the AI-explanation section,
-                // fetched-translation state, and any other per-term subview
-                // state, and lets the slide+fade transition run on navigation.
-                .id(term.id)
-                .transition(
-                    .asymmetric(
-                        insertion: .move(edge: slideEdge).combined(with: .opacity),
-                        removal: .move(edge: slideEdge == .trailing ? .leading : .trailing).combined(with: .opacity)
-                    )
-                )
+                .padding(.vertical, 12)
+                .frame(maxWidth: SMTheme.contentMaxWidth)
+                .frame(maxWidth: .infinity)
+        }
+        .background(SMTheme.pageBackground)
+        .task(id: isCurrent) {
+            guard isCurrent, term.glossText.isEmpty else { return }
+            await fetchTranslation()
+        }
+        .onAppear {
+            if isCurrent {
+                isHeadwordFocused = true
             }
-            #if os(iOS)
-            // Horizontal swipe anywhere on the detail content flips to the
-            // neighboring word (left = next, right = previous). The gesture
-            // only claims clearly horizontal drags (|dx| > 2·|dy|), so
-            // vertical scrolling is unaffected.
-            .highPriorityGesture(
-                DragGesture(minimumDistance: 40)
-                    .onEnded { value in
-                        let dx = value.translation.width
-                        let dy = value.translation.height
-                        guard abs(dx) > 2 * abs(dy) else { return }
-                        navigateToNeighbor(offset: dx < 0 ? 1 : -1)
-                    }
-            )
-            #endif
-            .navigationTitle("Word Details")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                if let index = currentIndex, orderedTerms.count > 1 {
-                    ToolbarItem(placement: .principal) {
-                        Text("\(index + 1) of \(orderedTerms.count)")
-                            .font(.caption)
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
-                            .accessibilityLabel(Text("Word \(index + 1) of \(orderedTerms.count)"))
-                    }
-                }
-                ToolbarItemGroup(placement: .primaryAction) {
-                    Button {
-                        navigateToNeighbor(offset: -1)
-                    } label: {
-                        Label("Previous Word", systemImage: "chevron.backward")
-                    }
-                    .disabled(!canGoPrevious)
-                    .keyboardShortcut(.leftArrow, modifiers: [.command])
-                    .help("Previous word (⌘←)")
-
-                    Button {
-                        navigateToNeighbor(offset: 1)
-                    } label: {
-                        Label("Next Word", systemImage: "chevron.forward")
-                    }
-                    .disabled(!canGoNext)
-                    .keyboardShortcut(.rightArrow, modifiers: [.command])
-                    .help("Next word (⌘→)")
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
+        }
+        .onChange(of: isCurrent) { _, isNowCurrent in
+            if isNowCurrent {
+                isHeadwordFocused = true
+            } else {
+                translationTask?.cancel()
             }
-            .task(id: selectedTerm?.id) {
-                // Reset state when term changes
-                fetchedTranslation = ""
-                isLoadingTranslation = false
-                showCopiedFeedback = false
-
-                // Auto-fetch a translation when the native-language gloss is missing
-                if term.glossText.isEmpty {
-                    await fetchTranslation()
-                }
-            }
+        }
+        .onDisappear {
+            translationTask?.cancel()
+            copyResetTask?.cancel()
         }
     }
 
     /// Translate the headword into the user's native language (the headword's
     /// own language decides the direction, since it can be either).
+    private func startTranslation() {
+        translationTask?.cancel()
+        translationTask = Task { @MainActor in
+            await fetchTranslation()
+            translationTask = nil
+        }
+    }
+
     private func fetchTranslation() async {
+        guard !isLoadingTranslation else { return }
         isLoadingTranslation = true
 
         do {
             let headword = term.headlineText
             let translation = try await WordTranslationService.shared
                 .translate(headword, sourceIsChinese: headword.containsCJK)
-            await MainActor.run {
-                fetchedTranslation = translation
-                isLoadingTranslation = false
-            }
+            try Task.checkCancellation()
+            fetchedTranslation = translation
+        } catch is CancellationError {
+            // Expected when a lazily-created neighboring page moves offscreen.
         } catch {
-            await MainActor.run {
-                isLoadingTranslation = false
-            }
             print("Failed to fetch translation: \(error)")
+        }
+        isLoadingTranslation = false
+    }
+
+    private func performCopy(_ action: CopyAction) {
+        let text: String
+        switch action {
+        case .headword:
+            text = term.headlineText
+        case .all:
+            text = [
+                term.headlineText,
+                term.showsPinyin ? term.pinyin : "",
+                displayDefinition
+            ]
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
+        }
+
+        ClipboardService.copy(text)
+        copiedAction = action
+        triggerHaptic()
+
+        copyResetTask?.cancel()
+        copyResetTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled, copiedAction == action else { return }
+            copiedAction = nil
         }
     }
     
@@ -985,7 +1244,6 @@ struct TermDetailSheet: View {
         // The term may have been deleted while this sheet was open; in that
         // case don't pretend the edit succeeded.
         guard savedTermsStore.update(updatedTerm) else { return }
-        selectedTerm = savedTermsStore.term(withID: term.id)
         triggerHaptic()
     }
 
@@ -1003,6 +1261,8 @@ struct TermDetailSheet: View {
     }
 }
 
+#endif
+
 // MARK: - Term Detail Inspector (macOS)
 
 #if os(macOS)
@@ -1013,13 +1273,25 @@ struct TermDetailInspector: View {
     /// The visible (filtered + sorted) list this term was opened from, in
     /// display order — prev/next navigation walks exactly this order.
     var orderedTerms: [SavedTerm] = []
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var fetchedTranslation: String = ""
     @State private var isLoadingTranslation: Bool = false
-    @State private var showCopiedFeedback: Bool = false
+    @State private var copiedAction: CopyAction?
+    @State private var copyResetTask: Task<Void, Never>?
     /// Persisted size of the Chinese headword in the detail view; shared with
     /// the sheet presentation so the −/+ buttons behave identically.
     @AppStorage("vocabularyDetailChineseFontSize") private var detailFontSize: Double = 96
+    @ScaledMetric(relativeTo: .largeTitle) private var dynamicTypeScale: CGFloat = 1
+
+    private enum CopyAction: Equatable {
+        case headword
+        case all
+    }
+
+    private var renderedDetailFontSize: CGFloat {
+        CGFloat(detailFontSize) * min(dynamicTypeScale, 1.4)
+    }
 
     // MARK: Prev/Next Navigation
 
@@ -1046,8 +1318,12 @@ struct TermDetailInspector: View {
         guard let index = currentIndex else { return }
         let target = index + offset
         guard orderedTerms.indices.contains(target) else { return }
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+        if reduceMotion {
             selectedTerm = orderedTerms[target]
+        } else {
+            withAnimation(.snappy(duration: 0.3)) {
+                selectedTerm = orderedTerms[target]
+            }
         }
     }
 
@@ -1062,61 +1338,81 @@ struct TermDetailInspector: View {
         term.glossText.isEmpty || term.glossText.count > 100
     }
 
+    private var masteredBinding: Binding<Bool> {
+        Binding(
+            get: { term.isMastered },
+            set: { isMastered in
+                guard savedTermsStore.term(withID: term.id)?.isMastered != isMastered else { return }
+                savedTermsStore.setMastered(term, isMastered: isMastered)
+                selectedTerm = savedTermsStore.term(withID: term.id)
+            }
+        )
+    }
+
+    private var inspectorHeader: some View {
+        HStack(spacing: 10) {
+            Button {
+                navigateToNeighbor(offset: -1)
+            } label: {
+                Image(systemName: "chevron.backward")
+                    .font(.body.weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+            .disabled(!canGoPrevious)
+            .keyboardShortcut(.leftArrow, modifiers: [.command])
+            .help("Previous word (⌘←)")
+            .accessibilityLabel(Text("Previous Word"))
+
+            Button {
+                navigateToNeighbor(offset: 1)
+            } label: {
+                Image(systemName: "chevron.forward")
+                    .font(.body.weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+            .disabled(!canGoNext)
+            .keyboardShortcut(.rightArrow, modifiers: [.command])
+            .help("Next word (⌘→)")
+            .accessibilityLabel(Text("Next Word"))
+
+            if let index = currentIndex, orderedTerms.count > 1 {
+                Text("\(index + 1) of \(orderedTerms.count)")
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(Text("Word \(index + 1) of \(orderedTerms.count)"))
+            }
+
+            Spacer()
+
+            Button {
+                selectedTerm = nil
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Close"))
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .background(.bar)
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Header: prev/next navigation + position + close. ⌘←/⌘→
-                // also work from the hardware keyboard.
-                HStack(spacing: 10) {
-                    Button {
-                        navigateToNeighbor(offset: -1)
-                    } label: {
-                        Image(systemName: "chevron.backward")
-                            .font(.body.weight(.semibold))
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(!canGoPrevious)
-                    .keyboardShortcut(.leftArrow, modifiers: [.command])
-                    .help("Previous word (⌘←)")
-                    .accessibilityLabel(Text("Previous Word"))
+        VStack(spacing: 0) {
+            // Keep navigation in the macOS navigation layer so it remains
+            // reachable while a long definition or AI explanation scrolls.
+            inspectorHeader
+            Divider()
 
-                    Button {
-                        navigateToNeighbor(offset: 1)
-                    } label: {
-                        Image(systemName: "chevron.forward")
-                            .font(.body.weight(.semibold))
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(!canGoNext)
-                    .keyboardShortcut(.rightArrow, modifiers: [.command])
-                    .help("Next word (⌘→)")
-                    .accessibilityLabel(Text("Next Word"))
-
-                    if let index = currentIndex, orderedTerms.count > 1 {
-                        Text("\(index + 1) of \(orderedTerms.count)")
-                            .font(.caption)
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    Button {
-                        selectedTerm = nil
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text("Close"))
-                }
-                .padding(.horizontal)
-
+            ScrollView {
+                VStack(spacing: 20) {
                 // Large headword display — the language being learned.
                 VStack(spacing: 10) {
                     Text(term.headlineText)
-                        .font(.system(size: detailFontSize, weight: .medium))
+                        .font(.system(size: renderedDetailFontSize, weight: .medium))
                         .lineLimit(2)
                         .minimumScaleFactor(0.35)
                         .multilineTextAlignment(.center)
@@ -1124,7 +1420,7 @@ struct TermDetailInspector: View {
 
                     if term.showsPinyin {
                         Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                            .font(.system(size: detailFontSize * 0.45))
+                            .font(.system(size: renderedDetailFontSize * 0.45))
                     }
 
                     if !term.partOfSpeech.isEmpty {
@@ -1149,19 +1445,17 @@ struct TermDetailInspector: View {
                 Divider()
                 
                 // Mastered toggle
-                Button {
-                    savedTermsStore.toggleMastered(term)
-                    selectedTerm = savedTermsStore.term(withID: term.id)
-                } label: {
+                Toggle(isOn: masteredBinding) {
                     HStack {
                         Image(systemName: term.isMastered ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(term.isMastered ? .green : .secondary)
-                        Text(term.isMastered ? "Mastered" : "Mark as Mastered")
+                        Text("Mastered")
                             .foregroundStyle(term.isMastered ? .green : .primary)
                         Spacer()
                     }
                     .padding(.horizontal)
                 }
+                .toggleStyle(.button)
                 .buttonStyle(.plain)
                 
                 Divider()
@@ -1221,21 +1515,17 @@ struct TermDetailInspector: View {
                     .buttonStyle(.bordered)
 
                     Button {
-                        ClipboardService.copy(term.headlineText)
-                        showCopiedFeedback = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                            showCopiedFeedback = false
-                        }
+                        performCopy(.headword, text: term.headlineText)
                     } label: {
                         VStack(spacing: 3) {
-                            Image(systemName: showCopiedFeedback ? "checkmark" : "doc.on.doc")
+                            Image(systemName: copiedAction == .headword ? "checkmark" : "doc.on.doc")
                                 .font(.title3)
-                            Text(showCopiedFeedback ? "Copied!" : "Copy")
+                            Text(copiedAction == .headword ? "Copied!" : "Copy")
                                 .font(.caption2)
                         }
                     }
                     .buttonStyle(.bordered)
-                    .tint(showCopiedFeedback ? .green : nil)
+                    .tint(copiedAction == .headword ? .green : nil)
 
                     Button {
                         let parts = [
@@ -1244,20 +1534,17 @@ struct TermDetailInspector: View {
                             displayDefinition
                         ].filter { !$0.isEmpty }
                         let text = parts.joined(separator: "\n")
-                        ClipboardService.copy(text)
-                        showCopiedFeedback = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                            showCopiedFeedback = false
-                        }
+                        performCopy(.all, text: text)
                     } label: {
                         VStack(spacing: 3) {
-                            Image(systemName: "doc.on.doc.fill")
+                            Image(systemName: copiedAction == .all ? "checkmark" : "doc.on.doc.fill")
                                 .font(.title3)
-                            Text("Copy All")
+                            Text(copiedAction == .all ? "Copied!" : "Copy All")
                                 .font(.caption2)
                         }
                     }
                     .buttonStyle(.bordered)
+                    .tint(copiedAction == .all ? .green : nil)
                 }
                 
                 // Update definition button
@@ -1294,22 +1581,44 @@ struct TermDetailInspector: View {
                     AIWordExplanationView(
                         word: term.headlineText,
                         pinyin: term.pinyin,
-                        context: term.glossText.isEmpty ? nil : term.glossText
+                        context: term.glossText.isEmpty ? nil : term.glossText,
+                        contentLayout: .embedded
                     )
                 }
 
                 Spacer()
+                }
+                .padding(.vertical)
             }
-            .padding(.vertical)
         }
         .task(id: term.id) {
             // Reset state when term changes
             fetchedTranslation = ""
             isLoadingTranslation = false
-            showCopiedFeedback = false
+            copiedAction = nil
 
             if term.glossText.isEmpty {
                 await fetchTranslation()
+            }
+        }
+        .onDisappear {
+            copyResetTask?.cancel()
+        }
+    }
+
+    private func performCopy(_ action: CopyAction, text: String) {
+        ClipboardService.copy(text)
+        copiedAction = action
+        copyResetTask?.cancel()
+        copyResetTask = Task { @MainActor in
+            do {
+                try await Task.sleep(for: .seconds(1.5))
+                guard !Task.isCancelled, copiedAction == action else { return }
+                copiedAction = nil
+            } catch is CancellationError {
+                // Expected when another copy action replaces this feedback.
+            } catch {
+                // Task.sleep currently only throws for cancellation.
             }
         }
     }

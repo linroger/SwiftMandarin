@@ -156,6 +156,7 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 - **Smart Saving**: Save words from translations, phrases, or word details with one tap
 - **Flexible Organization**: Sort vocabulary by date added, alphabetical order, or pinyin
 - **Powerful Search**: Find words by Chinese characters, pinyin, or English definition
+- **Continuous Browsing**: On iPhone and iPad, swipe through adjacent word details—or use Previous/Next controls—without returning to the list; navigation follows the current search and sort order
 - **Rich Word Details**: View complete information for each saved term:
   - Chinese characters
   - Pinyin with tones
