@@ -1,3 +1,4 @@
+#if VOCABULARY_PAGING_CHECKS
 import Foundation
 
 private struct CheckFailure: Error {
@@ -137,13 +138,19 @@ private func runChecks() throws {
     )
 }
 
-do {
-    try runChecks()
-    print("Vocabulary paging checks passed (\(checksRun)/\(checksRun))")
-} catch let failure as CheckFailure {
-    fputs("Vocabulary paging check failed: \(failure.message)\n", stderr)
-    exit(1)
-} catch {
-    fputs("Vocabulary paging checks failed: \(error)\n", stderr)
-    exit(1)
+@main
+private struct VocabularyPagingChecksRunner {
+    static func main() {
+        do {
+            try runChecks()
+            print("Vocabulary paging checks passed (\(checksRun)/\(checksRun))")
+        } catch let failure as CheckFailure {
+            fputs("Vocabulary paging check failed: \(failure.message)\n", stderr)
+            exit(1)
+        } catch {
+            fputs("Vocabulary paging checks failed: \(error)\n", stderr)
+            exit(1)
+        }
+    }
 }
+#endif

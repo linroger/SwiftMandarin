@@ -301,3 +301,80 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - 2026-07-13T09:58:15Z: Recorded implementation, the rejected ID-bound ScrollView and unbounded TabView attempts, the three-page-window recovery, 13/13 deterministic checks, clean production builds, passing gesture/boundary/dismissal UI acceptance, and the passing 7,000-word stress gate.
 - 2026-07-13T10:15:53Z: Recorded independent-review fixes (translation gating, single scroll ownership, native mastery semantics, per-action macOS copy feedback, adaptive/accessibility refinements), corrected stress-test evidence to retained-log claims, expanded the paging suite to 18/18, recorded the fresh post-review UI pass and transient-harness recoveries, filed issues #4/#5, and added the repeated-workflow packaging decision plus exact next-session prompt.
 - 2026-07-13T10:25:50Z: Recorded final stable-snapshot Xcode 27 builds (both platforms, zero source diagnostics), three clean adversarial re-reviews, bilingual README updates, complete delivery state, and the bounded issue #4 continuation prompt.
+
+## Iteration 20 — Xcode build-graph repair and paging-runner isolation (2026-07-13)
+
+**Last Updated (UTC):** 2026-07-13T15:42:22Z
+
+**Status:** Complete
+
+**Current Focus:** This compiler/build-graph repair is complete; only the account-holder's Personal Team profile renewal remains for physical-device installation.
+
+### 1) Request & Context
+
+- **User request:** Resolve duplicate Compile Sources warnings, the `SwiftMandarinApp.swift` `@main`/top-level-code error, the provisioning timeout, and missing profile reported from the primary checkout.
+- **Constraints:** Preserve the Iteration 19 feature, automatic signing identity, and unrelated primary-worktree files. Apple-account/profile issuance cannot be bypassed in source.
+- **Scope boundary:** This follow-up hardens the standalone paging check against accidental app-target inclusion. The valid committed project already uses synchronized source membership; generated local duplicate entries were removed in the primary checkout.
+
+### 2) Requirements → Acceptance Checks
+
+| Requirement | Acceptance Check | Expected Outcome | Evidence |
+|---|---|---|---|
+| R20.1: App target has one entry point | Build iOS Simulator, unsigned generic iOS, and macOS | No `@main` or top-level-code error | Retained xcodebuild logs |
+| R20.2: No duplicate sources | Inspect project and build logs | Empty explicit Sources phase; no duplicate warning | Project validation + logs |
+| R20.3: Runner is isolated | Execute checks with the opt-in flag; typecheck without it | 18/18 pass when enabled; inert when disabled | Script and compiler output |
+| R20.4: Signing diagnosis is actionable | Audit settings, identities, profiles, and Xcode activity | Source correctness separated from Personal Team renewal | Diagnostic record |
+
+### 3) Plan & Decomposition
+
+- [x] Reproduce the original failure and trace every compiler input.
+- [x] Remove generated explicit project membership in the primary checkout.
+- [x] Replace top-level `main.swift` with a conditional declaration-only runner.
+- [x] Run deterministic, structural, localization, iOS, and macOS gates.
+- [x] Complete independent review and final hygiene checks.
+- [x] Prepare one narrow follow-up changeset for `codex/vocab-detail-swipe-modernization`.
+
+### 4) To-Do & Progress Ledger
+
+- [x] `scripts/test-vocabulary-paging.sh` now opts into `VocabularyPagingChecksRunner` with `VOCABULARY_PAGING_CHECKS`.
+- [x] All 18 paging checks pass; disabled-runner typecheck passes.
+- [x] iOS Simulator, unsigned generic iOS, and macOS builds pass with zero compiler warnings/errors.
+- [x] Independent reviewer found no Critical or Important issue and confirmed the new runner must be staged with the old runner's deletion.
+
+### 5) Findings, Decisions, Assumptions
+
+- **Finding:** The `SwiftMandarin` synchronized folder already supplies app sources. Explicit additions duplicated three app files and compiled the standalone top-level runner into the app.
+- **Decision:** Keep the project's explicit Sources phase empty and make the external runner declaration-only and compile-gated as defense in depth.
+- **Finding:** Automatic signing is correctly set to team `X8AD8YC886` and bundle ID `linroger022.SwiftMandarin`; the matching development certificate is valid through 2026-08-12. The seven-day Personal Team profile expired on 2026-07-13, and Xcode's online renewal timed out.
+
+### 6) Issues, Mistakes, Recoveries
+
+- A first guard wrapped top-level statements in `#if`, but Swift's `-parse-as-library` parser still rejected their source form. The runner was renamed and execution moved into a conditional `@main` declaration; both enabled and disabled checks pass.
+- The open primary Xcode session automatically added the renamed runner to Compile Sources. This became an adversarial proof: all three builds still passed because the guard was effective. The generated membership was removed again.
+
+### 7) Scenario-Focused Resolution Tests
+
+- **Before:** The primary build exited 65, named `scripts/vocabulary-paging-checks/main.swift` as top-level code, and reported three duplicate source entries.
+- **After:** All three unsigned/local platform builds succeed without those diagnostics; the project graph remains the synchronized-source design.
+- **Verdict:** Compiler regression resolved. Physical iOS installation still requires Xcode to renew the Personal Team profile.
+
+### 8) Verification Summary
+
+- `scripts/test-vocabulary-paging.sh`: 18/18 passed.
+- Disabled runner: `swiftc -parse-as-library -typecheck` passed.
+- `plutil`, both localization catalogs, staged/unstaged diff hygiene: passed.
+- `/tmp/SwiftMandarin-primary-fixed-ios-simulator.log`: build succeeded, zero source diagnostics.
+- `/tmp/SwiftMandarin-primary-fixed-ios-device-unsigned.log`: build succeeded, zero source diagnostics.
+- `/tmp/SwiftMandarin-primary-fixed-macos.log`: build succeeded, zero source diagnostics.
+- Fresh branch-snapshot iOS Simulator and macOS builds passed in `/tmp/SwiftMandarin-branch-final-ios-simulator.log` and `/tmp/SwiftMandarin-branch-final-macos.log`; both contain one success marker and zero warning/error/duplicate/top-level matches.
+- Independent review found no Critical or Important issue. It separately verified the disabled runner alone and beside an app `@main`, confirmed the app does not define `VOCABULARY_PAGING_CHECKS`, and confirmed the explicit Sources phase is empty.
+
+### 9) Remaining Work & Next Steps
+
+- No source-code work remains in this repair. Git history and the delivery response carry the follow-up commit/remote metadata.
+- For a physical iPhone, refresh/re-authenticate Xcode Settings → Accounts, keep Roger Lin (Personal Team) with automatic signing, unlock/trust the intended device with Developer Mode enabled, and retry so Xcode can register it and issue a fresh seven-day profile.
+
+### 10) Updates to This File (append-only)
+
+- 2026-07-13T15:26:56Z: Added the failure trace, runner hardening, clean build evidence, corrected certificate/profile diagnosis, and remaining delivery gate.
+- 2026-07-13T15:42:22Z: Recorded two clean branch-snapshot builds, passing final hygiene, and an independent review with no Critical or Important findings; marked implementation complete pending the immediate commit/push action.
