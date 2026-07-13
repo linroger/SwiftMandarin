@@ -482,11 +482,11 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 
 ## Iteration 22 — Merge smooth vocabulary paging to main (2026-07-14)
 
-**Last Updated (UTC):** 2026-07-13T18:08:29Z
+**Last Updated (UTC):** 2026-07-13T18:10:15Z
 
-**Status:** In Progress
+**Status:** Complete
 
-**Current Focus:** Validate the conflict-free merge tree in an isolated worktree before creating and pushing the authoritative merge commit to `origin/main`.
+**Current Focus:** Merge commit `2c669f1` is delivered to `origin/main`; this closing record documents the verified remote result.
 
 ### 1) Request & Context
 
@@ -511,7 +511,7 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - [x] Prepare a no-fast-forward, no-commit merge in the isolated integration worktree.
 - [x] Confirm Git reports an automatic clean merge and zero unmerged paths.
 - [x] Run deterministic checks, project hygiene, and all platform builds against the exact merge tree.
-- [ ] Create the merge commit, push `HEAD:main`, verify the remote SHA/ancestry, and remove temporary integration artifacts.
+- [x] Create merge commit `2c669f1`, push `HEAD:main`, and verify its remote SHA and feature ancestry. Temporary integration cleanup follows the closing documentation commit.
 
 ### 4) Findings & Decisions
 
@@ -525,9 +525,13 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - **Policy/hygiene:** `scripts/test-vocabulary-paging.sh` passes 25/25; staged diff hygiene, project plist validation, localization JSON parsing, empty explicit Sources membership, and runner-exclusion checks all pass.
 - **Builds:** iOS Simulator (`/tmp/SwiftMandarin-main-merge-ios-simulator.log`), unsigned generic iOS device (`/tmp/SwiftMandarin-main-merge-ios-device.log`), and macOS (`/tmp/SwiftMandarin-main-merge-macos.log`) each report `BUILD SUCCEEDED` with no filtered error/warning/duplicate/top-level-code diagnostic.
 - **Tree parity:** Every production, user-facing documentation, and test path matches verified feature tip `c8d3736`; the only intentional tree delta is this Iteration 22 merge record in `handoff.md`.
-- **Pending:** Create the two-parent merge commit, push it to `origin/main`, verify remote SHA and ancestry, then remove the temporary integration worktree/branch.
+- **Merge commit:** `2c669f102ff020b1d5d76dba77fadfdd147e65ad` has parents `6c3d9aa` (prior main) and `c8d3736` (verified feature tip), so the feature remains first-class ancestry rather than a squash.
+- **Remote delivery:** A normal non-force push advanced `origin/main` from `6c3d9aa` to `2c669f1`; local `origin/main` resolves to the same SHA and contains `c8d3736` as an ancestor.
+- **Preservation:** The primary dirty main worktree was never stashed, reset, checked out, or written during integration. Its Xcode-generated explicit Sources regression and untracked `InfoPlist.xcstrings` remain excluded from remote main.
+- **Remaining:** No source, conflict, build, or remote-delivery work remains. Remove only the clean temporary integration worktree/branch after this record is committed and pushed.
 
 ### 6) Updates
 
 - 2026-07-13T18:04:13Z: Created the main-integration record after fetching remote refs, preserving the dirty primary worktree, and preparing a conflict-free no-commit merge in a dedicated worktree.
 - 2026-07-13T18:08:29Z: Passed all 25 policy checks, merge hygiene, and clean iOS Simulator, unsigned iOS device, and macOS builds against the exact staged merge tree; only commit/push/remote verification remains.
+- 2026-07-13T18:10:15Z: Created two-parent merge commit `2c669f1`, pushed it normally to `origin/main`, verified the remote SHA and feature ancestry, and marked main integration complete.
