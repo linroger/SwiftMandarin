@@ -23,17 +23,23 @@ struct AIWordExplanationView: View {
     let pinyin: String
     let context: String?
     let contentLayout: ContentLayout
+    /// Neighboring vocabulary pages are preloaded for a fluid horizontal
+    /// gesture, but their potentially large cached analysis should not be
+    /// loaded or laid out until that page becomes the settled selection.
+    let isActive: Bool
 
     init(
         word: String,
         pinyin: String,
         context: String?,
-        contentLayout: ContentLayout = .selfScrolling
+        contentLayout: ContentLayout = .selfScrolling,
+        isActive: Bool = true
     ) {
         self.word = word
         self.pinyin = pinyin
         self.context = context
         self.contentLayout = contentLayout
+        self.isActive = isActive
     }
 
     /// Every collapsible-section id the explanation card can render. Kept in
@@ -107,7 +113,9 @@ struct AIWordExplanationView: View {
     
     var body: some View {
         Group {
-            if !isAnyProviderAvailable {
+            if !isActive {
+                EmptyView()
+            } else if !isAnyProviderAvailable {
                 unavailableView
             } else if isLoading {
                 loadingView
@@ -122,7 +130,8 @@ struct AIWordExplanationView: View {
         // Serve a previously generated explanation instantly, without another
         // AI round-trip. Re-runs if the word OR direction changes (view reuse /
         // interface-language flip). Never overrides a fresh in-memory result.
-        .task(id: currentKey) {
+        .task(id: "\(currentKey)\u{1}\(isActive)") {
+            guard isActive else { return }
             loadCachedExplanationIfAvailable()
         }
     }

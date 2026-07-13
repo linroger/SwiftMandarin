@@ -378,3 +378,103 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 
 - 2026-07-13T15:26:56Z: Added the failure trace, runner hardening, clean build evidence, corrected certificate/profile diagnosis, and remaining delivery gate.
 - 2026-07-13T15:42:22Z: Recorded two clean branch-snapshot builds, passing final hygiene, and an independent review with no Critical or Important findings; marked implementation complete pending the immediate commit/push action.
+
+## Iteration 21 — Smooth, completion-safe iOS vocabulary paging (2026-07-14)
+
+**Last Updated (UTC):** 2026-07-13T17:50:13Z
+
+**Status:** Complete
+
+**Current Focus:** The swipe repair is verified and ready to commit/push; only an optional physical-device ProMotion trace remains outside the software acceptance gates.
+
+### 1) Request & Context
+
+- **User request:** The vocabulary detail swipe is not smooth and can stop halfway through, leaving adjacent pages simultaneously visible. Diagnose the supplied runtime messages and make paging feel continuous and reliable.
+- **Visual evidence:** The supplied iPhone screenshot shows word 1,012 of 1,445 with the outgoing and incoming detail pages each occupying part of the viewport after the gesture should have settled.
+- **Operational constraints:** Work from `f818a5a` on isolated branch `codex/vocab-swipe-smoothness`; preserve the open prior worktree's unstaged string-catalog/project changes; keep the pager bounded for thousand-word libraries; retain vertical detail scrolling, toolbar navigation, accessibility actions, deletion reconciliation, and iOS 17 compatibility.
+- **Scope boundary:** Console messages are fixed only when code tracing ties them to this interaction. An unavailable optional Ollama server and unrelated OS/framework diagnostics are not reasons to broaden this slice.
+
+### 2) Requirements → Acceptance Checks
+
+| Requirement | Acceptance Check (scenario steps) | Expected Outcome | Evidence to Capture |
+|---|---|---|---|
+| R21.1: Every horizontal gesture settles | Open a middle item; perform slow, short, reversed, fast, and repeated left/right drags | The content follows the finger and always returns to one full page or completes on one full adjacent page; never remains split | Simulator screenshots plus visible headword/counter geometry assertions |
+| R21.2: No transition-time identity churn | Observe state/page composition across a completed swipe | Page-controller children remain stable until UIKit reports transition completion | Source invariant plus runtime geometry stability |
+| R21.3: Vertical gestures remain vertical | Scroll the long AI explanation and start diagonally biased vertical drags | No unintended page turn and no blocked vertical scrolling | Simulator acceptance run |
+| R21.4: Large libraries stay responsive | Open and page inside a synthetic list of at least 1,445, preferably 7,000, terms | Presentation and adjacent paging remain bounded without constructing the full library's detail views | Stress run and source/performance evidence |
+| R21.5: Alternatives and mutations remain safe | Use Previous/Next, first/last bounds, mastery/edit/delete/current-term reconciliation | Correct item/count, disabled bounds, no stale or fabricated page | Regression checks and UI assertions |
+| R21.6: Scoped diagnostics are understood | Map each supplied console line to app code, configuration, or OS framework | Pager-caused per-frame state warnings are removed or explained; unrelated noise is documented accurately | Warning triage and filtered runtime log |
+| R21.7: Cross-platform delivery remains healthy | Run deterministic checks plus iOS Simulator and macOS builds | Zero build errors and no new compiler warnings | Retained logs and clean diff checks |
+
+### 3) Plan & Decomposition
+
+- **Critical path:** First reproduce the split state and trace selection/page-window timing; then stabilize the transition model without reintroducing all-page eagerness; finally validate real gestures, large data, vertical scrolling, mutations, builds, and review.
+- [x] Inspect the screenshot, current branch/history, prior paging evidence, and applicable SwiftUI/performance/debug workflows.
+- [x] Confirm the rolling-window `TabView` mutates its controllers inside the native interactive transaction.
+- [x] Implement and compile one stable, bounded paging architecture.
+- [x] Run helper checks, real simulator gesture acceptance, stress/mutation scenarios, and both platform builds.
+- [x] Complete two independent review passes and update evidence; commit/push are the final delivery action after this record is staged.
+
+### 4) To-Do & Progress Ledger
+
+- [x] Isolated branch/worktree created from `f818a5a` to avoid the open Xcode session rewriting project membership.
+- [x] User screenshot inspected at original resolution; the failure is a real split page, not a static content-clipping issue.
+- [x] Three independent read-only investigations agreed on the same transition-time child mutation and classified the supplied warnings.
+- [x] Final production policy checks pass 25/25; iOS Simulator, generic iOS device, and macOS builds succeed without matched compiler warnings/errors.
+- [x] Three-term real-gesture suite passes canceled, slow, fast, repeated, boundary, toolbar, vertical, and live-mastery scenarios with stable centered geometry.
+- [x] The 1,445-term screenshot-scale suite passes completed/canceled and alternating gestures with the same geometry gate.
+- [x] Final read-only review reports no actionable findings after the deletion/cancellation and causal-test corrections.
+
+### 5) Findings, Decisions, Assumptions
+
+- **Root cause:** `visibleTermID` drove both `TabView` selection and its `[previous,current,next]` child membership. During B → C, the children changed from `[A,B,C]` to `[B,C,D]` before UIKit finished settling, reindexing the active controllers and permitting the screenshot's split offset.
+- **Amplifier:** The same selection change immediately wrote parent `selectedTerm`, forcing the covered 1,445-row vocabulary view to filter/sort, while all three pages instantiated full cached AI-analysis trees.
+- **Decision:** Use an O(1) `UIPageViewController` data source with lazily hosted adjacent SwiftUI pages. Commit the selected ID only from UIKit's completed-transition delegate; canceled gestures never mutate selection.
+- **Decision:** Preload normal neighbor content but gate heavyweight AI cache loading/layout to the settled page. Explicitly inject the saved-terms store and custom locale into each manually created `UIHostingController` root.
+- **Warning triage:** NavigationRequestObserver and Liquid Glass multiple-update messages corroborate transition-time state churn. Ollama localhost refusal is optional-provider configuration; PointerUI/public-settings messages are framework noise; unsafeForcedSync needs a backtrace; the ProvidesDialog mismatch is a real but unrelated App Intent defect.
+- **Preservation decision:** The prior worktree's localization/project diffs predate this slice and will not be staged or rewritten here.
+
+### 6) Issues, Mistakes, Recoveries
+
+- **Prior test gap:** The old UI acceptance asserted only that the destination headword existed and was hittable, which remains true in the supplied half-page state. The new test MUST assert centered geometry and stability over multiple samples.
+- **Implementation review catch:** Manually hosted SwiftUI pages do not inherit the representable's environment. The design now passes `SavedTermsStore` and `locale` into every hosted root.
+- **Performance review catch:** Publishing an `isTransitioning` binding from `willTransitionTo` would itself invalidate the toolbar/sheet at gesture start. Transition state remains coordinator-local; only a completed selection reaches SwiftUI.
+- **Compile failure → recovery:** The first build found that a local `host` binding in both page-data-source methods shadowed the `host(for:)` factory, producing “cannot call value of non-function type.” Renaming the local to `currentHost` restored the intended factory call; all subsequent iOS and macOS builds pass.
+- **Final-review catch → recovery:** A store mutation is intentionally deferred while UIKit is settling. If the visible term was deleted during a gesture that then canceled, refreshing cached roots was insufficient because UIKit still retained the deleted host. Both touch and programmatic cancellation paths now reconcile against UIKit's actual visible controller, replace any deleted controller immediately, publish the surviving ID, prune the cache, and assert the post-transition three-host bound.
+- **Regression-test correction:** The first deletion checks composed existing helpers and therefore would have passed before the coordinator repair. The exact post-transition precedence is now a production model rule (`visible → request → settled → current → first survivor`) used by the coordinator and covered across surviving/deleted/empty matrices. Cache pruning likewise consumes a tested live-ID window; the fast suite now passes 25/25.
+
+### 7) Scenario-Focused Resolution Tests
+
+- **Repro steps:** Open a vocabulary detail near the middle of a large library and drag horizontally far enough to begin a page change, including a slow release near the threshold.
+- **Pre-change behavior:** The outgoing and incoming pages can remain side by side, with oversized headwords and actions clipped at both viewport edges; the toolbar counter may already reflect the incoming selection.
+- **Change applied:** Replace the rolling-window `TabView` with a lazily populated native page controller whose child set stays stable through the interaction and whose selection commits only after completion.
+- **Post-change behavior:** Canceled drags spring fully back; completed drags settle on exactly one adjacent page; parent selection updates only after UIKit completion; neighbor AI trees are inactive; cache retention remains current ± 1.
+- **Verdict:** Resolved. The final three-term test sampled every destination headword three times after each gesture (≤2-point drift, center within 2%/8 points) and passed in 107.434 seconds. The 1,445-term stress case passed the same assertions in 73.514 seconds.
+
+### 8) Verification Summary
+
+- **Fast policy checks:** `scripts/test-vocabulary-paging.sh` passes 25/25, including post-transition visible/requested/settled/current/fallback precedence, empty sessions, and live bounded cache IDs.
+- **Final builds:** iOS Simulator (`/tmp/SwiftMandarin-smooth-pager-final3-ios.log`), generic iOS device with signing disabled (`/tmp/SwiftMandarin-smooth-pager-final-device.log`), and macOS (`/tmp/SwiftMandarin-smooth-pager-final3-macos.log`) each report `BUILD SUCCEEDED`; filtered output contains no compiler warnings/errors.
+- **Real gesture acceptance:** `/tmp/SwiftMandarin-smooth-pager-final3-uiqa.xcresult` passes the 3-term suite in 107.434 seconds; `/tmp/SwiftMandarin-smooth-pager-large-uiqa-3.xcresult` passes the 1,445-term suite in 73.514 seconds. Both assert centered, stable pixels rather than mere element existence.
+- **Additional motion probe:** Three measured alternating-swipe iterations completed successfully in `/tmp/SwiftMandarin-smooth-pager-hitch.xcresult`; Xcode exported no numeric hitch samples for this simulator run, so it is not presented as physical 120 Hz frame-pacing evidence.
+- **Visual artifact:** `/tmp/SwiftMandarin-smooth-pager-final-centered.png` shows a single centered page after the final repeated-swipe run.
+- **Runtime diagnostics:** The only `NavigationRequestObserver` line occurred 0.49 seconds after tapping the Study tab and roughly 10 seconds before the first pager drag; none occurred during 17+ pager gestures. The final run emitted no `glassEffect()` repeated-frame, `unsafeForcedSync`, or `ProvidesDialog` line. One `localhost:11434` probe remains the separately scoped optional Ollama configuration behavior.
+- **Review:** The final independent review traced deletion/cancellation, failed programmatic transition, empty-session, pruning, and precedence paths and reported no actionable findings.
+- **Hygiene:** `git diff --check`, the project plist lint, localization JSON parse, and duplicate-source scan pass; the project graph and catalog remain untouched.
+
+### 9) Remaining Work & Next Steps
+
+- Commit and push this isolated branch. No pager implementation work remains.
+- Recommended release validation: run Instruments/Core Animation on a 120 Hz physical iPhone after provisioning is available, plus a short VoiceOver/Reduce Motion pass. Simulator geometry, behavior, and all compile gates already pass.
+- Separate follow-ups, not blockers for this repair: avoid automatic Ollama localhost probing on iPhone and correct App Intent `ProvidesDialog` signatures. GitHub issue lookup was attempted twice but the API TLS handshake timed out, so no potentially duplicate issue was created blindly.
+
+### 10) Updates to This File (append-only)
+
+- 2026-07-13T16:15:22Z: Created Iteration 21 with screenshot-backed criteria, confirmed root cause, isolated-worktree recovery, environment/performance review guardrails, scoped warning triage, and pending compile/runtime gates.
+- 2026-07-13T17:08:00Z: The first 1,445-term fixture attempt stopped before app launch because Swift 6 rejected a module-scope inferred array whose element type was declared `private` in the temporary seed utility. The harness type was made internal; no production source was implicated or changed by this failure.
+- 2026-07-13T17:14:00Z: The large-library fixture initially remained at three terms because CoreSimulator's preferences daemon still held the old domain; reseeding while the simulator was shut down made the 1,445-term fixture deterministic. The next run opened the correct centered `词1443` page, but the harness expected `1445` instead of the localized counter label `1,445`; the expectation was corrected before replaying gestures.
+- 2026-07-13T16:52:20Z: Recorded the initial compiler-detected name-shadowing mistake and its narrow correction before rerunning the iOS build.
+- 2026-07-13T17:21:00Z: Independent final review found the deleted-current-term plus canceled-swipe seam. The coordinator now reconciles the controller UIKit actually leaves visible after every cancellation, replaces stale deleted content, and prunes/asserts bounded cache state.
+- 2026-07-13T17:31:00Z: The post-review three-term replay passed every swipe/geometry assertion, then the added live-mastery mutation step failed before interaction because XCUITest classifies a button-styled SwiftUI `Toggle` as `Switch`, not `Button`. The selector was corrected and the acceptance run restarted; production behavior was not implicated.
+- 2026-07-13T17:38:00Z: Re-review accepted the production mutation repair but rejected the first regression check as insufficiently causal. Extracted and adopted the exact post-transition resolver plus live cache-window policy, expanded the survivor/deletion/empty matrix, and passed all 25 fast checks.
+- 2026-07-13T17:50:13Z: Final exact-binary replay passed 107.434 seconds of geometry-checked gestures and live mutation; 1,445-term stress, three platform builds, policy checks, hygiene, warning timing, screenshot inspection, and independent review all pass. Marked Iteration 21 complete pending only commit/push delivery.

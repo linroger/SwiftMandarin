@@ -136,6 +136,82 @@ private func runChecks() throws {
         nil,
         "An empty session has no fabricated fallback"
     )
+
+    let survivorsAfterDeletingCurrent = [last, middle]
+    try expect(
+        VocabularyPaging.resolvedIDAfterTransition(
+            visibleID: first,
+            requestedID: middle,
+            settledID: last,
+            currentID: first,
+            orderedIDs: survivorsAfterDeletingCurrent
+        ),
+        middle,
+        "A deleted visible page yields to the live requested destination"
+    )
+    try expect(
+        VocabularyPaging.resolvedIDAfterTransition(
+            visibleID: last,
+            requestedID: middle,
+            settledID: middle,
+            currentID: middle,
+            orderedIDs: survivorsAfterDeletingCurrent
+        ),
+        last,
+        "A surviving UIKit page remains authoritative after cancellation"
+    )
+    try expect(
+        VocabularyPaging.resolvedIDAfterTransition(
+            visibleID: first,
+            requestedID: first,
+            settledID: middle,
+            currentID: last,
+            orderedIDs: survivorsAfterDeletingCurrent
+        ),
+        middle,
+        "A surviving settled selection wins when visible and requested pages were deleted"
+    )
+    try expect(
+        VocabularyPaging.resolvedIDAfterTransition(
+            visibleID: first,
+            requestedID: first,
+            settledID: first,
+            currentID: last,
+            orderedIDs: survivorsAfterDeletingCurrent
+        ),
+        last,
+        "The prior current page wins when newer candidates were deleted"
+    )
+    try expect(
+        VocabularyPaging.resolvedIDAfterTransition(
+            visibleID: first,
+            requestedID: first,
+            settledID: first,
+            currentID: first,
+            orderedIDs: survivorsAfterDeletingCurrent
+        ),
+        last,
+        "The first survivor is used when every candidate was deleted"
+    )
+    try expect(
+        VocabularyPaging.resolvedIDAfterTransition(
+            visibleID: first,
+            requestedID: middle,
+            settledID: last,
+            currentID: first,
+            orderedIDs: []
+        ),
+        nil,
+        "An empty post-transition session cannot retain a stale controller"
+    )
+    try expect(
+        VocabularyPaging.pageWindowIDs(
+            currentID: last,
+            orderedIDs: survivorsAfterDeletingCurrent
+        ),
+        Set(survivorsAfterDeletingCurrent),
+        "Post-deletion cache retention contains only live bounded neighbors"
+    )
 }
 
 @main

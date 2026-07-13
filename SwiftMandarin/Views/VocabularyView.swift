@@ -7,6 +7,9 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+#if os(iOS)
+import UIKit
+#endif
 
 /// Saved vocabulary terms view with search, sorting, and export
 struct VocabularyView: View {
@@ -699,26 +702,21 @@ struct VocabularyDetailSession: Identifiable, Equatable {
 }
 
 #if os(iOS)
-private struct VocabularyDetailPageEntry: Identifiable {
-    let position: Int
-    let term: SavedTerm
-
-    var id: SavedTerm.ID { term.id }
-}
-
 struct TermDetailSheet: View {
     let session: VocabularyDetailSession
     @Binding var selectedTerm: SavedTerm?
     @Environment(\.dismiss) private var dismiss
     @Environment(SavedTermsStore.self) private var savedTermsStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.locale) private var locale
     @State private var visibleTermID: SavedTerm.ID?
+    @State private var pageRequest: VocabularyPageRequest?
 
     init(session: VocabularyDetailSession, selectedTerm: Binding<SavedTerm?>) {
         self.session = session
         self._selectedTerm = selectedTerm
-        // Page-style TabView honors its initial selection, so the pixels and
-        // toolbar begin on the exact row the learner opened.
+        // Seed UIKit's native pager and the toolbar from the exact row the
+        // learner opened.
         self._visibleTermID = State(initialValue: session.initialTermID)
     }
 
@@ -748,36 +746,14 @@ struct TermDetailSheet: View {
         return currentIndex < terms.index(before: terms.endIndex)
     }
 
-    /// Keep the native page controller bounded to the current word and its two
-    /// neighbors. A TabView containing an entire multi-thousand-word library
-    /// eagerly creates enough page state to stall presentation and consume
-    /// hundreds of megabytes. Re-centering this three-page window after each
-    /// completed selection preserves the same swipe interaction with O(1) page
-    /// view cost, while `position` still refers to the full ordered session.
-    private func pageWindow(in terms: [SavedTerm]) -> [VocabularyDetailPageEntry] {
-        let indices = VocabularyPaging.pageWindowIndices(
-            currentID: visibleTermID,
-            orderedIDs: terms.map(\.id)
-        )
-        return indices.map { pageIndex in
-            VocabularyDetailPageEntry(position: pageIndex + 1, term: terms[pageIndex])
-        }
-    }
-
     private func navigateToNeighbor(offset: Int, in terms: [SavedTerm]) {
+        guard pageRequest == nil else { return }
         guard let targetID = VocabularyPaging.neighborID(
             currentID: visibleTermID,
             offset: offset,
             orderedIDs: terms.map(\.id)
         ) else { return }
-
-        if reduceMotion {
-            visibleTermID = targetID
-        } else {
-            withAnimation(.snappy(duration: 0.3)) {
-                visibleTermID = targetID
-            }
-        }
+        pageRequest = VocabularyPageRequest(targetID: targetID)
     }
 
     var body: some View {
@@ -806,7 +782,7 @@ struct TermDetailSheet: View {
                         } label: {
                             Label("Previous Word", systemImage: "chevron.backward")
                         }
-                        .disabled(!canGoPrevious(in: terms))
+                        .disabled(pageRequest != nil || !canGoPrevious(in: terms))
                         .keyboardShortcut(.leftArrow, modifiers: [.command])
                         .help("Previous word (⌘←)")
 
@@ -828,7 +804,7 @@ struct TermDetailSheet: View {
                         } label: {
                             Label("Next Word", systemImage: "chevron.forward")
                         }
-                        .disabled(!canGoNext(in: terms))
+                        .disabled(pageRequest != nil || !canGoNext(in: terms))
                         .keyboardShortcut(.rightArrow, modifiers: [.command])
                         .help("Next word (⌘→)")
                     }
@@ -851,18 +827,14 @@ struct TermDetailSheet: View {
     }
 
     private func nativePager(terms: [SavedTerm]) -> some View {
-        TabView(selection: $visibleTermID) {
-            ForEach(pageWindow(in: terms)) { entry in
-                TermDetailPage(
-                    term: entry.term,
-                    position: entry.position,
-                    totalCount: terms.count,
-                    isCurrent: visibleTermID == entry.id
-                )
-                .tag(Optional(entry.id))
-            }
-        }
-        .tabViewStyle(.page(indexDisplayMode: .never))
+        VocabularyDetailPageController(
+            terms: terms,
+            settledID: $visibleTermID,
+            request: $pageRequest,
+            animatesProgrammaticTransitions: !reduceMotion,
+            savedTermsStore: savedTermsStore,
+            locale: locale
+        )
         .background(SMTheme.pageBackground)
         .onChange(of: visibleTermID) { _, newID in
             guard let newID,
@@ -896,6 +868,393 @@ struct TermDetailSheet: View {
         }
         visibleTermID = reconciledID
         selectedTerm = terms.first { $0.id == reconciledID }
+    }
+}
+
+/// A toolbar/accessibility navigation request. Keeping this separate from the
+/// settled selection means the underlying vocabulary list is not invalidated
+/// until UIKit has finished the page transition.
+private struct VocabularyPageRequest: Equatable {
+    let token = UUID()
+    let targetID: SavedTerm.ID
+}
+
+/// UIKit owns the interactive transition lifecycle here because a page-style
+/// SwiftUI `TabView` does not expose a completion callback. In the former
+/// implementation, changing the selection also changed the TabView's child
+/// collection during the same gesture, which could strand two pages at a
+/// partial offset. The data source below resolves neighbors lazily and commits
+/// the SwiftUI selection only after UIKit reports a completed transition.
+private struct VocabularyDetailPageController: UIViewControllerRepresentable {
+    let terms: [SavedTerm]
+    @Binding var settledID: SavedTerm.ID?
+    @Binding var request: VocabularyPageRequest?
+    let animatesProgrammaticTransitions: Bool
+    let savedTermsStore: SavedTermsStore
+    let locale: Locale
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIViewController(context: Context) -> UIPageViewController {
+        let pageController = UIPageViewController(
+            transitionStyle: .scroll,
+            navigationOrientation: .horizontal
+        )
+        pageController.dataSource = context.coordinator
+        pageController.delegate = context.coordinator
+        pageController.view.backgroundColor = .clear
+        context.coordinator.attach(pageController, parent: self)
+        return pageController
+    }
+
+    func updateUIViewController(
+        _ pageController: UIPageViewController,
+        context: Context
+    ) {
+        context.coordinator.update(parent: self, pageController: pageController)
+    }
+
+    static func dismantleUIViewController(
+        _ pageController: UIPageViewController,
+        coordinator: Coordinator
+    ) {
+        pageController.dataSource = nil
+        pageController.delegate = nil
+        coordinator.tearDown()
+    }
+
+    @MainActor
+    final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+        private typealias PageHost = UIHostingController<VocabularyHostedDetailPage>
+
+        private var parent: VocabularyDetailPageController
+        private weak var pageController: UIPageViewController?
+        private var orderedIDs: [SavedTerm.ID] = []
+        private var termSnapshot: [SavedTerm] = []
+        private var termByID: [SavedTerm.ID: SavedTerm] = [:]
+        private var indexByID: [SavedTerm.ID: Int] = [:]
+        private var cachedHosts: [SavedTerm.ID: PageHost] = [:]
+        private var currentID: SavedTerm.ID?
+        private var lastHandledRequestToken: UUID?
+        private var transitionIsInFlight = false
+
+        init(parent: VocabularyDetailPageController) {
+            self.parent = parent
+        }
+
+        func attach(
+            _ pageController: UIPageViewController,
+            parent: VocabularyDetailPageController
+        ) {
+            self.pageController = pageController
+            self.parent = parent
+            rebuildLookupIfNeeded(force: true)
+            guard let initialID = resolvedRequestedOrSettledID(),
+                  let host = host(for: initialID) else { return }
+            currentID = initialID
+            refreshCachedHosts()
+            pageController.setViewControllers(
+                [host],
+                direction: .forward,
+                animated: false
+            )
+            publishSettledIDIfNeeded(initialID)
+            pruneCache()
+        }
+
+        func update(
+            parent: VocabularyDetailPageController,
+            pageController: UIPageViewController
+        ) {
+            self.parent = parent
+            self.pageController = pageController
+
+            // Never replace or remove controllers while UIKit is settling a
+            // touch-driven or programmatic page transition.
+            guard !transitionIsInFlight else { return }
+
+            rebuildLookupIfNeeded()
+            guard !orderedIDs.isEmpty else {
+                cachedHosts.removeAll()
+                return
+            }
+
+            if currentID.flatMap({ indexByID[$0] }) == nil {
+                guard let replacementID = resolvedRequestedOrSettledID() else { return }
+                showImmediately(replacementID, publishSelection: true)
+                return
+            }
+
+            refreshCachedHosts()
+            pruneCache()
+
+            if let request = parent.request,
+               request.token != lastHandledRequestToken {
+                perform(request)
+                return
+            }
+
+            // Store mutation reconciliation can legitimately change the
+            // settled binding without producing a toolbar request.
+            if let settledID = parent.settledID,
+               indexByID[settledID] != nil,
+               settledID != currentID {
+                showImmediately(settledID, publishSelection: false)
+            }
+        }
+
+        func tearDown() {
+            transitionIsInFlight = false
+            cachedHosts.removeAll()
+            pageController = nil
+        }
+
+        private func rebuildLookupIfNeeded(force: Bool = false) {
+            guard force || parent.terms != termSnapshot else { return }
+            termSnapshot = parent.terms
+            orderedIDs = parent.terms.map(\.id)
+            termByID = Dictionary(uniqueKeysWithValues: parent.terms.map { ($0.id, $0) })
+            indexByID = Dictionary(
+                uniqueKeysWithValues: orderedIDs.enumerated().map { ($0.element, $0.offset) }
+            )
+        }
+
+        private func resolvedRequestedOrSettledID() -> SavedTerm.ID? {
+            VocabularyPaging.resolvedIDAfterTransition(
+                visibleID: nil,
+                requestedID: parent.request?.targetID,
+                settledID: parent.settledID,
+                currentID: currentID,
+                orderedIDs: orderedIDs
+            )
+        }
+
+        private func rootView(for id: SavedTerm.ID) -> VocabularyHostedDetailPage? {
+            guard let term = termByID[id], let index = indexByID[id] else { return nil }
+            return VocabularyHostedDetailPage(
+                term: term,
+                position: index + 1,
+                totalCount: orderedIDs.count,
+                isCurrent: id == currentID,
+                savedTermsStore: parent.savedTermsStore,
+                locale: parent.locale
+            )
+        }
+
+        private func host(for id: SavedTerm.ID) -> PageHost? {
+            guard let rootView = rootView(for: id) else { return nil }
+            if let cachedHost = cachedHosts[id] {
+                cachedHost.rootView = rootView
+                return cachedHost
+            }
+
+            let host = PageHost(rootView: rootView)
+            host.view.backgroundColor = .clear
+            cachedHosts[id] = host
+            return host
+        }
+
+        private func refreshCachedHosts() {
+            for (id, host) in cachedHosts {
+                guard let rootView = rootView(for: id) else { continue }
+                host.rootView = rootView
+            }
+        }
+
+        private func pruneCache() {
+            let retainedIDs = VocabularyPaging.pageWindowIDs(
+                currentID: currentID,
+                orderedIDs: orderedIDs
+            )
+            cachedHosts = cachedHosts.filter { retainedIDs.contains($0.key) }
+            assert(
+                cachedHosts.count <= 3,
+                "Vocabulary pager must retain only the current page and its neighbors."
+            )
+        }
+
+        /// Reconcile against the controller UIKit actually left on screen.
+        /// This is essential when the store changes during an interactive
+        /// transition: a cancelled gesture can otherwise reveal a hosting
+        /// controller whose term was deleted while UIKit was settling it.
+        private func reconcileVisibleControllerAfterTransition() {
+            rebuildLookupIfNeeded()
+            guard !orderedIDs.isEmpty else {
+                cachedHosts.removeAll()
+                return
+            }
+
+            let visibleID = (pageController?.viewControllers?.first as? PageHost)?.rootView.termID
+            guard let resolvedID = VocabularyPaging.resolvedIDAfterTransition(
+                visibleID: visibleID,
+                requestedID: parent.request?.targetID,
+                settledID: parent.settledID,
+                currentID: currentID,
+                orderedIDs: orderedIDs
+            ) else {
+                cachedHosts.removeAll()
+                return
+            }
+
+            if resolvedID == visibleID {
+                settle(on: resolvedID)
+            } else {
+                showImmediately(resolvedID, publishSelection: true)
+            }
+        }
+
+        private func showImmediately(
+            _ id: SavedTerm.ID,
+            publishSelection: Bool
+        ) {
+            guard let pageController, let host = host(for: id) else { return }
+            currentID = id
+            refreshCachedHosts()
+            pageController.setViewControllers(
+                [host],
+                direction: .forward,
+                animated: false
+            )
+            if publishSelection {
+                publishSettledIDIfNeeded(id)
+            }
+            publishRequest(nil)
+            pruneCache()
+        }
+
+        private func perform(_ request: VocabularyPageRequest) {
+            lastHandledRequestToken = request.token
+            guard let pageController,
+                  let targetIndex = indexByID[request.targetID],
+                  let currentID,
+                  let currentIndex = indexByID[currentID],
+                  let targetHost = host(for: request.targetID) else {
+                publishRequest(nil)
+                return
+            }
+
+            guard targetIndex != currentIndex else {
+                publishRequest(nil)
+                return
+            }
+
+            transitionIsInFlight = true
+            let direction: UIPageViewController.NavigationDirection =
+                targetIndex > currentIndex ? .forward : .reverse
+
+            pageController.setViewControllers(
+                [targetHost],
+                direction: direction,
+                animated: parent.animatesProgrammaticTransitions
+            ) { [weak self] finished in
+                guard let self else { return }
+                self.transitionIsInFlight = false
+                self.rebuildLookupIfNeeded()
+                if finished {
+                    self.settle(on: request.targetID)
+                } else {
+                    self.reconcileVisibleControllerAfterTransition()
+                }
+                self.publishRequest(nil)
+            }
+        }
+
+        private func settle(on candidateID: SavedTerm.ID) {
+            guard indexByID[candidateID] != nil else {
+                if let replacementID = resolvedRequestedOrSettledID() {
+                    showImmediately(replacementID, publishSelection: true)
+                }
+                return
+            }
+            currentID = candidateID
+            refreshCachedHosts()
+            publishSettledIDIfNeeded(candidateID)
+            pruneCache()
+        }
+
+        private func publishSettledIDIfNeeded(_ id: SavedTerm.ID) {
+            let binding = parent.$settledID
+            guard binding.wrappedValue != id else { return }
+            DispatchQueue.main.async {
+                guard binding.wrappedValue != id else { return }
+                binding.wrappedValue = id
+            }
+        }
+
+        private func publishRequest(_ request: VocabularyPageRequest?) {
+            let binding = parent.$request
+            DispatchQueue.main.async {
+                guard binding.wrappedValue != request else { return }
+                binding.wrappedValue = request
+            }
+        }
+
+        func pageViewController(
+            _ pageViewController: UIPageViewController,
+            viewControllerBefore viewController: UIViewController
+        ) -> UIViewController? {
+            guard let currentHost = viewController as? PageHost,
+                  let index = indexByID[currentHost.rootView.termID],
+                  index > orderedIDs.startIndex else { return nil }
+            return host(for: orderedIDs[index - 1])
+        }
+
+        func pageViewController(
+            _ pageViewController: UIPageViewController,
+            viewControllerAfter viewController: UIViewController
+        ) -> UIViewController? {
+            guard let currentHost = viewController as? PageHost,
+                  let index = indexByID[currentHost.rootView.termID],
+                  index + 1 < orderedIDs.endIndex else { return nil }
+            return host(for: orderedIDs[index + 1])
+        }
+
+        func pageViewController(
+            _ pageViewController: UIPageViewController,
+            willTransitionTo pendingViewControllers: [UIViewController]
+        ) {
+            transitionIsInFlight = true
+        }
+
+        func pageViewController(
+            _ pageViewController: UIPageViewController,
+            didFinishAnimating finished: Bool,
+            previousViewControllers: [UIViewController],
+            transitionCompleted completed: Bool
+        ) {
+            transitionIsInFlight = false
+            rebuildLookupIfNeeded()
+            if completed,
+               let host = pageViewController.viewControllers?.first as? PageHost {
+                settle(on: host.rootView.termID)
+            } else {
+                reconcileVisibleControllerAfterTransition()
+            }
+        }
+    }
+}
+
+private struct VocabularyHostedDetailPage: View {
+    let term: SavedTerm
+    let position: Int
+    let totalCount: Int
+    let isCurrent: Bool
+    let savedTermsStore: SavedTermsStore
+    let locale: Locale
+
+    var termID: SavedTerm.ID { term.id }
+
+    var body: some View {
+        TermDetailPage(
+            term: term,
+            position: position,
+            totalCount: totalCount,
+            isCurrent: isCurrent
+        )
+        .environment(savedTermsStore)
+        .environment(\.locale, locale)
     }
 }
 
@@ -1141,7 +1500,8 @@ private struct TermDetailPage: View {
                             word: term.headlineText,
                             pinyin: term.pinyin,
                             context: term.glossText.isEmpty ? nil : term.glossText,
-                            contentLayout: .embedded
+                            contentLayout: .embedded,
+                            isActive: isCurrent
                         )
                     }
 

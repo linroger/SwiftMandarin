@@ -53,6 +53,40 @@ enum VocabularyPaging {
         return Array(lowerBound..<upperBound)
     }
 
+    /// Return the live identifiers the pager may retain after a transition.
+    /// Keeping this policy in the model makes stale-host eviction directly
+    /// testable instead of relying only on a controller-level assertion.
+    static func pageWindowIDs(
+        currentID: UUID?,
+        orderedIDs: [UUID]
+    ) -> Set<UUID> {
+        Set(
+            pageWindowIndices(currentID: currentID, orderedIDs: orderedIDs)
+                .map { orderedIDs[$0] }
+        )
+    }
+
+    /// Resolve the page UIKit and SwiftUI should agree on after an interactive
+    /// or programmatic transition finishes. UIKit's visible page is
+    /// authoritative when it survived a concurrent store mutation; otherwise
+    /// prefer a live request, settled binding, or prior current page in that
+    /// order, then the first survivor. Nil means the session is empty.
+    static func resolvedIDAfterTransition(
+        visibleID: UUID?,
+        requestedID: UUID?,
+        settledID: UUID?,
+        currentID: UUID?,
+        orderedIDs: [UUID]
+    ) -> UUID? {
+        let availableIDs = Set(orderedIDs)
+        for candidate in [visibleID, requestedID, settledID, currentID] {
+            if let candidate, availableIDs.contains(candidate) {
+                return candidate
+            }
+        }
+        return orderedIDs.first
+    }
+
     /// Keep the current page when possible, otherwise return the session's
     /// initial page, then the first surviving page. Nil means the session has
     /// no content left and should close.
