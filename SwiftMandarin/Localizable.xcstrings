@@ -629,6 +629,16 @@
         }
       }
     },
+    "A to Z" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A 到 Z"
+          }
+        }
+      }
+    },
     "A patient conversation partner" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2309,6 +2319,26 @@
         }
       }
     },
+    "Decrease Headword Size" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缩小词条字号"
+          }
+        }
+      }
+    },
+    "Decrease headword size" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缩小词条字号"
+          }
+        }
+      }
+    },
     "Decrease headword font size (⌘-)" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3493,6 +3523,26 @@
         }
       }
     },
+    "Increase Headword Size" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "增大词条字号"
+          }
+        }
+      }
+    },
+    "Increase headword size" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "增大词条字号"
+          }
+        }
+      }
+    },
     "Increase headword font size (⌘+)" : {
       "localizations" : {
         "zh-Hans" : {
@@ -4602,6 +4652,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打开设置"
+          }
+        }
+      }
+    },
+    "Open Word Details" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开词汇详情"
           }
         }
       }
@@ -7004,6 +7064,16 @@
         }
       }
     },
+    "This word was removed from your vocabulary." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该词已从你的词汇表中移除。"
+          }
+        }
+      }
+    },
     "This removes every saved translation and cannot be undone." : {
       "localizations" : {
         "zh-Hans" : {
@@ -8076,6 +8146,16 @@
         }
       }
     },
+    "Word No Longer Available" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该词已不可用"
+          }
+        }
+      }
+    },
     "Word explanations, graded stories, conversation practice, and workbook grading come alive with AI. They work with Apple Intelligence, a local Ollama server, or any cloud key you add later in Settings → AI." : {
       "localizations" : {
         "zh-Hans" : {
@@ -8289,6 +8369,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "您已浏览过所有卡片"
+          }
+        }
+      }
+    },
+    "Z to A" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Z 到 A"
           }
         }
       }

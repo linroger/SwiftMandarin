@@ -10,9 +10,37 @@ import SwiftUI
 
 /// A view that displays a detailed AI-generated explanation for a Mandarin word
 struct AIWordExplanationView: View {
+    enum ContentLayout {
+        /// The explanation owns its vertical scrolling, as in the standalone
+        /// analysis sheet.
+        case selfScrolling
+        /// A parent detail page owns vertical scrolling, so this view renders
+        /// its full content without introducing a competing gesture region.
+        case embedded
+    }
+
     let word: String
     let pinyin: String
     let context: String?
+    let contentLayout: ContentLayout
+    /// Neighboring vocabulary pages are preloaded for a fluid horizontal
+    /// gesture, but their potentially large cached analysis should not be
+    /// loaded or laid out until that page becomes the settled selection.
+    let isActive: Bool
+
+    init(
+        word: String,
+        pinyin: String,
+        context: String?,
+        contentLayout: ContentLayout = .selfScrolling,
+        isActive: Bool = true
+    ) {
+        self.word = word
+        self.pinyin = pinyin
+        self.context = context
+        self.contentLayout = contentLayout
+        self.isActive = isActive
+    }
 
     /// Every collapsible-section id the explanation card can render. Kept in
     /// one place so the initial expansion state can't drift out of sync with
@@ -85,7 +113,9 @@ struct AIWordExplanationView: View {
     
     var body: some View {
         Group {
-            if !isAnyProviderAvailable {
+            if !isActive {
+                EmptyView()
+            } else if !isAnyProviderAvailable {
                 unavailableView
             } else if isLoading {
                 loadingView
@@ -100,7 +130,8 @@ struct AIWordExplanationView: View {
         // Serve a previously generated explanation instantly, without another
         // AI round-trip. Re-runs if the word OR direction changes (view reuse /
         // interface-language flip). Never overrides a fresh in-memory result.
-        .task(id: currentKey) {
+        .task(id: "\(currentKey)\u{1}\(isActive)") {
+            guard isActive else { return }
             loadCachedExplanationIfAvailable()
         }
     }
@@ -240,8 +271,7 @@ struct AIWordExplanationView: View {
             .padding(.vertical, 8)
             .background(.blue.opacity(0.1))
             
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 16) {
                     // Definition Section
                     collapsibleSection(
                         title: "Definition",
@@ -390,9 +420,9 @@ struct AIWordExplanationView: View {
                             )
                         }
                     }
-                }
-                .padding()
             }
+            .padding()
+            .aiExplanationScrollContainer(contentLayout == .selfScrolling)
         }
     }
     
@@ -597,6 +627,20 @@ struct AIWordExplanationView: View {
     }
 }
 
+private extension View {
+    /// Conditionally provide the one vertical scroll owner used by the
+    /// standalone explanation screen. Embedded explanations expand naturally
+    /// inside their parent page's existing ScrollView.
+    @ViewBuilder
+    func aiExplanationScrollContainer(_ isEnabled: Bool) -> some View {
+        if isEnabled {
+            ScrollView { self }
+        } else {
+            self
+        }
+    }
+}
+
 // MARK: - Compact AI Button for List Rows
 
 /// A small button that can be added to vocabulary rows to trigger AI explanation
@@ -615,14 +659,28 @@ struct AIExplainButton: View {
         AIModelSettings.shared.effectiveProvider.displayName
     }
 
+    private var controlSize: CGFloat {
+        #if os(iOS)
+        44
+        #else
+        28
+        #endif
+    }
+
     var body: some View {
         Button(action: onTap) {
             ProviderIcon(provider: provider, size: 16)
                 .foregroundStyle(isAvailable ? .blue : .secondary)
+                .frame(width: controlSize, height: controlSize)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!isAvailable)
         .help(isAvailable ? "Explain with \(providerName)" : "AI not available")
+        .accessibilityLabel(Text("AI Word Analysis"))
+        .accessibilityHint(
+            Text(isAvailable ? "Explain with \(providerName)" : "AI not available")
+        )
         .onAppear {
             // Any configured provider (including cloud ones) enables the
             // button — checking only Apple Intelligence/Ollama wrongly
