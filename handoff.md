@@ -381,11 +381,11 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 
 ## Iteration 21 — Smooth, completion-safe iOS vocabulary paging (2026-07-14)
 
-**Last Updated (UTC):** 2026-07-13T17:50:13Z
+**Last Updated (UTC):** 2026-07-13T17:53:45Z
 
 **Status:** Complete
 
-**Current Focus:** The swipe repair is verified and ready to commit/push; only an optional physical-device ProMotion trace remains outside the software acceptance gates.
+**Current Focus:** Delivered on `codex/vocab-swipe-smoothness`; only an optional physical-device ProMotion trace remains outside the completed software acceptance gates.
 
 ### 1) Request & Context
 
@@ -413,7 +413,7 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - [x] Confirm the rolling-window `TabView` mutates its controllers inside the native interactive transaction.
 - [x] Implement and compile one stable, bounded paging architecture.
 - [x] Run helper checks, real simulator gesture acceptance, stress/mutation scenarios, and both platform builds.
-- [x] Complete two independent review passes and update evidence; commit/push are the final delivery action after this record is staged.
+- [x] Complete two independent review passes, update evidence, commit as `e9ab7c5`, and push `codex/vocab-swipe-smoothness` to origin.
 
 ### 4) To-Do & Progress Ledger
 
@@ -464,7 +464,7 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 
 ### 9) Remaining Work & Next Steps
 
-- Commit and push this isolated branch. No pager implementation work remains.
+- No pager implementation or delivery work remains. Commit `e9ab7c5` is pushed on `origin/codex/vocab-swipe-smoothness`.
 - Recommended release validation: run Instruments/Core Animation on a 120 Hz physical iPhone after provisioning is available, plus a short VoiceOver/Reduce Motion pass. Simulator geometry, behavior, and all compile gates already pass.
 - Separate follow-ups, not blockers for this repair: avoid automatic Ollama localhost probing on iPhone and correct App Intent `ProvidesDialog` signatures. GitHub issue lookup was attempted twice but the API TLS handshake timed out, so no potentially duplicate issue was created blindly.
 
@@ -478,3 +478,4 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - 2026-07-13T17:31:00Z: The post-review three-term replay passed every swipe/geometry assertion, then the added live-mastery mutation step failed before interaction because XCUITest classifies a button-styled SwiftUI `Toggle` as `Switch`, not `Button`. The selector was corrected and the acceptance run restarted; production behavior was not implicated.
 - 2026-07-13T17:38:00Z: Re-review accepted the production mutation repair but rejected the first regression check as insufficiently causal. Extracted and adopted the exact post-transition resolver plus live cache-window policy, expanded the survivor/deletion/empty matrix, and passed all 25 fast checks.
 - 2026-07-13T17:50:13Z: Final exact-binary replay passed 107.434 seconds of geometry-checked gestures and live mutation; 1,445-term stress, three platform builds, policy checks, hygiene, warning timing, screenshot inspection, and independent review all pass. Marked Iteration 21 complete pending only commit/push delivery.
+- 2026-07-13T17:53:45Z: Committed the verified repair as `e9ab7c5` and pushed `codex/vocab-swipe-smoothness` to origin; the worktree was clean immediately after delivery.
