@@ -538,11 +538,11 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 
 ## Iteration 23 — Tutor-grade AI explanation prompt (2026-07-21)
 
-**Last Updated (UTC):** 2026-07-20T19:02:25Z
+**Last Updated (UTC):** 2026-07-20T19:04:21Z
 
-**Status:** In Progress
+**Status:** Complete
 
-**Current Focus:** Verify the prompt change against current remote `main`, push the feature branch, merge it, and confirm the remote result.
+**Current Focus:** Merge commit `a0b09dc` is delivered to `origin/main`; this record closes the verified AI prompt slice.
 
 ### 1) Request & Context
 
@@ -617,12 +617,13 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - Project/localization hygiene: project plist lint, localization `jq empty`, empty explicit Sources membership, runner exclusion, and `git diff --check` all pass.
 - `git diff --check`: passed.
 - Independent Swift/integration and adversarial language-pedagogy reviews found no remaining Critical or Important issue after their findings were resolved.
+- Delivery: feature commits `4033e7b` and `f8f06cb` were pushed on `origin/codex/ai-translation-explanations`; two-parent merge `a0b09dcd2d738da16e09cb4a7fc6c438eddc2cab` was pushed normally to `origin/main`, and remote ancestry checks confirm both feature commits are included.
 
 ### 9) Remaining Work & Next Steps
 
 - No implementation work remains for this slice.
 - Live-provider quality sampling remains valuable; deterministic checks prove the prompt and wiring, not the factual quality of any model's prose. Previously cached explanations intentionally remain compatible and unchanged; use the existing Regenerate action to obtain a new explanation under this prompt.
-- The implementation is committed as `4033e7b` on `codex/ai-translation-explanations`; the primary dirty worktree remains preserved while integration proceeds in an isolated worktree.
+- No commit, merge, or delivery work remains. The primary dirty worktree's stale pager index, generated project diff, and unrelated untracked InfoPlist catalog remain preserved locally and excluded from main.
 
 ### 10) Updates to This File (append-only)
 
@@ -631,3 +632,4 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - 2026-07-20T18:17:42Z: Resolved all final-review findings, added role-aware character teaching, same-language non-circular definitions, exact-anchor-plus-natural-form behavior, scan-friendly output, compatible uncertainty validation, and direction-aware provider schemas; recorded 90 passing checks and fresh green iOS/macOS builds; marked Iteration 23 complete.
 - 2026-07-20T18:59:05Z: Replayed the isolated AI implementation onto current `origin/main` as `4033e7b`, preserving the primary worktree and the newer merged pager implementation; clean-branch verification and delivery follow.
 - 2026-07-20T19:02:25Z: Passed 75/75 prompt checks, 15/15 provider-wiring checks, 25/25 pager checks, project/localization hygiene, and clean iOS/macOS builds on the exact feature tree; only commit, push, merge, and remote verification remain.
+- 2026-07-20T19:04:21Z: Pushed the two feature commits, created and pushed two-parent merge `a0b09dc` to `origin/main`, verified remote SHA and feature ancestry, and marked Iteration 23 complete; the primary dirty worktree remains untouched.
