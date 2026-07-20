@@ -145,6 +145,17 @@ struct MoreView: View {
             }
 
             NavigationLink {
+                AIAudioSettingsView()
+            } label: {
+                HStack {
+                    Label("AI Audio", systemImage: "waveform")
+                    Spacer()
+                    Text(prefs.aiAudioEnabled ? "On" : "Off")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            NavigationLink {
                 BatchAIAnalysisView()
             } label: {
                 HStack {

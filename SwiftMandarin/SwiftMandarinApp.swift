@@ -27,6 +27,9 @@ struct SwiftMandarinApp: App {
     #endif
 
     init() {
+        // Audio-input files are working copies scoped to one app session. A
+        // startup sweep removes anything abandoned by a crash or force-quit.
+        AudioInputFileStore.removeAllTemporaryFiles()
         // Ensures app shortcuts are registered and entity-backed parameters are refreshed.
         SwiftMandarinShortcutsProvider.updateAppShortcutParameters()
     }

@@ -40,9 +40,9 @@ struct GetRandomPhraseIntent: AppIntent {
 
         if speakPhrase {
             if learningEnglish {
-                SpeechService.speakEnglish(phrase.english)
+                try await SpeechService.speakAndWait(phrase.english, languageCode: "en-US")
             } else {
-                SpeechService.speakChinese(phrase.chinese)
+                try await SpeechService.speakAndWait(phrase.chinese, languageCode: "zh-CN")
             }
         }
 

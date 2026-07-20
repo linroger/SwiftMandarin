@@ -24,6 +24,11 @@ struct MacOSSettingsView: View {
                 .tabItem {
                     Label("AI", systemImage: "cpu")
                 }
+
+            AIAudioSettingsView()
+                .tabItem {
+                    Label("Audio", systemImage: "waveform")
+                }
             
             TranslationSettingsTab()
                 .tabItem {

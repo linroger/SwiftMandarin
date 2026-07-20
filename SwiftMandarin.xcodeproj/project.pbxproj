@@ -328,9 +328,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSCameraUsageDescription = "SwiftMandarin needs camera access to scan and recognize text from photos for translation.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SwiftMandarin uses the microphone for live speech translation.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SwiftMandarin uses the microphone to record speech for transcription and translation.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "SwiftMandarin needs photo library access to select images containing text for translation.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "SwiftMandarin transcribes your speech on-device so it can be translated.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "SwiftMandarin uses Apple Speech to transcribe live and recorded audio for editing and translation; processing may use Apple services when on-device recognition is unavailable.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -401,9 +401,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSCameraUsageDescription = "SwiftMandarin needs camera access to scan and recognize text from photos for translation.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SwiftMandarin uses the microphone for live speech translation.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SwiftMandarin uses the microphone to record speech for transcription and translation.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "SwiftMandarin needs photo library access to select images containing text for translation.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "SwiftMandarin transcribes your speech on-device so it can be translated.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "SwiftMandarin uses Apple Speech to transcribe live and recorded audio for editing and translation; processing may use Apple services when on-device recognition is unavailable.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

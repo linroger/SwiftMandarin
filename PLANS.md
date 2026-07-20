@@ -1,5 +1,17 @@
 # SwiftMandarin implementation plans
 
+## Active slice: MiniMax AI Audio and Multimodal translation
+
+**Created (UTC):** 2026-07-20T19:55:55Z
+
+**Branch:** `codex/minimax-ai-audio`
+
+**Base:** `origin/main` at `329ad5fbf59edab83d208b4edb6a4e38b4bdbf47`
+
+The approved implementation contract, architecture, invariants, risks, acceptance checks, and planned evidence for this cross-cutting feature are recorded in [`docs/handoff/minimax-ai-audio/PLANS.md`](docs/handoff/minimax-ai-audio/PLANS.md). The bounded slice adds settings-controlled MiniMax persistent TTS behind the existing global speech router, an exportable generated-audio library, and Apple Speech-backed recording/import transcription plus one-action translation in the renamed Multimodal tab.
+
+MiniMax's current public documentation does not expose a supported general uploaded-audio transcription or audio-translation endpoint. The implementation therefore uses MiniMax only for text-to-speech and composes Apple Speech transcription with the app's existing text-translation pipeline for audio input.
+
 ## Active slice: Native vocabulary-detail paging and 2027 UI alignment
 
 **Created (UTC):** 2026-07-13T08:51:49Z
