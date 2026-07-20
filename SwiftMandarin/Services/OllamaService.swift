@@ -299,34 +299,11 @@ final class OllamaService {
         sourceIsChinese: Bool,
         model: String
     ) async throws -> String {
-        let systemPrompt = """
-        You are an expert translator specializing in English and Mandarin Chinese (Simplified).
-        
-        Your translations should be:
-        1. ACCURATE: Preserve the exact meaning and intent of the source text
-        2. NATURAL: Use idiomatic expressions appropriate for the target language
-        3. CONTEXTUAL: Consider the context and register (formal/informal)
-        4. CULTURAL: Adapt cultural references when necessary for clarity
-        
-        For English to Chinese translations:
-        - Use Simplified Chinese characters (简体中文)
-        - Choose vocabulary appropriate for modern standard Mandarin (普通话)
-        - Maintain the tone and style of the original
-        
-        For Chinese to English translations:
-        - Use natural, fluent English
-        - Preserve nuances and connotations where possible
-        - Clarify ambiguous cultural references if needed
-        
-        Respond with ONLY the translation, no explanations or additional text.
-        """
-        
-        let direction = sourceIsChinese ? "Chinese to English" : "English to Chinese"
-        let userPrompt = """
-        Translate the following text from \(direction):
-        
-        \(text)
-        """
+        let systemPrompt = AITranslationPromptBuilder.instructions
+        let userPrompt = AITranslationPromptBuilder.request(
+            text: text,
+            sourceIsChinese: sourceIsChinese
+        )
         
         let (content, _) = try await chat(
             model: model,

@@ -362,13 +362,8 @@ final class CloudAIService {
 
     /// Translate text using a cloud provider.
     func translate(_ text: String, sourceIsChinese: Bool, provider: AIProvider, model: String) async throws -> String {
-        let system = """
-        You are an expert translator between English and Mandarin Chinese (Simplified).
-        Translate accurately and naturally, preserving meaning, tone and register.
-        For English→Chinese use 简体中文. Respond with ONLY the translation, no commentary.
-        """
-        let direction = sourceIsChinese ? "Chinese to English" : "English to Chinese"
-        let user = "Translate the following from \(direction):\n\n\(text)"
+        let system = AITranslationPromptBuilder.instructions
+        let user = AITranslationPromptBuilder.request(text: text, sourceIsChinese: sourceIsChinese)
         let result = try await chat(provider: provider, model: model, system: system, user: user, maxTokens: 2048)
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
