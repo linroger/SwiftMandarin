@@ -57,5 +57,5 @@ The existing structured fields remain the output contract. Character composition
 - Shared prompt and translation contracts: 75/75 deterministic assertions passed.
 - Apple Intelligence, Ollama, and cloud wiring: 15/15 structural assertions passed.
 - Generic iOS Simulator Debug and generic macOS Debug builds both succeeded from the final snapshot.
-- The only build warnings are inherited duplicate Compile Sources entries for the staged vocabulary-paging slice; this prompt slice deliberately did not modify that project-file work.
+- Clean-branch iOS Simulator and macOS builds emit no warning or error. The primary dirty worktree's Xcode-generated duplicate Sources diff remains deliberately excluded.
 - No configured live model was invoked, so factual prose quality remains a runtime sampling step rather than a locally proven claim.

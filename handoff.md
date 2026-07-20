@@ -535,3 +535,99 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - 2026-07-13T18:04:13Z: Created the main-integration record after fetching remote refs, preserving the dirty primary worktree, and preparing a conflict-free no-commit merge in a dedicated worktree.
 - 2026-07-13T18:08:29Z: Passed all 25 policy checks, merge hygiene, and clean iOS Simulator, unsigned iOS device, and macOS builds against the exact staged merge tree; only commit/push/remote verification remains.
 - 2026-07-13T18:10:15Z: Created two-parent merge commit `2c669f1`, pushed it normally to `origin/main`, verified the remote SHA and feature ancestry, and marked main integration complete.
+
+## Iteration 23 — Tutor-grade AI explanation prompt (2026-07-21)
+
+**Last Updated (UTC):** 2026-07-20T19:02:25Z
+
+**Status:** In Progress
+
+**Current Focus:** Verify the prompt change against current remote `main`, push the feature branch, merge it, and confirm the remote result.
+
+### 1) Request & Context
+
+- **User request:** Make AI translations and explanations more useful, thorough, detailed, engaging, easy to understand, and pleasurable to read; specifically explain what individual characters mean and how they reveal the essence of a word.
+- **Operational constraints:** The primary worktree contains staged vocabulary-paging/UI work. That work MUST remain intact and MUST NOT be included in this slice's edits or verification claims.
+- **Scope boundary:** Rich pedagogy belongs to the structured word-explanation flow. Plain AI translation remains translation-only because photo, live speech, Reader, history, TTS, screenshots, and Shortcuts consume it as raw target-language text.
+- **Plan:** `docs/handoff/ai-explanation-quality/PLANS.md` records the approved prompt design, invariants, risks, and checks.
+
+### 2) Requirements → Acceptance Checks
+
+| Requirement | Acceptance Check | Expected Outcome | Evidence |
+|---|---|---|---|
+| R23.1: Character-aware semantic explanation | Generate/inspect the Chinese prompt contract | It accounts for every character/morpheme, assigns an honest semantic/phonetic/grammatical/other role, and bridges the parts to the modern whole-word sense | Deterministic prompt check |
+| R23.2: Engaging but rigorous prose | Inspect field roles and style guardrails | Answer-first, concrete, warm, scan-friendly prose; no repetition, filler, or invented etymology | Contract assertions + review |
+| R23.3: Sense-aware usefulness | Inspect requests with/without context | Context/pinyin selects the intended sense; default is the common modern sense | Prompt-payload assertions |
+| R23.4: Provider parity | Trace Apple, Ollama, and cloud paths | All three use the shared teacher/request contract and reinforced schemas | Source assertions + build |
+| R23.5: Preserve consumers and data | Review output model/cache and plain translation methods | Existing result/cache shape remains decodable; translation still returns only target text | Diff review + builds |
+| R23.6: Cross-platform safety | Build iOS Simulator and macOS | Both builds succeed with no new source diagnostics | Retained build logs |
+
+### 3) Plan & Decomposition
+
+- [x] Capture the dirty baseline, recent history, continuity files, prompt call graph, and output contracts.
+- [x] Deploy parallel read-only reviews for provider mapping, UI/decoder constraints, and language-pedagogy quality.
+- [x] Implement one pure shared prompt builder and route every explanation provider through it.
+- [x] Add credential-free deterministic prompt checks.
+- [x] Run focused checks, iOS/macOS builds, and independent diff review; fix findings.
+- [x] Record final evidence and residual live-model validation needs.
+
+### 4) To-Do & Progress Ledger
+
+- [x] Confirmed `AIWordExplanationService` is clean at baseline; its three explanation routes are safe to edit without overwriting the staged paging implementation.
+- [x] Confirmed `AIWordExplanationView` and `VocabularyView` contain staged paging work; avoid UI/schema expansion unless source evidence makes it necessary.
+- [x] Production prompt implementation: shared explanation and translation builders, reinforced typed/Ollama/cloud field guidance, safer exact-headword filtering, bounded arrays, and semantic response validation.
+- [x] Deterministic verification: 75 prompt/JSON/matcher checks plus 15 provider-wiring checks pass; both target builds succeed.
+
+### 5) Findings, Decisions, Assumptions
+
+- **Finding:** The app has two different AI contracts. `translate` must return only a target-language string, while `generateExplanationWithProvider` returns the rich `WordExplanationResult` displayed as a multi-section tutor card.
+- **Finding:** Apple Intelligence uses one short instruction block, while Ollama/cloud share another; all provider schemas use broad descriptions such as “cultural/contextual nuance,” so character composition and engaging pedagogy are not currently guaranteed.
+- **Decision:** Keep the stable structured result shape. Put direct translation plus semantic essence in `definition`; put character-by-character composition and the literal-to-modern bridge in `nuances`; sharpen the distinct jobs of the remaining fields.
+- **Decision:** Treat context/headword/pinyin as untrusted data and delimit them in a JSON payload rather than interpolating raw context into imperative prose.
+- **Finding:** The value called `context` is often a saved native-language gloss (`term.glossText`), not an attested encounter sentence. The payload now names it `senseHintOrContext`, and the teacher contract forbids quoting it or inventing a scene around it.
+- **Decision:** Preserve the nine-field stored result shape. The direct translation + semantic essence belongs in `definition`; synchronic character/morpheme contributions and the bridge to the lexicalized whole belong in `nuances`.
+- **Decision:** Optional synonyms, antonyms, collocations, examples, and grammar may be empty when uncertain. The old Foundation Models minima were removed because completeness pressure encouraged fabricated relations and filler.
+- **Decision:** Cap retained output at 3 contexts/examples, 2 synonyms/collocations, and 1 antonym. Exact anchors use case-insensitive token boundaries for English (`Charge` matches `charge`, while `running` is not itself an exact `run` anchor) and exact character sequences for Chinese. Once a generated set has one exact anchor, natural inflected or separated forms of the same lexeme are retained.
+- **Decision:** Cross-language definitions lead with the closest natural translation; same-language directions instead require a non-circular plain-language definition and paraphrased example/collocation glosses.
+- **Finding:** Tolerant cloud decoding previously allowed `{}` to be cached. Every provider now validates substantive `definition` and `nuances` fields before caching. This preserves the honest uncertainty path: malformed or unidentified items explain what cannot be established in those two fields while other unsupported content remains empty.
+- **Assumption:** A credential-free prompt-contract check plus both platform builds is proportionate implementation evidence. Actual prose quality across models still needs a live-provider sample run; no model generation was used as proof in this slice.
+
+### 6) Issues, Mistakes, Recoveries
+
+- **Prompt-builder interpolation mistake → detection → recovery:** The first standalone typecheck warned that prompt variables were unused; source inspection showed the initial patch had dropped Swift interpolation backslashes. The strings were corrected, a warning-free standalone typecheck was rerun, and the production prompt suite now asserts interpolated language names and JSON payload values.
+- **Independent pedagogy review → prompt contradictions → recovery:** Review found that exact-headword-everywhere wording blocked natural English inflections and Chinese separable forms, that a naive character rule could invent meanings for phonetic/function elements, and that same-language directions could produce circular “translations.” The final contract uses one exact anchor plus natural forms, classifies every Chinese component by its honest role, handles particles grammatically, and switches same-language fields to definitions/paraphrases.
+- **Independent implementation review → schema/validator fixes:** Review found unconditional Chinese-style wording in provider schemas, a strict completeness threshold that rejected the prompt's honest uncertainty fallback, and temporary `String`/`Ollama.Value` inference build errors. Direction-aware schema descriptions, two irreducible teaching fields, and explicit `Ollama.Value` annotations resolved all three; fresh builds passed.
+- **Inherited project-file regression → isolation:** Initial builds in the primary worktree reported duplicate Compile Sources entries for `VocabularyPaging.swift`, `VocabularyView.swift`, and `AIWordExplanationView.swift`. The unstaged Xcode-generated `project.pbxproj` diff caused them and remains excluded. Fresh builds on current `origin/main` plus the AI commit emit no warning or error.
+- **Build-report wrapper mistake → retained-log recovery:** The first parallel wrapper used zsh's read-only `status` variable after both `xcodebuild` processes had finished, so the wrappers exited before printing their results. Direct inspection of the complete retained logs confirmed one `BUILD SUCCEEDED` marker and zero warning/error lines for each platform; the implementation did not fail or change.
+
+### 7) Scenario-Focused Resolution Tests
+
+- **Chinese scenario:** `学习 (xuéxí)` with a sense hint or encounter context must request a natural translation, the core idea, `学` and `习` contributions, the compositional bridge, real usage decisions, one exact anchor plus useful natural forms, and an accurate memory cue without claiming folk etymology.
+- **English scenario:** An English headword must produce explanations in Simplified Chinese when that is the interface language, keep pinyin fields empty, and discuss genuine word parts only when they clarify meaning.
+- **Post-change behavior:** The generated Chinese contract explicitly accounts for each Han character/bound morpheme, giving a core meaning only to semantically active parts and naming phonetic, transliterated, grammatical, fossilized, or uncertain roles honestly. It then requires a scan-friendly parts-to-whole bridge and useful contrast; English uses genuine morphology only when helpful. Both directions use safely JSON-encoded inputs and a warm, answer-first, anti-filler style.
+- **Verdict:** Contract and build verification passed; live prose sampling remains pending provider/device availability.
+
+### 8) Verification Summary
+
+- `scripts/test-ai-prompt-contracts.sh`: 75/75 prompt, language-direction, same-language non-circularity, JSON round-trip, translation-invariant, character-role, schema, and exact-anchor checks passed; 15/15 provider-wiring/semantic-validation checks passed.
+- Standalone `swiftc -parse-as-library -typecheck SwiftMandarin/Services/AIExplanationPromptBuilder.swift`: passed with no diagnostics.
+- Clean-feature iOS Simulator Debug build: `** BUILD SUCCEEDED **` in `/tmp/SwiftMandarin-ai-feature-ios.log`; zero warning/error lines.
+- Clean-feature macOS Debug build: `** BUILD SUCCEEDED **` in `/tmp/SwiftMandarin-ai-feature-macos.log`; zero warning/error lines.
+- Current pager regression suite: `scripts/test-vocabulary-paging.sh` passes 25/25 on the combined tree.
+- Project/localization hygiene: project plist lint, localization `jq empty`, empty explicit Sources membership, runner exclusion, and `git diff --check` all pass.
+- `git diff --check`: passed.
+- Independent Swift/integration and adversarial language-pedagogy reviews found no remaining Critical or Important issue after their findings were resolved.
+
+### 9) Remaining Work & Next Steps
+
+- No implementation work remains for this slice.
+- Live-provider quality sampling remains valuable; deterministic checks prove the prompt and wiring, not the factual quality of any model's prose. Previously cached explanations intentionally remain compatible and unchanged; use the existing Regenerate action to obtain a new explanation under this prompt.
+- The implementation is committed as `4033e7b` on `codex/ai-translation-explanations`; the primary dirty worktree remains preserved while integration proceeds in an isolated worktree.
+
+### 10) Updates to This File (append-only)
+
+- 2026-07-20T17:42:19Z: Created the AI prompt brief, acceptance matrix, plan, scope protections, initial findings, and scenario checks before production edits.
+- 2026-07-20T17:59:59Z: Recorded shared prompt implementation, output guardrails, 69 passing deterministic checks, two successful platform builds, the recovered interpolation mistake, inherited warning boundary, and pending final reviews.
+- 2026-07-20T18:17:42Z: Resolved all final-review findings, added role-aware character teaching, same-language non-circular definitions, exact-anchor-plus-natural-form behavior, scan-friendly output, compatible uncertainty validation, and direction-aware provider schemas; recorded 90 passing checks and fresh green iOS/macOS builds; marked Iteration 23 complete.
+- 2026-07-20T18:59:05Z: Replayed the isolated AI implementation onto current `origin/main` as `4033e7b`, preserving the primary worktree and the newer merged pager implementation; clean-branch verification and delivery follow.
+- 2026-07-20T19:02:25Z: Passed 75/75 prompt checks, 15/15 provider-wiring checks, 25/25 pager checks, project/localization hygiene, and clean iOS/macOS builds on the exact feature tree; only commit, push, merge, and remote verification remain.
