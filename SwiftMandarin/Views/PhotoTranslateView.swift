@@ -34,6 +34,24 @@ extension DetectedLanguage {
     }
 }
 
+nonisolated private struct PhotoEnglishTranslationSnapshot: Sendable {
+    nonisolated struct Word: Sendable {
+        let sentenceIndex: Int
+        let wordIndex: Int
+        let lemma: String
+        let shouldTranslate: Bool
+    }
+
+    let requestID: UUID
+    let sourceTexts: [String]
+    let words: [Word]
+}
+
+nonisolated private struct MultimodalAudioTranslationFailure: LocalizedError, Sendable {
+    let message: String
+    var errorDescription: String? { message }
+}
+
 /// Main view for photo-based translation
 struct PhotoTranslateView: View {
     @Environment(SavedTermsStore.self) private var savedTermsStore
@@ -74,6 +92,7 @@ struct PhotoTranslateView: View {
     @State private var showGrammarPoints: Bool = true
     @State private var prefs = AppPreferences.shared
     @State private var aiSettings = AIModelSettings.shared
+    @State private var inputMode: MultimodalInputMode = .imageAndText
 
     // AI structured vocabulary extraction
     @State private var extractedVocab: [ExtractedVocabItem] = []
@@ -95,7 +114,11 @@ struct PhotoTranslateView: View {
     // re-selection can't pile up stale work that overwrites newer results.
     @State private var photoProcessingTask: Task<Void, Never>?
     @State private var textProcessingTask: Task<Void, Never>?
+    @State private var inputProcessingRequestID: UUID?
     @State private var aiFallbackTranslationTask: Task<Void, Never>?
+    @State private var englishTranslationRequestID: UUID?
+    @State private var chineseTranslationTask: Task<Void, Never>?
+    @State private var chineseTranslationRequestID: UUID?
 
     // History (translations made here count like the Translate tab's)
     @AppStorage("saveToHistoryAutomatically") private var saveToHistoryAutomatically: Bool = true
@@ -133,7 +156,7 @@ struct PhotoTranslateView: View {
                 }
                 .padding()
             }
-            .navigationTitle("拍照翻译")
+            .navigationTitle("Multimodal")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             #endif
@@ -238,12 +261,16 @@ struct PhotoTranslateView: View {
             }
             .fileImporter(isPresented: $showPhotoFiles, allowedContentTypes: [.image], allowsMultipleSelection: false) { result in
                 guard case let .success(urls) = result, let url = urls.first else { return }
+                let requestID = beginInputProcessingRequest()
                 Task {
                     let scoped = url.startAccessingSecurityScopedResource()
                     defer { if scoped { url.stopAccessingSecurityScopedResource() } }
                     guard let data = try? Data(contentsOf: url) else { return }
-                    await MainActor.run { selectedImageData = data }
-                    await processImageData(data)
+                    try? Task.checkCancellation()
+                    guard commitIfCurrent(requestID, operation: {
+                        selectedImageData = data
+                    }) else { return }
+                    await processImageData(data, requestID: requestID)
                 }
             }
             .task(id: routeStore.pendingAction?.id) {
@@ -251,21 +278,23 @@ struct PhotoTranslateView: View {
             }
             .onChange(of: capturedText) { _, newValue in
                 if !newValue.isEmpty {
-                    sourceText = newValue
                     // Cancel BOTH in-flight pipelines: a photo task finishing
                     // late must not overwrite this newer camera capture.
                     photoProcessingTask?.cancel()
                     textProcessingTask?.cancel()
+                    let requestID = beginInputProcessingRequest()
+                    sourceText = newValue
                     textProcessingTask = Task {
-                        await processText(newValue)
+                        await processText(newValue, requestID: requestID)
                     }
                 }
             }
             .onChange(of: selectedPhoto) { _, newValue in
                 photoProcessingTask?.cancel()
                 textProcessingTask?.cancel()
+                let requestID = beginInputProcessingRequest()
                 photoProcessingTask = Task {
-                    await loadAndProcessImage(newValue)
+                    await loadAndProcessImage(newValue, requestID: requestID)
                 }
             }
             .background {
@@ -328,11 +357,12 @@ struct PhotoTranslateView: View {
     /// Restore the unmodified OCR text and re-run analysis on it.
     private func revertToRawOCRText() {
         guard !rawOCRText.isEmpty else { return }
+        let requestID = beginInputProcessingRequest()
         aiCleanupApplied = false
         sourceText = rawOCRText
         textProcessingTask?.cancel()
         textProcessingTask = Task {
-            await processText(rawOCRText)
+            await processText(rawOCRText, requestID: requestID)
         }
     }
 
@@ -356,77 +386,97 @@ struct PhotoTranslateView: View {
 
     private var inputSection: some View {
         VStack(spacing: 16) {
-            // Input buttons
-            HStack(spacing: 12) {
-                #if os(iOS)
-                // Camera button - only show if device supports scanning
-                if CameraScannerView.isSupported {
-                    Button {
-                        showCameraScanner = true
-                    } label: {
-                        sourceButtonLabel("相机扫描", systemImage: "camera.fill")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!CameraScannerView.isAvailable)
+            Picker("Input Type", selection: $inputMode) {
+                ForEach(MultimodalInputMode.allCases) { mode in
+                    Label(mode.title, systemImage: mode.iconName).tag(mode)
                 }
-                #endif
-
-                // Photo picker (Photos library)
-                PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                    sourceButtonLabel("照片", systemImage: "photo.fill")
-                }
-                .buttonStyle(.bordered)
-
-                // File picker (Files app / Finder)
-                Button {
-                    showPhotoFiles = true
-                } label: {
-                    sourceButtonLabel("文件", systemImage: "folder")
-                }
-                .buttonStyle(.bordered)
             }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Multimodal input type")
 
-            // Scan-language selector + re-recognize. Lets the user force
-            // Chinese/English recognition and re-run OCR on the same image.
-            HStack(spacing: 12) {
-                Menu {
-                    Picker("识别语言", selection: Binding(
-                        get: { prefs.photoScanLanguage },
-                        set: { prefs.photoScanLanguage = $0 }
-                    )) {
-                        ForEach(PhotoScanLanguage.allCases) { lang in
-                            Label(lang.displayName, systemImage: lang.iconName).tag(lang)
+            if inputMode == .imageAndText {
+                // Image input buttons
+                HStack(spacing: 12) {
+                    #if os(iOS)
+                    if CameraScannerView.isSupported {
+                        Button {
+                            showCameraScanner = true
+                        } label: {
+                            sourceButtonLabel("相机扫描", systemImage: "camera.fill")
                         }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(!CameraScannerView.isAvailable)
                     }
-                } label: {
-                    Label("识别语言: \(prefs.photoScanLanguage.displayName)",
-                          systemImage: prefs.photoScanLanguage.iconName)
-                        .font(.caption)
-                        .fitSingleLine()
-                }
-                .menuStyle(.borderlessButton)
+                    #endif
 
-                Spacer()
-
-                if selectedImageData != nil {
-                    Button {
-                        Task { await reRecognizeCurrentImage() }
-                    } label: {
-                        Label("重新识别", systemImage: "arrow.clockwise")
-                            .font(.caption)
+                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                        sourceButtonLabel("照片", systemImage: "photo.fill")
                     }
                     .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(isProcessing)
+
+                    Button {
+                        showPhotoFiles = true
+                    } label: {
+                        sourceButtonLabel("文件", systemImage: "folder")
+                    }
+                    .buttonStyle(.bordered)
                 }
 
-                if aiSettings.aiPhotoCleanupEnabled {
-                    Label("AI", systemImage: "sparkles")
-                        .font(.caption2)
-                        .foregroundStyle(.purple)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(Color.purple.opacity(0.12)))
+                // Scan-language selector + re-recognize. Lets the user force
+                // Chinese/English recognition and re-run OCR on the same image.
+                HStack(spacing: 12) {
+                    Menu {
+                        Picker("识别语言", selection: Binding(
+                            get: { prefs.photoScanLanguage },
+                            set: { prefs.photoScanLanguage = $0 }
+                        )) {
+                            ForEach(PhotoScanLanguage.allCases) { lang in
+                                Label(lang.displayName, systemImage: lang.iconName).tag(lang)
+                            }
+                        }
+                    } label: {
+                        Label(
+                            "识别语言: " + prefs.photoScanLanguage.displayName,
+                            systemImage: prefs.photoScanLanguage.iconName
+                        )
+                        .font(.caption)
+                        .fitSingleLine()
+                    }
+                    .menuStyle(.borderlessButton)
+
+                    Spacer()
+
+                    if selectedImageData != nil {
+                        Button {
+                            let requestID = beginInputProcessingRequest()
+                            Task {
+                                await reRecognizeCurrentImage(requestID: requestID)
+                            }
+                        } label: {
+                            Label("重新识别", systemImage: "arrow.clockwise")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .disabled(isProcessing)
+                    }
+
+                    if aiSettings.aiPhotoCleanupEnabled {
+                        Label("AI", systemImage: "sparkles")
+                            .font(.caption2)
+                            .foregroundStyle(.purple)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.purple.opacity(0.12)))
+                    }
+                }
+            } else {
+                MultimodalAudioInputView { transcript, language, action in
+                    try await handleAudioInputResult(
+                        transcript,
+                        recognitionLanguage: language,
+                        action: action
+                    )
                 }
             }
 
@@ -493,8 +543,9 @@ struct PhotoTranslateView: View {
                     }
                     
                     Button {
+                        let requestID = beginInputProcessingRequest()
                         Task {
-                            await processText(sourceText)
+                            await processText(sourceText, requestID: requestID)
                         }
                     } label: {
                         Label("分析翻译", systemImage: "wand.and.stars")
@@ -516,13 +567,17 @@ struct PhotoTranslateView: View {
     }
 
     private func handlePhotoDrop(_ providers: [NSItemProvider]) -> Bool {
+        guard inputMode == .imageAndText else { return false }
         guard let provider = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.image.identifier) }) else {
             return false
         }
+        let requestID = beginInputProcessingRequest()
         Task {
             guard let data = await PhotoTranslateView.loadDroppedImage(provider) else { return }
-            await MainActor.run { selectedImageData = data }
-            await processImageData(data)
+            guard commitIfCurrent(requestID, operation: {
+                selectedImageData = data
+            }) else { return }
+            await processImageData(data, requestID: requestID)
         }
         return true
     }
@@ -792,8 +847,9 @@ struct PhotoTranslateView: View {
             Text(error)
         } actions: {
             Button("重试") {
+                let requestID = beginInputProcessingRequest()
                 Task {
-                    await processText(sourceText)
+                    await processText(sourceText, requestID: requestID)
                 }
             }
             .buttonStyle(.borderedProminent)
@@ -802,9 +858,9 @@ struct PhotoTranslateView: View {
     
     private var emptyStateView: some View {
         ContentUnavailableView {
-            Label("拍照翻译", systemImage: "camera.viewfinder")
+            Label("Multimodal Translation", systemImage: "waveform.and.magnifyingglass")
         } description: {
-            Text("拍摄或选择图片，自动识别文字并翻译\n支持中文↔英文双向翻译")
+            Text("Scan an image, enter text, or switch to Audio to record or upload speech.\nSupports English ↔ Chinese transcription and translation.")
         }
         .padding(.vertical, 40)
     }
@@ -839,23 +895,186 @@ struct PhotoTranslateView: View {
     }
 
     // MARK: - Actions
-    
-    private func loadAndProcessImage(_ item: PhotosPickerItem?) async {
-        guard let item = item else { return }
 
-        await MainActor.run {
+    private func beginInputProcessingRequest() -> UUID {
+        let requestID = UUID()
+        inputProcessingRequestID = requestID
+        return requestID
+    }
+
+    @discardableResult
+    private func commitIfCurrent(
+        _ requestID: UUID,
+        operation: () -> Void
+    ) -> Bool {
+        guard inputProcessingRequestID == requestID, !Task.isCancelled else {
+            return false
+        }
+        operation()
+        return true
+    }
+
+    /// Reuses the same editor, analysis, and language-specific translation
+    /// paths as typed or OCR text. The transcript is committed to the editor
+    /// before translation starts so learners can always inspect and correct it.
+    private func handleAudioInputResult(
+        _ transcript: String,
+        recognitionLanguage: SpeechRecognitionLanguage,
+        action: MultimodalAudioAction
+    ) async throws {
+        guard !transcript.isEmpty, !Task.isCancelled else { return }
+
+        // An audio result is newer than any in-flight photo/OCR work and must
+        // not be overwritten when an older image task completes.
+        photoProcessingTask?.cancel()
+        textProcessingTask?.cancel()
+        let requestID = beginInputProcessingRequest()
+        aiFallbackTranslationTask?.cancel()
+        englishTranslationRequestID = nil
+        chineseTranslationTask?.cancel()
+        chineseTranslationTask = nil
+        chineseTranslationRequestID = nil
+        isTranslating = false
+        sourceText = transcript
+        rawOCRText = ""
+        aiCleanupApplied = false
+        cleanupNotice = nil
+
+        let knownLanguage: DetectedLanguage = recognitionLanguage == .english
+            ? .english
+            : .chinese
+        await processText(
+            transcript,
+            knownLanguage: knownLanguage,
+            requestID: requestID
+        )
+        try Task.checkCancellation()
+
+        guard action == .translateAudio,
+              !Task.isCancelled,
+              inputProcessingRequestID == requestID else { return }
+        if knownLanguage == .english {
+            triggerTranslation()
+            guard let translationRequestID = englishTranslationRequestID else {
+                throw MultimodalAudioTranslationFailure(
+                    message: String(localized: "Translation failed.")
+                )
+            }
+            try await waitForAudioTranslationCompletion(
+                inputRequestID: requestID,
+                translationRequestID: translationRequestID,
+                language: .english
+            )
+            guard analyzedSentences.contains(where: {
+                !($0.translation ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }) else {
+                throw MultimodalAudioTranslationFailure(
+                    message: errorMessage ?? String(localized: "Translation failed.")
+                )
+            }
+        } else {
+            triggerChineseTranslation()
+            guard let translationRequestID = chineseTranslationRequestID else {
+                throw MultimodalAudioTranslationFailure(
+                    message: String(localized: "Translation failed.")
+                )
+            }
+            try await waitForAudioTranslationCompletion(
+                inputRequestID: requestID,
+                translationRequestID: translationRequestID,
+                language: .chinese
+            )
+            guard !chineseTranslation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw MultimodalAudioTranslationFailure(
+                    message: errorMessage ?? String(localized: "Translation failed.")
+                )
+            }
+        }
+    }
+
+    /// Keeps the audio operation's progress and Cancel control alive through
+    /// the parent-owned translation. Cancelling the child task invalidates the
+    /// matching translation request so late provider results cannot commit.
+    private func waitForAudioTranslationCompletion(
+        inputRequestID: UUID,
+        translationRequestID: UUID,
+        language: DetectedLanguage
+    ) async throws {
+        do {
+            while true {
+                try Task.checkCancellation()
+                guard self.inputProcessingRequestID == inputRequestID else {
+                    throw CancellationError()
+                }
+                let isActive = language == .english
+                    ? englishTranslationRequestID == translationRequestID
+                    : chineseTranslationRequestID == translationRequestID
+                if !isActive { return }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+        } catch {
+            if language == .english,
+               englishTranslationRequestID == translationRequestID {
+                aiFallbackTranslationTask?.cancel()
+                aiFallbackTranslationTask = nil
+                englishTranslationRequestID = nil
+            } else if language == .chinese,
+                      chineseTranslationRequestID == translationRequestID {
+                chineseTranslationTask?.cancel()
+                chineseTranslationTask = nil
+                chineseTranslationRequestID = nil
+            }
+            if englishTranslationRequestID == nil,
+               chineseTranslationRequestID == nil {
+                isTranslating = false
+            }
+            throw error
+        }
+    }
+    
+    private func loadAndProcessImage(
+        _ item: PhotosPickerItem?,
+        requestID: UUID
+    ) async {
+        guard inputProcessingRequestID == requestID,
+              !Task.isCancelled else { return }
+        guard let item else {
+            _ = commitIfCurrent(requestID) {
+                isProcessing = false
+            }
+            return
+        }
+
+        guard commitIfCurrent(requestID, operation: {
+            aiFallbackTranslationTask?.cancel()
+            aiFallbackTranslationTask = nil
+            englishTranslationRequestID = nil
+            isTranslating = false
+            if chineseTranslationRequestID != nil {
+                chineseTranslationTask?.cancel()
+                chineseTranslationTask = nil
+                chineseTranslationRequestID = nil
+                isTranslating = false
+            }
             isProcessing = true
             errorMessage = nil
-        }
+        }) else { return }
 
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else {
                 throw RecognitionError.invalidImage
             }
-            await MainActor.run { selectedImageData = data }
-            await processImageData(data)
+            try Task.checkCancellation()
+            guard commitIfCurrent(requestID, operation: {
+                selectedImageData = data
+            }) else { return }
+            await processImageData(data, requestID: requestID)
+        } catch is CancellationError {
+            _ = commitIfCurrent(requestID) {
+                isProcessing = false
+            }
         } catch {
-            await MainActor.run {
+            _ = commitIfCurrent(requestID) {
                 errorMessage = error.localizedDescription
                 isProcessing = false
             }
@@ -865,25 +1084,26 @@ struct PhotoTranslateView: View {
     /// Re-run OCR on the most recently selected image using the current scan
     /// language / AI-cleanup settings. Lets users "switch languages" on the
     /// same photo without re-picking it.
-    private func reRecognizeCurrentImage() async {
-        guard let data = selectedImageData else { return }
-        await processImageData(data)
+    private func reRecognizeCurrentImage(requestID: UUID) async {
+        guard let data = selectedImageData,
+              inputProcessingRequestID == requestID else { return }
+        await processImageData(data, requestID: requestID)
     }
 
     /// OCR an image's data, optionally run AI cleanup, then analyze/translate.
-    private func processImageData(_ data: Data) async {
-        await MainActor.run {
+    private func processImageData(_ data: Data, requestID: UUID) async {
+        guard commitIfCurrent(requestID, operation: {
             isProcessing = true
             errorMessage = nil
             cleanupNotice = nil
             aiCleanupApplied = false
-        }
+        }) else { return }
 
         do {
             let scanLanguage = AppPreferences.shared.photoScanLanguage
             let result = try await PhotoTextRecognitionService.shared.recognizeText(from: data, scanLanguage: scanLanguage)
-            guard !Task.isCancelled else {  // superseded by a newer photo
-                await MainActor.run { isProcessing = false }
+            guard !Task.isCancelled,
+                  inputProcessingRequestID == requestID else {
                 return
             }
 
@@ -892,7 +1112,9 @@ struct PhotoTranslateView: View {
             // The pre-AI-cleanup baseline ("original" for the revert button):
             // the locally cleaned OCR text — exactly what the user would have
             // gotten with AI cleanup turned off.
-            await MainActor.run { rawOCRText = result.cleanedText }
+            guard commitIfCurrent(requestID, operation: {
+                rawOCRText = result.cleanedText
+            }) else { return }
 
             // Concern C: route OCR output (and image, for vision-capable
             // providers) through the selected AI model for cleanup/structuring.
@@ -907,43 +1129,63 @@ struct PhotoTranslateView: View {
                     ), !cleaned.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         textToProcess = cleaned
                         languageHint = nil  // re-detect on the AI-cleaned text
-                        await MainActor.run { aiCleanupApplied = true }
+                        guard commitIfCurrent(requestID, operation: {
+                            aiCleanupApplied = true
+                        }) else { return }
                     } else {
-                        await MainActor.run {
+                        guard commitIfCurrent(requestID, operation: {
                             cleanupNotice = "AI cleanup is unavailable — showing the original scanned text"
-                        }
+                        }) else { return }
                     }
                 } catch {
-                    guard !Task.isCancelled else {
-                        await MainActor.run { isProcessing = false }
-                        return
-                    }
-                    await MainActor.run {
+                    guard !Task.isCancelled,
+                          commitIfCurrent(requestID, operation: {
                         cleanupNotice = "AI cleanup failed — showing the original scanned text"
-                    }
+                    }) else { return }
                 }
             }
-            guard !Task.isCancelled else {
-                await MainActor.run { isProcessing = false }
-                return
-            }
+            guard !Task.isCancelled else { return }
 
-            await MainActor.run { sourceText = textToProcess }
-            await processText(textToProcess, knownLanguage: languageHint)
+            guard commitIfCurrent(requestID, operation: {
+                sourceText = textToProcess
+            }) else { return }
+            await processText(
+                textToProcess,
+                knownLanguage: languageHint,
+                requestID: requestID
+            )
+        } catch is CancellationError {
+            _ = commitIfCurrent(requestID) {
+                isProcessing = false
+            }
         } catch {
-            await MainActor.run {
-                if !Task.isCancelled {
-                    errorMessage = error.localizedDescription
-                }
+            _ = commitIfCurrent(requestID) {
+                errorMessage = error.localizedDescription
                 isProcessing = false
             }
         }
     }
     
-    private func processText(_ text: String, knownLanguage: DetectedLanguage? = nil) async {
-        guard !text.isEmpty, !Task.isCancelled else { return }
+    private func processText(
+        _ text: String,
+        knownLanguage: DetectedLanguage? = nil,
+        requestID: UUID
+    ) async {
+        guard !text.isEmpty,
+              !Task.isCancelled,
+              inputProcessingRequestID == requestID else { return }
 
-        await MainActor.run {
+        guard commitIfCurrent(requestID, operation: {
+            aiFallbackTranslationTask?.cancel()
+            aiFallbackTranslationTask = nil
+            englishTranslationRequestID = nil
+            isTranslating = false
+            if chineseTranslationRequestID != nil {
+                chineseTranslationTask?.cancel()
+                chineseTranslationTask = nil
+                chineseTranslationRequestID = nil
+                isTranslating = false
+            }
             isProcessing = true
             errorMessage = nil
             // Clear previous results
@@ -951,20 +1193,18 @@ struct PhotoTranslateView: View {
             cleanedChineseText = ""
             chineseTranslation = ""
             extractedVocab = []
-        }
+        }) else { return }
 
         // Determine language first (prefer the OCR-provided detection), using
         // the robust CJK-ratio-first detector so Chinese is never lost.
         let language = knownLanguage ?? ChineseTextAnalyzer.shared.detectLanguageRobust(text)
-        guard !Task.isCancelled else {  // superseded — don't write stale results
-            await MainActor.run { isProcessing = false }
-            return
-        }
+        guard !Task.isCancelled,
+              inputProcessingRequestID == requestID else { return }
 
         if language.isChinese {
             // Chinese: clean with the Chinese-aware cleaner (no English regex).
             let cleaned = TextRecognitionResult.cleanChineseText([text])
-            await MainActor.run {
+            _ = commitIfCurrent(requestID) {
                 detectedLanguage = .chinese
                 cleanedChineseText = cleaned
                 isProcessing = false
@@ -973,7 +1213,7 @@ struct PhotoTranslateView: View {
             // English (or other scripts → treated as English): sentence cleanup.
             let cleaned = cleanTextForProcessing(text)
             let sentences = EnglishTextAnalyzer.shared.analyzeSentences(cleaned)
-            await MainActor.run {
+            _ = commitIfCurrent(requestID) {
                 detectedLanguage = .english
                 analyzedSentences = sentences
                 isProcessing = false
@@ -1006,13 +1246,22 @@ struct PhotoTranslateView: View {
     
     /// Trigger English → Chinese translation
     private func triggerTranslation() {
-        guard !analyzedSentences.isEmpty else { return }
+        let sourceTexts = analyzedSentences.map(\.text)
+        guard !sourceTexts.isEmpty else { return }
+
+        aiFallbackTranslationTask?.cancel()
+        let requestID = UUID()
+        englishTranslationRequestID = requestID
 
         guard #available(iOS 18.0, macOS 15.0, *) else {
             // iOS 17: no on-device Translation API — translate the sentences
             // through the configured AI provider instead.
-            aiFallbackTranslationTask?.cancel()
-            aiFallbackTranslationTask = Task { await translateSentencesWithAIFallback() }
+            aiFallbackTranslationTask = Task {
+                await translateSentencesWithAIFallback(
+                    requestID: requestID,
+                    sourceTexts: sourceTexts
+                )
+            }
             return
         }
 
@@ -1030,45 +1279,48 @@ struct PhotoTranslateView: View {
     /// translations are fetched lazily when a word is tapped). One failing
     /// sentence doesn't abort the rest; an error is shown only when nothing
     /// could be translated.
-    private func translateSentencesWithAIFallback() async {
-        await MainActor.run { isTranslating = true }
+    private func translateSentencesWithAIFallback(
+        requestID: UUID,
+        sourceTexts: [String]
+    ) async {
+        await MainActor.run {
+            guard isCurrentEnglishTranslation(requestID, sourceTexts: sourceTexts) else { return }
+            isTranslating = true
+        }
 
         var lastError: Error?
-        var translatedCount = 0
+        var translations: [Int: String] = [:]
 
-        let sentenceCount = await MainActor.run { analyzedSentences.count }
-        for i in 0..<sentenceCount {
-            guard !Task.isCancelled else {
-                await MainActor.run { isTranslating = false }
-                return
-            }
-            let sentenceText = await MainActor.run {
-                i < analyzedSentences.count ? analyzedSentences[i].text : nil
-            }
-            guard let text = sentenceText else { continue }
+        for (index, text) in sourceTexts.enumerated() {
+            guard !Task.isCancelled else { return }
 
             do {
                 let translation = try await WordTranslationService.shared.translate(text, sourceIsChinese: false)
-                translatedCount += 1
+                try Task.checkCancellation()
+                guard await MainActor.run(body: {
+                    isCurrentEnglishTranslation(requestID, sourceTexts: sourceTexts)
+                }) else { return }
+                translations[index] = translation
                 await MainActor.run {
-                    if i < analyzedSentences.count {
-                        analyzedSentences[i].translation = translation
-                    }
+                    guard isCurrentEnglishTranslation(requestID, sourceTexts: sourceTexts),
+                          index < analyzedSentences.count else { return }
+                    analyzedSentences[index].translation = translation
                 }
+            } catch is CancellationError {
+                return
             } catch {
                 lastError = error
             }
         }
 
         await MainActor.run {
-            if translatedCount == 0, let lastError {
+            guard isCurrentEnglishTranslation(requestID, sourceTexts: sourceTexts) else { return }
+            if translations.isEmpty, let lastError {
                 errorMessage = "翻译失败: \(lastError.localizedDescription)"
             } else if saveToHistoryAutomatically {
-                // One combined history entry covering whatever succeeded,
-                // same as the Apple-translation path.
-                let translated = analyzedSentences.filter { $0.translation != nil }
-                let fullSource = translated.map(\.text).joined(separator: " ")
-                let fullTarget = translated.compactMap(\.translation).joined(separator: " ")
+                let translatedIndexes = translations.keys.sorted()
+                let fullSource = translatedIndexes.map { sourceTexts[$0] }.joined(separator: " ")
+                let fullTarget = translatedIndexes.compactMap { translations[$0] }.joined(separator: " ")
                 if !fullSource.isEmpty, !fullTarget.isEmpty {
                     TranslationHistoryStore.shared.add(
                         source: fullSource,
@@ -1077,101 +1329,139 @@ struct PhotoTranslateView: View {
                     )
                 }
             }
+            englishTranslationRequestID = nil
+            aiFallbackTranslationTask = nil
             isTranslating = false
         }
+    }
+
+    private func isCurrentEnglishTranslation(
+        _ requestID: UUID,
+        sourceTexts: [String]
+    ) -> Bool {
+        englishTranslationRequestID == requestID
+            && analyzedSentences.map(\.text) == sourceTexts
     }
     
     /// Trigger Chinese → English translation
     private func triggerChineseTranslation() {
-        guard !cleanedChineseText.isEmpty else { return }
-        
-        Task {
-            await MainActor.run {
-                isTranslating = true
-            }
-            
+        let source = cleanedChineseText
+        guard !source.isEmpty else { return }
+
+        chineseTranslationTask?.cancel()
+        let requestID = UUID()
+        chineseTranslationRequestID = requestID
+        isTranslating = true
+
+        chineseTranslationTask = Task {
             do {
                 // Translate the full text from Chinese to English
-                let translation = try await WordTranslationService.shared.translateToEnglish(cleanedChineseText)
+                let translation = try await WordTranslationService.shared.translateToEnglish(source)
+                try Task.checkCancellation()
 
                 await MainActor.run {
+                    guard chineseTranslationRequestID == requestID,
+                          cleanedChineseText == source else { return }
                     chineseTranslation = translation
                     // Photo translations count toward history/stats like the
                     // Translate tab's (respecting the same preference).
                     if saveToHistoryAutomatically {
                         TranslationHistoryStore.shared.add(
-                            source: cleanedChineseText,
+                            source: source,
                             target: translation,
                             direction: .chineseToEnglish
                         )
                     }
+                    chineseTranslationRequestID = nil
+                    chineseTranslationTask = nil
+                    isTranslating = false
+                }
+            } catch is CancellationError {
+                await MainActor.run {
+                    guard chineseTranslationRequestID == requestID else { return }
+                    chineseTranslationRequestID = nil
+                    chineseTranslationTask = nil
+                    isTranslating = false
                 }
             } catch {
                 await MainActor.run {
+                    guard chineseTranslationRequestID == requestID else { return }
                     errorMessage = "翻译失败: \(error.localizedDescription)"
+                    chineseTranslationRequestID = nil
+                    chineseTranslationTask = nil
+                    isTranslating = false
                 }
-            }
-            
-            await MainActor.run {
-                isTranslating = false
             }
         }
     }
     
     @available(iOS 18.0, macOS 15.0, *)
     private func translateSentences(session: TranslationSession) async {
-        await MainActor.run {
+        guard let snapshot = await MainActor.run(body: { () -> PhotoEnglishTranslationSnapshot? in
+            guard let requestID = englishTranslationRequestID else { return nil }
+            let sourceTexts = analyzedSentences.map(\.text)
+            let words = analyzedSentences.enumerated().flatMap { sentenceIndex, sentence in
+                sentence.words.enumerated().map { wordIndex, word in
+                    PhotoEnglishTranslationSnapshot.Word(
+                        sentenceIndex: sentenceIndex,
+                        wordIndex: wordIndex,
+                        lemma: word.lemma,
+                        shouldTranslate: word.partOfSpeech != .determiner
+                            && word.partOfSpeech != .particle
+                    )
+                }
+            }
             isTranslating = true
-        }
-        
+            return PhotoEnglishTranslationSnapshot(
+                requestID: requestID,
+                sourceTexts: sourceTexts,
+                words: words
+            )
+        }) else { return }
+
+        var sentenceTranslations: [Int: String] = [:]
+        var wordTranslations: [(sentenceIndex: Int, wordIndex: Int, translation: String)] = []
+
         do {
-            // Capture a snapshot of sentences to translate
-            let sentenceCount = await MainActor.run { analyzedSentences.count }
-            
-            // Translate each sentence
-            for i in 0..<sentenceCount {
-                // Safely get the sentence text
-                let sentenceText = await MainActor.run { 
-                    i < analyzedSentences.count ? analyzedSentences[i].text : nil 
-                }
-                guard let text = sentenceText else { continue }
-                
+            for (index, text) in snapshot.sourceTexts.enumerated() {
                 let response = try await session.translate(text)
+                try Task.checkCancellation()
+                guard await MainActor.run(body: {
+                    isCurrentEnglishTranslation(
+                        snapshot.requestID,
+                        sourceTexts: snapshot.sourceTexts
+                    )
+                }) else { return }
+                sentenceTranslations[index] = response.targetText
                 await MainActor.run {
-                    if i < analyzedSentences.count {
-                        analyzedSentences[i].translation = response.targetText
-                    }
+                    guard isCurrentEnglishTranslation(
+                        snapshot.requestID,
+                        sourceTexts: snapshot.sourceTexts
+                    ), index < analyzedSentences.count else { return }
+                    analyzedSentences[index].translation = response.targetText
                 }
             }
-            
-            // Translate individual words - collect all words first
-            var wordTranslations: [(sentenceIndex: Int, wordIndex: Int, translation: String)] = []
-            
-            for i in 0..<sentenceCount {
-                let wordCount = await MainActor.run { 
-                    i < analyzedSentences.count ? analyzedSentences[i].words.count : 0 
-                }
-                
-                for j in 0..<wordCount {
-                    // Safely get word info
-                    let wordInfo = await MainActor.run { () -> (lemma: String, partOfSpeech: EnglishPartOfSpeech)? in
-                        guard i < analyzedSentences.count, j < analyzedSentences[i].words.count else { return nil }
-                        let word = analyzedSentences[i].words[j]
-                        return (word.lemma, word.partOfSpeech)
-                    }
-                    
-                    guard let info = wordInfo else { continue }
-                    
-                    // Skip common words like "the", "a", "is"
-                    if info.partOfSpeech != .determiner && info.partOfSpeech != .particle {
-                        let response = try await session.translate(info.lemma)
-                        wordTranslations.append((i, j, response.targetText))
-                    }
-                }
+
+            for word in snapshot.words where word.shouldTranslate {
+                let response = try await session.translate(word.lemma)
+                try Task.checkCancellation()
+                guard await MainActor.run(body: {
+                    isCurrentEnglishTranslation(
+                        snapshot.requestID,
+                        sourceTexts: snapshot.sourceTexts
+                    )
+                }) else { return }
+                wordTranslations.append(
+                    (word.sentenceIndex, word.wordIndex, response.targetText)
+                )
             }
-            
-            // Apply all word translations at once on main actor
+
             await MainActor.run {
+                guard isCurrentEnglishTranslation(
+                    snapshot.requestID,
+                    sourceTexts: snapshot.sourceTexts
+                ) else { return }
+
                 for (sentenceIndex, wordIndex, translation) in wordTranslations {
                     if sentenceIndex < analyzedSentences.count,
                        wordIndex < analyzedSentences[sentenceIndex].words.count {
@@ -1179,11 +1469,14 @@ struct PhotoTranslateView: View {
                     }
                 }
 
-                // One combined history entry for the whole photo translation
-                // (respecting the same preference as the Translate tab).
                 if saveToHistoryAutomatically {
-                    let fullSource = analyzedSentences.map(\.text).joined(separator: " ")
-                    let fullTarget = analyzedSentences.compactMap(\.translation).joined(separator: " ")
+                    let translatedIndexes = sentenceTranslations.keys.sorted()
+                    let fullSource = translatedIndexes
+                        .map { snapshot.sourceTexts[$0] }
+                        .joined(separator: " ")
+                    let fullTarget = translatedIndexes
+                        .compactMap { sentenceTranslations[$0] }
+                        .joined(separator: " ")
                     if !fullSource.isEmpty, !fullTarget.isEmpty {
                         TranslationHistoryStore.shared.add(
                             source: fullSource,
@@ -1192,15 +1485,27 @@ struct PhotoTranslateView: View {
                         )
                     }
                 }
+                englishTranslationRequestID = nil
+                isTranslating = false
+            }
+        } catch is CancellationError {
+            await MainActor.run {
+                guard englishTranslationRequestID == snapshot.requestID else { return }
+                englishTranslationRequestID = nil
+                isTranslating = false
             }
         } catch {
             await MainActor.run {
-                errorMessage = "翻译失败: \(error.localizedDescription)"
+                guard isCurrentEnglishTranslation(
+                    snapshot.requestID,
+                    sourceTexts: snapshot.sourceTexts
+                ) else { return }
+                if !Task.isCancelled {
+                    errorMessage = "翻译失败: \(error.localizedDescription)"
+                }
+                englishTranslationRequestID = nil
+                isTranslating = false
             }
-        }
-        
-        await MainActor.run {
-            isTranslating = false
         }
     }
     
@@ -1345,7 +1650,13 @@ struct PhotoTranslateView: View {
     private func clearAll() {
         photoProcessingTask?.cancel()
         textProcessingTask?.cancel()
+        inputProcessingRequestID = nil
         aiFallbackTranslationTask?.cancel()
+        aiFallbackTranslationTask = nil
+        englishTranslationRequestID = nil
+        chineseTranslationTask?.cancel()
+        chineseTranslationTask = nil
+        chineseTranslationRequestID = nil
         sourceText = ""
         analyzedSentences = []
         cleanedChineseText = ""

@@ -145,12 +145,22 @@ final class AppPreferences {
         static let photoScanLanguage = "photo_scan_language"
         static let dualNarration = "dual_narration"
         static let ttsRate = "tts_rate"
+        static let aiAudioEnabled = "ai_audio_enabled"
+        static let aiAudioRegion = "ai_audio_region"
+        static let aiAudioModel = "ai_audio_model"
+        static let aiAudioChineseVoice = "ai_audio_chinese_voice"
+        static let aiAudioEnglishVoice = "ai_audio_english_voice"
+        static let aiAudioSpeed = "ai_audio_speed"
+        static let aiAudioFallbackToSystemSpeech = "ai_audio_fallback_to_system_speech"
     }
 
     /// The allowed text-to-speech rate range. 0.5 is
     /// `AVSpeechUtteranceDefaultSpeechRate`; below ~0.35 speech sounds broken
     /// and above 0.6 it is too fast to shadow.
     static let ttsRateRange: ClosedRange<Double> = 0.35...0.6
+
+    /// MiniMax accepts speech speeds from 0.5× through 2×.
+    static let aiAudioSpeedRange: ClosedRange<Double> = 0.5...2.0
 
     /// The app's learner-centric mode. Changing it updates the default
     /// translation direction used across the app.
@@ -205,6 +215,76 @@ final class AppPreferences {
         }
     }
 
+    /// Routes read-aloud actions through MiniMax when a Keychain credential is
+    /// available. This is deliberately opt-in because it sends the spoken text
+    /// to a network service and may incur API usage charges.
+    var aiAudioEnabled: Bool {
+        didSet { UserDefaults.standard.set(aiAudioEnabled, forKey: Keys.aiAudioEnabled) }
+    }
+
+    /// Selects MiniMax's regional API host independently of the text-model
+    /// provider configuration.
+    var aiAudioRegion: MiniMaxAPIRegion {
+        didSet { UserDefaults.standard.set(aiAudioRegion.rawValue, forKey: Keys.aiAudioRegion) }
+    }
+
+    /// T2A model identifier. Settings may expose this as editable so a newer
+    /// compatible speech model can be adopted without an app release.
+    var aiAudioModel: String {
+        didSet {
+            let trimmed = aiAudioModel.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed != aiAudioModel {
+                aiAudioModel = trimmed
+                return
+            }
+            UserDefaults.standard.set(aiAudioModel, forKey: Keys.aiAudioModel)
+        }
+    }
+
+    var aiAudioChineseVoice: String {
+        didSet {
+            let trimmed = aiAudioChineseVoice.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed != aiAudioChineseVoice {
+                aiAudioChineseVoice = trimmed
+                return
+            }
+            UserDefaults.standard.set(aiAudioChineseVoice, forKey: Keys.aiAudioChineseVoice)
+        }
+    }
+
+    var aiAudioEnglishVoice: String {
+        didSet {
+            let trimmed = aiAudioEnglishVoice.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed != aiAudioEnglishVoice {
+                aiAudioEnglishVoice = trimmed
+                return
+            }
+            UserDefaults.standard.set(aiAudioEnglishVoice, forKey: Keys.aiAudioEnglishVoice)
+        }
+    }
+
+    var aiAudioSpeed: Double {
+        didSet {
+            let clamped = min(max(aiAudioSpeed, Self.aiAudioSpeedRange.lowerBound),
+                              Self.aiAudioSpeedRange.upperBound)
+            if clamped != aiAudioSpeed {
+                aiAudioSpeed = clamped
+                return
+            }
+            UserDefaults.standard.set(aiAudioSpeed, forKey: Keys.aiAudioSpeed)
+        }
+    }
+
+    /// Keeps read-aloud useful when the network, API key, or MiniMax service is
+    /// unavailable. Users can disable this when they prefer failures to be
+    /// explicit instead of switching voices.
+    var aiAudioFallbackToSystemSpeech: Bool {
+        didSet {
+            UserDefaults.standard.set(aiAudioFallbackToSystemSpeech,
+                                      forKey: Keys.aiAudioFallbackToSystemSpeech)
+        }
+    }
+
     /// Align the learner mode with the interface language (the interface
     /// language is the user's native language, so the learning direction
     /// follows from it). Called by `LocalizationManager` whenever the in-app
@@ -237,5 +317,32 @@ final class AppPreferences {
         // clamped in case a stale/out-of-range value was persisted.
         let savedRate = UserDefaults.standard.object(forKey: Keys.ttsRate) as? Double ?? 0.5
         self.ttsRate = min(max(savedRate, Self.ttsRateRange.lowerBound), Self.ttsRateRange.upperBound)
+
+        self.aiAudioEnabled = UserDefaults.standard.object(forKey: Keys.aiAudioEnabled) as? Bool ?? false
+
+        let savedRegion = UserDefaults.standard.string(forKey: Keys.aiAudioRegion)
+        self.aiAudioRegion = savedRegion.flatMap(MiniMaxAPIRegion.init(rawValue:)) ?? .mainlandChina
+
+        let savedModel = UserDefaults.standard.string(forKey: Keys.aiAudioModel)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        self.aiAudioModel = savedModel.flatMap { $0.isEmpty ? nil : $0 }
+            ?? MiniMaxSpeechConfiguration.defaultModel
+
+        let savedChineseVoice = UserDefaults.standard.string(forKey: Keys.aiAudioChineseVoice)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        self.aiAudioChineseVoice = savedChineseVoice.flatMap { $0.isEmpty ? nil : $0 }
+            ?? MiniMaxSpeechConfiguration.defaultChineseVoice
+
+        let savedEnglishVoice = UserDefaults.standard.string(forKey: Keys.aiAudioEnglishVoice)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        self.aiAudioEnglishVoice = savedEnglishVoice.flatMap { $0.isEmpty ? nil : $0 }
+            ?? MiniMaxSpeechConfiguration.defaultEnglishVoice
+
+        let savedAISpeed = UserDefaults.standard.object(forKey: Keys.aiAudioSpeed) as? Double ?? 1.0
+        self.aiAudioSpeed = min(max(savedAISpeed, Self.aiAudioSpeedRange.lowerBound),
+                                Self.aiAudioSpeedRange.upperBound)
+
+        self.aiAudioFallbackToSystemSpeech =
+            UserDefaults.standard.object(forKey: Keys.aiAudioFallbackToSystemSpeech) as? Bool ?? true
     }
 }

@@ -25,6 +25,11 @@ struct ContentView: View {
     
     var body: some View {
         contentView
+            .overlay(alignment: .top) {
+                AIAudioStatusBanner()
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+            }
             .onAppear {
                 SwiftMandarinShortcutsProvider.updateAppShortcutParameters()
             }
@@ -71,7 +76,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: return "Home"
         case .translate: return "Translate"
-        case .photo: return "Photo"
+        case .photo: return "Multimodal"
         case .reader: return "Reader"
         case .study: return "Study"
         case .practice: return "Practice"
@@ -89,7 +94,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: return "house.fill"
         case .translate: return "character.bubble"
-        case .photo: return "camera.viewfinder"
+        case .photo: return "sparkles.rectangle.stack"
         case .reader: return "book.pages"
         case .study: return "graduationcap.fill"
         case .practice: return "checklist"

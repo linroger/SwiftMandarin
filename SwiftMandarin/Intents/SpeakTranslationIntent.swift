@@ -42,17 +42,17 @@ struct SpeakTranslationIntent: AppIntent {
         switch speakTarget {
         case .source:
             if resolvedDirection == .chineseToEnglish {
-                SpeechService.speakChinese(trimmed)
+                try await SpeechService.speakAndWait(trimmed, languageCode: "zh-CN")
             } else {
-                SpeechService.speakEnglish(trimmed)
+                try await SpeechService.speakAndWait(trimmed, languageCode: "en-US")
             }
             return .result()
         case .translated:
             let result = try await ShortcutHelpers.translate(trimmed, direction: resolvedDirection, useAI: useAI)
             if resolvedDirection == .chineseToEnglish {
-                SpeechService.speakEnglish(result.translation)
+                try await SpeechService.speakAndWait(result.translation, languageCode: "en-US")
             } else {
-                SpeechService.speakChinese(result.translation)
+                try await SpeechService.speakAndWait(result.translation, languageCode: "zh-CN")
             }
             return .result()
         }

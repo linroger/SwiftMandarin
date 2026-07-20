@@ -105,11 +105,11 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
   - ⚫ Neutral tone
 - **Ruby Text Display**: Pinyin displayed elegantly above Chinese characters
 - **Auto-Translate Options**: Translate automatically as you type or on paste
-- **Text-to-Speech**: Native Chinese pronunciation using Apple's speech synthesis
+- **Text-to-Speech**: Use Apple's system voices, or opt into MiniMax AI Audio for persistent, reusable Mandarin and English MP3 speech
 
 <br clear="right"/>
 
-### 📷 Photo, Camera & Screenshot Translation
+### 🧩 Multimodal Translation
 
 - **Photo Translate**: Pick a photo of a textbook, menu, or sign and SwiftMandarin recognizes and translates the text
 - **Live Camera Scanner**: Point your camera at text for real-time on-device recognition (iOS)
@@ -119,6 +119,8 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 - **Cleanup Transparency**: When AI cleanup runs you see a badge and can flip back to the original OCR text with one tap; if cleanup can't run, the app tells you instead of failing silently
 - **Extract Key Vocabulary**: Pull the most useful words out of any scanned passage and save them with one tap
 - **Counts Toward Your Stats**: Photo translations are saved to History and your daily activity, just like typed ones
+- **Recorded or Imported Audio**: Record speech or choose an audio file up to 60 seconds, preview it locally, and transcribe it into the same editable source-text workspace
+- **Transcribe and Translate**: Run transcription and the existing translation flow in one action while still exposing the transcript for correction
 
 ### 🎙️ Voice Translation
 
@@ -134,6 +136,7 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 - **Live Model Lists**: Enter your API key and fetch the provider's available models directly from its API
 - **Test Connection & Capability Badges**: One tap verifies your key, endpoint, and model round-trip; badges show whether the provider supports vision (images) and strict JSON mode
 - **Secure Key Storage**: API keys are stored in the system **Keychain**, never in plain files or the cloud
+- **Optional MiniMax AI Audio**: Route every read-aloud action through MiniMax TTS, persist the generated MP3, replay it without another paid request, and share or export it
 - **Learner Mode**: Tell the app whether you're an English speaker learning Mandarin, a Mandarin speaker learning English, or both—defaults adapt accordingly
 - **Entirely Optional**: Leave AI off and every core feature still works fully on-device
 
@@ -241,6 +244,10 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
   - Pick a provider, enter an API key, fetch live model lists, and test the connection end-to-end
   - See at a glance whether the provider supports vision (images) and JSON mode
   - Toggle AI photo cleanup
+- **AI Audio**:
+  - Enable or disable MiniMax speech globally without changing individual Speak buttons
+  - Choose API region, speech model, Mandarin/English voice IDs, speed, and system-voice fallback
+  - Preview the configured voice and manage, replay, share, export, or delete saved MP3 files
 - **Translation Preferences**:
   - Auto-translate toggle
   - Translate on paste
@@ -395,15 +402,15 @@ xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration
 3. Tap any phrase to hear pronunciation
 4. Save useful phrases to your vocabulary for later study
 
-### Scanning Photos & Workbooks
+### Using the Multimodal Workspace
 
-1. Open the **Photo** tab and add an image (Photos, Files/Finder, drag-and-drop, or the live camera scanner)
-2. Pick the scan language if needed, then read and translate the recognized text
-3. For grading, open the **Workbook Grading** tool from the Photo tab's toolbar
-4. Add the workbook pages (and a separate answer sheet only if needed), optionally add custom instructions, then tap **Grade**
-5. Review each question, tap 🔊 to hear the full English sentence, and save wrong-answer words to your vocabulary
+1. Open the **Multimodal** tab and choose **Image** or **Audio**
+2. For an image, add it from Photos, Files/Finder, drag-and-drop, or the live camera scanner; then choose the scan language and translate the recognized text
+3. For audio, record or import a supported clip up to 60 seconds, choose the spoken language, then use **Transcribe to Editor** or **Translate Audio**
+4. Review or correct the transcript in the existing editor; direct audio translation also runs the normal translation flow after filling that editor
+5. For grading, open **Workbook Grading** from the Multimodal toolbar, add workbook pages and optional instructions, then tap **Grade**
 
-> Photo translation and on-device OCR work without AI. AI photo cleanup and workbook grading require an AI provider configured in **Settings → AI**.
+> Image OCR works without AI. Audio transcription uses Apple's Speech framework and may use Apple services when on-device recognition is unavailable. Translation, AI photo cleanup, and workbook grading use the translation/provider configuration described in Settings.
 
 ### Switching the App Language
 
@@ -420,7 +427,7 @@ xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration
 - **Translation**: Apple Translation framework (on-device, privacy-preserving) on iOS 18+/macOS, with an AI-provider fallback that keeps every translation feature working on iOS 17
 - **AI (optional)**: A 10-provider abstraction—Apple Foundation Models, Ollama, and OpenAI-compatible / Anthropic cloud APIs via `URLSession`—for explanations, photo cleanup, and grading
 - **OCR**: Vision framework with language-aware recognition (`PhotoTextRecognitionService`)
-- **Speech**: AVFoundation for text-to-speech; Speech framework for live transcription
+- **Speech**: AVFoundation for system speech, recording, and playback; optional MiniMax `/v1/t2a_v2` speech persisted as local MP3; Speech framework for live and file transcription
 - **NLP**: NaturalLanguage framework for Chinese segmentation and lexical analysis
 - **Localization**: String Catalog (`Localizable.xcstrings`, 600+ keys, fully bilingual) + a `LocalizationManager` that swaps the active `.lproj` bundle for the in-app language toggle
 - **Storage**: UserDefaults + Codable locally, with automatic last-known-good backups so corrupted data never silently wipes your vocabulary, history, or progress; API keys in the system Keychain
@@ -469,11 +476,11 @@ SwiftMandarin/
 SwiftMandarin is designed with privacy as a core principle:
 
 - **No Account Required**: Use all features without signing up
-- **Local Storage Only**: All your data (vocabulary, history, progress) is stored locally on your device
+- **Local Storage by Default**: Vocabulary, history, progress, imported/recorded working audio, and generated AI Audio files are stored in the app's local container unless you export them
 - **On-Device Translation**: Apple Translation framework processes text on-device
 - **No Tracking**: No analytics, no telemetry, no third-party tracking SDKs
 - **Offline Core**: Translation, vocabulary, flashcards, phrases, stats, and on-device OCR work fully offline (after downloading language packs)
-- **AI Is Opt-In**: Cloud AI features are disabled until *you* choose a provider and add a key. Apple Intelligence and Ollama run locally; cloud providers receive only the text or image you submit, and your API keys are stored in the Keychain—never transmitted anywhere except to the provider you configured.
+- **AI Is Opt-In**: Cloud AI features are disabled until *you* choose a provider and add a key. Apple Intelligence and Ollama run locally; cloud providers receive only the text or image you submit. When MiniMax AI Audio is enabled, the text you ask the app to speak is sent to MiniMax. API keys remain in the Keychain and are transmitted only to the configured provider.
 
 Your learning journey is yours alone.
 

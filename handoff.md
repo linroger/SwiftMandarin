@@ -633,3 +633,105 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - 2026-07-20T18:59:05Z: Replayed the isolated AI implementation onto current `origin/main` as `4033e7b`, preserving the primary worktree and the newer merged pager implementation; clean-branch verification and delivery follow.
 - 2026-07-20T19:02:25Z: Passed 75/75 prompt checks, 15/15 provider-wiring checks, 25/25 pager checks, project/localization hygiene, and clean iOS/macOS builds on the exact feature tree; only commit, push, merge, and remote verification remain.
 - 2026-07-20T19:04:21Z: Pushed the two feature commits, created and pushed two-parent merge `a0b09dc` to `origin/main`, verified remote SHA and feature ancestry, and marked Iteration 23 complete; the primary dirty worktree remains untouched.
+
+## Iteration 24 — MiniMax AI Audio and Multimodal translation (2026-07-21)
+
+**Last Updated (UTC):** 2026-07-20T21:40:59Z
+
+**Status:** Complete
+
+**Current Focus:** Deliver the verified MiniMax AI Audio and Multimodal audio-input slice through an isolated commit, branch push, and two-parent merge to `main`.
+
+### 1) Request & Context
+
+- **User request:** Add a Settings-toggleable MiniMax AI Audio mode; route every speak/audio action through it when enabled; save generated audio persistently and make it exportable; research and test MiniMax audio; rename Photo to Multimodal; and let users record or upload audio for transcription into the existing editor or direct translation.
+- **Operational constraints:** The primary checkout remains intentionally dirty on `codex/ai-prompt-source`. All Iteration 24 edits occur in isolated worktree `/tmp/swiftmandarin-minimax-audio.fCBqXb/worktree`, branch `codex/minimax-ai-audio`, based on clean `origin/main` commit `329ad5f`. The primary checkout MUST NOT be reset, stashed, switched, or included.
+- **Secret boundary:** The user supplied a credential for testing. It MUST NOT be repeated, written into source/docs/tests/build settings/logs, included in shell command text, or committed. The existing Keychain service already contains an `apikey.minimax` item and is the only permissible credential source for live testing.
+- **Plan:** `docs/handoff/minimax-ai-audio/PLANS.md` is the detailed approved architecture and verification contract.
+
+### 2) Requirements → Acceptance Checks
+
+| Requirement | Acceptance Check | Expected Outcome | Evidence |
+|---|---|---|---|
+| R24.1: Toggleable global AI Audio | Toggle in macOS/iOS AI Settings; invoke representative speak actions from Translate, vocabulary, drills, photo, conversation, and App Intents | Enabled routes through one MiniMax-backed `SpeechService`; disabled uses current system voice | Source call graph + UI/runtime scenarios |
+| R24.2: Strict, safe MiniMax TTS | Exercise success, malformed hex, application error, missing key, cancellation, and over-limit input | Only fully valid responses play/persist; failures are actionable, secret-safe, and fall back once | Deterministic client checks + live smoke |
+| R24.3: Persistent cache | Generate, replay, relaunch, and replay offline | Same settings/text reuse one non-empty Application Support MP3 with no duplicate paid call | Cache metadata/file evidence |
+| R24.4: Exportable library | Open library, play, export, inspect exported file, delete, clear | Valid MP3 opens outside the app; file and metadata lifecycle stay consistent | UI scenario + file inspection |
+| R24.5: Multimodal audio input | Record and import English/Mandarin audio; choose Transcribe to Editor | Permission/progress/errors are clear and final transcript fills the existing editor and analysis flow | Simulator/macOS scenario |
+| R24.6: One-action audio translation | Choose Translate Audio for both language directions | Transcript becomes editable source text before the existing translation result appears | UI/state scenario + history check |
+| R24.7: Honest provider boundary | Inspect network paths and privacy copy | MiniMax receives only TTS text; Apple Speech handles audio transcription; no deprecated GroupId API | Source audit + docs |
+| R24.8: Cross-platform delivery | Run deterministic checks, secret scan, iOS Simulator and macOS builds | All gates pass with no new source diagnostics and no credential bytes in the tree/history | Retained logs + hygiene output |
+
+### 3) Plan & Decomposition
+
+- [x] Preserve the dirty primary checkout and create an isolated feature worktree from current remote main.
+- [x] Research current official MiniMax international/mainland APIs, voices, models, response semantics, limits, errors, pricing, and persistence implications.
+- [x] Confirm current MiniMax public APIs do not support general uploaded-audio transcription; choose Apple Speech → existing translation for the audio-input flow.
+- [x] Map the central `SpeechService`, all speak call sites, Keychain/provider settings, Photo editor/translation seams, Speech framework, entitlements, and export patterns.
+- [x] Implement strict synthesis, persistence/cache, central routing/playback, and credential-free tests.
+- [x] Implement shared AI Audio settings, library management, playback, and export.
+- [x] Implement record/import transcription and direct translation in Multimodal.
+- [x] Run live/keyless/runtime/build/review gates and resolve implementation findings. Git delivery is the only remaining operational step.
+
+### 4) Findings, Decisions, Assumptions
+
+- **API finding:** Current MiniMax TTS is `POST /v1/t2a_v2` with Bearer auth. Non-streaming `output_format: hex` returns MP3 bytes in `data.audio`; success requires HTTP 2xx, `base_resp.status_code == 0`, non-null data, `data.status == 2`, and strict non-empty hex decoding.
+- **Model decision:** Default interactive speech to `speech-2.8-turbo` for lower latency/cost; expose `speech-2.8-hd` as a quality option. Default output is mono MP3, 32 kHz, 128 kbps.
+- **Voice decision:** Use a small documented cross-region set rather than a stale 300-voice catalog. Initial defaults are `Chinese (Mandarin)_News_Anchor` and `English_Graceful_Lady`.
+- **Transcription finding:** Neither the complete current documentation index nor the file-upload contract provides general STT/audio translation. The old Realtime GroupId interface is historical and MUST NOT anchor a new feature.
+- **Architecture decision:** Keep every current call site behind `SpeechService`; no view gets direct MiniMax network logic. Stable `AppTab.photo` identity is preserved while visible labels become Multimodal.
+- **Fallback decision:** AI Audio remains opt-in. Missing configuration or a failed request records a visible status and performs one local system-speech fallback so existing learning actions remain usable.
+- **Security finding:** A matching MiniMax Keychain entry already exists. Live tests can read it internally without printing it; no pasted credential needs to enter a command or file.
+- **Persistence decision:** Generated speech is keyed by normalized text plus all synthesis-affecting settings. Matching clips replay from Application Support before the Keychain is consulted, so a previously generated clip remains available offline. Concurrent matching requests coalesce into one paid synthesis operation.
+- **Recovery decision:** A malformed saved-audio index is transactionally replaced and cache-shaped orphaned files are reconciled. A valid index from a future schema is never mutated implicitly; the UI presents the typed error and offers an explicit destructive clear.
+- **Concurrency decision:** Speech and Multimodal pipelines use request identities and exact player/utterance ownership. Cancelled or superseded image, audio-copy, transcription, translation, and playback work cannot overwrite a newer user action.
+- **Session decision:** A single source-audio coordinator prevents recording and imported-audio preview from competing across windows. Interruption and route-change errors remain visible and interrupted recordings remain recoverable.
+
+### 5) Scenario-Focused Resolution Tests
+
+- **TTS scenario:** Enable AI Audio, speak a short Mandarin word and English sentence, validate/play persisted MP3s, repeat both to prove cache reuse, then disable networking and replay.
+- **Fallback scenario:** Remove/withhold a test credential or inject an API failure and confirm a clear status plus exactly one system-speech fallback.
+- **Multimodal scenario:** Record and import audio, preview it, transcribe each language into the editor, edit the transcript, and run normal analysis; repeat with Translate Audio to prove one-action composition.
+- **Export scenario:** Export a generated record through Files/Finder, open the copy outside SwiftMandarin, then delete the library record and verify its private cached file disappears without deleting the exported copy.
+- **Post-change behavior:** The Settings toggle switches the app-wide `SpeechService` between system speech and MiniMax speech; every existing speak surface and App Intent remains behind that router. Generated MP3s persist in an app-private library with replay, share/export, delete, and clear controls. The visible Photo label is now Multimodal, where recorded or imported audio can be previewed, transcribed into the existing editor, or transcribed and translated through the existing translation pipeline.
+- **Verdict:** Resolved. Production implementation, strict offline contracts, a live MiniMax synthesis, cache/recovery behavior, localization/privacy checks, and both target builds pass.
+
+### 6) Issues, Mistakes, Recoveries
+
+- **Shell invocation mistake → immediate correction:** The first final contract invocation explicitly launched the zsh runner with `bash`, so zsh's `${0:A:h:h}` path modifier was interpreted as an unbound shell variable. The runner itself was unchanged; invoking it with its declared `#!/bin/zsh` shell immediately passed all 101 checks. The retained success command is `zsh scripts/test-minimax-audio-contracts.sh`.
+- **Stale async write risk → request ownership:** Review found that cancelled photo/audio work could still commit after a newer user action. Synchronous request IDs now guard every input preparation, recognition, transcription, and translation state write, including Clear and Retry paths.
+- **Hidden/corrupt library risk → explicit recovery:** Review found that decoding an unsupported future index or malformed index could hide files or accidentally mutate unknown data. Future schemas are now read-only until explicit Clear; malformed v1 data uses transactional rollback and orphan reconciliation.
+- **Fallback/offline usability risk → cache-first routing:** Review found that requiring a credential before cache lookup made saved clips unusable offline. The router now resolves a matching persisted clip before reading Keychain and asks for a key only on cache miss.
+- **Clear-versus-generation race → coordinated destructive barrier:** Final review found that a generation already queued in `repository.save` could recreate a clip after Clear All. The shared pipeline now blocks new speech, retains every cancelled task handle, awaits all generation completion, and only then clears persisted audio. A delayed-response regression scenario proves no MP3 appears after clear returns and that later generation still works.
+- **Preview setup failure → audio-session cleanup:** Final review found that iOS playback-session activation could succeed before player decoding failed, leaving other audio ducked because no player/URL marked ownership. The failure path now always deactivates the preview session and notifies other audio.
+- **Final transcript plus stream-end error → transcript wins:** Apple Speech may deliver a valid final transcript and an error together. File transcription now accepts a nonempty final result before evaluating the companion error, matching the established live-recognition invariant.
+- **Cancel then repeat → separate retiring generations:** Retaining a cancelled task in the joinable map fixed Clear All but briefly allowed an immediate same-text replay to inherit cancellation. Cancelled tasks now move to a non-joinable retiring set that Clear All can still drain; the next tap always creates fresh synthesis.
+- **Invalid iOS recording options → physical-device-safe session:** Final SDK-header review found `.duckOthers` invalid for the record-only category and `.notifyOthersOnDeactivation` invalid during activation. Recording now uses `.record`/`.measurement` with no options and reserves notification for deactivation.
+- **Downstream translation ownership → awaited parent result:** Translate Audio now retains its progress and Cancel control through the parent-owned translation. Cancellation invalidates the exact translation request; success or failure returns to the audio pane instead of leaving a stale “continuing” message.
+- **Growing import → bounded during copy:** File metadata is no longer the only 100 MB guard. The chunked importer tracks cumulative bytes and aborts/removes the temporary copy immediately if the source grows past the limit.
+
+### 7) Verification Summary
+
+- Remote main and isolated branch baseline recorded at `329ad5f`; the dirty primary status was captured and remains untouched.
+- Official MiniMax global/mainland API overview, T2A HTTP contract, system voice lists, error codes, pricing/rate limits, file upload, and documentation index were reviewed. No current public STT endpoint was found.
+- Existing Keychain metadata confirms `linroger022.SwiftMandarin.secrets` / `apikey.minimax` exists; its value was never displayed.
+- Source audit confirms all production read-aloud actions already call `SpeechService`, so central routing can cover the app without per-view API integrations.
+- Keychain-backed live MiniMax TTS passed for both supported learning languages against `https://api.minimaxi.com/v1/t2a_v2`: Mandarin decoded to a 39,156-byte MP3 with a matching reported size and 2,340 ms duration; English decoded to a 63,924-byte MP3 with a matching reported size and 3,888 ms duration. `file` identified both as 128 kbps, 32 kHz, mono MPEG Layer III, and `afplay` decoded/played both successfully. The smoke harness printed only status/size/duration/format and never the credential or authorization header.
+- The production `MiniMaxAudioClient` live smoke synthesized and strictly decoded a 48,948-byte MP3 in 2,952 ms. The file is 128 kbps, 32 kHz, mono MPEG Layer III and played successfully through `afplay`.
+- `zsh scripts/test-minimax-audio-contracts.sh` passes 111/111 deterministic checks against production request/response decoding and persistence code, including endpoint/auth/body shape, application failures, strict hex decoding, cache identity, concurrent coalescing, cancel-then-repeat, save/reload, malformed-index recovery, future-schema immutability, coordinated in-flight clear, and explicit reset.
+- Fresh macOS Debug build on Xcode 27 beta: `** BUILD SUCCEEDED **` in `/tmp/SwiftMandarin-minimax-macos-final-latest.log`, with zero `warning:` and zero `error:` lines.
+- Fresh generic iOS Simulator Debug build on Xcode 27 beta: `** BUILD SUCCEEDED **` in `/tmp/SwiftMandarin-minimax-ios-final-latest.log`, with zero `warning:` and zero `error:` lines.
+- `git diff --check`, localization JSON parsing, Xcode project/entitlement plist lint, credential-pattern scan, and unexpected audio-artifact scan all pass. No credential or generated audio was found in the repository tree.
+
+### 8) Remaining Work & Next Steps
+
+- No implementation work remains for this slice. Commit and push the isolated feature branch, merge it into current `origin/main` from a second clean worktree, repeat the critical post-merge gates, and push the merge commit.
+- The credential pasted into chat should be rotated before production use because chat exposure cannot be undone, even though the implementation and Git tree never stored it.
+
+### 9) Updates to This File
+
+- 2026-07-20T19:55:55Z: Created Iteration 24 with isolated-worktree protections, secret boundary, source-backed API findings, traceable requirements, architecture decisions, and pending implementation/verification ledger.
+- 2026-07-20T20:02:30Z: Completed live Mandarin and English MiniMax TTS calls from the existing Keychain credential, strictly decoded and atomically saved both MP3s, matched service-reported byte counts, validated their media format, and played them with the system decoder without exposing the key.
+- 2026-07-20T21:24:43Z: Completed the global MiniMax router, persistent/exportable library, Multimodal recording/import/transcription/translation flow, strict persistence and concurrency hardening, privacy/localization work, 101 deterministic checks, production-client live synthesis, and warning-free macOS/iOS builds; marked implementation complete pending isolated Git delivery.
+- 2026-07-20T21:33:21Z: Resolved final review findings for in-flight generation versus Clear All, iOS preview-session cleanup, and final-transcript/error ordering; expanded the deterministic suite to 106 checks and reran warning-free incremental builds on both targets.
+- 2026-07-20T21:40:59Z: Completed the last adversarial pass: separated retiring from joinable generations, added deterministic cancel-then-repeat coverage, corrected physical-device recording options, bounded growing imports during copy, and extended audio-operation ownership through translation completion; 111 checks and both warning-free builds pass.
