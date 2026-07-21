@@ -52,5 +52,19 @@
       "Verify localized loading, error, progress, cost, and completion states"
     ],
     "passes": true
+  },
+  {
+    "id": "bug_async_av_audio_session",
+    "category": "reliability",
+    "description": "Speech playback activates and deactivates AVAudioSession without synchronously blocking the main actor, while preserving request replacement and source-audio handoff ordering.",
+    "steps": [
+      "Start local system narration on iOS 27 and verify playback begins only after asynchronous audio-session activation succeeds",
+      "Start saved or newly generated MiniMax audio and verify it uses the same asynchronous activation gate",
+      "Stop or replace speech during pending activation and verify stale playback never starts",
+      "Hand off from speech to recording or imported-audio playback and verify a stale speech deactivation cannot turn off the new owner",
+      "Verify idle speech deactivation uses the asynchronous iOS 27 API with notify-others semantics",
+      "Build and run regression checks for macOS, iPhone iOS 27, and iPadOS 27"
+    ],
+    "passes": true
   }
 ]

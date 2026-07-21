@@ -29,7 +29,9 @@ enum SpeechService {
     private static var generatedAudioPlayer: AVAudioPlayer?
     private static var activeUtterance: AVSpeechUtterance?
     private static var generationTask: Task<Void, Never>?
+    private static var playbackStartTask: Task<Void, Never>?
     private static var activeRequestID: UUID?
+    private static var activeAudioSessionOwner: AudioSessionOwner?
     private static var trackedRequestIDs: Set<UUID> = []
     private static var completedRequestOutcomes: [UUID: SpeechRequestOutcome] = [:]
 
@@ -140,7 +142,9 @@ enum SpeechService {
         SourceAudioActivityCoordinator.shared.stopSourceAudioForSpeech()
         stop()
         let requestID = UUID()
+        let sessionOwner = AudioSessionOwner()
         activeRequestID = requestID
+        activeAudioSessionOwner = sessionOwner
         AIAudioRuntimeState.shared.update(
             phase: .cacheHit,
             message: String(localized: "Preparing saved AI audio…"),
@@ -153,8 +157,12 @@ enum SpeechService {
             try Task.checkCancellation()
             guard activeRequestID == requestID else { throw CancellationError() }
             do {
-                try playGeneratedFile(fileURL)
-            } catch {
+                try await playGeneratedFile(
+                    fileURL,
+                    requestID: requestID,
+                    sessionOwner: sessionOwner
+                )
+            } catch let error as GeneratedAudioFileUnreadable {
                 // A cache entry that cannot be decoded must not poison every
                 // future replay. Eviction lets the next Speak regenerate it.
                 try? await GeneratedSpeechStore.shared.delete(recordID: recordID)
@@ -169,6 +177,8 @@ enum SpeechService {
         } catch {
             if activeRequestID == requestID {
                 activeRequestID = nil
+                activeAudioSessionOwner = nil
+                AudioSessionCoordinator.shared.release(sessionOwner)
                 let message = error.localizedDescription
                 AIAudioRuntimeState.shared.update(phase: .failed, message: message)
                 AIAudioRuntimeState.shared.publishNotice(message, isError: true)
@@ -178,12 +188,16 @@ enum SpeechService {
     }
 
     static func stop() {
+        let sessionOwner = activeAudioSessionOwner
+        activeAudioSessionOwner = nil
         if let requestID = activeRequestID {
             completeTrackedRequest(requestID, outcome: .cancelled)
             activeRequestID = nil
         }
         generationTask?.cancel()
         generationTask = nil
+        playbackStartTask?.cancel()
+        playbackStartTask = nil
 
         generatedAudioPlayer?.stop()
         generatedAudioPlayer = nil
@@ -191,11 +205,14 @@ enum SpeechService {
         synthesizer.stopSpeaking(at: .immediate)
 
         AIAudioRuntimeState.shared.update(phase: .idle)
-        deactivateAudioSessionIfIdle()
+        if let sessionOwner {
+            AudioSessionCoordinator.shared.release(sessionOwner)
+        }
     }
 
     static var isSpeaking: Bool {
-        generationTask != nil || generatedAudioPlayer?.isPlaying == true || synthesizer.isSpeaking
+        generationTask != nil || playbackStartTask != nil
+            || generatedAudioPlayer?.isPlaying == true || synthesizer.isSpeaking
     }
 
     // MARK: - Routing
@@ -215,14 +232,22 @@ enum SpeechService {
         stop()
         AIAudioRuntimeState.shared.clearNotice()
         let requestID = UUID()
+        let sessionOwner = AudioSessionOwner()
         activeRequestID = requestID
+        activeAudioSessionOwner = sessionOwner
         if trackCompletion {
             trackedRequestIDs.insert(requestID)
         }
         let resolvedLanguage = languageCode ?? (trimmed.containsCJK ? "zh-CN" : "en-US")
         let preferences = AppPreferences.shared
         guard preferences.aiAudioEnabled || requireMiniMax else {
-            speakLocally(trimmed, languageCode: resolvedLanguage, rate: localRate)
+            speakLocally(
+                trimmed,
+                languageCode: resolvedLanguage,
+                rate: localRate,
+                requestID: requestID,
+                sessionOwner: sessionOwner
+            )
             return requestID
         }
 
@@ -253,8 +278,12 @@ enum SpeechService {
 
                 GeneratedSpeechStore.shared.note(generated.record)
                 do {
-                    try playGeneratedFile(generated.fileURL)
-                } catch {
+                    try await playGeneratedFile(
+                        generated.fileURL,
+                        requestID: requestID,
+                        sessionOwner: sessionOwner
+                    )
+                } catch let error as GeneratedAudioFileUnreadable {
                     try? await GeneratedSpeechStore.shared.delete(recordID: generated.record.id)
                     throw error
                 }
@@ -291,9 +320,13 @@ enum SpeechService {
         guard activeRequestID == requestID else { return }
         completeTrackedRequest(requestID, outcome: .cancelled)
         activeRequestID = nil
+        let sessionOwner = activeAudioSessionOwner
+        activeAudioSessionOwner = nil
         generationTask = nil
         AIAudioRuntimeState.shared.update(phase: .idle)
-        deactivateAudioSessionIfIdle()
+        if let sessionOwner {
+            AudioSessionCoordinator.shared.release(sessionOwner)
+        }
     }
 
     private static func handleAIFailure(
@@ -314,50 +347,111 @@ enum SpeechService {
                 message: notice
             )
             AIAudioRuntimeState.shared.publishNotice(notice, isError: false)
-            speakLocally(text, languageCode: languageCode, rate: localRate)
+            guard let sessionOwner = activeAudioSessionOwner else { return }
+            speakLocally(
+                text,
+                languageCode: languageCode,
+                rate: localRate,
+                requestID: requestID,
+                sessionOwner: sessionOwner
+            )
         } else {
             completeTrackedRequest(requestID, outcome: .failed(message))
             activeRequestID = nil
+            let sessionOwner = activeAudioSessionOwner
+            activeAudioSessionOwner = nil
             AIAudioRuntimeState.shared.update(phase: .failed, message: message)
             AIAudioRuntimeState.shared.publishNotice(message, isError: true)
-            deactivateAudioSessionIfIdle()
+            if let sessionOwner {
+                AudioSessionCoordinator.shared.release(sessionOwner)
+            }
         }
     }
 
     // MARK: - Generated Audio Playback
 
-    private static func playGeneratedFile(_ url: URL) throws {
+    private static func playGeneratedFile(
+        _ url: URL,
+        requestID: UUID,
+        sessionOwner: AudioSessionOwner
+    ) async throws {
         _ = generatedAudioDelegate
-        configureAudioSessionForPlayback()
+        let player: AVAudioPlayer
         do {
-            let player = try AVAudioPlayer(contentsOf: url)
+            player = try AVAudioPlayer(contentsOf: url)
             player.delegate = generatedAudioDelegate
-            guard player.prepareToPlay(), player.play() else {
+            guard player.prepareToPlay() else {
+                throw GeneratedAudioFileUnreadable(
+                    message: String(localized: "The audio player could not start.")
+                )
+            }
+        } catch let error as GeneratedAudioFileUnreadable {
+            throw error
+        } catch {
+            throw GeneratedAudioFileUnreadable(message: error.localizedDescription)
+        }
+
+        do {
+            await SpeechRecognitionService.shared.stopRecording()
+            try Task.checkCancellation()
+            guard activeRequestID == requestID,
+                  activeAudioSessionOwner == sessionOwner else {
+                AudioSessionCoordinator.shared.release(sessionOwner)
+                throw CancellationError()
+            }
+            SourceAudioActivityCoordinator.shared.stopSourceAudioForSpeech()
+
+            try await AudioSessionCoordinator.shared.acquire(
+                .spokenPlayback,
+                owner: sessionOwner
+            )
+            try Task.checkCancellation()
+            guard activeRequestID == requestID,
+                  activeAudioSessionOwner == sessionOwner else {
+                AudioSessionCoordinator.shared.release(sessionOwner)
+                throw CancellationError()
+            }
+
+            generatedAudioPlayer = player
+            guard player.play() else {
+                generatedAudioPlayer = nil
                 throw MiniMaxAudioError.playback(
                     String(localized: "The audio player could not start.")
                 )
             }
-            generatedAudioPlayer = player
         } catch let error as MiniMaxAudioError {
-            generatedAudioPlayer = nil
-            deactivateAudioSessionIfIdle()
+            if generatedAudioPlayer === player {
+                generatedAudioPlayer = nil
+            }
+            AudioSessionCoordinator.shared.release(sessionOwner)
             throw error
+        } catch is CancellationError {
+            if generatedAudioPlayer === player {
+                generatedAudioPlayer = nil
+            }
+            AudioSessionCoordinator.shared.release(sessionOwner)
+            throw CancellationError()
         } catch {
-            generatedAudioPlayer = nil
-            deactivateAudioSessionIfIdle()
+            if generatedAudioPlayer === player {
+                generatedAudioPlayer = nil
+            }
+            AudioSessionCoordinator.shared.release(sessionOwner)
             throw MiniMaxAudioError.playback(error.localizedDescription)
         }
     }
 
     fileprivate static func generatedAudioDidFinish(
-        player: AVAudioPlayer,
+        playerID: ObjectIdentifier,
         successfully: Bool
     ) {
-        guard player === generatedAudioPlayer else { return }
+        guard let currentPlayer = generatedAudioPlayer,
+              ObjectIdentifier(currentPlayer) == playerID else { return }
         let recordID = AIAudioRuntimeState.shared.currentRecordID
         let requestID = activeRequestID
+        let sessionOwner = activeAudioSessionOwner
         generatedAudioPlayer = nil
         activeRequestID = nil
+        activeAudioSessionOwner = nil
         if successfully {
             if let requestID {
                 completeTrackedRequest(requestID, outcome: .success)
@@ -377,31 +471,88 @@ enum SpeechService {
                 Task { try? await GeneratedSpeechStore.shared.delete(recordID: recordID) }
             }
         }
-        deactivateAudioSessionIfIdle()
+        if let sessionOwner {
+            AudioSessionCoordinator.shared.release(sessionOwner)
+        }
     }
 
     // MARK: - System Speech
 
-    private static func speakLocally(_ text: String, languageCode: String, rate: Float) {
+    private static func speakLocally(
+        _ text: String,
+        languageCode: String,
+        rate: Float,
+        requestID: UUID,
+        sessionOwner: AudioSessionOwner
+    ) {
         _ = sessionReleaser
-        configureAudioSessionForPlayback()
+        playbackStartTask?.cancel()
+        playbackStartTask = Task { @MainActor in
+            do {
+                await SpeechRecognitionService.shared.stopRecording()
+                try Task.checkCancellation()
+                guard activeRequestID == requestID,
+                      activeAudioSessionOwner == sessionOwner else {
+                    AudioSessionCoordinator.shared.release(sessionOwner)
+                    return
+                }
+                SourceAudioActivityCoordinator.shared.stopSourceAudioForSpeech()
 
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = bestVoice(forLanguage: languageCode)
-        utterance.rate = rate
-        activeUtterance = utterance
-        synthesizer.speak(utterance)
+                try await AudioSessionCoordinator.shared.acquire(
+                    .spokenPlayback,
+                    owner: sessionOwner
+                )
+                try Task.checkCancellation()
+                guard activeRequestID == requestID,
+                      activeAudioSessionOwner == sessionOwner else {
+                    AudioSessionCoordinator.shared.release(sessionOwner)
+                    return
+                }
+
+                let utterance = AVSpeechUtterance(string: text)
+                utterance.voice = bestVoice(forLanguage: languageCode)
+                utterance.rate = rate
+                activeUtterance = utterance
+                playbackStartTask = nil
+                synthesizer.speak(utterance)
+            } catch is CancellationError {
+                AudioSessionCoordinator.shared.release(sessionOwner)
+            } catch {
+                AudioSessionCoordinator.shared.release(sessionOwner)
+                guard activeRequestID == requestID,
+                      activeAudioSessionOwner == sessionOwner else { return }
+
+                playbackStartTask = nil
+                completeTrackedRequest(
+                    requestID,
+                    outcome: .failed(error.localizedDescription)
+                )
+                activeRequestID = nil
+                activeAudioSessionOwner = nil
+                log.error(
+                    "Audio session activation failed: \(error.localizedDescription, privacy: .public)"
+                )
+                AIAudioRuntimeState.shared.update(
+                    phase: .failed,
+                    message: error.localizedDescription
+                )
+                AIAudioRuntimeState.shared.publishNotice(
+                    error.localizedDescription,
+                    isError: true
+                )
+            }
+        }
     }
 
     fileprivate static func systemSpeechDidFinish(
-        utterance: AVSpeechUtterance,
+        utteranceID: ObjectIdentifier,
         cancelled: Bool
     ) {
-        guard utterance === activeUtterance else {
-            deactivateAudioSessionIfIdle()
-            return
-        }
+        guard let currentUtterance = activeUtterance,
+              ObjectIdentifier(currentUtterance) == utteranceID else { return }
+        let sessionOwner = activeAudioSessionOwner
         activeUtterance = nil
+        activeAudioSessionOwner = nil
         if let requestID = activeRequestID {
             completeTrackedRequest(
                 requestID,
@@ -412,7 +563,9 @@ enum SpeechService {
         if AIAudioRuntimeState.shared.phase == .localFallback {
             AIAudioRuntimeState.shared.update(phase: .idle)
         }
-        deactivateAudioSessionIfIdle()
+        if let sessionOwner {
+            AudioSessionCoordinator.shared.release(sessionOwner)
+        }
     }
 
     /// Reconciles playback state when iOS interrupts the shared audio session.
@@ -424,7 +577,9 @@ enum SpeechService {
         guard generatedAudioPlayer != nil || activeUtterance != nil else { return }
 
         let requestID = activeRequestID
+        let sessionOwner = activeAudioSessionOwner
         activeRequestID = nil
+        activeAudioSessionOwner = nil
         generatedAudioPlayer?.stop()
         generatedAudioPlayer = nil
         activeUtterance = nil
@@ -434,7 +589,9 @@ enum SpeechService {
         }
         AIAudioRuntimeState.shared.update(phase: .failed, message: message)
         AIAudioRuntimeState.shared.publishNotice(message, isError: true)
-        deactivateAudioSessionIfIdle()
+        if let sessionOwner {
+            AudioSessionCoordinator.shared.release(sessionOwner)
+        }
     }
 
     private static func completeTrackedRequest(
@@ -464,32 +621,6 @@ enum SpeechService {
         return picked
     }
 
-    // MARK: - Audio Session (iOS)
-
-    private static func configureAudioSessionForPlayback() {
-        #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        do {
-            try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
-            try session.setActive(true)
-        } catch {
-            log.error("Audio session configuration failed: \(error.localizedDescription, privacy: .public)")
-        }
-        #endif
-    }
-
-    fileprivate static func deactivateAudioSessionIfIdle() {
-        #if os(iOS)
-        guard !synthesizer.isSpeaking, generatedAudioPlayer?.isPlaying != true,
-              generationTask == nil,
-              !SourceAudioActivityCoordinator.shared.hasActiveSourceAudio else { return }
-        do {
-            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        } catch {
-            log.error("Audio session deactivation failed: \(error.localizedDescription, privacy: .public)")
-        }
-        #endif
-    }
 }
 
 nonisolated private enum SpeechRequestOutcome: Sendable {
@@ -503,30 +634,39 @@ nonisolated private struct AIAudioSpeechFailure: LocalizedError {
     var errorDescription: String? { message }
 }
 
+nonisolated private struct GeneratedAudioFileUnreadable: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
+}
+
 private final class SpeechSessionReleaser: NSObject, AVSpeechSynthesizerDelegate {
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        MainActor.assumeIsolated {
-            SpeechService.systemSpeechDidFinish(utterance: utterance, cancelled: false)
+        let utteranceID = ObjectIdentifier(utterance)
+        Task { @MainActor in
+            SpeechService.systemSpeechDidFinish(utteranceID: utteranceID, cancelled: false)
         }
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        MainActor.assumeIsolated {
-            SpeechService.systemSpeechDidFinish(utterance: utterance, cancelled: true)
+        let utteranceID = ObjectIdentifier(utterance)
+        Task { @MainActor in
+            SpeechService.systemSpeechDidFinish(utteranceID: utteranceID, cancelled: true)
         }
     }
 }
 
 private final class GeneratedAudioPlaybackDelegate: NSObject, AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        MainActor.assumeIsolated {
-            SpeechService.generatedAudioDidFinish(player: player, successfully: flag)
+        let playerID = ObjectIdentifier(player)
+        Task { @MainActor in
+            SpeechService.generatedAudioDidFinish(playerID: playerID, successfully: flag)
         }
     }
 
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
-        MainActor.assumeIsolated {
-            SpeechService.generatedAudioDidFinish(player: player, successfully: false)
+        let playerID = ObjectIdentifier(player)
+        Task { @MainActor in
+            SpeechService.generatedAudioDidFinish(playerID: playerID, successfully: false)
         }
     }
 }

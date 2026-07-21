@@ -349,7 +349,7 @@ final class SourceAudioActivityCoordinator {
             guard let rawValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
                   AVAudioSession.InterruptionType(rawValue: rawValue) == .began else { return }
             Task { @MainActor [weak self] in
-                self?.handleAudioSessionLoss(
+                await self?.handleAudioSessionLoss(
                     message: String(localized: "Audio was interrupted by another app. Please try again.")
                 )
             }
@@ -362,7 +362,7 @@ final class SourceAudioActivityCoordinator {
             guard let rawValue = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
                   AVAudioSession.RouteChangeReason(rawValue: rawValue) == .oldDeviceUnavailable else { return }
             Task { @MainActor [weak self] in
-                self?.handleAudioSessionLoss(
+                await self?.handleAudioSessionLoss(
                     message: String(localized: "Audio stopped because the playback or recording device was disconnected.")
                 )
             }
@@ -370,9 +370,10 @@ final class SourceAudioActivityCoordinator {
         #endif
     }
 
-    private func handleAudioSessionLoss(message: String) {
+    private func handleAudioSessionLoss(message: String) async {
         service?.handleAudioSessionLoss(message: message)
         SpeechService.handleAudioSessionLoss(message: message)
+        await SpeechRecognitionService.shared.handleAudioSessionLoss(message: message)
     }
 }
 
@@ -382,6 +383,7 @@ final class SourceAudioActivityCoordinator {
 final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
     private(set) var isRecording = false
     private(set) var isStartingRecording = false
+    private(set) var isStartingPlayback = false
     private(set) var playingURL: URL?
     private(set) var completedRecordingURL: URL?
     private(set) var playbackErrorMessage: String?
@@ -389,25 +391,42 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
     private var recorder: AVAudioRecorder?
     private var recordingURL: URL?
     private var player: AVAudioPlayer?
+    private var recordingStartID: UUID?
+    private var playbackStartID: UUID?
+    private var recordingSessionOwner: AudioSessionOwner?
+    private var playbackSessionOwner: AudioSessionOwner?
 
     var hasActiveAudio: Bool {
-        isRecording || recorder != nil || playingURL != nil || player?.isPlaying == true
+        isRecording || isStartingRecording || isStartingPlayback
+            || recorder != nil || playingURL != nil || player?.isPlaying == true
+            || recordingSessionOwner != nil || playbackSessionOwner != nil
     }
 
     func startRecording() async throws {
         guard !isRecording, !isStartingRecording else { return }
+        let requestID = UUID()
+        recordingStartID = requestID
         completedRecordingURL = nil
         playbackErrorMessage = nil
         isStartingRecording = true
-        defer { isStartingRecording = false }
+        defer {
+            if recordingStartID == requestID {
+                recordingStartID = nil
+                isStartingRecording = false
+            }
+        }
 
         try Task.checkCancellation()
         guard await requestMicrophonePermissionIfNeeded() else {
             throw AudioCaptureError.microphoneNotAuthorized
         }
         try Task.checkCancellation()
+        guard recordingStartID == requestID else { throw CancellationError() }
 
         stopPlayback()
+        await SpeechRecognitionService.shared.stopRecording()
+        try Task.checkCancellation()
+        guard recordingStartID == requestID else { throw CancellationError() }
         SpeechService.stop()
 
         let fileManager = FileManager.default
@@ -426,10 +445,22 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
             AVEncoderBitRateKey: 128_000
         ]
+        let sessionOwner = AudioSessionOwner()
 
         do {
             SourceAudioActivityCoordinator.shared.acquire(self)
-            try activateRecordingSession()
+            recordingSessionOwner = sessionOwner
+            try await AudioSessionCoordinator.shared.acquire(
+                .clipRecording,
+                owner: sessionOwner
+            )
+            try Task.checkCancellation()
+            guard recordingStartID == requestID,
+                  recordingSessionOwner == sessionOwner else {
+                AudioSessionCoordinator.shared.release(sessionOwner)
+                throw CancellationError()
+            }
+
             let recorder = try AVAudioRecorder(url: url, settings: settings)
             recorder.prepareToRecord()
             guard recorder.record() else {
@@ -439,9 +470,15 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
             recordingURL = url
             isRecording = true
         } catch {
-            SourceAudioActivityCoordinator.shared.release(self)
+            AudioSessionCoordinator.shared.release(sessionOwner)
+            if recordingSessionOwner == sessionOwner {
+                recordingSessionOwner = nil
+            }
             AudioInputFileStore.remove(url)
-            deactivateAudioSession()
+            releaseSessionOwnershipIfIdle()
+            if error is CancellationError {
+                throw error
+            }
             if let captureError = error as? AudioCaptureError {
                 throw captureError
             }
@@ -454,11 +491,17 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
             throw AudioCaptureError.noActiveRecording
         }
 
+        recordingStartID = nil
+        isStartingRecording = false
         recorder.stop()
+        let sessionOwner = recordingSessionOwner
+        recordingSessionOwner = nil
         self.recorder = nil
         self.recordingURL = nil
         isRecording = false
-        deactivateAudioSession()
+        if let sessionOwner {
+            AudioSessionCoordinator.shared.release(sessionOwner)
+        }
         releaseSessionOwnershipIfIdle()
 
         let byteCount = (try? recordingURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
@@ -470,7 +513,10 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
     }
 
     func discardActiveRecording() {
-        let ownedRecordingSession = recorder != nil || isRecording || recordingURL != nil
+        recordingStartID = nil
+        isStartingRecording = false
+        let sessionOwner = recordingSessionOwner
+        recordingSessionOwner = nil
         recorder?.stop()
         recorder = nil
         isRecording = false
@@ -478,51 +524,76 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
             AudioInputFileStore.remove(recordingURL)
         }
         recordingURL = nil
-        if ownedRecordingSession {
-            deactivateAudioSession()
+        if let sessionOwner {
+            AudioSessionCoordinator.shared.release(sessionOwner)
         }
         releaseSessionOwnershipIfIdle()
     }
 
-    func togglePlayback(of url: URL) throws {
-        if playingURL == url {
+    func togglePlayback(of url: URL) async throws {
+        if playingURL == url || isStartingPlayback {
             stopPlayback()
             return
         }
 
         stopPlayback()
-        SpeechService.stop()
-        playbackErrorMessage = nil
+        let requestID = UUID()
+        let sessionOwner = AudioSessionOwner()
+        playbackStartID = requestID
+        isStartingPlayback = true
         do {
+            await SpeechRecognitionService.shared.stopRecording()
+            try Task.checkCancellation()
+            guard playbackStartID == requestID else { throw CancellationError() }
+            SpeechService.stop()
+            playbackErrorMessage = nil
             SourceAudioActivityCoordinator.shared.acquire(self)
-            #if os(iOS)
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default, options: [.duckOthers])
-            try session.setActive(true)
-            #endif
-
             let player = try AVAudioPlayer(contentsOf: url)
             player.delegate = self
-            player.prepareToPlay()
-            guard player.play() else {
+            guard player.prepareToPlay() else {
                 throw AudioCaptureError.previewFailed(
                     String(localized: "The player could not decode this file.")
                 )
             }
+
+            playbackSessionOwner = sessionOwner
+            try await AudioSessionCoordinator.shared.acquire(
+                .sourcePreview,
+                owner: sessionOwner
+            )
+            try Task.checkCancellation()
+            guard playbackStartID == requestID,
+                  playbackSessionOwner == sessionOwner else {
+                AudioSessionCoordinator.shared.release(sessionOwner)
+                throw CancellationError()
+            }
+
             self.player = player
             playingURL = url
+            playbackStartID = nil
+            isStartingPlayback = false
+            guard player.play() else {
+                self.player = nil
+                playingURL = nil
+                throw AudioCaptureError.previewFailed(
+                    String(localized: "The player could not decode this file.")
+                )
+            }
         } catch {
-            // Activation can succeed before player construction or decoding
-            // fails, so there may be no player/URL for stopPlayback() to use
-            // as an ownership signal. Always relinquish the iOS session here.
-            #if os(iOS)
-            try? AVAudioSession.sharedInstance().setActive(
-                false,
-                options: .notifyOthersOnDeactivation
-            )
-            #endif
-            SourceAudioActivityCoordinator.shared.release(self)
-            stopPlayback()
+            AudioSessionCoordinator.shared.release(sessionOwner)
+            if playbackStartID == requestID {
+                playbackStartID = nil
+                isStartingPlayback = false
+            }
+            if playbackSessionOwner == sessionOwner {
+                playbackSessionOwner = nil
+                player = nil
+                playingURL = nil
+            }
+            releaseSessionOwnershipIfIdle()
+            if error is CancellationError {
+                throw error
+            }
             if let captureError = error as? AudioCaptureError {
                 throw captureError
             }
@@ -531,14 +602,15 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
     }
 
     func stopPlayback() {
-        let ownedPlaybackSession = player != nil || playingURL != nil
+        playbackStartID = nil
+        let sessionOwner = playbackSessionOwner
+        playbackSessionOwner = nil
+        isStartingPlayback = false
         player?.stop()
         player = nil
         playingURL = nil
-        if ownedPlaybackSession {
-            #if os(iOS)
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-            #endif
+        if let sessionOwner {
+            AudioSessionCoordinator.shared.release(sessionOwner)
         }
         releaseSessionOwnershipIfIdle()
     }
@@ -572,27 +644,31 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
 
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         guard player === self.player else { return }
+        let sessionOwner = playbackSessionOwner
+        playbackSessionOwner = nil
         self.player = nil
         playingURL = nil
         if !flag {
             playbackErrorMessage = String(localized: "The audio preview stopped before it finished.")
         }
-        #if os(iOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
+        if let sessionOwner {
+            AudioSessionCoordinator.shared.release(sessionOwner)
+        }
         releaseSessionOwnershipIfIdle()
     }
 
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
         guard player === self.player else { return }
+        let sessionOwner = playbackSessionOwner
+        playbackSessionOwner = nil
         self.player = nil
         playingURL = nil
         playbackErrorMessage = AudioCaptureError.previewFailed(
             error?.localizedDescription ?? String(localized: "The player could not decode this file.")
         ).localizedDescription
-        #if os(iOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
+        if let sessionOwner {
+            AudioSessionCoordinator.shared.release(sessionOwner)
+        }
         releaseSessionOwnershipIfIdle()
     }
 
@@ -634,22 +710,6 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
         @unknown default:
             return false
         }
-    }
-
-    private func activateRecordingSession() throws {
-        #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        // `.duckOthers` is not valid with the record-only category, and
-        // `.notifyOthersOnDeactivation` is valid only when deactivating.
-        try session.setCategory(.record, mode: .measurement, options: [])
-        try session.setActive(true)
-        #endif
-    }
-
-    private func deactivateAudioSession() {
-        #if os(iOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
     }
 
     private func releaseSessionOwnershipIfIdle() {

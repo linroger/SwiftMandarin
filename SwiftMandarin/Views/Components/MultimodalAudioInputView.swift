@@ -283,11 +283,15 @@ struct MultimodalAudioInputView: View {
     private func selectedAudioCard(_ audio: PreparedAudioFile) -> some View {
         HStack(spacing: 12) {
             Button {
-                do {
-                    try captureService.togglePlayback(of: audio.url)
-                    errorMessage = nil
-                } catch {
-                    errorMessage = error.localizedDescription
+                Task {
+                    do {
+                        try await captureService.togglePlayback(of: audio.url)
+                        errorMessage = nil
+                    } catch is CancellationError {
+                        // A newer audio action intentionally replaced startup.
+                    } catch {
+                        errorMessage = error.localizedDescription
+                    }
                 }
             } label: {
                 Image(systemName: captureService.playingURL == audio.url ? "stop.fill" : "play.fill")
