@@ -136,7 +136,8 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 - **Live Model Lists**: Enter your API key and fetch the provider's available models directly from its API
 - **Test Connection & Capability Badges**: One tap verifies your key, endpoint, and model round-trip; badges show whether the provider supports vision (images) and strict JSON mode
 - **Secure Key Storage**: API keys are stored in the system **Keychain**, never in plain files or the cloud
-- **Optional MiniMax AI Audio**: Route every read-aloud action through MiniMax TTS, persist the generated MP3, replay it without another paid request, and share or export it
+- **Optional MiniMax AI Audio**: Refresh your account's live Mandarin/English voice catalog, choose the latest Speech 2.8 model or an older compatible 2.6/02/01 model, route every read-aloud action through MiniMax TTS, persist the generated MP3, replay it without another paid request, and share or export it
+- **Batch AI Analysis & Audio**: Analyze missing saved words and optionally pre-generate deduplicated, persistent Mandarin and English MiniMax clips after an exact paid-request/character preflight
 - **Learner Mode**: Tell the app whether you're an English speaker learning Mandarin, a Mandarin speaker learning English, or both—defaults adapt accordingly
 - **Entirely Optional**: Leave AI off and every core feature still works fully on-device
 
@@ -246,8 +247,9 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
   - Toggle AI photo cleanup
 - **AI Audio**:
   - Enable or disable MiniMax speech globally without changing individual Speak buttons
-  - Choose API region, speech model, Mandarin/English voice IDs, speed, and system-voice fallback
-  - Preview the configured voice and manage, replay, share, export, or delete saved MP3 files
+  - Choose API region and either the latest Speech 2.8 model or an older compatible model; refresh friendly Mandarin and English voice names live from the selected MiniMax account while retaining the last public catalog offline
+  - Preview each language through MiniMax itself—without a misleading system-voice fallback—and manage, replay, share, export, or delete saved MP3 files
+  - In Batch AI Analysis & Audio, choose the learning language or both languages, review exact new-request and character counts, then generate cache-first audio without automatic playback
 - **Translation Preferences**:
   - Auto-translate toggle
   - Translate on paste

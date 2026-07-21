@@ -110,6 +110,27 @@ actor GeneratedSpeechRepository {
         return recordsByID.values.sorted { $0.createdAt > $1.createdAt }
     }
 
+    /// One actor hop answers a whole batch preflight and avoids repeatedly
+    /// scanning or touching the index for thousands of vocabulary entries.
+    func existingRecordIDs(among cacheKeys: Set<String>) throws -> Set<String> {
+        try loadIfNeeded()
+        var existing = Set<String>()
+        var removedInvalidRecord = false
+        for cacheKey in cacheKeys {
+            guard let record = recordsByID[cacheKey] else { continue }
+            if validFileURL(for: record) != nil {
+                existing.insert(cacheKey)
+            } else {
+                recordsByID.removeValue(forKey: cacheKey)
+                removedInvalidRecord = true
+            }
+        }
+        if removedInvalidRecord {
+            try persistIndex()
+        }
+        return existing
+    }
+
     func fileURL(for recordID: String) throws -> URL {
         try loadIfNeeded()
         guard let record = recordsByID[recordID], let url = validFileURL(for: record) else {
@@ -203,6 +224,7 @@ actor GeneratedSpeechRepository {
         guard FileManager.default.fileExists(atPath: indexURL.path) else {
             recordsByID = [:]
             cleanupOrphanedAudioFiles()
+            cleanupRecoveryMetadata()
             return
         }
 
@@ -243,6 +265,7 @@ actor GeneratedSpeechRepository {
             }
         }
         cleanupOrphanedAudioFiles()
+        cleanupRecoveryMetadata()
     }
 
     /// Malformed JSON must not permanently lock users out of their library.
@@ -349,6 +372,27 @@ actor GeneratedSpeechRepository {
             try? FileManager.default.removeItem(at: candidate)
         }
     }
+
+    /// Recovery files may contain the same source text as the private index.
+    /// A failed final unlink is retried after every successful supported-schema
+    /// load so temporary rollback metadata cannot become an indefinite shadow
+    /// copy. Future-schema directories deliberately return before this cleanup.
+    private func cleanupRecoveryMetadata() {
+        guard let candidates = try? FileManager.default.contentsOfDirectory(
+            at: directoryURL,
+            includingPropertiesForKeys: nil,
+            options: []
+        ) else { return }
+
+        for candidate in candidates {
+            let name = candidate.lastPathComponent
+            let isRecoveryMetadata = candidate.pathExtension.lowercased() == "json"
+                && (name.hasPrefix("index.recovery-")
+                    || name.hasPrefix("index.corrupt-"))
+            guard isRecoveryMetadata else { continue }
+            try? FileManager.default.removeItem(at: candidate)
+        }
+    }
 }
 
 @Observable
@@ -450,6 +494,7 @@ actor MiniMaxSpeechPipeline {
     private var inFlight: [String: InFlight] = [:]
     private var retiringTasks: [UUID: Task<CachedGeneratedSpeech, Error>] = [:]
     private var clearTask: Task<Void, Error>?
+    private var generationEpoch: UInt64 = 0
 
     init(
         client: MiniMaxAudioClient = MiniMaxAudioClient(),
@@ -463,12 +508,20 @@ actor MiniMaxSpeechPipeline {
         for identity: MiniMaxSpeechCacheIdentity,
         apiKey: String
     ) async throws -> CachedGeneratedSpeech {
+        try Task.checkCancellation()
+        let requestEpoch = generationEpoch
         guard clearTask == nil else { throw CancellationError() }
         if let cached = try await repository.cachedSpeech(for: identity) {
-            guard clearTask == nil else { throw CancellationError() }
+            try Task.checkCancellation()
+            guard requestEpoch == generationEpoch, clearTask == nil else {
+                throw CancellationError()
+            }
             return cached
         }
-        guard clearTask == nil else { throw CancellationError() }
+        try Task.checkCancellation()
+        guard requestEpoch == generationEpoch, clearTask == nil else {
+            throw CancellationError()
+        }
 
         let waiterID = UUID()
         let generationID: UUID
@@ -504,15 +557,14 @@ actor MiniMaxSpeechPipeline {
         }
 
         return try await withTaskCancellationHandler {
+            let result: CachedGeneratedSpeech
             do {
-                let result = try await task.value
-                try Task.checkCancellation()
+                result = try await task.value
                 finishWaiter(
                     cacheKey: identity.cacheKey,
                     waiterID: waiterID,
                     generationID: generationID
                 )
-                return result
             } catch {
                 finishWaiter(
                     cacheKey: identity.cacheKey,
@@ -521,6 +573,16 @@ actor MiniMaxSpeechPipeline {
                 )
                 throw error
             }
+
+            // Once persistence succeeds, a caller cancellation may still
+            // return the durable artifact so batch accounting can publish it;
+            // playback callers perform their own cancellation check. A Clear
+            // All epoch change is different: the record was deliberately
+            // deleted and must never be republished into observable state.
+            guard requestEpoch == generationEpoch, clearTask == nil else {
+                throw CancellationError()
+            }
+            return result
         } onCancel: {
             Task {
                 await self.cancelWaiter(
@@ -573,6 +635,7 @@ actor MiniMaxSpeechPipeline {
             return
         }
 
+        generationEpoch &+= 1
         let generationTasks = inFlight.values.map(\.task) + retiringTasks.values
         let repository = self.repository
         let task = Task<Void, Error> {

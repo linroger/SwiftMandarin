@@ -150,6 +150,8 @@ final class AppPreferences {
         static let aiAudioModel = "ai_audio_model"
         static let aiAudioChineseVoice = "ai_audio_chinese_voice"
         static let aiAudioEnglishVoice = "ai_audio_english_voice"
+        static let aiAudioChineseVoiceUsesCustomLanguage = "ai_audio_chinese_voice_custom_language"
+        static let aiAudioEnglishVoiceUsesCustomLanguage = "ai_audio_english_voice_custom_language"
         static let aiAudioSpeed = "ai_audio_speed"
         static let aiAudioFallbackToSystemSpeech = "ai_audio_fallback_to_system_speech"
     }
@@ -225,7 +227,11 @@ final class AppPreferences {
     /// Selects MiniMax's regional API host independently of the text-model
     /// provider configuration.
     var aiAudioRegion: MiniMaxAPIRegion {
-        didSet { UserDefaults.standard.set(aiAudioRegion.rawValue, forKey: Keys.aiAudioRegion) }
+        didSet {
+            UserDefaults.standard.set(aiAudioRegion.rawValue, forKey: Keys.aiAudioRegion)
+            guard oldValue != aiAudioRegion else { return }
+            invalidateCredentialScopedVoiceProvenance()
+        }
     }
 
     /// T2A model identifier. Settings may expose this as editable so a newer
@@ -263,6 +269,27 @@ final class AppPreferences {
         }
     }
 
+    /// Account-created/custom IDs can legally resemble public system IDs.
+    /// Persisting the user's explicit slot assignment keeps validation stable
+    /// across catalog refreshes and relaunches without guessing provenance.
+    var aiAudioChineseVoiceUsesCustomLanguage: Bool {
+        didSet {
+            UserDefaults.standard.set(
+                aiAudioChineseVoiceUsesCustomLanguage,
+                forKey: Keys.aiAudioChineseVoiceUsesCustomLanguage
+            )
+        }
+    }
+
+    var aiAudioEnglishVoiceUsesCustomLanguage: Bool {
+        didSet {
+            UserDefaults.standard.set(
+                aiAudioEnglishVoiceUsesCustomLanguage,
+                forKey: Keys.aiAudioEnglishVoiceUsesCustomLanguage
+            )
+        }
+    }
+
     var aiAudioSpeed: Double {
         didSet {
             let clamped = min(max(aiAudioSpeed, Self.aiAudioSpeedRange.lowerBound),
@@ -283,6 +310,27 @@ final class AppPreferences {
             UserDefaults.standard.set(aiAudioFallbackToSystemSpeech,
                                       forKey: Keys.aiAudioFallbackToSystemSpeech)
         }
+    }
+
+    /// Account-created voices can use system-looking prefixes, but that proof
+    /// belongs to the MiniMax account and regional catalog where it was
+    /// observed. Crossing either boundary must fail closed until a live
+    /// catalog confirms the selected ID is account-created again.
+    func invalidateCredentialScopedVoiceProvenance() {
+        aiAudioChineseVoiceUsesCustomLanguage =
+            MiniMaxVoiceDescriptor.reconciledSlotLanguageAssignment(
+                voiceID: aiAudioChineseVoice,
+                persistedAssignment: aiAudioChineseVoiceUsesCustomLanguage,
+                liveCatalogSource: nil,
+                scopeChanged: true
+            )
+        aiAudioEnglishVoiceUsesCustomLanguage =
+            MiniMaxVoiceDescriptor.reconciledSlotLanguageAssignment(
+                voiceID: aiAudioEnglishVoice,
+                persistedAssignment: aiAudioEnglishVoiceUsesCustomLanguage,
+                liveCatalogSource: nil,
+                scopeChanged: true
+            )
     }
 
     /// Align the learner mode with the interface language (the interface
@@ -337,6 +385,13 @@ final class AppPreferences {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         self.aiAudioEnglishVoice = savedEnglishVoice.flatMap { $0.isEmpty ? nil : $0 }
             ?? MiniMaxSpeechConfiguration.defaultEnglishVoice
+
+        self.aiAudioChineseVoiceUsesCustomLanguage = UserDefaults.standard.object(
+            forKey: Keys.aiAudioChineseVoiceUsesCustomLanguage
+        ) as? Bool ?? false
+        self.aiAudioEnglishVoiceUsesCustomLanguage = UserDefaults.standard.object(
+            forKey: Keys.aiAudioEnglishVoiceUsesCustomLanguage
+        ) as? Bool ?? false
 
         let savedAISpeed = UserDefaults.standard.object(forKey: Keys.aiAudioSpeed) as? Double ?? 1.0
         self.aiAudioSpeed = min(max(savedAISpeed, Self.aiAudioSpeedRange.lowerBound),

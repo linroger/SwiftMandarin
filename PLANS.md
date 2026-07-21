@@ -1,5 +1,17 @@
 # SwiftMandarin implementation plans
 
+## Active slice: Live MiniMax audio catalog and batch audio
+
+**Created (UTC):** 2026-07-20T22:07:52Z
+
+**Branch:** `codex/minimax-audio-catalog-batch`
+
+**Base:** `origin/main` at `4879c53b81d86f8142b26e4a4ba915916a9cd1f9`
+
+The implementation contract, API findings, concurrency boundaries, acceptance scenarios, and planned evidence for this slice are recorded in [`docs/handoff/minimax-audio-catalog-batch/PLANS.md`](docs/handoff/minimax-audio-catalog-batch/PLANS.md). This slice refreshes the live MiniMax voice catalog, presents the latest Speech 2.8 models ahead of the older compatible 2.6/02/01 families, forces the correct MiniMax language boost for Mandarin and English, invalidates ambiguous legacy audio cache identities, and optionally generates persistent MiniMax pronunciation audio during Batch AI Analysis.
+
+The live mainland MiniMax account currently returns 303 system voices: 26 have the standard Mandarin prefix, two documented Mandarin exceptions are recognized explicitly, and 6 are English (28 Mandarin choices total). Its general `/v1/models` response contains no speech models, so production code MUST NOT treat that endpoint as an authoritative speech-model catalog. Models use the current documented T2A catalog, while voices refresh from `/v1/get_voice` and retain the last successful public system catalog for offline settings use.
+
 ## Active slice: MiniMax AI Audio and Multimodal translation
 
 **Created (UTC):** 2026-07-20T19:55:55Z

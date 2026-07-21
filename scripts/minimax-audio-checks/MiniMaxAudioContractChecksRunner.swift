@@ -14,6 +14,8 @@ final class AppPreferences {
     var aiAudioModel = MiniMaxSpeechConfiguration.defaultModel
     var aiAudioChineseVoice = MiniMaxSpeechConfiguration.defaultChineseVoice
     var aiAudioEnglishVoice = MiniMaxSpeechConfiguration.defaultEnglishVoice
+    var aiAudioChineseVoiceUsesCustomLanguage = false
+    var aiAudioEnglishVoiceUsesCustomLanguage = false
 }
 
 private struct CheckFailure: Error {
@@ -200,6 +202,50 @@ private func t2aResponse(
     return try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
 }
 
+private func voiceCatalogResponse(
+    primaryMandarinVoiceID: String = "Chinese (Mandarin)_News_Anchor",
+    baseStatus: Int = 0,
+    baseMessage: String = "success",
+    includeAccountVoices: Bool = true
+) throws -> Data {
+    let object: [String: Any] = [
+        "system_voice": [
+            [
+                "voice_id": primaryMandarinVoiceID,
+                "voice_name": "新闻女声",
+                "description": ["清晰", "沉稳"],
+                "created_time": 1_700_000_001,
+            ],
+            [
+                "voice_id": "English_Graceful_Lady",
+                "voice_name": "Graceful Lady",
+                "description": "Warm English voice",
+            ],
+            [
+                "voice_id": "Arrogant_Miss",
+                "voice_name": "傲娇小姐",
+                "description": [],
+            ],
+            [
+                "voice_id": "Unclassified_System_Voice",
+                "description": [],
+            ],
+        ],
+        "voice_cloning": includeAccountVoices
+            ? [["voice_id": "account-clone", "voice_name": "My Voice"]]
+            : [],
+        "voice_generation": includeAccountVoices
+            ? [["voice_id": "account-generated", "description": ["Designed"]]]
+            : [],
+        "music_generation": [],
+        "base_resp": [
+            "status_code": baseStatus,
+            "status_msg": baseMessage,
+        ],
+    ]
+    return try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+}
+
 private struct ContractChecks {
     private(set) var checksRun = 0
 
@@ -320,6 +366,7 @@ private struct ContractChecks {
             region: .mainlandChina,
             model: MiniMaxSpeechConfiguration.defaultModel,
             voiceID: MiniMaxSpeechConfiguration.defaultChineseVoice,
+            languageBoost: .chinese,
             speed: 1.0
         )
         let fixture = MiniMaxSpeechCacheIdentity(
@@ -334,6 +381,7 @@ private struct ContractChecks {
                 region: .mainlandChina,
                 model: "  speech-2.8-turbo ",
                 voiceID: " Chinese (Mandarin)_News_Anchor  ",
+                languageBoost: .chinese,
                 speed: 1.0,
                 format: "MP3"
             )
@@ -341,8 +389,8 @@ private struct ContractChecks {
 
         try expectEqual(
             fixture.cacheKey,
-            "f33b2a0ee23c491a793f95735ddc3146191099824eb7edfdc087b24036006010",
-            "The canonical cache fixture remains stable"
+            "93432d55bc2443998f7d3789e9c20ea830373fa973273002b3d0972951b95fe6",
+            "The schema-v2 language-aware cache fixture remains stable"
         )
         try expectEqual(
             same.cacheKey,
@@ -408,6 +456,7 @@ private struct ContractChecks {
                         region: .international,
                         model: base.model,
                         voiceID: base.voiceID,
+                        languageBoost: base.languageBoost,
                         speed: base.speed
                     )
                 )
@@ -421,6 +470,7 @@ private struct ContractChecks {
                         region: base.region,
                         model: "speech-2.8-hd",
                         voiceID: base.voiceID,
+                        languageBoost: base.languageBoost,
                         speed: base.speed
                     )
                 )
@@ -434,6 +484,7 @@ private struct ContractChecks {
                         region: base.region,
                         model: base.model,
                         voiceID: "Chinese (Mandarin)_Reliable_Executive",
+                        languageBoost: base.languageBoost,
                         speed: base.speed
                     )
                 )
@@ -447,6 +498,7 @@ private struct ContractChecks {
                         region: base.region,
                         model: base.model,
                         voiceID: base.voiceID,
+                        languageBoost: base.languageBoost,
                         speed: 0.9
                     )
                 )
@@ -460,6 +512,7 @@ private struct ContractChecks {
                         region: base.region,
                         model: base.model,
                         voiceID: base.voiceID,
+                        languageBoost: base.languageBoost,
                         speed: base.speed,
                         bitrate: 192_000
                     )
@@ -530,7 +583,7 @@ private struct ContractChecks {
         try expectEqual(payload["model"] as? String, "speech-2.8-turbo", "Payload includes the selected model")
         try expectEqual(payload["text"] as? String, "你好，世界！", "Payload includes normalized source text")
         try expectEqual(payload["stream"] as? Bool, false, "Interactive generation is non-streaming")
-        try expectEqual(payload["language_boost"] as? String, "auto", "Payload enables automatic language detection")
+        try expectEqual(payload["language_boost"] as? String, "Chinese", "Mandarin payload explicitly selects Chinese")
         try expectEqual(payload["output_format"] as? String, "hex", "Non-streaming output requests strict hex")
 
         try expectEqual(
@@ -560,6 +613,7 @@ private struct ContractChecks {
                 region: .international,
                 model: identity.configuration.model,
                 voiceID: identity.configuration.voiceID,
+                languageBoost: identity.configuration.languageBoost,
                 speed: identity.configuration.speed
             )
         )
@@ -574,6 +628,119 @@ private struct ContractChecks {
             MiniMaxURLProtocolStub.requests().first?.url?.absoluteString,
             "https://api.minimax.io/v1/t2a_v2",
             "International speech uses the current global T2A v2 endpoint"
+        )
+
+        let englishIdentity = MiniMaxSpeechCacheIdentity(
+            text: "Hello from MiniMax.",
+            languageCode: "en-US",
+            configuration: MiniMaxSpeechConfiguration(
+                region: .mainlandChina,
+                model: "speech-2.8-turbo",
+                voiceID: "English_Graceful_Lady",
+                languageBoost: .english,
+                speed: 1
+            )
+        )
+        MiniMaxURLProtocolStub.install { _ in
+            .respond(statusCode: 200, body: successBody)
+        }
+        _ = try await client.synthesize(
+            identity: englishIdentity,
+            apiKey: "offline-contract-token"
+        )
+        guard let englishBody = MiniMaxURLProtocolStub.requests().first?.body,
+              let englishPayload = try JSONSerialization.jsonObject(
+                with: englishBody
+              ) as? [String: Any] else {
+            throw CheckFailure(message: "The English request body was not captured")
+        }
+        try expectEqual(
+            englishPayload["language_boost"] as? String,
+            "English",
+            "English payload explicitly selects English"
+        )
+
+        let mismatchedIdentity = MiniMaxSpeechCacheIdentity(
+            text: "你好",
+            languageCode: "zh-CN",
+            configuration: englishIdentity.configuration
+        )
+        MiniMaxURLProtocolStub.install { _ in
+            .respond(statusCode: 200, body: successBody)
+        }
+        checksRun += 1
+        do {
+            _ = try await client.synthesize(
+                identity: mismatchedIdentity,
+                apiKey: "offline-contract-token"
+            )
+            throw CheckFailure(message: "A mismatched text/configuration language was accepted")
+        } catch let error as MiniMaxAudioError {
+            guard case .invalidConfiguration = error else {
+                throw CheckFailure(message: "A language mismatch produced the wrong typed error")
+            }
+        }
+        try expectEqual(
+            MiniMaxURLProtocolStub.requests().count,
+            0,
+            "A language mismatch is rejected before any paid request"
+        )
+
+        let wrongSystemVoiceIdentity = MiniMaxSpeechCacheIdentity(
+            text: "你好",
+            languageCode: "zh-CN",
+            configuration: MiniMaxSpeechConfiguration(
+                region: .mainlandChina,
+                model: "speech-2.8-turbo",
+                voiceID: "English_Graceful_Lady",
+                languageBoost: .chinese,
+                speed: 1
+            )
+        )
+        MiniMaxURLProtocolStub.install { _ in
+            .respond(statusCode: 200, body: successBody)
+        }
+        checksRun += 1
+        do {
+            _ = try await client.synthesize(
+                identity: wrongSystemVoiceIdentity,
+                apiKey: "offline-contract-token"
+            )
+            throw CheckFailure(message: "A known English system voice was accepted for Mandarin")
+        } catch let error as MiniMaxAudioError {
+            guard case .invalidConfiguration = error else {
+                throw CheckFailure(message: "A system-voice language mismatch produced the wrong typed error")
+            }
+        }
+        try expectEqual(
+            MiniMaxURLProtocolStub.requests().count,
+            0,
+            "A known wrong-language system voice is rejected before any paid request"
+        )
+
+        let customPrefixVoiceIdentity = MiniMaxSpeechCacheIdentity(
+            text: "你好",
+            languageCode: "zh-CN",
+            configuration: MiniMaxSpeechConfiguration(
+                region: .mainlandChina,
+                model: "speech-2.8-turbo",
+                voiceID: "English_my_account_clone",
+                languageBoost: .chinese,
+                voiceUsesCustomLanguageAssignment: true,
+                speed: 1
+            )
+        )
+        MiniMaxURLProtocolStub.install { _ in
+            .respond(statusCode: 200, body: successBody)
+        }
+        _ = try await client.synthesize(
+            identity: customPrefixVoiceIdentity,
+            apiKey: "offline-contract-token"
+        )
+        try expectEqual(
+            MiniMaxURLProtocolStub.requests().count,
+            1,
+            "An explicitly assigned account voice is not misclassified by its custom prefix"
         )
 
         MiniMaxURLProtocolStub.install { _ in
@@ -650,6 +817,573 @@ private struct ContractChecks {
         }
     }
 
+    mutating func runCatalogModelChecks() throws {
+        let models = MiniMaxSpeechModelDescriptor.selectableModels
+        try expectEqual(models.count, 8, "The bundled T2A catalog includes current and accepted legacy models")
+        try expectEqual(models.first?.id, "speech-2.8-turbo", "The latest low-latency model leads the catalog")
+        try expectEqual(
+            Set(models.filter(\.isLatestFamily).map(\.id)),
+            Set(["speech-2.8-turbo", "speech-2.8-hd"]),
+            "Only Speech 2.8 is marked as the latest family"
+        )
+        try expectEqual(
+            Set(models.filter { $0.lifecycle == .legacy }.map(\.id)),
+            Set([
+                "speech-2.6-turbo", "speech-2.6-hd",
+                "speech-02-turbo", "speech-02-hd",
+                "speech-01-turbo", "speech-01-hd",
+            ]),
+            "Every older accepted family is clearly labeled as compatible legacy"
+        )
+        try expectEqual(
+            MiniMaxVoiceDescriptor.classifySystemVoiceID("Chinese (Mandarin)_News_Anchor"),
+            .mandarinChinese,
+            "The normal Mandarin system prefix is classified"
+        )
+        try expectEqual(
+            MiniMaxVoiceDescriptor.classifySystemVoiceID("Arrogant_Miss"),
+            .mandarinChinese,
+            "The documented Mandarin prefix exception remains available"
+        )
+        try expectEqual(
+            MiniMaxVoiceDescriptor.classifySystemVoiceID("Robot_Armor"),
+            .mandarinChinese,
+            "The second documented Mandarin prefix exception remains available"
+        )
+        try expectEqual(
+            MiniMaxVoiceDescriptor.classifySystemVoiceID("English_Graceful_Lady"),
+            .english,
+            "The English system prefix is classified"
+        )
+        try expect(
+            MiniMaxVoiceDescriptor.classifySystemVoiceID("Unknown") == nil,
+            "Unknown system voices are not assigned a guessed language"
+        )
+        try expect(
+            !MiniMaxVoiceDescriptor.usesSlotLanguageAssignment(
+                voiceID: "English_Graceful_Lady",
+                catalogSource: nil
+            ),
+            "A manually entered known English system ID remains language-validated"
+        )
+        try expect(
+            !MiniMaxVoiceDescriptor.usesSlotLanguageAssignment(
+                voiceID: "Chinese (Mandarin)_News_Anchor",
+                catalogSource: .system
+            ),
+            "A catalog system voice remains language-validated"
+        )
+        try expect(
+            MiniMaxVoiceDescriptor.usesSlotLanguageAssignment(
+                voiceID: "English_my_account_clone",
+                catalogSource: .voiceCloning
+            ),
+            "Live account provenance overrides a system-looking voice prefix"
+        )
+        try expect(
+            MiniMaxVoiceDescriptor.usesSlotLanguageAssignment(
+                voiceID: "my_unclassified_voice",
+                catalogSource: nil
+            ),
+            "An unclassified custom ID takes its language from the selected slot"
+        )
+        try expect(
+            !MiniMaxVoiceDescriptor.reconciledSlotLanguageAssignment(
+                voiceID: "English_my_account_clone",
+                persistedAssignment: true,
+                liveCatalogSource: nil,
+                scopeChanged: true
+            ),
+            "A key or region change revokes stale custom provenance for a system-looking ID"
+        )
+        try expect(
+            MiniMaxVoiceDescriptor.reconciledSlotLanguageAssignment(
+                voiceID: "English_my_account_clone",
+                persistedAssignment: false,
+                liveCatalogSource: .voiceCloning,
+                scopeChanged: false
+            ),
+            "A new live account catalog can restore custom provenance"
+        )
+        try expect(
+            !MiniMaxVoiceDescriptor.reconciledSlotLanguageAssignment(
+                voiceID: "English_Graceful_Lady",
+                persistedAssignment: true,
+                liveCatalogSource: .system,
+                scopeChanged: false
+            ),
+            "A live system descriptor demotes stale custom provenance"
+        )
+        try expect(
+            MiniMaxVoiceDescriptor.reconciledSlotLanguageAssignment(
+                voiceID: "my_unclassified_voice",
+                persistedAssignment: true,
+                liveCatalogSource: nil,
+                scopeChanged: true
+            ),
+            "An unclassified custom ID preserves its chosen slot across scope changes"
+        )
+    }
+
+    mutating func runVoiceCatalogChecks() async throws {
+        let session = stubbedSession()
+        defer { session.invalidateAndCancel() }
+        let body = try voiceCatalogResponse()
+        MiniMaxURLProtocolStub.install { _ in
+            .respond(statusCode: 200, body: body)
+        }
+
+        let client = MiniMaxVoiceCatalogClient(session: session)
+        let catalog = try await client.fetch(
+            region: .mainlandChina,
+            apiKey: "  offline-catalog-token  "
+        )
+        let observations = MiniMaxURLProtocolStub.requests()
+        try expectEqual(observations.count, 1, "One voice refresh performs exactly one HTTP request")
+        guard let request = observations.first,
+              let requestBody = request.body,
+              let requestJSON = try JSONSerialization.jsonObject(with: requestBody) as? [String: Any] else {
+            throw CheckFailure(message: "The voice-catalog request was not captured as JSON")
+        }
+        try expectEqual(request.method, "POST", "Voice refresh uses POST")
+        try expectEqual(
+            request.url?.absoluteString,
+            "https://api.minimaxi.com/v1/get_voice",
+            "Mainland voice refresh uses the selected regional endpoint"
+        )
+        try expectEqual(
+            request.header(named: "Authorization"),
+            "Bearer offline-catalog-token",
+            "Voice refresh trims and applies the bearer credential"
+        )
+        try expectEqual(requestJSON["voice_type"] as? String, "all", "Voice refresh requests every voice source")
+
+        try expectEqual(catalog.systemVoices.count, 4, "All unique system voices decode")
+        try expectEqual(catalog.mandarinSystemVoices.count, 2, "Prefix and exception Mandarin voices are retained")
+        try expectEqual(catalog.englishSystemVoices.count, 1, "English system voices are separated")
+        try expectEqual(catalog.unclassifiedSystemVoices.count, 1, "Unclassified system voices remain visible")
+        try expectEqual(catalog.clonedVoices.count, 1, "Account cloned voices decode without language guesses")
+        try expectEqual(catalog.generatedVoices.count, 1, "Account generated voices decode")
+        try expect(catalog.accountVoices.allSatisfy { $0.knownLanguage == nil }, "Account voices never inherit a guessed locale")
+        try expectEqual(
+            catalog.systemVoices.first { $0.voiceID == "English_Graceful_Lady" }?.descriptions,
+            ["Warm English voice"],
+            "A scalar description decodes as one description"
+        )
+        try expectEqual(
+            catalog.systemVoices.first { $0.voiceID == "Chinese (Mandarin)_News_Anchor" }?.descriptions,
+            ["清晰", "沉稳"],
+            "A description array round-trips"
+        )
+
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(
+            "swiftmandarin-minimax-catalog-cache-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        defer { try? fileManager.removeItem(at: root) }
+        let cache = MiniMaxVoiceCatalogCache(directoryURL: root)
+        try await cache.savePublicMetadata(from: catalog)
+        guard let cached = try await cache.load(region: .mainlandChina) else {
+            throw CheckFailure(message: "The public voice catalog did not reload")
+        }
+        try expectEqual(cached.origin, .cachedPublicMetadata, "Reloaded catalog identifies its offline origin")
+        try expectEqual(cached.systemVoices.count, 4, "Public system metadata persists")
+        try expectEqual(cached.accountVoices.count, 0, "Private account voice metadata is not persisted")
+
+        let failedBody = try voiceCatalogResponse(baseStatus: 2049, baseMessage: "invalid key region")
+        MiniMaxURLProtocolStub.install { _ in
+            .respond(statusCode: 200, body: failedBody)
+        }
+        checksRun += 1
+        do {
+            _ = try await client.fetch(region: .international, apiKey: "offline-catalog-token")
+            throw CheckFailure(message: "A voice-catalog application error was accepted")
+        } catch let error as MiniMaxVoiceCatalogError {
+            guard case .apiStatus(code: 2049, message: _) = error else {
+                throw CheckFailure(message: "Voice-catalog application error had the wrong type")
+            }
+        }
+    }
+
+    mutating func runCatalogStoreChecks() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(
+            "swiftmandarin-minimax-catalog-store-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        defer { try? fileManager.removeItem(at: root) }
+
+        let session = stubbedSession()
+        defer { session.invalidateAndCancel() }
+        let client = MiniMaxVoiceCatalogClient(session: session)
+        let cache = MiniMaxVoiceCatalogCache(directoryURL: root)
+        let store = await MainActor.run {
+            MiniMaxAudioCatalogStore(
+                activeRegion: .international,
+                client: client,
+                cache: cache
+            )
+        }
+
+        let slowInternational = try voiceCatalogResponse(
+            primaryMandarinVoiceID: "Chinese (Mandarin)_Old_Account"
+        )
+        let fastMainland = try voiceCatalogResponse(
+            primaryMandarinVoiceID: "Chinese (Mandarin)_Newest_Account"
+        )
+        MiniMaxURLProtocolStub.install { request in
+            if request.url?.host == "api.minimax.io" {
+                return .respond(
+                    statusCode: 200,
+                    body: slowInternational,
+                    delayNanoseconds: 200_000_000
+                )
+            }
+            return .respond(statusCode: 200, body: fastMainland)
+        }
+
+        let olderRefresh = Task {
+            await store.refresh(region: .international, apiKey: "older-account")
+        }
+        for _ in 0..<100 where MiniMaxURLProtocolStub.requests().isEmpty {
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        let newestRefresh = Task {
+            await store.refresh(region: .mainlandChina, apiKey: "newest-account")
+        }
+        await newestRefresh.value
+        await olderRefresh.value
+
+        let newestState = await MainActor.run {
+            (
+                store.activeRegion,
+                store.catalog?.systemVoices.first?.voiceID,
+                store.catalog?.accountVoices.count,
+                store.isRefreshing
+            )
+        }
+        try expectEqual(
+            newestState.0,
+            .mainlandChina,
+            "The newest regional refresh remains active"
+        )
+        try expectEqual(
+            newestState.1,
+            "Chinese (Mandarin)_Newest_Account",
+            "A late older response cannot replace the newest voice catalog"
+        )
+        try expectEqual(
+            newestState.2,
+            2,
+            "A successful live refresh exposes the current account's voices in memory"
+        )
+        try expectEqual(
+            newestState.3,
+            false,
+            "The latest completed request clears refreshing state"
+        )
+
+        MiniMaxURLProtocolStub.install { _ in
+            .respond(statusCode: 200, body: slowInternational)
+        }
+        await store.refresh(region: .international, apiKey: "newest-account")
+        await MainActor.run { store.activate(region: .mainlandChina) }
+
+        await MainActor.run {
+            store.activateSharedCredential(apiKey: "replacement-account")
+        }
+        let strippedState = await MainActor.run {
+            let mainland = (
+                store.catalog?.systemVoices.count,
+                store.catalog?.accountVoices.count,
+                store.catalog?.origin
+            )
+            store.activate(region: .international)
+            let international = (
+                store.catalog?.accountVoices.count,
+                store.catalog?.origin
+            )
+            store.activate(region: .mainlandChina)
+            return (
+                mainland.0,
+                mainland.1,
+                mainland.2,
+                international.0,
+                international.1
+            )
+        }
+        try expectEqual(
+            strippedState.0,
+            4,
+            "Changing credentials preserves public system voices"
+        )
+        try expectEqual(
+            strippedState.1,
+            0,
+            "Changing credentials immediately removes the prior account's private voices"
+        )
+        try expectEqual(
+            strippedState.2,
+            .cachedPublicMetadata,
+            "Public voices retained after a key change are labeled as an offline snapshot"
+        )
+        try expectEqual(
+            strippedState.3,
+            0,
+            "A shared-key change also strips private voices from the inactive region"
+        )
+        try expectEqual(
+            strippedState.4,
+            .cachedPublicMetadata,
+            "The inactive region is also prevented from claiming a stale live catalog"
+        )
+
+        let failedBody = try voiceCatalogResponse(
+            baseStatus: 2049,
+            baseMessage: "invalid replacement account"
+        )
+        MiniMaxURLProtocolStub.install { _ in
+            .respond(statusCode: 200, body: failedBody)
+        }
+        await store.refresh(
+            region: .mainlandChina,
+            apiKey: "replacement-account"
+        )
+        let failedState = await MainActor.run {
+            (
+                store.catalog?.systemVoices.count,
+                store.catalog?.accountVoices.count,
+                store.errorMessage != nil
+            )
+        }
+        try expectEqual(
+            failedState.0,
+            4,
+            "A failed replacement-account refresh retains public voice choices"
+        )
+        try expectEqual(
+            failedState.1,
+            0,
+            "A failed replacement-account refresh cannot restore stale private voices"
+        )
+        try expectEqual(
+            failedState.2,
+            true,
+            "A failed refresh remains visible to the user"
+        )
+
+        let noAccountBody = try voiceCatalogResponse(includeAccountVoices: false)
+        MiniMaxURLProtocolStub.install { _ in
+            .respond(statusCode: 200, body: noAccountBody)
+        }
+        await store.refresh(
+            region: .mainlandChina,
+            apiKey: "replacement-account"
+        )
+        let liveEmptyAccountState = await MainActor.run {
+            (store.catalog?.origin, store.catalog?.accountVoices.count)
+        }
+        try expectEqual(
+            liveEmptyAccountState.0,
+            .live,
+            "A successful zero-account-voice refresh is initially live"
+        )
+        try expectEqual(
+            liveEmptyAccountState.1,
+            0,
+            "The zero-account-voice fixture contains no private voices"
+        )
+
+        await MainActor.run {
+            store.activateSharedCredential(apiKey: "empty-account-replacement")
+        }
+        let strippedEmptyAccountOrigin = await MainActor.run {
+            store.catalog?.origin
+        }
+        try expectEqual(
+            strippedEmptyAccountOrigin,
+            .cachedPublicMetadata,
+            "A live zero-account-voice catalog cannot remain labeled live after a key change"
+        )
+
+        guard let cached = try await cache.load(region: .mainlandChina) else {
+            throw CheckFailure(message: "The catalog store did not persist its live public catalog")
+        }
+        try expectEqual(
+            cached.accountVoices.count,
+            0,
+            "The store's offline snapshot never contains credential-scoped voices"
+        )
+    }
+
+    mutating func runBatchAudioPlannerChecks() throws {
+        let chineseConfiguration = MiniMaxSpeechConfiguration(
+            region: .mainlandChina,
+            model: "speech-2.8-turbo",
+            voiceID: "Chinese (Mandarin)_News_Anchor",
+            languageBoost: .chinese,
+            speed: 1
+        )
+        let englishConfiguration = MiniMaxSpeechConfiguration(
+            region: .mainlandChina,
+            model: "speech-2.8-turbo",
+            voiceID: "English_Graceful_Lady",
+            languageBoost: .english,
+            speed: 1
+        )
+        let firstID = UUID()
+        let snapshots = [
+            BatchAudioTermSnapshot(
+                termID: firstID,
+                displayWord: "你好",
+                chineseText: " 你好 ",
+                englishText: "hello"
+            ),
+            BatchAudioTermSnapshot(
+                termID: UUID(),
+                displayWord: "duplicate",
+                chineseText: "你好",
+                englishText: "hello"
+            ),
+            BatchAudioTermSnapshot(
+                termID: UUID(),
+                displayWord: "学习",
+                chineseText: "学习",
+                englishText: ""
+            ),
+        ]
+
+        let uncached = BatchAudioPlanner.makePlan(
+            terms: snapshots,
+            scope: .bothLanguages,
+            learningIsChinese: true,
+            chineseConfiguration: chineseConfiguration,
+            englishConfiguration: englishConfiguration,
+            existingRecordIDs: []
+        )
+        try expectEqual(uncached.totalClipCount, 3, "Duplicate bilingual terms collapse to unique paid identities")
+        try expectEqual(uncached.newMandarinClipCount, 2, "Both unique Mandarin clips are planned")
+        try expectEqual(uncached.newEnglishClipCount, 1, "One unique English clip is planned")
+        try expect(
+            uncached.allTargets.filter(\.isMandarin).allSatisfy {
+                $0.identity.languageBoost == .chinese && $0.languageCode == "zh-cn"
+            },
+            "Every Mandarin batch target uses explicit Chinese language selection"
+        )
+        try expect(
+            uncached.allTargets.filter { !$0.isMandarin }.allSatisfy {
+                $0.identity.languageBoost == .english && $0.languageCode == "en-us"
+            },
+            "Every English batch target uses explicit English language selection"
+        )
+
+        guard let cachedEnglishID = uncached.allTargets.first(where: { !$0.isMandarin })?.id else {
+            throw CheckFailure(message: "The bilingual plan omitted its English identity")
+        }
+        let resumed = BatchAudioPlanner.makePlan(
+            terms: snapshots,
+            scope: .bothLanguages,
+            learningIsChinese: true,
+            chineseConfiguration: chineseConfiguration,
+            englishConfiguration: englishConfiguration,
+            existingRecordIDs: [cachedEnglishID]
+        )
+        try expectEqual(resumed.cachedClipCount, 1, "Preflight excludes a matching persisted clip")
+        try expectEqual(resumed.newClipCount, 2, "Only uncached clips remain paid work")
+        try expectEqual(resumed.totalNewCharacters, 4, "Character preflight counts only uncached normalized text")
+
+        guard let newlyCachedID = resumed.pendingTargets.first?.id else {
+            throw CheckFailure(message: "The resumed fixture omitted pending work")
+        }
+        let revalidated = try BatchAudioPlanRevalidator.revalidate(
+            reviewed: resumed,
+            existingRecordIDs: [cachedEnglishID, newlyCachedID]
+        )
+        try expectEqual(
+            revalidated.cachedClipCount,
+            2,
+            "Cache revalidation safely reduces paid work added after review"
+        )
+        try expectEqual(
+            revalidated.newClipCount,
+            1,
+            "Only still-missing reviewed targets remain after revalidation"
+        )
+        checksRun += 1
+        do {
+            _ = try BatchAudioPlanRevalidator.revalidate(
+                reviewed: resumed,
+                existingRecordIDs: []
+            )
+            throw CheckFailure(message: "A deleted reviewed cache hit silently expanded paid work")
+        } catch BatchAudioPlanRevalidationError.reviewedSavedAudioChanged {
+            // Expected: renewed confirmation is required before new charges.
+        }
+
+        let learningEnglish = BatchAudioPlanner.makePlan(
+            terms: snapshots,
+            scope: .learningLanguage,
+            learningIsChinese: false,
+            chineseConfiguration: chineseConfiguration,
+            englishConfiguration: englishConfiguration,
+            existingRecordIDs: []
+        )
+        try expectEqual(learningEnglish.totalClipCount, 1, "Learning-language scope selects and deduplicates only English")
+        try expectEqual(learningEnglish.newMandarinClipCount, 0, "English learning scope schedules no Mandarin clip")
+    }
+
+    mutating func runBatchAudioOrchestrationChecks() async throws {
+        try expect(
+            BatchAudioFailurePolicy.shouldStop(
+                after: MiniMaxAudioError.persistence("disk full fixture")
+            ),
+            "A systemic persistence failure stops remaining paid requests"
+        )
+        try expect(
+            BatchAudioFailurePolicy.shouldStop(
+                after: MiniMaxAudioError.httpStatus(429)
+            ),
+            "A client/rate-limit HTTP failure stops the current paid queue"
+        )
+        try expect(
+            BatchAudioFailurePolicy.shouldStop(
+                after: MiniMaxAudioError.httpStatus(503)
+            ),
+            "A server failure stops an ambiguous paid queue"
+        )
+        try expect(
+            BatchAudioFailurePolicy.shouldStop(
+                after: MiniMaxAudioError.transport("offline fixture")
+            ),
+            "A transport failure requires explicit cache-first resume"
+        )
+
+        let gate = BatchAudioStartGate(intervalNanoseconds: 20_000_000)
+        let start = DispatchTime.now().uptimeNanoseconds
+        try await gate.waitForPermit()
+        try await gate.waitForPermit()
+        let elapsed = DispatchTime.now().uptimeNanoseconds - start
+        try expect(
+            elapsed >= 15_000_000,
+            "The audio start gate spaces paid request starts"
+        )
+
+        let cancellationGate = BatchAudioStartGate(intervalNanoseconds: 1_000_000_000)
+        try await cancellationGate.waitForPermit()
+        let waitingTask = Task {
+            try await cancellationGate.waitForPermit()
+        }
+        waitingTask.cancel()
+        checksRun += 1
+        do {
+            try await waitingTask.value
+            throw CheckFailure(message: "A cancelled paced request still received a permit")
+        } catch is CancellationError {
+            // Expected: cancellation prevents a later paid request start.
+        }
+    }
+
     mutating func runRepositoryChecks(identity: MiniMaxSpeechCacheIdentity) async throws {
         let fileManager = FileManager.default
         let root = fileManager.temporaryDirectory.appendingPathComponent(
@@ -687,9 +1421,17 @@ private struct ContractChecks {
             .appendingPathComponent("index.json", isDirectory: false)
         try expect(fileManager.fileExists(atPath: indexURL.path), "Saving atomically creates the JSON index")
 
+        let staleRecoveryURL = indexURL.deletingLastPathComponent()
+            .appendingPathComponent("index.recovery-stale.json", isDirectory: false)
+        try Data("private rollback fixture".utf8).write(to: staleRecoveryURL, options: .atomic)
+
         let reloadedRepository = GeneratedSpeechRepository(rootDirectory: root)
         let reloadedRecords = try await reloadedRepository.allRecords()
         try expectEqual(reloadedRecords.count, 1, "A fresh repository reloads one persisted record")
+        try expect(
+            !fileManager.fileExists(atPath: staleRecoveryURL.path),
+            "A supported-schema reload removes stale private recovery metadata"
+        )
         try expectEqual(reloadedRecords.first?.id, identity.cacheKey, "Reload preserves record identity")
         let reloadedURL = try await reloadedRepository.fileURL(for: identity.cacheKey)
         try expectEqual(try Data(contentsOf: reloadedURL), audio, "Reload resolves the persisted audio URL")
@@ -1099,7 +1841,11 @@ private struct ContractChecks {
         )
 
         try await pipeline.clearAllGeneratedSpeech()
-        _ = await generation.result
+        let clearedGenerationResult = await generation.result
+        checksRun += 1
+        if case .success = clearedGenerationResult {
+            throw CheckFailure(message: "A waiter returned a record deleted by Clear All")
+        }
         try await Task.sleep(for: .milliseconds(300))
 
         try expectEqual(
@@ -1157,6 +1903,33 @@ private struct ContractChecks {
         let repository = GeneratedSpeechRepository(rootDirectory: root)
         let client = MiniMaxAudioClient(session: session)
         let pipeline = MiniMaxSpeechPipeline(client: client, repository: repository)
+
+        let alreadyCancelled = Task {
+            do {
+                try await Task.sleep(for: .milliseconds(20))
+            } catch {
+                // Deliberately continue with cancellation already set so the
+                // pipeline boundary itself must reject paid work.
+            }
+            return try await pipeline.speech(
+                for: identity,
+                apiKey: "offline-contract-token"
+            )
+        }
+        alreadyCancelled.cancel()
+        checksRun += 1
+        do {
+            _ = try await alreadyCancelled.value
+            throw CheckFailure(message: "An already-cancelled caller started speech")
+        } catch is CancellationError {
+            // Expected.
+        }
+        try expectEqual(
+            MiniMaxURLProtocolStub.requests().count,
+            0,
+            "An already-cancelled caller creates no paid HTTP request"
+        )
+
         let first = Task {
             try await pipeline.speech(
                 for: identity,
@@ -1208,7 +1981,12 @@ private struct MiniMaxAudioContractChecksRunner {
         do {
             try checks.runHexChecks()
             let identity = try checks.runCacheIdentityChecks()
+            try checks.runCatalogModelChecks()
             try await checks.runClientChecks(identity: identity)
+            try await checks.runVoiceCatalogChecks()
+            try await checks.runCatalogStoreChecks()
+            try checks.runBatchAudioPlannerChecks()
+            try await checks.runBatchAudioOrchestrationChecks()
             try await checks.runRepositoryChecks(identity: identity)
             try await checks.runCorruptIndexRecoveryChecks(identity: identity)
             try await checks.runPipelineCoalescingChecks(identity: identity)

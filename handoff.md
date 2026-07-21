@@ -738,3 +738,90 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - 2026-07-20T21:33:21Z: Resolved final review findings for in-flight generation versus Clear All, iOS preview-session cleanup, and final-transcript/error ordering; expanded the deterministic suite to 106 checks and reran warning-free incremental builds on both targets.
 - 2026-07-20T21:40:59Z: Completed the last adversarial pass: separated retiring from joinable generations, added deterministic cancel-then-repeat coverage, corrected physical-device recording options, bounded growing imports during copy, and extended audio-operation ownership through translation completion; 111 checks and both warning-free builds pass.
 - 2026-07-20T21:44:47Z: Pushed feature commit `713bc55`, created and verified two-parent merge `34cfb41` in a second clean worktree, repeated 111 contracts and fresh warning-free builds on the exact merge, pushed remote `main`, and marked Iteration 24 complete.
+
+## Iteration 25 — Live MiniMax audio catalog and batch audio (2026-07-21)
+
+**Last Updated (UTC):** 2026-07-20T23:59:30Z
+
+**Status:** Release Verified; Git Delivery Pending
+
+**Current Focus:** Complete the staged-diff audit, push the feature branch, and verify the exact merge on remote main without touching the dirty primary checkout.
+
+### 1) Request & Context
+
+- **User request:** Pull the latest MiniMax speech models, Mandarin voices, and English voices; repair the Mandarin preview that currently sounds English; generate MiniMax audio during the batch AI translation/analysis feature; and support macOS, iOS, and iPadOS 27 Golden Gate.
+- **Operational constraint:** The primary checkout at `/Users/rogerlin/XCode-Projects/SwiftMandarinShortcuts` contains unrelated staged, unstaged, and untracked user work. This slice is isolated in `/tmp/swiftmandarin-audio-catalog.4jzfw2/worktree` on `codex/minimax-audio-catalog-batch`, based on clean `origin/main` commit `4879c53`; the primary checkout MUST NOT be stashed, reset, switched, or edited.
+- **Secret boundary:** Live research uses the existing Keychain credential internally. The credential pasted into chat MUST NOT be repeated, placed in commands/files/logs/tests, or committed, and it should be rotated after testing.
+- **Detailed plan:** `docs/handoff/minimax-audio-catalog-batch/PLANS.md` defines the architecture, invariants, risks, and evidence contract.
+
+### 2) Requirements → Acceptance Checks
+
+| Requirement | Acceptance Check | Expected Outcome | Evidence |
+|---|---|---|---|
+| R25.1: Current speech catalog | Refresh Settings against the selected MiniMax region and inspect model/voice choices | Latest Speech 2.8 HD/Turbo appear first; six older compatible 2.6/02/01 models are clearly separated; live friendly Mandarin/English voices and the last public offline snapshot remain usable | Contract tests + redacted live counts + UI scenario |
+| R25.2: Correct Mandarin/English preview | Inspect request JSON and synthesize both preview phrases | Mandarin sends `Chinese`; English sends `English`; corrected cache identities cannot reuse old `auto` audio | Request fixtures + live MP3 validation |
+| R25.3: Safe catalog state | Exercise slow/failed/empty refresh, region change, custom voice, relaunch | Latest request wins; prior catalog and valid selection survive; no credential is persisted | Deterministic state tests + secret scan |
+| R25.4: Batch audio | Enable the batch option and process mixed/new/cached terms | Explanations complete; each eligible term gains persistent no-playback audio; cache hits avoid duplicate calls | Controller/store contracts + scenario |
+| R25.5: Failure and cancellation safety | Inject TTS failures, cancel at each paid-work boundary, delete/clear cache during review or generation, and replace the MiniMax key | Completed explanation/audio remains visible; ambiguous/systemic synthesis errors fail closed; stale work cannot republish deleted audio or expand reviewed charges | Regression fixtures |
+| R25.6: Native cross-platform UX | Exercise settings and batch controls on Mac, iPhone, and iPad | Adaptive, localized, accessible controls with understandable cost/privacy/progress/error states | UI review + screenshots/hierarchy when available |
+| R25.7: Platform delivery | Build macOS, generic iOS, iPhone Simulator, and iPad Simulator with Xcode 27 | All builds succeed with no new source warnings/errors | Retained build logs |
+
+### 3) Plan & Progress
+
+- [x] Preserve the dirty primary checkout and create an isolated branch/worktree from current remote main.
+- [x] Review official current MiniMax T2A, model release, voice-management, and async batch documentation.
+- [x] Run a credential-safe live catalog probe: 303 system voices, including 26 Mandarin and 6 English; `/v1/models` exposes no speech models.
+- [x] Identify the immediate preview defect: production requests hard-code `language_boost: auto`, and cache schema v1 omits intended language boost.
+- [x] Implement strict live catalog/client/store contracts and settings UI.
+- [x] Implement explicit language boost and cache schema migration.
+- [x] Implement opt-in persistent batch audio with independent outcomes.
+- [x] Complete deterministic, live, build, UI, security, and independent review gates.
+- [ ] Commit, push, integrate into remote main, and verify remote ancestry without touching the primary checkout.
+
+### 4) Findings, Decisions, Assumptions
+
+- **Finding:** `POST /v1/get_voice` is the official live catalog endpoint. The configured mainland account returned HTTP 200 with MiniMax status 0 and 303 system voices; 26 IDs begin `Chinese (Mandarin)_`, 2 documented exceptions (`Arrogant_Miss` and `Robot_Armor`) are also Mandarin, and 6 begin `English_`. The production classifier therefore exposes 28 Mandarin and 6 English choices.
+- **Finding:** `GET /v1/models` returned eight text models and zero speech models. Production code cannot honestly “pull” speech models from that endpoint.
+- **Decision:** Refresh voices live and cache only their public metadata. Present Speech 2.8 HD/Turbo as the latest family and group the accepted 2.6/02/01 identifiers as older compatible models, while preserving a nonempty custom/existing model selection.
+- **Finding:** `MiniMaxAudioClient` currently sends `language_boost: auto` for every language. The configuration chooses a Mandarin voice for `zh`, but the language itself is not forced and does not participate in cache identity.
+- **Decision:** Derive the API language boost from the explicit source language (`Chinese` for `zh`, `English` otherwise), serialize it in each request, add it to cache identity, and bump the generated-audio schema.
+- **Assumption:** “Batch AI translate” refers to the existing user-facing Batch AI Analysis flow for saved terms. This is the only batch AI feature exposed in Settings/More and already has bounded concurrency; the implementation will extend it rather than create a competing batch screen.
+- **Decision:** Batch audio is default-off and persists headword/source pronunciation without playback through the existing generated-speech pipeline. Explanation and audio are separate result dimensions, but every ambiguous synthesis failure stops further paid audio starts; already completed results remain resumable from cache.
+- **Review finding and resolution:** Manual Advanced Voice ID entry originally marked every value custom, which let a known English system ID waive the Mandarin mismatch guard. Catalog provenance now wins for account-created voices, recognized system prefixes remain validated, and four dedicated provenance checks prevent regression.
+- **Review finding and resolution:** Replacing the shared MiniMax key now invalidates all regional in-flight responses, removes old private voice names, and reclassifies retained public data as an offline snapshot even for accounts with zero private voices. It can no longer claim that an old-credential catalog is live.
+- **Security finding outside this feature diff:** The existing repository history tracks 57 root `logs/` files that may contain historical credentials; `.gitignore` currently covers only `SwiftMandarin/logs/`. GitHub issue creation was attempted but both available authentication paths returned HTTP 401. Remediation requires rotating affected keys, ignoring `/logs/`, removing those paths from the index, and coordinating a history rewrite if they were pushed. This feature does not delete or rewrite that user-owned history without explicit authority.
+- **Platform constraint:** The production target remains on the repository's pre-existing Swift 5 language setting. The entire new non-UI contract slice compiles under Swift 6 with complete strict concurrency and warnings-as-errors; a repository-wide language-mode migration remains a separate change because current unrelated sources emit Swift 6 diagnostics.
+
+### 5) Scenario-Focused Resolution Tests
+
+- **Catalog scenario — resolved:** Live decoding returned 303 system voices and exposed 28 recognized Mandarin plus 6 English choices. Deterministic runs cover latest-request-wins region changes, failed refresh retention, account-voice privacy, zero-private-voice accounts, offline reload, and shared-key replacement.
+- **Language scenario — resolved:** Production request fixtures and live calls prove Mandarin sends `Chinese` and English sends `English`; both live outputs decode as 128 kbps, 32 kHz mono MP3. Schema-v2 identities reject legacy `auto` cache hits, and known wrong-language system IDs are blocked before any paid request.
+- **Batch scenario — resolved:** Deterministic runs cover opt-in preflight, exact deduplication and character counts, cache resume/revalidation, one-start-per-second pacing, provider/audio configuration snapshots, key changes, already-cancelled callers, coordinated Clear All, generation epochs, persistence recovery, cancellation, and fail-closed HTTP/transport/response errors.
+- **Platform scenario — resolved:** Fresh named-destination Xcode 27 builds pass for macOS, iPhone 17 Pro/iOS 27, and iPad Pro 13-inch/iPadOS 27. The latest feature build also launched on both simulators; the iPhone and iPad screenshots render the adaptive tab/home surfaces, including the Multimodal label.
+
+### 6) Verification Summary
+
+- Official MiniMax release/model docs confirm Speech 2.8 as the latest family; T2A accepts eight exposed identifiers, with 2.6/02/01 presented as older compatible families.
+- Official voice-management docs confirm `/v1/get_voice` and its system/cloned/generated response groups.
+- The credential-safe live probe confirmed 303/26/6 catalog counts and that the general models endpoint cannot supply speech models. No credential or authorization value was printed or written.
+- Production implementation now includes a strict actor-isolated Get Voice client, per-region public system-catalog cache, latest-request-wins observable state, friendly language-scoped pickers with advanced custom IDs, truthful documented model tiers, and no-fallback MiniMax previews.
+- Every T2A identity now snapshots an explicit `Chinese` or `English` language boost. The boost is encoded in the request and cache schema v2, so no legacy `auto` clip can satisfy the corrected identity; known cross-language system-voice mismatches are blocked in Settings.
+- Batch planning now builds independent, deduplicated analysis and audio queues. Audio is opt-in, supports learning-language or bilingual scope, performs an exact cache-miss/character preflight, revalidates that plan before paid work, persists without playback through the shared pipeline, starts at most one request per second, fails closed on synthesis errors, and retains completed explanations/audio for a safe retry.
+- `zsh scripts/test-minimax-audio-contracts.sh` passes 191/191 credential-free production contracts. The script compiles the feature's non-UI production slice using Swift 6, complete strict concurrency, and warnings-as-errors before checking strict T2A/catalog decoding, both explicit languages, manual/account voice provenance and key/region invalidation, pre-network mismatch rejection, schema-v2 identity, regional/key catalog invalidation, exact batch preflight/revalidation/pacing/failure policy, persistence/coalescing/cancellation, and coordinated Clear All.
+- A live production-client smoke test returned 303 system voices, 28 classified Mandarin voices, and 6 English voices. Explicit-Chinese synthesis returned a valid 71,412-byte MP3 (4,356 ms); explicit-English synthesis returned a valid 83,508-byte MP3 (5,112 ms). `file` and `afinfo` identify both as 128 kbps, 32 kHz, mono MP3 and match MiniMax's durations. The harness read the Keychain internally and printed no credential or authorization data.
+- Fresh exact-tree Xcode 27 Debug builds each contain one `BUILD SUCCEEDED` marker and zero `warning:`/`error:` diagnostics: `/tmp/SwiftMandarin-audio-catalog-final4-macos.log`, `/tmp/SwiftMandarin-audio-catalog-final4-iphone27.log`, and `/tmp/SwiftMandarin-audio-catalog-final4-ipad27.log`.
+- The latest built app installed and launched on the iPhone 17 Pro and iPad Pro 13-inch simulators. Runtime captures are `/tmp/swiftmandarin-audio-catalog-final-iphone27-loaded.png` and `/tmp/swiftmandarin-audio-catalog-final-ipad27-loaded.png`.
+- `zsh init.sh`, localization JSON parsing, `git diff --check`, and the targeted new-key Simplified Chinese audit pass. Independent reviewers' paid-request, cancellation, persistence, configuration-snapshot, catalog-provenance, wrong-language, adaptive-layout, and localization findings were addressed and converted into regression checks.
+
+### 7) Remaining Work & Next Steps
+
+- Stage and inspect only this feature's diff, create a conventional feature commit, and push `codex/minimax-audio-catalog-batch`.
+- Merge the pushed feature into a fresh isolated worktree based on current `origin/main`, repeat contracts and the three-platform build matrix on the exact merge, push normally to remote main, and verify ancestry.
+- Separate security follow-up remains: rotate chat-exposed and historically logged credentials, then remediate the already tracked root logs with explicit history-rewrite coordination. This is not silently folded into the feature commit.
+
+### 8) Updates
+
+- 2026-07-20T22:07:52Z: Created the Iteration 25 continuity record after official research and live endpoint probes; recorded the model-endpoint limitation, 303/26/6 voice counts, root preview defect, bounded architecture, and traceable acceptance plan before production edits.
+- 2026-07-20T22:41:50Z: Completed the live/public-cached voice catalog, documented model tiers, language-scoped Settings pickers, honest no-fallback previews, schema-v2 explicit-language T2A, exact bilingual batch preflight and persistent generation, English/Chinese localization and privacy/README updates; recorded 151 passing contracts, a live 303/28/6 catalog result, two validated explicit-language MP3s, and preliminary green macOS/generic-iOS builds pending final named-device and review gates.
+- 2026-07-20T23:50:46Z: Closed the first final-review cycle by adding paid-work fail-closed behavior, immutable provider/audio snapshots, cache/key revalidation, cancellation and Clear All epochs, truthful key-scoped catalog state, adaptive/VoiceOver UI, and the missing Simplified Chinese strings. The strict suite reached 187 passing checks and the named three-platform Xcode 27 matrix was green.
+- 2026-07-20T23:59:30Z: Resolved all review findings through paid-work fail-closed semantics, immutable provider/audio snapshots, cache/key revalidation, cancellation and Clear All epochs, truthful credential-scoped catalog state, key/region-scoped manual/account voice provenance, adaptive/VoiceOver UI, and six missing Simplified Chinese strings. Expanded the strict contract suite to 191 checks; `init.sh`, localization/diff checks, live bilingual MP3 validation, simulator launches, and clean macOS/iPhone/iPadOS 27 builds pass. The final independent review found no remaining feature-blocking issue, all four feature-list scenarios are passing, and only isolated Git delivery remains.

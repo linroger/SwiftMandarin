@@ -145,6 +145,26 @@ actor MiniMaxAudioClient {
 
         let configuration = identity.configuration
         try Self.validate(configuration)
+        guard configuration.languageBoost == MiniMaxSpeechLanguageBoost(
+            languageCode: identity.languageCode
+        ) else {
+            throw MiniMaxAudioError.invalidConfiguration(
+                String(localized: "The selected voice language does not match the spoken text language.")
+            )
+        }
+        if !configuration.voiceUsesCustomLanguageAssignment,
+           let knownVoiceLanguage = MiniMaxVoiceDescriptor.classifySystemVoiceID(
+               configuration.voiceID
+           ) {
+            let expectedVoiceLanguage: MiniMaxKnownVoiceLanguage = configuration.languageBoost == .chinese
+                ? .mandarinChinese
+                : .english
+            guard knownVoiceLanguage == expectedVoiceLanguage else {
+                throw MiniMaxAudioError.invalidConfiguration(
+                    String(localized: "The selected voice language does not match the spoken text language.")
+                )
+            }
+        }
         guard let endpoint = configuration.region.t2aEndpoint else {
             throw MiniMaxAudioError.invalidConfiguration(
                 String(localized: "The regional API URL is invalid.")
@@ -155,7 +175,7 @@ actor MiniMaxAudioClient {
             model: configuration.model,
             text: text,
             stream: false,
-            languageBoost: "auto",
+            languageBoost: identity.languageBoost.rawValue,
             outputFormat: "hex",
             voiceSetting: .init(
                 voiceID: configuration.voiceID,

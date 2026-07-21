@@ -2,84 +2,196 @@
 //  BatchExplanationController.swift
 //  SwiftMandarin
 //
-//  Drives a background batch run of the AI word-analysis over the user's saved
-//  vocabulary. Only words that have not yet been analyzed (no cached
-//  explanation for the current interface direction) are processed; results are
-//  persisted to `WordExplanationCacheStore` exactly as the per-word detail view
-//  does, so an analysis produced here is served instantly when that word is
-//  later opened.
-//
-//  This is an `@Observable @MainActor` singleton — like every other store in
-//  the app — so the work lives independently of any view. The user can navigate
-//  away (or close Settings) while it runs; any view that reads this controller
-//  shows the live progress, and returning to it resumes showing the same run.
+//  Independent, resumable-by-cache batch queues for AI explanations and
+//  persistent MiniMax pronunciation audio.
 //
 
+import CryptoKit
 import Foundation
 import Observation
+
+nonisolated enum BatchCredentialFingerprint {
+    static func make(_ credential: String) -> String {
+        let normalized = credential.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return "no-credential" }
+        return SHA256.hash(data: Data(normalized.utf8))
+            .map { String(format: "%02x", $0) }
+            .joined()
+    }
+}
+
+/// An in-memory, secret-free identity for every mutable AI request setting
+/// used by word explanations. The service can continue to own request
+/// construction, while a reviewed batch refuses to mix models, accounts,
+/// endpoints, formats, or local-Ollama options mid-run.
+nonisolated struct BatchAnalysisConfigurationSnapshot: Equatable, Sendable {
+    let providerRawValue: String
+    let providerName: String
+    let modelID: String
+    let endpointIdentity: String
+    let optionsIdentity: String
+    let credentialFingerprint: String
+
+    @MainActor
+    static func current() -> Self {
+        let settings = AIModelSettings.shared
+        let provider = settings.effectiveProvider
+        let modelID = settings.selectedModel(for: provider)
+
+        switch provider {
+        case .appleIntelligence:
+            return Self(
+                providerRawValue: provider.rawValue,
+                providerName: provider.displayName,
+                modelID: modelID,
+                endpointIdentity: "on-device",
+                optionsIdentity: "foundation-models",
+                credentialFingerprint: "no-credential"
+            )
+        case .ollama:
+            return Self(
+                providerRawValue: provider.rawValue,
+                providerName: provider.displayName,
+                modelID: modelID,
+                endpointIdentity: OllamaService.shared.hostURL.absoluteString,
+                optionsIdentity: "thinking=\(settings.enableThinking);context=\(settings.contextLength)",
+                credentialFingerprint: "no-credential"
+            )
+        default:
+            let style: String
+            switch settings.effectiveAPIStyle(for: provider) {
+            case .openAICompatible: style = "openai"
+            case .anthropic: style = "anthropic"
+            }
+            return Self(
+                providerRawValue: provider.rawValue,
+                providerName: provider.displayName,
+                modelID: modelID,
+                endpointIdentity: settings.baseURL(for: provider)
+                    + "\u{1}" + settings.effectiveChatPath(for: provider),
+                optionsIdentity: style,
+                credentialFingerprint: BatchCredentialFingerprint.make(
+                    settings.apiKey(for: provider)
+                )
+            )
+        }
+    }
+
+    @MainActor
+    func matchesCurrentSettings() -> Bool {
+        self == Self.current()
+    }
+}
+
+nonisolated struct BatchAnalysisTarget: Hashable, Sendable {
+    let word: String
+    let pinyin: String
+    let context: String?
+    let directionToken: String
+}
+
+nonisolated struct BatchRunPlan: Sendable, Identifiable {
+    let id: UUID
+    let analysisTargets: [BatchAnalysisTarget]
+    let analysisConfiguration: BatchAnalysisConfigurationSnapshot
+    let audioPlan: BatchAudioPlan?
+    let audioLearningIsChinese: Bool?
+    let audioCredentialFingerprint: String?
+
+    var analysisCount: Int { analysisTargets.count }
+    var newAudioCount: Int { audioPlan?.newClipCount ?? 0 }
+    var cachedAudioCount: Int { audioPlan?.cachedClipCount ?? 0 }
+    var totalAudioCount: Int { audioPlan?.totalClipCount ?? 0 }
+    var totalNewAudioCharacters: Int { audioPlan?.totalNewCharacters ?? 0 }
+    var hasWork: Bool { analysisCount > 0 || newAudioCount > 0 }
+}
+
+nonisolated struct BatchRunSummary: Equatable, Sendable {
+    let analysesGenerated: Int
+    let analysesFailed: Int
+    let analysesSkipped: Int
+    let analysesUnattempted: Int
+    let audioGenerated: Int
+    let audioCached: Int
+    let audioFailed: Int
+    let audioUnattempted: Int
+}
 
 @Observable
 @MainActor
 final class BatchExplanationController {
-
     static let shared = BatchExplanationController()
 
-    // MARK: - Status
-
-    /// Lifecycle of a batch run. `idle` is the resting state (also the initial
-    /// state); the others describe the last/active run so the UI can label it.
-    enum Status: Equatable {
-        case idle
-        case running
-        /// All work attempted. `generated` succeeded, `failed` errored,
-        /// `skipped` were already cached when reached.
-        case finished(generated: Int, failed: Int, skipped: Int)
-        /// The user cancelled mid-run; `generated` analyses were already saved.
-        case cancelled(generated: Int)
+    enum RunPhase: Equatable {
+        case analyzing
+        case generatingAudio
     }
 
-    // MARK: - Observable state
+    enum Status: Equatable {
+        case idle
+        case running(RunPhase)
+        case finished(BatchRunSummary)
+        case cancelled(BatchRunSummary)
+        case failed(BatchRunSummary)
+    }
 
     private(set) var status: Status = .idle
-    /// Words queued for this run (the unprocessed set captured at start).
-    private(set) var total: Int = 0
-    /// Successfully generated-and-saved analyses this run.
-    private(set) var generated: Int = 0
-    /// Words that errored this run.
-    private(set) var failed: Int = 0
-    /// Words that turned out to be already cached when processed (rare — only if
-    /// they were analyzed elsewhere after the run started).
-    private(set) var skipped: Int = 0
-    /// Most recently completed word, for a bit of life in the progress UI.
+
+    private(set) var analysisTotal = 0
+    private(set) var analysesGenerated = 0
+    private(set) var analysesFailed = 0
+    private(set) var analysesSkipped = 0
+
+    private(set) var audioTotal = 0
+    private(set) var audioGenerated = 0
+    private(set) var audioCached = 0
+    private(set) var audioFailed = 0
+
     private(set) var lastWord: String?
-    /// Last error message seen this run, surfaced so failures aren't silent.
     private(set) var lastErrorMessage: String?
 
-    // MARK: - Private
-
     private var task: Task<Void, Never>?
+    private var userRequestedCancellation = false
+    private var stoppedByFailure = false
 
     private init() {}
 
-    // MARK: - Derived
+    var isRunning: Bool {
+        if case .running = status { return true }
+        return false
+    }
 
-    var isRunning: Bool { status == .running }
+    var currentPhase: RunPhase? {
+        if case let .running(phase) = status { return phase }
+        return nil
+    }
 
-    /// Words attempted so far (succeeded + failed + skipped).
-    var processed: Int { generated + failed + skipped }
+    var analysisProcessed: Int {
+        analysesGenerated + analysesFailed + analysesSkipped
+    }
 
-    /// Progress in 0...1 for a determinate progress bar.
+    var audioProcessed: Int {
+        audioGenerated + audioCached + audioFailed
+    }
+
+    var total: Int { analysisTotal + audioTotal }
+    var processed: Int { analysisProcessed + audioProcessed }
+
     var progress: Double {
         guard total > 0 else { return 0 }
         return min(1, Double(processed) / Double(total))
     }
 
-    // MARK: - Work discovery
+    var analysisProgress: Double {
+        guard analysisTotal > 0 else { return 1 }
+        return min(1, Double(analysisProcessed) / Double(analysisTotal))
+    }
 
-    /// The subset of `terms` that still need analysis for the current interface
-    /// direction — i.e. whose `(headlineText, directionToken)` is not in the
-    /// persistent cache. Empty headwords are excluded. Reading the cache here
-    /// makes the count reactive: as analyses complete, this shrinks.
+    var audioProgress: Double {
+        guard audioTotal > 0 else { return 1 }
+        return min(1, Double(audioProcessed) / Double(audioTotal))
+    }
+
     func unprocessedTerms(from terms: [SavedTerm]) -> [SavedTerm] {
         let cache = WordExplanationCacheStore.shared
         return terms.filter { term in
@@ -90,98 +202,286 @@ final class BatchExplanationController {
         }
     }
 
-    /// Convenience: how many saved terms still need analysis right now.
     func remainingCount(from terms: [SavedTerm]) -> Int {
         unprocessedTerms(from: terms).count
     }
 
-    // MARK: - Control
+    /// Builds an exact, credential-free paid-request preflight. Explanation
+    /// and audio queues are independent, so an audio-only run remains possible
+    /// after every word has already been analyzed.
+    func preparePlan(
+        from terms: [SavedTerm],
+        includeAudio: Bool,
+        audioScope: BatchAudioScope
+    ) async throws -> BatchRunPlan {
+        let sorted = terms.sorted { $0.dateAdded > $1.dateAdded }
+        let explanationCache = WordExplanationCacheStore.shared
+        let nativeIsChinese = LocalizationManager.shared.nativeIsChinese
+        let learningIsChinese = LocalizationManager.shared.learningIsChinese
+        let analysisConfiguration = BatchAnalysisConfigurationSnapshot.current()
+        var seenAnalyses = Set<String>()
+        var analysisTargets: [BatchAnalysisTarget] = []
+        var audioSnapshots: [BatchAudioTermSnapshot] = []
 
-    /// Begin analyzing every currently-unprocessed saved term, `concurrency`
-    /// words at a time. No-op if a run is already in progress. The work list is
-    /// snapshotted now, so terms added after starting are not included (the user
-    /// can run again to pick them up).
-    func start(concurrency: Int) {
+        for term in sorted {
+            let word = term.headlineText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !word.isEmpty {
+                let token = ExplanationDirection(
+                    wordIsChinese: word.containsCJK,
+                    explainInChinese: nativeIsChinese
+                ).cacheToken
+                let analysisID = token + "\u{1}" + word.folding(
+                    options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive],
+                    locale: Locale(identifier: "en_US_POSIX")
+                )
+                if !explanationCache.hasExplanation(forWord: word, directionToken: token),
+                   seenAnalyses.insert(analysisID).inserted {
+                    analysisTargets.append(
+                        BatchAnalysisTarget(
+                            word: word,
+                            pinyin: term.pinyin,
+                            context: term.glossText.isEmpty ? nil : term.glossText,
+                            directionToken: token
+                        )
+                    )
+                }
+            }
+
+            if includeAudio {
+                audioSnapshots.append(
+                    BatchAudioTermSnapshot(
+                        termID: term.id,
+                        displayWord: word.isEmpty ? term.chinese : word,
+                        chineseText: term.chineseSide,
+                        englishText: term.englishSide
+                    )
+                )
+            }
+        }
+
+        let audioPlan: BatchAudioPlan?
+        if includeAudio {
+            let preferences = AppPreferences.shared
+            let chineseConfiguration = preferences.miniMaxSpeechConfiguration(languageCode: "zh-CN")
+            let englishConfiguration = preferences.miniMaxSpeechConfiguration(languageCode: "en-US")
+            let uncachedPlan = BatchAudioPlanner.makePlan(
+                terms: audioSnapshots,
+                scope: audioScope,
+                learningIsChinese: learningIsChinese,
+                chineseConfiguration: chineseConfiguration,
+                englishConfiguration: englishConfiguration,
+                existingRecordIDs: []
+            )
+            let existing = try await GeneratedSpeechRepository.shared.existingRecordIDs(
+                among: Set(uncachedPlan.allTargets.map(\.id))
+            )
+            audioPlan = BatchAudioPlanner.makePlan(
+                terms: audioSnapshots,
+                scope: audioScope,
+                learningIsChinese: learningIsChinese,
+                chineseConfiguration: chineseConfiguration,
+                englishConfiguration: englishConfiguration,
+                existingRecordIDs: existing
+            )
+        } else {
+            audioPlan = nil
+        }
+
+        return BatchRunPlan(
+            id: UUID(),
+            analysisTargets: analysisTargets,
+            analysisConfiguration: analysisConfiguration,
+            audioPlan: audioPlan,
+            audioLearningIsChinese: includeAudio ? learningIsChinese : nil,
+            audioCredentialFingerprint: includeAudio
+                ? BatchCredentialFingerprint.make(
+                    AIModelSettings.shared.apiKey(for: .minimax)
+                )
+                : nil
+        )
+    }
+
+    func start(plan: BatchRunPlan, concurrency: Int) {
         guard !isRunning else { return }
 
-        // Newest-added first: when the user adds a batch of words and runs this,
-        // the words they just added are analyzed before the older backlog, so
-        // they can stop early once the new ones are done. Stable for equal dates.
-        let pending = unprocessedTerms(from: SavedTermsStore.shared.terms)
-            .sorted { $0.dateAdded > $1.dateAdded }
-        guard !pending.isEmpty else {
-            // Nothing to do — report a clean, zero-work finish.
-            resetCounters(total: 0)
-            status = .finished(generated: 0, failed: 0, skipped: 0)
-            return
-        }
-
-        guard AIModelSettings.shared.isAnyProviderAvailable else {
+        let settings = AIModelSettings.shared
+        if plan.analysisCount > 0, !settings.isAnyProviderAvailable {
+            resetCounters(for: plan)
             lastErrorMessage = String(localized: "No AI provider is configured. Add one in Settings → AI (or run a local Ollama server).")
-            resetCounters(total: 0)
-            status = .finished(generated: 0, failed: 0, skipped: 0)
+            status = .failed(summary())
             return
         }
 
-        let limit = min(max(concurrency, AIModelSettings.batchConcurrencyRange.lowerBound),
-                        AIModelSettings.batchConcurrencyRange.upperBound)
+        if plan.analysisCount > 0,
+           !plan.analysisConfiguration.matchesCurrentSettings() {
+            resetCounters(for: plan)
+            lastErrorMessage = String(localized: "AI settings changed after this batch was reviewed. Review the batch again before starting.")
+            status = .failed(summary())
+            return
+        }
 
-        resetCounters(total: pending.count)
-        status = .running
+        if plan.analysisTargets.contains(where: {
+            ExplanationDirection.current(forWord: $0.word).cacheToken != $0.directionToken
+        }) {
+            resetCounters(for: plan)
+            lastErrorMessage = String(localized: "Language settings changed after this batch was reviewed. Review the batch again before starting.")
+            status = .failed(summary())
+            return
+        }
 
+        if plan.audioPlan?.scope == .learningLanguage,
+           plan.audioLearningIsChinese != LocalizationManager.shared.learningIsChinese {
+            resetCounters(for: plan)
+            lastErrorMessage = String(localized: "Language settings changed after this batch was reviewed. Review the batch again before starting.")
+            status = .failed(summary())
+            return
+        }
+
+        let apiKey = plan.newAudioCount > 0 ? settings.apiKey(for: .minimax) : ""
+        if plan.newAudioCount > 0,
+           apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            resetCounters(for: plan)
+            lastErrorMessage = String(localized: "Add a MiniMax API key in AI Audio settings before generating batch audio.")
+            status = .failed(summary())
+            return
+        }
+        if plan.newAudioCount > 0,
+           plan.audioCredentialFingerprint != BatchCredentialFingerprint.make(apiKey) {
+            resetCounters(for: plan)
+            lastErrorMessage = String(localized: "The MiniMax API key changed after this batch was reviewed. Review the batch again before starting.")
+            status = .failed(summary())
+            return
+        }
+
+        let analysisLimit = min(
+            max(concurrency, AIModelSettings.batchConcurrencyRange.lowerBound),
+            AIModelSettings.batchConcurrencyRange.upperBound
+        )
+        resetCounters(for: plan)
+        guard plan.hasWork else {
+            status = .finished(summary())
+            return
+        }
+
+        status = .running(plan.analysisCount > 0 ? .analyzing : .generatingAudio)
         task = Task { [weak self] in
-            await self?.run(pending: pending, concurrency: limit)
+            await self?.run(
+                plan: plan,
+                analysisConcurrency: analysisLimit,
+                apiKey: apiKey,
+                analysisConfiguration: plan.analysisConfiguration
+            )
         }
     }
 
-    /// Request cancellation of the active run. Already-saved analyses are kept;
-    /// in-flight network calls are cancelled and the run settles into
-    /// `.cancelled`. Safe to call when idle.
     func cancel() {
+        userRequestedCancellation = true
         task?.cancel()
     }
 
-    // MARK: - Execution
-
-    private func resetCounters(total: Int) {
-        self.total = total
-        generated = 0
-        failed = 0
-        skipped = 0
+    private func resetCounters(for plan: BatchRunPlan) {
+        analysisTotal = plan.analysisCount
+        analysesGenerated = 0
+        analysesFailed = 0
+        analysesSkipped = 0
+        audioTotal = plan.totalAudioCount
+        audioGenerated = 0
+        audioCached = plan.cachedAudioCount
+        audioFailed = 0
         lastWord = nil
         lastErrorMessage = nil
+        userRequestedCancellation = false
+        stoppedByFailure = false
     }
 
-    /// Outcome of analyzing one term, reported back to the main actor.
-    private enum WorkOutcome: Sendable {
+    private func run(
+        plan: BatchRunPlan,
+        analysisConcurrency: Int,
+        apiKey: String,
+        analysisConfiguration: BatchAnalysisConfigurationSnapshot
+    ) async {
+        let runtimeAudioPlan: BatchAudioPlan?
+        do {
+            if let reviewedAudioPlan = plan.audioPlan {
+                let existing = try await GeneratedSpeechRepository.shared.existingRecordIDs(
+                    among: Set(reviewedAudioPlan.allTargets.map(\.id))
+                )
+                runtimeAudioPlan = try BatchAudioPlanRevalidator.revalidate(
+                    reviewed: reviewedAudioPlan,
+                    existingRecordIDs: existing
+                )
+                audioCached = runtimeAudioPlan?.cachedClipCount ?? 0
+            } else {
+                runtimeAudioPlan = nil
+            }
+        } catch is CancellationError {
+            finish()
+            return
+        } catch {
+            stoppedByFailure = true
+            lastErrorMessage = error.localizedDescription
+            finish()
+            return
+        }
+
+        if Task.isCancelled {
+            finish()
+            return
+        }
+
+        if !plan.analysisTargets.isEmpty {
+            await runAnalyses(
+                plan.analysisTargets,
+                concurrency: analysisConcurrency,
+                analysisConfiguration: analysisConfiguration
+            )
+        }
+
+        if !Task.isCancelled,
+           let audioPlan = runtimeAudioPlan,
+           !audioPlan.pendingTargets.isEmpty {
+            status = .running(.generatingAudio)
+            await runAudio(
+                audioPlan.pendingTargets,
+                apiKey: apiKey,
+                credentialFingerprint: plan.audioCredentialFingerprint
+                    ?? BatchCredentialFingerprint.make(apiKey)
+            )
+        }
+
+        finish()
+    }
+
+    private enum AnalysisOutcome: Sendable {
         case generated(word: String)
-        case failed(word: String, message: String)
+        case failed(word: String, message: String, stopRemaining: Bool)
         case skipped
         case cancelled
     }
 
-    /// Run the queue through a bounded-concurrency task group: at most
-    /// `concurrency` analyses are in flight at once. Each analysis suspends on
-    /// the network, so the main actor is free during the slow part and the
-    /// in-flight requests genuinely overlap.
-    private func run(pending: [SavedTerm], concurrency: Int) async {
-        await withTaskGroup(of: WorkOutcome.self) { group in
+    private func runAnalyses(
+        _ targets: [BatchAnalysisTarget],
+        concurrency: Int,
+        analysisConfiguration: BatchAnalysisConfigurationSnapshot
+    ) async {
+        await withTaskGroup(of: AnalysisOutcome.self) { group in
             var nextIndex = 0
 
             func addTaskIfPossible() {
-                guard nextIndex < pending.count else { return }
-                let term = pending[nextIndex]
+                guard nextIndex < targets.count, !Task.isCancelled else { return }
+                let target = targets[nextIndex]
                 nextIndex += 1
-                group.addTask { await Self.process(term: term) }
+                group.addTask {
+                    await Self.processAnalysis(
+                        target,
+                        analysisConfiguration: analysisConfiguration
+                    )
+                }
             }
 
-            // Prime the window.
             for _ in 0..<concurrency { addTaskIfPossible() }
-
             while let outcome = await group.next() {
                 apply(outcome)
-                // Stop scheduling new work once cancelled; let in-flight tasks
-                // drain (they will observe cancellation and return quickly).
                 if Task.isCancelled {
                     group.cancelAll()
                 } else {
@@ -189,76 +489,218 @@ final class BatchExplanationController {
                 }
             }
         }
-        finish()
     }
 
-    /// Fold one outcome into the observable counters (runs on the main actor).
-    private func apply(_ outcome: WorkOutcome) {
-        switch outcome {
-        case let .generated(word):
-            generated += 1
-            lastWord = word
-        case let .failed(word, message):
-            failed += 1
-            lastWord = word
-            lastErrorMessage = message
-        case .skipped:
-            skipped += 1
-        case .cancelled:
-            break  // not counted; the run is settling into .cancelled
-        }
-    }
-
-    private func finish() {
-        if Task.isCancelled {
-            status = .cancelled(generated: generated)
-        } else {
-            // Any queued-but-unreached work (shouldn't happen on a clean drain)
-            // is reported as skipped so the totals reconcile.
-            let unreached = max(0, total - processed)
-            status = .finished(generated: generated, failed: failed, skipped: skipped + unreached)
-        }
-        task = nil
-    }
-
-    /// Analyze a single term and persist the result. Runs on the main actor for
-    /// its synchronous bookkeeping; the embedded `await` for the AI call yields
-    /// the actor so sibling analyses overlap on the network.
     @MainActor
-    private static func process(term: SavedTerm) async -> WorkOutcome {
+    private static func processAnalysis(
+        _ target: BatchAnalysisTarget,
+        analysisConfiguration: BatchAnalysisConfigurationSnapshot
+    ) async -> AnalysisOutcome {
         if Task.isCancelled { return .cancelled }
-
-        let word = term.headlineText
-        guard !word.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .skipped }
-
-        let token = ExplanationDirection.current(forWord: word).cacheToken
+        guard analysisConfiguration.matchesCurrentSettings(),
+              ExplanationDirection.current(forWord: target.word).cacheToken == target.directionToken else {
+            return .failed(
+                word: target.word,
+                message: String(localized: "AI or language settings changed while the batch was running. Start a new reviewed batch to continue."),
+                stopRemaining: true
+            )
+        }
         let cache = WordExplanationCacheStore.shared
+        if cache.hasExplanation(forWord: target.word, directionToken: target.directionToken) {
+            return .skipped
+        }
 
-        // It may have been analyzed (here or in the detail view) since the queue
-        // was snapshotted — never pay for it twice.
-        if cache.hasExplanation(forWord: word, directionToken: token) { return .skipped }
-
-        let context = term.glossText.isEmpty ? nil : term.glossText
         do {
             let result = try await AIWordExplanationService.shared.generateExplanationWithProvider(
-                for: word,
-                pinyin: term.pinyin,
-                context: context
+                for: target.word,
+                pinyin: target.pinyin,
+                context: target.context
             )
             if Task.isCancelled { return .cancelled }
+            guard analysisConfiguration.matchesCurrentSettings(),
+                  ExplanationDirection.current(forWord: target.word).cacheToken == target.directionToken else {
+                return .failed(
+                    word: target.word,
+                    message: String(localized: "AI or language settings changed while the batch was running. The completed response was not cached under stale settings."),
+                    stopRemaining: true
+                )
+            }
             cache.store(
-                word: word,
-                pinyin: term.pinyin,
-                directionToken: token,
-                providerName: AIModelSettings.shared.effectiveProvider.displayName,
+                word: target.word,
+                pinyin: target.pinyin,
+                directionToken: target.directionToken,
+                providerName: analysisConfiguration.providerName,
                 result: result
             )
-            return .generated(word: word)
+            return .generated(word: target.word)
         } catch is CancellationError {
             return .cancelled
         } catch {
             if Task.isCancelled { return .cancelled }
-            return .failed(word: word, message: error.localizedDescription)
+            return .failed(
+                word: target.word,
+                message: error.localizedDescription,
+                stopRemaining: false
+            )
         }
+    }
+
+    private func apply(_ outcome: AnalysisOutcome) {
+        switch outcome {
+        case let .generated(word):
+            analysesGenerated += 1
+            lastWord = word
+        case let .failed(word, message, stopRemaining):
+            analysesFailed += 1
+            lastWord = word
+            lastErrorMessage = message
+            if stopRemaining {
+                stopForFailure()
+            }
+        case .skipped:
+            analysesSkipped += 1
+        case .cancelled:
+            break
+        }
+    }
+
+    private enum AudioOutcome: Sendable {
+        case generated(record: GeneratedSpeechRecord, word: String, wasCached: Bool)
+        case failed(word: String, message: String, stopRemaining: Bool)
+        case cancelled
+    }
+
+    private func runAudio(
+        _ targets: [BatchAudioTarget],
+        apiKey: String,
+        credentialFingerprint: String
+    ) async {
+        let gate = BatchAudioStartGate()
+        await withTaskGroup(of: AudioOutcome.self) { group in
+            var nextIndex = 0
+            let concurrency = min(2, targets.count)
+
+            func addTaskIfPossible() {
+                guard nextIndex < targets.count, !Task.isCancelled else { return }
+                let target = targets[nextIndex]
+                nextIndex += 1
+                group.addTask {
+                    await Self.processAudio(
+                        target,
+                        apiKey: apiKey,
+                        credentialFingerprint: credentialFingerprint,
+                        gate: gate
+                    )
+                }
+            }
+
+            for _ in 0..<concurrency { addTaskIfPossible() }
+            while let outcome = await group.next() {
+                apply(outcome)
+                if Task.isCancelled {
+                    group.cancelAll()
+                } else {
+                    addTaskIfPossible()
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private static func processAudio(
+        _ target: BatchAudioTarget,
+        apiKey: String,
+        credentialFingerprint: String,
+        gate: BatchAudioStartGate
+    ) async -> AudioOutcome {
+        if Task.isCancelled { return .cancelled }
+        do {
+            try await gate.waitForPermit()
+            guard credentialFingerprint == BatchCredentialFingerprint.make(apiKey),
+                  credentialFingerprint == BatchCredentialFingerprint.make(
+                    AIModelSettings.shared.apiKey(for: .minimax)
+                  ) else {
+                return .failed(
+                    word: target.displayWord,
+                    message: String(localized: "The MiniMax API key changed while the batch was running. Start a new reviewed batch to continue."),
+                    stopRemaining: true
+                )
+            }
+            let generated = try await MiniMaxSpeechPipeline.shared.speech(
+                for: target.identity,
+                apiKey: apiKey
+            )
+            GeneratedSpeechStore.shared.note(generated.record)
+            return .generated(
+                record: generated.record,
+                word: target.displayWord,
+                wasCached: generated.wasCached
+            )
+        } catch is CancellationError {
+            return .cancelled
+        } catch MiniMaxAudioError.cancelled {
+            return .cancelled
+        } catch {
+            if Task.isCancelled { return .cancelled }
+            return .failed(
+                word: target.displayWord,
+                message: error.localizedDescription,
+                stopRemaining: BatchAudioFailurePolicy.shouldStop(after: error)
+            )
+        }
+    }
+
+    private func apply(_ outcome: AudioOutcome) {
+        switch outcome {
+        case let .generated(_, word, wasCached):
+            if wasCached {
+                audioCached += 1
+            } else {
+                audioGenerated += 1
+            }
+            lastWord = word
+        case let .failed(word, message, stopRemaining):
+            audioFailed += 1
+            lastWord = word
+            lastErrorMessage = message
+            if stopRemaining {
+                // Authentication, configuration, quota, and rate-limit errors
+                // affect the remaining queue. Stop before repeating the same
+                // failing paid request; a later run resumes from saved clips.
+                stopForFailure()
+            }
+        case .cancelled:
+            break
+        }
+    }
+
+    private func summary() -> BatchRunSummary {
+        BatchRunSummary(
+            analysesGenerated: analysesGenerated,
+            analysesFailed: analysesFailed,
+            analysesSkipped: analysesSkipped,
+            analysesUnattempted: max(0, analysisTotal - analysisProcessed),
+            audioGenerated: audioGenerated,
+            audioCached: audioCached,
+            audioFailed: audioFailed,
+            audioUnattempted: max(0, audioTotal - audioProcessed)
+        )
+    }
+
+    private func finish() {
+        let finalSummary = summary()
+        if stoppedByFailure {
+            status = .failed(finalSummary)
+        } else if userRequestedCancellation || Task.isCancelled {
+            status = .cancelled(finalSummary)
+        } else {
+            status = .finished(finalSummary)
+        }
+        task = nil
+    }
+
+    private func stopForFailure() {
+        stoppedByFailure = true
+        task?.cancel()
     }
 }

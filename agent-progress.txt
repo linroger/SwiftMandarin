@@ -1,0 +1,34 @@
+# SwiftMandarin agent progress
+
+## Project overview
+
+SwiftMandarin is a cross-platform SwiftUI learning and translation app for macOS, iOS, and iPadOS. This log supplements `handoff.md` with compact session-level implementation and verification history. The active feature specification is `feature_list.json`.
+
+## Session log
+
+### 2026-07-20T22:07:52Z — `codex/minimax-audio-catalog-batch`
+
+- Feature: live/current MiniMax audio catalog, correct language previews, and optional Batch AI audio.
+- Baseline: clean isolated worktree at `origin/main` commit `4879c53`; unrelated primary-checkout changes are protected.
+- Research: official MiniMax docs identify Speech 2.8 as latest, `/v1/get_voice` as the voice catalog, and explicit `Chinese`/`English` language boosts. A redacted live probe found 303 system voices, including 26 Mandarin and 6 English; `/v1/models` returned no speech models.
+- Initial defect: synthesis hard-codes `language_boost: auto`, and cache schema v1 omits intended language boost.
+- Tests: credential-safe endpoint probes passed; production changes and platform gates are pending.
+- Next steps: implement catalog contracts/UI, explicit language identity, persistent batch synthesis, then run full deterministic/live/platform/review gates.
+
+### 2026-07-20T22:41:50Z — implementation milestone
+
+- Features: catalog infrastructure/settings, language-correct previews, and batch audio are implemented.
+- Files: added catalog models/client/store and pure batch planner; updated synthesis/cache identity, playback preview route, generated-audio repository, batch controller/UI, English/Chinese localization, README, privacy policy, plans, and contracts.
+- Tests: 151/151 offline contracts pass. A production live smoke returned 303 system / 28 recognized Mandarin / 6 English voices and generated valid explicit-Chinese and explicit-English 32 kHz mono MP3s without exposing the Keychain credential.
+- Builds: macOS and generic iOS Simulator Xcode 27 builds passed without source warnings/errors; named iPhone/iPadOS 27 builds and final reviews remain.
+- Next steps: finish named-device builds and runtime layout checks, resolve independent review findings, rerun final exact-tree gates, then commit/push/integrate.
+
+### 2026-07-20T23:59:30Z — release verification milestone
+
+- Features: all four catalog, language-preview, batch-audio, and cross-platform scenarios in `feature_list.json` now pass.
+- Review hardening: paid audio fails closed after ambiguous/systemic errors; cache and credentials are revalidated before paid work; provider/audio settings are snapshotted; cancellation and Clear All cannot start or republish stale work; catalog/account metadata is credential-scoped; manual and account voice provenance is revalidated on key/region changes; all new user-facing strings have Simplified Chinese translations.
+- Tests: 191/191 credential-free contracts pass after compiling the production core with Swift 6 complete strict concurrency and warnings-as-errors. `zsh init.sh`, `git diff --check`, localization JSON/new-key coverage, project/entitlement lint, exact MiniMax-key-pattern scan, unexpected-audio scan, and duplicate-Sources scan pass.
+- Live evidence: the production clients returned 303 system voices (28 recognized Mandarin, 6 English) and valid explicit-Chinese/explicit-English 128 kbps, 32 kHz mono MP3s without printing or persisting a credential.
+- Platform evidence: fresh Xcode 27 Debug builds for macOS, iPhone 17 Pro/iOS 27, and iPad Pro 13-inch/iPadOS 27 each contain one success marker and zero warning/error diagnostics. The latest feature build also installed and launched on the named iPhone and iPad simulators.
+- Independent verdict: no remaining feature-blocking issue. Pre-existing tracked root logs and the repository-wide Swift 5 migration remain separate concerns; GitHub issue creation for the log exposure was blocked by HTTP 401 authentication failures.
+- Next steps: inspect the staged feature-only diff, commit and push the feature branch, merge through a fresh isolated worktree, repeat exact-merge contracts/builds, push remote main, and verify ancestry while leaving the primary checkout untouched.

@@ -2,41 +2,66 @@
 //  BatchAIAnalysisView.swift
 //  SwiftMandarin
 //
-//  Settings UI for the background batch AI word-analysis. The controls are
-//  factored into `BatchAIAnalysisControls` (a set of `Section`s) so the exact
-//  same UI embeds in the iOS Settings push-screen and the macOS Settings tab.
-//  All state lives in `BatchExplanationController.shared`, so the progress bar,
-//  live count, and Cancel button keep working and stay current when the user
-//  leaves and returns to this screen while a run is in progress.
+//  Shared macOS/iOS/iPadOS controls for independent AI-analysis and
+//  persistent MiniMax-audio batch queues.
 //
 
 import SwiftUI
 
-// MARK: - Reusable controls (Sections)
-
-/// The batch-analysis controls as a group of `Section`s, embeddable in any
-/// `Form`/`List`. Observes the shared controller for live progress.
 struct BatchAIAnalysisControls: View {
     @Environment(SavedTermsStore.self) private var savedTermsStore
     @State private var controller = BatchExplanationController.shared
     @State private var settings = AIModelSettings.shared
+    @State private var preferences = AppPreferences.shared
+    @State private var generatedAudio = GeneratedSpeechStore.shared
+
+    @State private var generateAudio = false
+    @State private var audioScope: BatchAudioScope = .bothLanguages
+    @State private var isPreparing = false
+    @State private var pendingPlan: BatchRunPlan?
+    @State private var preparationError: String?
+    @State private var showingSavedAudioLibrary = false
 
     private var totalSaved: Int { savedTermsStore.terms.count }
     private var providerAvailable: Bool { settings.isAnyProviderAvailable }
-
-    var body: some View {
-        // Compute the unprocessed count ONCE per render and thread it through;
-        // recomputing it per subview would multiply the cache scan on every
-        // progress tick during a batch.
-        let remaining = controller.remainingCount(from: savedTermsStore.terms)
-        return Group {
-            overviewSection(remaining: remaining)
-            batchSizeSection
-            actionSection(remaining: remaining)
-        }
+    private var miniMaxKeyAvailable: Bool {
+        !settings.apiKey(for: .minimax)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty
     }
 
-    // MARK: Overview
+    var body: some View {
+        let remaining = controller.remainingCount(from: savedTermsStore.terms)
+        Group {
+            overviewSection(remaining: remaining)
+            parallelismSection
+            outputSection
+            actionSection(remaining: remaining)
+        }
+        .task {
+            await generatedAudio.refresh()
+        }
+        .sheet(item: $pendingPlan) { plan in
+            BatchAudioPreflightView(
+                plan: plan,
+                onStart: {
+                    pendingPlan = nil
+                    controller.start(plan: plan, concurrency: settings.batchConcurrency)
+                },
+                onCancel: { pendingPlan = nil }
+            )
+            .localizedSurface()
+        }
+        .sheet(isPresented: $showingSavedAudioLibrary) {
+            GeneratedAudioLibraryView()
+                .localizedSurface()
+        }
+        .alert("Batch Preparation Failed", isPresented: preparationErrorBinding) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(preparationError ?? String(localized: "The batch plan could not be prepared."))
+        }
+    }
 
     private func overviewSection(remaining: Int) -> some View {
         Section {
@@ -51,19 +76,21 @@ struct BatchAIAnalysisControls: View {
                     .foregroundStyle(remaining > 0 ? .primary : .secondary)
                     .fontWeight(remaining > 0 ? .semibold : .regular)
             }
+            LabeledContent("Saved AI Audio") {
+                Text("\(generatedAudio.records.count)")
+                    .foregroundStyle(.secondary)
+            }
         } header: {
-            Text("Batch AI Analysis")
+            Text("Batch AI Analysis & Audio")
         } footer: {
-            Text("Analyze every saved word with the current AI model. Only words that haven't been analyzed yet are processed, and each result is saved so opening that word later is instant.")
+            Text("Analyze missing saved words and optionally prepare persistent MiniMax pronunciation audio. Existing analyses and matching audio are reused.")
         }
     }
 
-    // MARK: Batch size
-
-    private var batchSizeSection: some View {
+    private var parallelismSection: some View {
         Section {
             Stepper(value: $settings.batchConcurrency, in: AIModelSettings.batchConcurrencyRange) {
-                LabeledContent("Words in Parallel") {
+                LabeledContent("Analyses in Parallel") {
                     Text("\(settings.batchConcurrency)")
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
@@ -73,11 +100,61 @@ struct BatchAIAnalysisControls: View {
         } header: {
             Text("Parallelism")
         } footer: {
-            Text("How many words to analyze at the same time. Higher is faster but more likely to hit a cloud provider's rate limits. Changes apply to the next run.")
+            Text("This controls AI analysis only. MiniMax audio uses at most two workers and starts no more than one new request per second to reduce rate-limit errors.")
         }
     }
 
-    // MARK: Action / progress
+    private var outputSection: some View {
+        Section {
+            Toggle("Generate MiniMax Audio", isOn: $generateAudio)
+                .disabled(controller.isRunning)
+
+            if generateAudio {
+                Picker("Audio Languages", selection: $audioScope) {
+                    ForEach(BatchAudioScope.allCases) { scope in
+                        Text(scope.displayName).tag(scope)
+                    }
+                }
+                .disabled(controller.isRunning)
+
+                LabeledContent("Speech Model") {
+                    Text(preferences.aiAudioModel)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                if audioScope == .bothLanguages || LocalizationManager.shared.learningIsChinese {
+                    LabeledContent("Mandarin Voice") {
+                        Text(preferences.aiAudioChineseVoice)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+                if audioScope == .bothLanguages || !LocalizationManager.shared.learningIsChinese {
+                    LabeledContent("English Voice") {
+                        Text(preferences.aiAudioEnglishVoice)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+
+                if !miniMaxKeyAvailable {
+                    Label("Add a MiniMax API key in AI Audio settings.", systemImage: "key.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+            }
+        } header: {
+            Text("Output")
+        } footer: {
+            if generateAudio {
+                Text("Before any new paid speech requests begin, a confirmation shows exact cache misses and characters. Spoken terms are sent to MiniMax; generated MP3s remain in the Saved Audio library for playback and export.")
+            } else {
+                Text("Audio generation is off. This run will only create missing AI analyses.")
+            }
+        }
+    }
 
     @ViewBuilder
     private func actionSection(remaining: Int) -> some View {
@@ -87,37 +164,53 @@ struct BatchAIAnalysisControls: View {
                 Button(role: .destructive) {
                     controller.cancel()
                 } label: {
-                    Label("Cancel", systemImage: "stop.circle")
+                    Label("Cancel Batch", systemImage: "stop.circle")
                 }
             } else {
                 startButton(remaining: remaining)
                 lastRunSummary
             }
         } footer: {
-            actionFooter
+            actionFooter(remaining: remaining)
         }
     }
 
     private var progressContent: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Analyzing…")
-                .font(.subheadline)
+        VStack(alignment: .leading, spacing: 14) {
+            if controller.analysisTotal > 0 {
+                progressLane(
+                    title: "AI Analysis",
+                    value: controller.analysisProgress,
+                    processed: controller.analysisProcessed,
+                    total: controller.analysisTotal
+                )
+            }
 
-            // Determinate bar (value in 0...1). Kept label-free to avoid the
-            // initializer where a trailing closure binds to `total`.
-            ProgressView(value: controller.progress)
+            if controller.audioTotal > 0 {
+                progressLane(
+                    title: "MiniMax Audio",
+                    value: controller.audioProgress,
+                    processed: controller.audioProcessed,
+                    total: controller.audioTotal
+                )
+            }
 
             HStack(spacing: 12) {
-                Label("\(controller.generated)", systemImage: "checkmark.circle.fill")
+                Label("\(controller.analysesGenerated + controller.audioGenerated)", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
-                if controller.failed > 0 {
-                    Label("\(controller.failed)", systemImage: "exclamationmark.triangle.fill")
+                    .accessibilityLabel("\(controller.analysesGenerated + controller.audioGenerated) newly completed")
+                if controller.audioCached > 0 {
+                    Label("\(controller.audioCached)", systemImage: "bolt.fill")
+                        .foregroundStyle(.blue)
+                        .accessibilityLabel("\(controller.audioCached) audio clips already saved")
+                }
+                let failures = controller.analysesFailed + controller.audioFailed
+                if failures > 0 {
+                    Label("\(failures)", systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
+                        .accessibilityLabel("\(failures) failed")
                 }
                 Spacer()
-                Text("\(controller.processed) / \(controller.total)")
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
             }
             .font(.caption)
 
@@ -129,85 +222,279 @@ struct BatchAIAnalysisControls: View {
             }
         }
         .padding(.vertical, 2)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Batch progress details")
+    }
+
+    private func progressLane(
+        title: LocalizedStringKey,
+        value: Double,
+        processed: Int,
+        total: Int
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                Text("\(processed) / \(total)")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+            ProgressView(value: value)
+                .accessibilityHidden(true)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(title))
+        .accessibilityValue("\(processed) of \(total) complete")
     }
 
     private func startButton(remaining: Int) -> some View {
         Button {
-            controller.start(concurrency: settings.batchConcurrency)
+            prepareAndStart()
         } label: {
-            Label(
-                remaining > 0 ? "Analyze \(remaining) Words" : "All Words Analyzed",
-                systemImage: "sparkles"
-            )
-            .fitSingleLine()
-            .frame(maxWidth: .infinity)
+            HStack(spacing: 8) {
+                if isPreparing {
+                    ProgressView()
+                        .controlSize(.small)
+                        .accessibilityLabel("Preparing batch")
+                }
+                Label(startTitle(remaining: remaining), systemImage: generateAudio ? "waveform.badge.plus" : "sparkles")
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
-        .disabled(remaining == 0 || !providerAvailable)
+        .disabled(!canStart(remaining: remaining))
     }
 
-    /// A one-line summary of the most recently completed/cancelled run, shown
-    /// until the next run starts. `nil` while idle or running.
+    private func canStart(remaining: Int) -> Bool {
+        guard !isPreparing, totalSaved > 0 else { return false }
+        if remaining > 0, !providerAvailable { return false }
+        if generateAudio, !miniMaxKeyAvailable { return false }
+        return remaining > 0 || generateAudio
+    }
+
+    private func startTitle(remaining: Int) -> LocalizedStringKey {
+        if isPreparing { return "Preparing Batch…" }
+        if generateAudio {
+            return remaining > 0 ? "Review Analysis & Audio Batch" : "Review Audio Batch"
+        }
+        return remaining > 0 ? "Analyze \(remaining) Words" : "All Words Analyzed"
+    }
+
+    private func prepareAndStart() {
+        guard !isPreparing else { return }
+        isPreparing = true
+        preparationError = nil
+        Task { @MainActor in
+            defer { isPreparing = false }
+            do {
+                let plan = try await controller.preparePlan(
+                    from: savedTermsStore.terms,
+                    includeAudio: generateAudio,
+                    audioScope: audioScope
+                )
+                if generateAudio {
+                    pendingPlan = plan
+                } else {
+                    controller.start(plan: plan, concurrency: settings.batchConcurrency)
+                }
+            } catch {
+                preparationError = error.localizedDescription
+            }
+        }
+    }
+
     @ViewBuilder
     private var lastRunSummary: some View {
         switch controller.status {
-        case let .finished(generated, failed, _) where generated > 0 || failed > 0:
-            Label {
-                if failed > 0 {
-                    Text("Analyzed \(generated), \(failed) failed")
-                } else {
-                    Text("Analyzed \(generated) words")
-                }
-            } icon: {
-                Image(systemName: failed > 0 ? "checkmark.circle.badge.questionmark" : "checkmark.circle.fill")
-                    .foregroundStyle(failed > 0 ? .orange : .green)
-            }
-            .font(.subheadline)
-        case let .cancelled(generated):
-            Label("Cancelled after \(generated)", systemImage: "stop.circle")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        case let .finished(summary):
+            summaryContent(summary, outcome: .finished)
+        case let .cancelled(summary):
+            summaryContent(summary, outcome: .cancelled)
+        case let .failed(summary):
+            summaryContent(summary, outcome: .failed)
         default:
             EmptyView()
         }
     }
 
+    private enum SummaryOutcome {
+        case finished
+        case cancelled
+        case failed
+    }
+
     @ViewBuilder
-    private var actionFooter: some View {
-        if !providerAvailable {
+    private func summaryContent(
+        _ summary: BatchRunSummary,
+        outcome: SummaryOutcome
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            runSummary(summary, outcome: outcome)
+            if summary.audioGenerated > 0 || summary.audioCached > 0 {
+                Button {
+                    showingSavedAudioLibrary = true
+                } label: {
+                    Label("Manage Saved Audio", systemImage: "music.note.list")
+                }
+            }
+        }
+    }
+
+    private func runSummary(
+        _ summary: BatchRunSummary,
+        outcome: SummaryOutcome
+    ) -> some View {
+        let failures = summary.analysesFailed + summary.audioFailed
+        let unattempted = summary.analysesUnattempted + summary.audioUnattempted
+        let title: LocalizedStringKey
+        let symbol: String
+        let iconColor: Color
+        switch outcome {
+        case .finished:
+            title = "Batch Complete"
+            symbol = failures > 0 ? "checkmark.circle.badge.questionmark" : "checkmark.circle.fill"
+            iconColor = failures > 0 ? .orange : .green
+        case .cancelled:
+            title = "Batch Cancelled"
+            symbol = "stop.circle"
+            iconColor = .secondary
+        case .failed:
+            title = "Batch Stopped"
+            symbol = "exclamationmark.octagon.fill"
+            iconColor = .red
+        }
+        return Label {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .fontWeight(.medium)
+                Text("Analyses \(summary.analysesGenerated) · Audio \(summary.audioGenerated) new, \(summary.audioCached) saved · Failed \(failures) · Not attempted \(unattempted)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } icon: {
+            Image(systemName: symbol)
+                .foregroundStyle(iconColor)
+        }
+    }
+
+    @ViewBuilder
+    private func actionFooter(remaining: Int) -> some View {
+        if remaining > 0, !providerAvailable {
             Text("No AI provider is available. Configure one in Settings → AI to analyze words.")
                 .foregroundStyle(.orange)
+        } else if generateAudio, !miniMaxKeyAvailable {
+            Text("A MiniMax API key is required for batch audio. Add it in AI Audio settings.")
+                .foregroundStyle(.orange)
         } else if controller.isRunning {
-            Text("Running in the background using \(settings.effectiveProvider.displayName). You can leave this screen — the analysis keeps going and you'll see the live count when you return.")
+            Text("You may leave this screen while the app remains active. Completed analyses and audio files are saved immediately; cancelling keeps finished work.")
         } else if let error = controller.lastErrorMessage {
             Text("Last error: \(error)")
                 .foregroundStyle(.secondary)
         } else {
-            Text("Using \(settings.effectiveProvider.displayName).")
+            Text("Analysis uses \(settings.effectiveProvider.displayName). MiniMax audio is opt-in and cache-first.")
         }
+    }
+
+    private var preparationErrorBinding: Binding<Bool> {
+        Binding(
+            get: { preparationError != nil },
+            set: { if !$0 { preparationError = nil } }
+        )
     }
 }
 
-// MARK: - Standalone screen (iOS push / generic)
+private struct BatchAudioPreflightView: View {
+    let plan: BatchRunPlan
+    let onStart: () -> Void
+    let onCancel: () -> Void
 
-/// Full-screen wrapper used as a navigation destination (iOS Settings hub).
+    private var audioPlan: BatchAudioPlan? { plan.audioPlan }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Work to Perform") {
+                    LabeledContent("AI Analyses", value: "\(plan.analysisCount)")
+                    LabeledContent("New MiniMax Clips", value: "\(plan.newAudioCount)")
+                    LabeledContent("Already Saved", value: "\(plan.cachedAudioCount)")
+                    LabeledContent("Characters Sent", value: "\(plan.totalNewAudioCharacters)")
+                    if let audioPlan {
+                        LabeledContent("Mandarin Clips", value: "\(audioPlan.newMandarinClipCount)")
+                        LabeledContent("English Clips", value: "\(audioPlan.newEnglishClipCount)")
+                    }
+                }
+
+                if let audioPlan {
+                    Section("MiniMax Snapshot") {
+                        LabeledContent("Languages", value: String(localized: audioPlan.scope.displayName))
+                        LabeledContent("Speech Model", value: configuration?.model ?? "—")
+                        if let mandarinVoice {
+                            LabeledContent("Mandarin Voice", value: mandarinVoice)
+                        }
+                        if let englishVoice {
+                            LabeledContent("English Voice", value: englishVoice)
+                        }
+                        Link(destination: pricingURL) {
+                            Label("View MiniMax Speech Pricing", systemImage: "arrow.up.right.square")
+                        }
+                    }
+                }
+
+                Section {
+                    Label("Up to \(plan.newAudioCount) new paid MiniMax requests will start. Matching saved clips are excluded, duplicate terms are deduplicated, and charges may apply.", systemImage: "creditcard")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Review Batch")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #elseif os(macOS)
+            .formStyle(.grouped)
+            .frame(minWidth: 440, minHeight: 470)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Start Batch", action: onStart)
+                        .disabled(!plan.hasWork)
+                }
+            }
+        }
+    }
+
+    private var configuration: MiniMaxSpeechConfiguration? {
+        audioPlan?.allTargets.first?.identity.configuration
+    }
+
+    private var mandarinVoice: String? {
+        audioPlan?.allTargets.first(where: \.isMandarin)?.identity.configuration.voiceID
+    }
+
+    private var englishVoice: String? {
+        audioPlan?.allTargets.first(where: { !$0.isMandarin })?.identity.configuration.voiceID
+    }
+
+    private let pricingURL = URL(string: "https://platform.minimax.io/docs/guides/pricing-speech")!
+}
+
 struct BatchAIAnalysisView: View {
     var body: some View {
         Form {
             BatchAIAnalysisControls()
         }
-        .navigationTitle("Batch AI Analysis")
+        .navigationTitle("Batch AI Analysis & Audio")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
     }
 }
 
-// MARK: - Compact live status row (for the More hub)
-
-/// A trailing accessory that shows live batch progress, so the user sees a run
-/// is still going even from the Settings list root. Renders nothing when idle.
 struct BatchAIAnalysisStatusBadge: View {
     @State private var controller = BatchExplanationController.shared
 
@@ -216,16 +503,18 @@ struct BatchAIAnalysisStatusBadge: View {
             HStack(spacing: 6) {
                 ProgressView()
                     .controlSize(.small)
+                    .accessibilityHidden(true)
                 Text("\(controller.processed)/\(controller.total)")
                     .font(.caption)
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Batch progress")
+            .accessibilityValue("\(controller.processed) of \(controller.total) complete")
         }
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     NavigationStack {
