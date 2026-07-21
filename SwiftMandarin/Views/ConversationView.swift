@@ -254,7 +254,7 @@ private struct ConversationChatView: View {
             }
         }
         .onDisappear {
-            if speech.isRecording && micSessionActive {
+            if micSessionActive {
                 Task { await speech.stopRecording() }
             }
             micSessionActive = false
@@ -401,7 +401,8 @@ private struct ConversationChatView: View {
     // MARK: Actions
 
     private func toggleMic() async {
-        if speech.isRecording {
+        if micSessionActive || speech.isRecording {
+            micSessionActive = false
             await speech.stopRecording()
         } else {
             speech.clearTranscripts()
@@ -411,6 +412,8 @@ private struct ConversationChatView: View {
                 try await speech.startRecording(
                     language: localization.learningIsChinese ? .chinese : .english
                 )
+            } catch is CancellationError {
+                micSessionActive = false
             } catch {
                 micSessionActive = false
                 withAnimation(.spring(duration: 0.3)) {
@@ -423,7 +426,7 @@ private struct ConversationChatView: View {
     private func send() {
         let text = trimmedDraft
         guard !text.isEmpty, !isAwaitingReply, conversation != nil else { return }
-        if speech.isRecording && micSessionActive {
+        if micSessionActive {
             Task { await speech.stopRecording() }
         }
         micSessionActive = false

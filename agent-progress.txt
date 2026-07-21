@@ -38,3 +38,28 @@ SwiftMandarin is a cross-platform SwiftUI learning and translation app for macOS
 - Git: pushed feature commit `170af65` on `origin/codex/minimax-audio-catalog-batch`; created two-parent merge `335e8c9` from base `4879c53` plus the feature and pushed it normally to `origin/main`.
 - Exact-merge verification: `zsh init.sh` passed 191/191 strict contracts. Fresh macOS, iPhone 17 Pro/iOS 27, and iPad Pro 13-inch/iPadOS 27 builds each passed with one success marker and zero warning/error diagnostics; localization, project/entitlement, secret, audio-artifact, duplicate-Sources, and diff gates passed.
 - State: all feature-list scenarios remain passing, no feature blocker remains, and the primary dirty checkout was not modified. The tracked-root-log credential remediation remains a separate explicitly coordinated security task.
+
+### 2026-07-21T14:27:39Z — `codex/async-audio-session`
+
+- Bug: iOS 27 Thread Performance Checker reports synchronous `AVAudioSession.setActive` calls from the `@MainActor` speech router, risking UI hangs during local and MiniMax playback activation/deactivation.
+- Baseline: clean isolated worktree at current `origin/main` commit `bd8acb1`; the unrelated dirty primary checkout remains protected.
+- Root cause: `SpeechService.configureAudioSessionForPlayback()` and `deactivateAudioSessionIfIdle()` synchronously mutate session activation on the main actor. The Xcode 27 SDK provides async `activate(options:)` and `deactivate(options:)`, both returning `Bool`; the iOS 17 deployment target requires a non-main compatibility path.
+- Concurrency risk: a direct fire-and-forget conversion can let stale speech deactivation land after recording or source-audio playback takes ownership. Pending playback activation must also remain request-scoped so a stopped/replaced request cannot begin late.
+- Tests pending: deterministic activation ordering, cancellation/replacement, idle deactivation, source handoff, source integration guard, and fresh macOS/iPhone/iPadOS 27 builds.
+- Next steps: implement one ordered audio-session transition boundary, route speech playback through an awaited request-owned activation gate, then complete regression and platform gates.
+
+### 2026-07-21T14:40:50Z — implementation milestone
+
+- Implementation: added one FIFO `AudioSessionCoordinator` for spoken playback, source preview, clip recording, and live recognition. iOS 27 uses async `activate`/`deactivate` with Boolean-result validation; iOS 17–26 uses the legacy blocking calls only on a private serial queue; macOS is a no-op.
+- Lifecycle hardening: all three services now use pre-created owner tokens. Local and MiniMax playback, capture, preview, and recognition start I/O only after acquisition and reject stale/cancelled owners. Only the current owner may enqueue a real deactivation.
+- Recognition hardening: activation moved ahead of engine I/O, concurrent starts/stops are state-guarded, and an old stop no longer clears/releases a newer engine owner.
+- Preliminary builds: fresh Xcode 27 Debug builds for macOS and iPhone 17 Pro/iOS 27 succeeded with zero source warnings/errors.
+- Next steps: finish deterministic transition contracts, run iPad and final exact-tree gates, resolve independent concurrency reviews, and exercise runtime handoffs.
+
+### 2026-07-21T15:02:36Z — verification and branch delivery readiness
+
+- Regression evidence: `zsh init.sh` passes the existing 191 MiniMax contracts plus 27 deterministic audio-session transition checks. The new harness compiles the coordinator with Swift 6 complete strict concurrency and warnings-as-errors, type-checks the iOS 27 async APIs at the iOS 17 deployment floor, and guards that the only two direct `setActive` calls are the legacy off-main compatibility calls in `AudioSessionCoordinator`.
+- Lifecycle coverage: the contracts exercise FIFO activation, thrown and `false` activation results, failed-deactivation recovery, stale releases, release-before-acquire ordering, same-owner release/reacquire, cancellation/replacement, and all four macOS no-op profiles. Independent concurrency and end-to-end audio integration reviews found no remaining commit blocker.
+- Platform evidence: fresh exact-tree Xcode 27 Debug builds for macOS, iPhone 17 Pro/iOS 27, and iPad Pro 13-inch/iPadOS 27 all succeeded with zero warning/error diagnostics. The iPhone and iPad products installed and launched successfully on their named simulators.
+- Hygiene: `git diff --check`, JSON parsing, executable-script mode, unexpected-audio checks, and production call-site inspection pass. The previously documented tracked-log credential exposure exists on the base branch and remains a separate rotation/history-remediation task; this fix does not add or alter those logs.
+- Result: `bug_async_av_audio_session` is passing. The branch is ready for a feature commit and push; remote-main integration requires a separate explicit instruction.

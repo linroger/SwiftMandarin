@@ -100,6 +100,13 @@ final class SpeechRecognitionService {
     // MARK: - Private Properties
 
     private var engine: SpeechRecognitionEngine?
+    private var operationID: UUID?
+    private var activeResultRequestID: UUID?
+    private var failureRequestID: UUID?
+    private var isStarting = false
+    private var isStopping = false
+    private var stopWaiters: [CheckedContinuation<Void, Never>] = []
+    private var audioSessionOwner: AudioSessionOwner?
 
     weak var delegate: SpeechRecognitionDelegate?
 
@@ -234,71 +241,117 @@ final class SpeechRecognitionService {
 
     /// Start live speech recognition
     func startRecording(language: SpeechRecognitionLanguage = .english) async throws {
-        guard !isRecording else { return }
+        guard !isRecording, !isStarting, !isStopping else { return }
 
-        // Check authorizations
-        guard await checkAuthorization() else {
-            throw SpeechRecognitionError.notAuthorized
-        }
-
-        guard await checkMicrophoneAuthorization() else {
-            throw SpeechRecognitionError.notAuthorized
-        }
-
-        // Ensure model is available
-        try await downloadModelIfNeeded(for: language)
-
-        currentLanguage = language
-
-        // Clear previous state
-        partialTranscript = ""
-        finalTranscript = ""
-        error = nil
-
-        // Pick the recognition engine for this OS release.
-        let engine: SpeechRecognitionEngine
-        if #available(iOS 26.0, macOS 26.0, *) {
-            engine = ModernSpeechEngine()
-        } else {
-            engine = LegacySpeechEngine()
-        }
-        self.engine = engine
-
-        engine.onPartialResult = { [weak self] text in
-            guard let self else { return }
-            self.partialTranscript = text
-            self.delegate?.speechRecognitionDidReceivePartialResult(text)
-        }
-        engine.onFinalResult = { [weak self] text in
-            guard let self else { return }
-            if !self.finalTranscript.isEmpty && !text.isEmpty {
-                self.finalTranscript += " "
-            }
-            self.finalTranscript += text
-            self.partialTranscript = ""
-            self.delegate?.speechRecognitionDidReceiveFinalResult(text)
-        }
-        engine.onStreamError = { [weak self] error in
-            guard let self else { return }
-            self.error = .recognitionError(error.localizedDescription)
-            self.delegate?.speechRecognitionDidFail(with: error)
-            // Tear down the mic tap, engine, and audio session — without
-            // this the microphone keeps capturing after a mid-session
-            // recognition failure. The delegate already got didFail, so
-            // suppress the didFinish callback.
-            Task { await self.stopRecording(notifyDelegate: false) }
-        }
+        let requestID = UUID()
+        let sessionOwner = AudioSessionOwner()
+        operationID = requestID
+        isStarting = true
+        var candidateEngine: SpeechRecognitionEngine?
 
         do {
+            // Check authorizations.
+            guard await checkAuthorization() else {
+                throw SpeechRecognitionError.notAuthorized
+            }
+            try ensureCurrentOperation(requestID)
+
+            guard await checkMicrophoneAuthorization() else {
+                throw SpeechRecognitionError.notAuthorized
+            }
+            try ensureCurrentOperation(requestID)
+
+            // Ensure the on-device model is available before taking audio
+            // ownership or interrupting another playback feature.
+            try await downloadModelIfNeeded(for: language)
+            try ensureCurrentOperation(requestID)
+
+            SourceAudioActivityCoordinator.shared.stopSourceAudioForSpeech()
+            SpeechService.stop()
+            currentLanguage = language
+
+            // Clear previous state.
+            partialTranscript = ""
+            finalTranscript = ""
+            error = nil
+
+            // Pick the recognition engine for this OS release.
+            let engine: SpeechRecognitionEngine
+            if #available(iOS 26.0, macOS 26.0, *) {
+                engine = ModernSpeechEngine()
+            } else {
+                engine = LegacySpeechEngine()
+            }
+            candidateEngine = engine
+            self.engine = engine
+            audioSessionOwner = sessionOwner
+            activeResultRequestID = requestID
+            failureRequestID = nil
+
+            engine.onPartialResult = { [weak self] text in
+                guard let self, self.activeResultRequestID == requestID else { return }
+                self.partialTranscript = text
+                self.delegate?.speechRecognitionDidReceivePartialResult(text)
+            }
+            engine.onFinalResult = { [weak self] text in
+                guard let self, self.activeResultRequestID == requestID else { return }
+                if !self.finalTranscript.isEmpty && !text.isEmpty {
+                    self.finalTranscript += " "
+                }
+                self.finalTranscript += text
+                self.partialTranscript = ""
+                self.delegate?.speechRecognitionDidReceiveFinalResult(text)
+            }
+            engine.onStreamError = { [weak self] error in
+                guard let self,
+                      self.activeResultRequestID == requestID,
+                      self.failureRequestID != requestID else { return }
+                self.failureRequestID = requestID
+                self.error = .recognitionError(error.localizedDescription)
+                self.delegate?.speechRecognitionDidFail(with: error)
+                // Tear down the mic tap, engine, and audio session — without
+                // this the microphone keeps capturing after a mid-session
+                // recognition failure. The delegate already got didFail, so
+                // suppress the didFinish callback.
+                Task { await self.stopRecording(notifyDelegate: false) }
+            }
+
+            try await AudioSessionCoordinator.shared.acquire(
+                .liveRecognition,
+                owner: sessionOwner
+            )
+            try ensureCurrentOperation(requestID)
             try await engine.start(language: language)
+            try ensureCurrentOperation(requestID)
+
+            isStarting = false
+            isRecording = true
+            delegate?.speechRecognitionDidStart()
         } catch {
-            // Unwind anything the engine set up before it failed.
-            await stopRecording(notifyDelegate: false)
+            if let candidateEngine, self.engine === candidateEngine {
+                self.engine = nil
+            }
+            if operationID == requestID {
+                operationID = nil
+                isStarting = false
+                isRecording = false
+            }
+            if audioSessionOwner == sessionOwner {
+                audioSessionOwner = nil
+            }
+            if activeResultRequestID == requestID {
+                activeResultRequestID = nil
+            }
+            if failureRequestID == requestID {
+                failureRequestID = nil
+            }
+            // stopRecording may already have detached this candidate while
+            // start() was suspended. Run candidate-local cleanup again so a
+            // late-resuming engine cannot leave a hidden microphone tap alive.
+            await candidateEngine?.stop()
+            AudioSessionCoordinator.shared.release(sessionOwner)
             throw error
         }
-
-        isRecording = true
-        delegate?.speechRecognitionDidStart()
     }
 
     /// Stop speech recognition. Idempotent — safe to call from error paths
@@ -306,15 +359,40 @@ final class SpeechRecognitionService {
     /// - Parameter notifyDelegate: pass `false` from failure paths so the
     ///   delegate doesn't receive `didFinish` right after `didFail`.
     func stopRecording(notifyDelegate: Bool = true) async {
+        if isStopping {
+            await withCheckedContinuation { continuation in
+                stopWaiters.append(continuation)
+            }
+            return
+        }
+        isStopping = true
         let wasRecording = isRecording
+        let engineToStop = engine
+        let sessionOwner = audioSessionOwner
+        let resultRequestID = activeResultRequestID
+
+        operationID = nil
+        isStarting = false
         isRecording = false
-
-        await engine?.stop()
         engine = nil
+        audioSessionOwner = nil
 
-        #if os(iOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
+        await engineToStop?.stop()
+        if activeResultRequestID == resultRequestID {
+            activeResultRequestID = nil
+        }
+        if failureRequestID == resultRequestID {
+            failureRequestID = nil
+        }
+        if let sessionOwner {
+            AudioSessionCoordinator.shared.release(sessionOwner)
+        }
+        isStopping = false
+        let waiters = stopWaiters
+        stopWaiters.removeAll()
+        for waiter in waiters {
+            waiter.resume()
+        }
 
         if wasRecording && notifyDelegate {
             delegate?.speechRecognitionDidFinish()
@@ -328,6 +406,21 @@ final class SpeechRecognitionService {
         } else {
             try await startRecording(language: language)
         }
+    }
+
+    /// Settles observable and session state after iOS interrupts capture or a
+    /// required route disappears. The shared notification bridge invokes this
+    /// for all audio features so recognition cannot retain a stale owner.
+    func handleAudioSessionLoss(message: String) async {
+        guard isRecording || isStarting || engine != nil || audioSessionOwner != nil else { return }
+        let requestID = activeResultRequestID ?? operationID
+        if failureRequestID != requestID {
+            failureRequestID = requestID
+            let interruptionError = SpeechRecognitionError.audioEngineError(message)
+            error = interruptionError
+            delegate?.speechRecognitionDidFail(with: interruptionError)
+        }
+        await stopRecording(notifyDelegate: false)
     }
 
     /// Get the complete transcript (final + partial)
@@ -344,13 +437,9 @@ final class SpeechRecognitionService {
         finalTranscript = ""
     }
 
-    /// Set up the audio session for recording (shared by both engines).
-    fileprivate static func activateAudioSession() throws {
-        #if os(iOS)
-        let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.playAndRecord, mode: .measurement, options: [.duckOthers, .defaultToSpeaker])
-        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-        #endif
+    private func ensureCurrentOperation(_ requestID: UUID) throws {
+        try Task.checkCancellation()
+        guard operationID == requestID else { throw CancellationError() }
     }
 }
 
@@ -371,8 +460,10 @@ private final class ModernSpeechEngine: SpeechRecognitionEngine {
     private var inputContinuation: AsyncStream<AnalyzerInput>.Continuation?
     private var recognitionTask: Task<Void, Never>?
     private var audioConverter: AVAudioConverter?
+    private var stopRequested = false
 
     func start(language: SpeechRecognitionLanguage) async throws {
+        stopRequested = false
         // Set up the transcriber + analyzer
         let transcriber = SpeechTranscriber(
             locale: language.locale,
@@ -385,8 +476,7 @@ private final class ModernSpeechEngine: SpeechRecognitionEngine {
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         self.analyzer = analyzer
         analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
-
-        try SpeechRecognitionService.activateAudioSession()
+        guard !stopRequested else { throw CancellationError() }
 
         // Set up the audio engine and converter
         let audioEngine = AVAudioEngine()
@@ -409,6 +499,7 @@ private final class ModernSpeechEngine: SpeechRecognitionEngine {
 
         // Start the analyzer
         try await analyzer.start(inputSequence: inputSequence)
+        guard !stopRequested else { throw CancellationError() }
 
         // Start recognition task to process results
         recognitionTask = Task { [weak self] in
@@ -519,6 +610,7 @@ private final class ModernSpeechEngine: SpeechRecognitionEngine {
     }
 
     func stop() async {
+        stopRequested = true
         // Stop audio engine
         audioEngine?.inputNode.removeTap(onBus: 0)
         audioEngine?.stop()
@@ -575,8 +667,6 @@ private final class LegacySpeechEngine: SpeechRecognitionEngine {
         latestTranscription = ""
         deliveredFinal = false
         isStopping = false
-
-        try SpeechRecognitionService.activateAudioSession()
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
