@@ -32,3 +32,9 @@ SwiftMandarin is a cross-platform SwiftUI learning and translation app for macOS
 - Platform evidence: fresh Xcode 27 Debug builds for macOS, iPhone 17 Pro/iOS 27, and iPad Pro 13-inch/iPadOS 27 each contain one success marker and zero warning/error diagnostics. The latest feature build also installed and launched on the named iPhone and iPad simulators.
 - Independent verdict: no remaining feature-blocking issue. Pre-existing tracked root logs and the repository-wide Swift 5 migration remain separate concerns; GitHub issue creation for the log exposure was blocked by HTTP 401 authentication failures.
 - Next steps: inspect the staged feature-only diff, commit and push the feature branch, merge through a fresh isolated worktree, repeat exact-merge contracts/builds, push remote main, and verify ancestry while leaving the primary checkout untouched.
+
+### 2026-07-21T00:06:03Z — delivery complete
+
+- Git: pushed feature commit `170af65` on `origin/codex/minimax-audio-catalog-batch`; created two-parent merge `335e8c9` from base `4879c53` plus the feature and pushed it normally to `origin/main`.
+- Exact-merge verification: `zsh init.sh` passed 191/191 strict contracts. Fresh macOS, iPhone 17 Pro/iOS 27, and iPad Pro 13-inch/iPadOS 27 builds each passed with one success marker and zero warning/error diagnostics; localization, project/entitlement, secret, audio-artifact, duplicate-Sources, and diff gates passed.
+- State: all feature-list scenarios remain passing, no feature blocker remains, and the primary dirty checkout was not modified. The tracked-root-log credential remediation remains a separate explicitly coordinated security task.

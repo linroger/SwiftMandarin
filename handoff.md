@@ -741,11 +741,11 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 
 ## Iteration 25 — Live MiniMax audio catalog and batch audio (2026-07-21)
 
-**Last Updated (UTC):** 2026-07-20T23:59:30Z
+**Last Updated (UTC):** 2026-07-21T00:06:03Z
 
-**Status:** Release Verified; Git Delivery Pending
+**Status:** Complete
 
-**Current Focus:** Complete the staged-diff audit, push the feature branch, and verify the exact merge on remote main without touching the dirty primary checkout.
+**Current Focus:** No feature work remains; preserve the verified delivery record and address the separate credential/log-history security follow-up only with explicit coordination.
 
 ### 1) Request & Context
 
@@ -776,7 +776,7 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - [x] Implement explicit language boost and cache schema migration.
 - [x] Implement opt-in persistent batch audio with independent outcomes.
 - [x] Complete deterministic, live, build, UI, security, and independent review gates.
-- [ ] Commit, push, integrate into remote main, and verify remote ancestry without touching the primary checkout.
+- [x] Commit, push, integrate into remote main, and verify remote ancestry without touching the primary checkout.
 
 ### 4) Findings, Decisions, Assumptions
 
@@ -812,11 +812,12 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - Fresh exact-tree Xcode 27 Debug builds each contain one `BUILD SUCCEEDED` marker and zero `warning:`/`error:` diagnostics: `/tmp/SwiftMandarin-audio-catalog-final4-macos.log`, `/tmp/SwiftMandarin-audio-catalog-final4-iphone27.log`, and `/tmp/SwiftMandarin-audio-catalog-final4-ipad27.log`.
 - The latest built app installed and launched on the iPhone 17 Pro and iPad Pro 13-inch simulators. Runtime captures are `/tmp/swiftmandarin-audio-catalog-final-iphone27-loaded.png` and `/tmp/swiftmandarin-audio-catalog-final-ipad27-loaded.png`.
 - `zsh init.sh`, localization JSON parsing, `git diff --check`, and the targeted new-key Simplified Chinese audit pass. Independent reviewers' paid-request, cancellation, persistence, configuration-snapshot, catalog-provenance, wrong-language, adaptive-layout, and localization findings were addressed and converted into regression checks.
+- Feature commit `170af655cd1b5c323decebe438d66ff0220c39e5` is pushed on `origin/codex/minimax-audio-catalog-batch`. Two-parent merge `335e8c90285a3293d2f4355854ed5c4ac328dafd` has parents `4879c53` and `170af65` and is pushed on `origin/main`.
+- The exact uncommitted merge tree passed `zsh init.sh` (191/191 strict contracts) and fresh Xcode 27 builds for macOS, iPhone 17 Pro/iOS 27, and iPad Pro 13-inch/iPadOS 27. `/tmp/SwiftMandarin-audio-catalog-merge-{macos,iphone27,ipad27}.log` each contains one success marker and zero warning/error diagnostics; final secret, audio-artifact, localization, plist, duplicate-Sources, and diff gates also passed before the merge commit was created.
 
 ### 7) Remaining Work & Next Steps
 
-- Stage and inspect only this feature's diff, create a conventional feature commit, and push `codex/minimax-audio-catalog-batch`.
-- Merge the pushed feature into a fresh isolated worktree based on current `origin/main`, repeat contracts and the three-platform build matrix on the exact merge, push normally to remote main, and verify ancestry.
+- No implementation, verification, or Git delivery work remains for this feature. The feature branch and remote main contain the verified commits above; the primary dirty checkout was not changed.
 - Separate security follow-up remains: rotate chat-exposed and historically logged credentials, then remediate the already tracked root logs with explicit history-rewrite coordination. This is not silently folded into the feature commit.
 
 ### 8) Updates
@@ -825,3 +826,4 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - 2026-07-20T22:41:50Z: Completed the live/public-cached voice catalog, documented model tiers, language-scoped Settings pickers, honest no-fallback previews, schema-v2 explicit-language T2A, exact bilingual batch preflight and persistent generation, English/Chinese localization and privacy/README updates; recorded 151 passing contracts, a live 303/28/6 catalog result, two validated explicit-language MP3s, and preliminary green macOS/generic-iOS builds pending final named-device and review gates.
 - 2026-07-20T23:50:46Z: Closed the first final-review cycle by adding paid-work fail-closed behavior, immutable provider/audio snapshots, cache/key revalidation, cancellation and Clear All epochs, truthful key-scoped catalog state, adaptive/VoiceOver UI, and the missing Simplified Chinese strings. The strict suite reached 187 passing checks and the named three-platform Xcode 27 matrix was green.
 - 2026-07-20T23:59:30Z: Resolved all review findings through paid-work fail-closed semantics, immutable provider/audio snapshots, cache/key revalidation, cancellation and Clear All epochs, truthful credential-scoped catalog state, key/region-scoped manual/account voice provenance, adaptive/VoiceOver UI, and six missing Simplified Chinese strings. Expanded the strict contract suite to 191 checks; `init.sh`, localization/diff checks, live bilingual MP3 validation, simulator launches, and clean macOS/iPhone/iPadOS 27 builds pass. The final independent review found no remaining feature-blocking issue, all four feature-list scenarios are passing, and only isolated Git delivery remains.
+- 2026-07-21T00:06:03Z: Pushed feature commit `170af65`, created two-parent merge `335e8c9` in a fresh isolated worktree, repeated 191 contracts and warning-free macOS/iPhone/iPadOS 27 builds on the exact merge tree, completed hygiene gates, pushed the merge normally to remote main, and marked Iteration 25 complete. The primary dirty checkout remained untouched.

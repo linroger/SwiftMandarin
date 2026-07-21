@@ -1,7 +1,7 @@
 # Live MiniMax audio catalog and batch audio plan
 
 **Created (UTC):** 2026-07-20T22:07:52Z
-**Status:** Implemented and release-verified; Git delivery pending
+**Status:** Complete — feature `170af65`, verified main merge `335e8c9`
 **Branch:** `codex/minimax-audio-catalog-batch`
 **Base:** `origin/main` at `4879c53b81d86f8142b26e4a4ba915916a9cd1f9`
 
@@ -76,3 +76,4 @@ Update AI Audio so Settings exposes the current MiniMax speech models plus the a
 - Mandarin and English requests serialize explicit `Chinese` and `English` language boosts. Schema-v2 cache identities prevent old `auto` clips from satisfying corrected requests, and both picker selections and manually entered recognized system IDs are checked for wrong-language assignment.
 - Batch AI Analysis can preflight, generate, persist, resume, replay, and export cache-first MiniMax audio without automatic playback. The run snapshots provider/audio settings, paces request starts, revalidates cache and credential state before paid work, and fail-closes on ambiguous synthesis failures while retaining already completed explanations and audio.
 - The credential-free Swift 6 strict-concurrency contract slice passes 191/191. Live production probes returned 303 system voices and valid explicit-Chinese/explicit-English 128 kbps, 32 kHz mono MP3s. Fresh Xcode 27 builds pass for macOS, iPhone 17 Pro/iOS 27, and iPad Pro 13-inch/iPadOS 27 with zero warning/error diagnostics.
+- Feature commit `170af65` is pushed on `origin/codex/minimax-audio-catalog-batch`. Two-parent merge `335e8c9` was reverified with the same 191 contracts and three-platform build matrix, then pushed normally to `origin/main`.
