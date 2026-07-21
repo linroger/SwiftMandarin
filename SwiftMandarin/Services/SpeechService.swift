@@ -80,6 +80,30 @@ enum SpeechService {
             trackCompletion: true
         ) else { return }
 
+        try await waitForCompletion(of: requestID)
+    }
+
+    /// Exercises the configured MiniMax path itself, with no system-speech
+    /// fallback. Settings previews use this contract so a failed API request,
+    /// wrong region, or invalid voice cannot be mistaken for a successful
+    /// MiniMax voice preview.
+    static func previewMiniMaxAndWait(
+        _ text: String,
+        languageCode: String
+    ) async throws {
+        guard let requestID = routeSpeech(
+            text,
+            languageCode: languageCode,
+            localRate: Float(AppPreferences.shared.ttsRate),
+            aiSpeedScale: 1,
+            trackCompletion: true,
+            requireMiniMax: true
+        ) else { return }
+
+        try await waitForCompletion(of: requestID)
+    }
+
+    private static func waitForCompletion(of requestID: UUID) async throws {
         do {
             while true {
                 if let outcome = completedRequestOutcomes.removeValue(forKey: requestID) {
@@ -181,7 +205,8 @@ enum SpeechService {
         languageCode: String?,
         localRate: Float,
         aiSpeedScale: Double,
-        trackCompletion: Bool
+        trackCompletion: Bool,
+        requireMiniMax: Bool = false
     ) -> UUID? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
@@ -196,7 +221,7 @@ enum SpeechService {
         }
         let resolvedLanguage = languageCode ?? (trimmed.containsCJK ? "zh-CN" : "en-US")
         let preferences = AppPreferences.shared
-        guard preferences.aiAudioEnabled else {
+        guard preferences.aiAudioEnabled || requireMiniMax else {
             speakLocally(trimmed, languageCode: resolvedLanguage, rate: localRate)
             return requestID
         }
@@ -216,7 +241,7 @@ enum SpeechService {
             message: String(localized: "Generating AI audio…")
         )
 
-        let fallback = preferences.aiAudioFallbackToSystemSpeech
+        let fallback = requireMiniMax ? false : preferences.aiAudioFallbackToSystemSpeech
         generationTask = Task { @MainActor in
             do {
                 let generated = try await MiniMaxSpeechPipeline.shared.speech(

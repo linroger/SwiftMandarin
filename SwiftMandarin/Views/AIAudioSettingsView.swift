@@ -8,32 +8,36 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+private enum MiniMaxVoiceSelectionSlot: String, Identifiable {
+    case mandarin
+    case english
+
+    var id: String { rawValue }
+}
+
 struct AIAudioSettingsView: View {
     @State private var preferences = AppPreferences.shared
     @State private var aiSettings = AIModelSettings.shared
     @State private var runtime = AIAudioRuntimeState.shared
     @State private var generatedAudio = GeneratedSpeechStore.shared
+    @State private var catalogStore = MiniMaxAudioCatalogStore.shared
 
     @State private var miniMaxAPIKey = ""
     @State private var showingLibrary = false
     @State private var confirmingClear = false
     @State private var errorMessage: String?
-
-    private let speechModels = [
-        "speech-2.8-turbo",
-        "speech-2.8-hd",
-        "speech-2.6-turbo",
-        "speech-2.6-hd",
-        "speech-02-turbo",
-        "speech-02-hd",
-    ]
+    @State private var showingAdvancedVoiceIDs = false
+    @State private var previewTask: Task<Void, Never>?
+    @State private var previewMessage: String?
+    @State private var previewIsError = false
+    @State private var selectedVoiceSlot: MiniMaxVoiceSelectionSlot?
 
     var body: some View {
         Form {
             Section {
                 Toggle("Use MiniMax AI Audio", isOn: $preferences.aiAudioEnabled)
 
-                if preferences.aiAudioEnabled && miniMaxAPIKey.isEmpty {
+                if preferences.aiAudioEnabled && !hasMiniMaxKey {
                     Label("Add a MiniMax API key before using AI Audio.", systemImage: "key.fill")
                         .font(.caption)
                         .foregroundStyle(.orange)
@@ -66,32 +70,134 @@ struct AIAudioSettingsView: View {
             }
 
             Section {
+                Button {
+                    refreshCatalog()
+                } label: {
+                    HStack {
+                        Label("Refresh MiniMax Catalog", systemImage: "arrow.clockwise")
+                        Spacer()
+                        if catalogStore.isRefreshing {
+                            ProgressView()
+                                .controlSize(.small)
+                                .accessibilityLabel("Refreshing MiniMax voices")
+                        }
+                    }
+                }
+                .disabled(!hasMiniMaxKey || catalogStore.isRefreshing)
+
+                if let catalog = catalogStore.catalog {
+                    LabeledContent("Voice Catalog") {
+                        Text(catalogStatus(catalog))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Available Voices") {
+                        Text("\(catalog.mandarinSystemVoices.count) Mandarin · \(catalog.englishSystemVoices.count) English")
+                            .foregroundStyle(.secondary)
+                    }
+                } else if !hasMiniMaxKey {
+                    Label("Add a MiniMax API key to load the latest voices.", systemImage: "key.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let message = catalogStore.errorMessage {
+                    Label(message, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                } else if let message = catalogStore.warningMessage {
+                    Label(message, systemImage: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Speech Catalog")
+            } footer: {
+                Text("Speech models come from MiniMax's current T2A documentation because its general model endpoint does not list speech models. Voices refresh live from the selected regional account; the last public system-voice catalog remains available offline.")
+            }
+
+            Section {
                 Picker("Speech Model", selection: $preferences.aiAudioModel) {
-                    ForEach(speechModels, id: \.self) { model in
-                        Text(model).tag(model)
+                    if MiniMaxSpeechModelDescriptor.descriptor(for: preferences.aiAudioModel) == nil {
+                        Text("Current Selection · \(preferences.aiAudioModel)")
+                            .tag(preferences.aiAudioModel)
+                    }
+                    Section("Latest") {
+                        ForEach(latestSpeechModels) { model in
+                            Text(model.displayName).tag(model.id)
+                        }
+                    }
+                    Section("Older Compatible Models") {
+                        ForEach(legacySpeechModels) { model in
+                            Text(model.displayName).tag(model.id)
+                        }
                     }
                 }
 
-                TextField("Mandarin Voice ID", text: $preferences.aiAudioChineseVoice)
-                    #if os(iOS)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    #endif
+                voiceSelectionButton(
+                    title: "Mandarin Voice",
+                    voiceID: preferences.aiAudioChineseVoice
+                ) {
+                    selectedVoiceSlot = .mandarin
+                }
 
-                TextField("English Voice ID", text: $preferences.aiAudioEnglishVoice)
-                    #if os(iOS)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    #endif
+                if chineseVoiceMismatch {
+                    Label("The selected Mandarin slot contains a known English system voice. Choose a Mandarin or account voice before previewing.", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
 
-                HStack {
-                    Link(destination: voiceLibraryURL) {
-                        Label("Browse Voice IDs", systemImage: "arrow.up.right.square")
+                voiceSelectionButton(
+                    title: "English Voice",
+                    voiceID: preferences.aiAudioEnglishVoice
+                ) {
+                    selectedVoiceSlot = .english
+                }
+
+                if englishVoiceMismatch {
+                    Label("The selected English slot contains a known Mandarin system voice. Choose an English or account voice before previewing.", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
+                DisclosureGroup("Advanced Voice IDs", isExpanded: $showingAdvancedVoiceIDs) {
+                    TextField(
+                        "Mandarin Voice ID",
+                        text: customVoiceBinding(for: .mandarin)
+                    )
+                        #if os(iOS)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        #endif
+
+                    TextField(
+                        "English Voice ID",
+                        text: customVoiceBinding(for: .english)
+                    )
+                        #if os(iOS)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        #endif
+
+                    Text("Account-created voices normally have no language metadata. Recognized Chinese/English system prefixes are validated; other IDs are assigned by the language slot where you place them.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                ViewThatFits(in: .horizontal) {
+                    HStack {
+                        Link(destination: voiceLibraryURL) {
+                            Label("Browse Voice IDs", systemImage: "arrow.up.right.square")
+                        }
+                        Spacer()
+                        restoreVoiceDefaultsButton
                     }
-                    Spacer()
-                    Button("Restore Default Voices") {
-                        preferences.aiAudioChineseVoice = MiniMaxSpeechConfiguration.defaultChineseVoice
-                        preferences.aiAudioEnglishVoice = MiniMaxSpeechConfiguration.defaultEnglishVoice
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Link(destination: voiceLibraryURL) {
+                            Label("Browse Voice IDs", systemImage: "arrow.up.right.square")
+                        }
+                        restoreVoiceDefaultsButton
                     }
                 }
 
@@ -125,42 +231,69 @@ struct AIAudioSettingsView: View {
             } header: {
                 Text("Voice")
             } footer: {
-                Text("Voice IDs come from MiniMax's Voice Library. Keep the defaults unless you use a custom voice. MiniMax generates mono MP3 audio at 32 kHz and 128 kbps; system speech can take over when generation fails.")
+                Text("MiniMax generates mono MP3 audio at 32 kHz and 128 kbps. Normal read-aloud can use system speech on failure; the preview below never falls back, so it tests the selected MiniMax region, model, and voice honestly.")
             }
 
             Section {
-                HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 10) {
                     Button {
-                        SpeechService.speakChinese("你好，欢迎使用 MiniMax AI 语音。")
+                        preview(
+                            text: "你好，很高兴认识你。我们一起练习普通话吧。",
+                            languageCode: "zh-CN",
+                            voice: preferences.aiAudioChineseVoice
+                        )
                     } label: {
-                        Label("Preview Mandarin", systemImage: "waveform.badge.magnifyingglass")
-                            .fitSingleLine(0.72)
+                        Label("Preview Mandarin with MiniMax", systemImage: "waveform.badge.magnifyingglass")
+                            .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
                     }
-                    .disabled(runtime.isBusy || !preferences.aiAudioEnabled || miniMaxAPIKey.isEmpty)
+                    .disabled(runtime.isBusy || !hasMiniMaxKey || chineseVoiceMismatch)
 
                     Button {
-                        SpeechService.speakEnglish("Hello, welcome to MiniMax AI Audio.")
+                        preview(
+                            text: "Hello. It’s great to meet you. Let’s practice English together.",
+                            languageCode: "en-US",
+                            voice: preferences.aiAudioEnglishVoice
+                        )
                     } label: {
-                        Label("Preview English", systemImage: "waveform.badge.magnifyingglass")
-                            .fitSingleLine(0.72)
+                        Label("Preview English with MiniMax", systemImage: "waveform.badge.magnifyingglass")
+                            .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
                     }
-                    .disabled(runtime.isBusy || !preferences.aiAudioEnabled || miniMaxAPIKey.isEmpty)
+                    .disabled(runtime.isBusy || !hasMiniMaxKey || englishVoiceMismatch)
 
                     if runtime.isBusy {
-                        ProgressView()
-                            .controlSize(.small)
-                        Button("Cancel") {
-                            SpeechService.stop()
+                        HStack {
+                            ProgressView()
+                                .controlSize(.small)
+                                .accessibilityLabel("Generating MiniMax preview")
+                            Text("Testing MiniMax…")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Button("Cancel Preview") {
+                                previewTask?.cancel()
+                                previewTask = nil
+                                previewMessage = nil
+                                previewIsError = false
+                                SpeechService.stop()
+                            }
                         }
                     }
                 }
 
-                if let message = runtime.message {
+                if let previewMessage {
+                    Label(
+                        previewMessage,
+                        systemImage: previewIsError
+                            ? "exclamationmark.triangle.fill"
+                            : "checkmark.circle.fill"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(previewIsError ? .red : .green)
+                } else if let message = runtime.message {
                     Label(message, systemImage: statusSymbol)
                         .font(.caption)
                         .foregroundStyle(statusColor)
                 } else {
-                    Text("Each preview uses a small amount of MiniMax API credit.")
+                    Text("Each preview makes or reuses one MiniMax clip. It never substitutes a system voice, and new generation may incur charges.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -208,17 +341,48 @@ struct AIAudioSettingsView: View {
         .formStyle(.grouped)
         .padding()
         #endif
-        .task {
+        .task(id: preferences.aiAudioRegion) {
             miniMaxAPIKey = aiSettings.apiKey(for: .minimax)
             await generatedAudio.refresh()
+            catalogStore.activate(region: preferences.aiAudioRegion)
+            catalogStore.activateCredential(
+                region: preferences.aiAudioRegion,
+                apiKey: miniMaxAPIKey
+            )
+            await catalogStore.loadCachedCatalog(for: preferences.aiAudioRegion)
+            if hasMiniMaxKey {
+                await catalogStore.refresh(
+                    region: preferences.aiAudioRegion,
+                    apiKey: miniMaxAPIKey
+                )
+                reconcileSelectedVoiceProvenance()
+            }
+        }
+        .onDisappear {
+            previewTask?.cancel()
+            previewTask = nil
+            catalogStore.cancelRefresh()
         }
         .sheet(isPresented: $showingLibrary) {
             GeneratedAudioLibraryView()
                 .localizedSurface()
         }
+        .sheet(item: $selectedVoiceSlot) { slot in
+            MiniMaxVoiceSelectionView(
+                title: slot == .mandarin ? "Mandarin Voice" : "English Voice",
+                voices: slot == .mandarin ? mandarinVoiceOptions : englishVoiceOptions,
+                selection: slot == .mandarin
+                    ? preferences.aiAudioChineseVoice
+                    : preferences.aiAudioEnglishVoice,
+                onSelect: { voice in selectVoice(voice, for: slot) },
+                onUseCurrentCustomID: { markVoiceAsCustom(for: slot) }
+            )
+            .localizedSurface()
+        }
         .alert("Clear Saved Audio?", isPresented: $confirmingClear) {
             Button("Clear All", role: .destructive) {
                 SpeechService.stop()
+                BatchExplanationController.shared.cancel()
                 Task {
                     do {
                         try await generatedAudio.clearAll()
@@ -238,14 +402,248 @@ struct AIAudioSettingsView: View {
         }
     }
 
+    private var latestSpeechModels: [MiniMaxSpeechModelDescriptor] {
+        catalogStore.speechModels.filter(\.isLatestFamily)
+    }
+
+    private var legacySpeechModels: [MiniMaxSpeechModelDescriptor] {
+        catalogStore.speechModels.filter { $0.lifecycle == .legacy }
+    }
+
+    private var mandarinVoiceOptions: [MiniMaxVoiceDescriptor] {
+        uniqueVoices(
+            (catalogStore.catalog?.mandarinSystemVoices ?? [])
+                + (catalogStore.catalog?.accountVoices ?? [])
+        )
+    }
+
+    private var englishVoiceOptions: [MiniMaxVoiceDescriptor] {
+        uniqueVoices(
+            (catalogStore.catalog?.englishSystemVoices ?? [])
+                + (catalogStore.catalog?.accountVoices ?? [])
+        )
+    }
+
+    private var chineseVoiceMismatch: Bool {
+        !preferences.aiAudioChineseVoiceUsesCustomLanguage
+            && knownLanguage(for: preferences.aiAudioChineseVoice) == .english
+    }
+
+    private var englishVoiceMismatch: Bool {
+        !preferences.aiAudioEnglishVoiceUsesCustomLanguage
+            && knownLanguage(for: preferences.aiAudioEnglishVoice) == .mandarinChinese
+    }
+
+    private func uniqueVoices(_ voices: [MiniMaxVoiceDescriptor]) -> [MiniMaxVoiceDescriptor] {
+        var seen = Set<String>()
+        return voices
+            .filter { seen.insert($0.voiceID).inserted }
+            .sorted {
+                $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
+            }
+    }
+
+    private func knownLanguage(for voiceID: String) -> MiniMaxKnownVoiceLanguage? {
+        catalogStore.knownLanguage(
+            for: voiceID,
+            region: preferences.aiAudioRegion
+        )
+    }
+
+    private func voiceSelectionButton(
+        title: LocalizedStringKey,
+        voiceID: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            LabeledContent {
+                HStack(spacing: 6) {
+                    Text(selectedVoiceName(for: voiceID))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            } label: {
+                Text(title)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens a searchable MiniMax voice list")
+    }
+
+    private func selectedVoiceName(for voiceID: String) -> String {
+        let voices = (catalogStore.catalog?.systemVoices ?? [])
+            + (catalogStore.catalog?.accountVoices ?? [])
+        return voices.first { $0.voiceID == voiceID }?.displayName ?? voiceID
+    }
+
+    private func catalogStatus(_ catalog: MiniMaxVoiceCatalog) -> String {
+        let source = catalog.origin == .live
+            ? String(localized: "Live")
+            : String(localized: "Saved Offline")
+        return source + " · " + catalog.fetchedAt.formatted(
+            date: .abbreviated,
+            time: .shortened
+        )
+    }
+
+    private func refreshCatalog() {
+        guard hasMiniMaxKey else { return }
+        Task {
+            await catalogStore.refresh(
+                region: preferences.aiAudioRegion,
+                apiKey: miniMaxAPIKey
+            )
+            reconcileSelectedVoiceProvenance()
+        }
+    }
+
+    private func preview(text: String, languageCode: String, voice: String) {
+        previewTask?.cancel()
+        SpeechService.stop()
+        previewMessage = nil
+        previewIsError = false
+
+        let model = preferences.aiAudioModel
+        let voiceName = selectedVoiceName(for: voice)
+        let modelName = MiniMaxSpeechModelDescriptor.descriptor(for: model)?.displayName ?? model
+        previewTask = Task { @MainActor in
+            do {
+                try await SpeechService.previewMiniMaxAndWait(
+                    text,
+                    languageCode: languageCode
+                )
+                try Task.checkCancellation()
+                previewMessage = String(localized: "Played with MiniMax")
+                    + " · \(voiceName) · \(modelName)"
+                previewIsError = false
+            } catch is CancellationError {
+                // Cancel is already represented by returning to the idle state.
+            } catch {
+                previewMessage = error.localizedDescription
+                previewIsError = true
+            }
+            previewTask = nil
+        }
+    }
+
     private var apiKeyBinding: Binding<String> {
         Binding(
             get: { miniMaxAPIKey },
             set: { value in
+                guard value != miniMaxAPIKey else { return }
                 miniMaxAPIKey = value
                 aiSettings.setAPIKey(value, for: .minimax)
             }
         )
+    }
+
+    private var hasMiniMaxKey: Bool {
+        !miniMaxAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var restoreVoiceDefaultsButton: some View {
+        Button("Restore Defaults") {
+            preferences.aiAudioModel = MiniMaxSpeechConfiguration.defaultModel
+            preferences.aiAudioChineseVoice = MiniMaxSpeechConfiguration.defaultChineseVoice
+            preferences.aiAudioEnglishVoice = MiniMaxSpeechConfiguration.defaultEnglishVoice
+            preferences.aiAudioChineseVoiceUsesCustomLanguage = false
+            preferences.aiAudioEnglishVoiceUsesCustomLanguage = false
+        }
+    }
+
+    private func customVoiceBinding(for slot: MiniMaxVoiceSelectionSlot) -> Binding<String> {
+        Binding(
+            get: {
+                slot == .mandarin
+                    ? preferences.aiAudioChineseVoice
+                    : preferences.aiAudioEnglishVoice
+            },
+            set: { value in
+                let usesCustomAssignment = usesSlotLanguageAssignment(for: value)
+                if slot == .mandarin {
+                    preferences.aiAudioChineseVoice = value
+                    preferences.aiAudioChineseVoiceUsesCustomLanguage = usesCustomAssignment
+                } else {
+                    preferences.aiAudioEnglishVoice = value
+                    preferences.aiAudioEnglishVoiceUsesCustomLanguage = usesCustomAssignment
+                }
+            }
+        )
+    }
+
+    private func selectVoice(
+        _ voice: MiniMaxVoiceDescriptor,
+        for slot: MiniMaxVoiceSelectionSlot
+    ) {
+        let usesCustomAssignment = voice.source != .system
+        if slot == .mandarin {
+            preferences.aiAudioChineseVoice = voice.voiceID
+            preferences.aiAudioChineseVoiceUsesCustomLanguage = usesCustomAssignment
+        } else {
+            preferences.aiAudioEnglishVoice = voice.voiceID
+            preferences.aiAudioEnglishVoiceUsesCustomLanguage = usesCustomAssignment
+        }
+    }
+
+    private func markVoiceAsCustom(for slot: MiniMaxVoiceSelectionSlot) {
+        if slot == .mandarin {
+            // Preserve provenance learned from an earlier live catalog across
+            // relaunches. Otherwise apply the same prefix validation used by
+            // manual edits so this action cannot waive a known mismatch.
+            guard !preferences.aiAudioChineseVoiceUsesCustomLanguage else { return }
+            preferences.aiAudioChineseVoiceUsesCustomLanguage = usesSlotLanguageAssignment(
+                for: preferences.aiAudioChineseVoice
+            )
+        } else {
+            guard !preferences.aiAudioEnglishVoiceUsesCustomLanguage else { return }
+            preferences.aiAudioEnglishVoiceUsesCustomLanguage = usesSlotLanguageAssignment(
+                for: preferences.aiAudioEnglishVoice
+            )
+        }
+    }
+
+    private func usesSlotLanguageAssignment(for voiceID: String) -> Bool {
+        let catalogVoice = ((catalogStore.catalog?.systemVoices ?? [])
+            + (catalogStore.catalog?.accountVoices ?? []))
+            .first { $0.voiceID == voiceID }
+        return MiniMaxVoiceDescriptor.usesSlotLanguageAssignment(
+            voiceID: voiceID,
+            catalogSource: catalogVoice?.source
+        )
+    }
+
+    private func reconcileSelectedVoiceProvenance() {
+        guard let catalog = catalogStore.catalog, catalog.origin == .live else { return }
+        // Prefer explicit account provenance if an API response ever contains
+        // a duplicate ID; avoid constructing a unique-key dictionary from
+        // server-owned data.
+        let liveVoices = catalog.accountVoices + catalog.systemVoices
+
+        if let chineseVoice = liveVoices.first(where: {
+            $0.voiceID == preferences.aiAudioChineseVoice
+        }) {
+            preferences.aiAudioChineseVoiceUsesCustomLanguage =
+                MiniMaxVoiceDescriptor.reconciledSlotLanguageAssignment(
+                    voiceID: chineseVoice.voiceID,
+                    persistedAssignment: preferences.aiAudioChineseVoiceUsesCustomLanguage,
+                    liveCatalogSource: chineseVoice.source,
+                    scopeChanged: false
+                )
+        }
+        if let englishVoice = liveVoices.first(where: {
+            $0.voiceID == preferences.aiAudioEnglishVoice
+        }) {
+            preferences.aiAudioEnglishVoiceUsesCustomLanguage =
+                MiniMaxVoiceDescriptor.reconciledSlotLanguageAssignment(
+                    voiceID: englishVoice.voiceID,
+                    persistedAssignment: preferences.aiAudioEnglishVoiceUsesCustomLanguage,
+                    liveCatalogSource: englishVoice.source,
+                    scopeChanged: false
+                )
+        }
     }
 
     private var apiKeyURL: URL? {
@@ -290,6 +688,137 @@ struct AIAudioSettingsView: View {
         case .generating, .cacheHit, .playing: return .accentColor
         case .idle: return .secondary
         }
+    }
+}
+
+private struct MiniMaxVoiceSelectionView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let title: LocalizedStringKey
+    let voices: [MiniMaxVoiceDescriptor]
+    let selection: String
+    let onSelect: (MiniMaxVoiceDescriptor) -> Void
+    let onUseCurrentCustomID: () -> Void
+
+    @State private var searchText = ""
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if !voices.contains(where: { $0.voiceID == selection }) {
+                    Section("Current / Custom") {
+                        Button {
+                            onUseCurrentCustomID()
+                            dismiss()
+                        } label: {
+                            voiceLabel(
+                                name: selection,
+                                voiceID: selection,
+                                description: String(localized: "This voice is not in the current live catalog."),
+                                isSelected: true
+                            )
+                        }
+                    }
+                }
+
+                voiceSection(
+                    "System Voices",
+                    voices: filteredVoices.filter { $0.source == .system }
+                )
+                voiceSection(
+                    "Your Voices",
+                    voices: filteredVoices.filter { $0.source != .system }
+                )
+
+                if filteredVoices.isEmpty && !searchText.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
+                }
+            }
+            .searchable(text: $searchText, prompt: "Search voices")
+            .navigationTitle(title)
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        #if os(macOS)
+        .frame(minWidth: 560, minHeight: 520)
+        #endif
+    }
+
+    private var filteredVoices: [MiniMaxVoiceDescriptor] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return voices }
+        return voices.filter { voice in
+            voice.displayName.localizedCaseInsensitiveContains(query)
+                || voice.voiceID.localizedCaseInsensitiveContains(query)
+                || voice.descriptions.contains {
+                    $0.localizedCaseInsensitiveContains(query)
+                }
+        }
+    }
+
+    @ViewBuilder
+    private func voiceSection(
+        _ title: LocalizedStringKey,
+        voices: [MiniMaxVoiceDescriptor]
+    ) -> some View {
+        if !voices.isEmpty {
+            Section(title) {
+                ForEach(voices) { voice in
+                    Button {
+                        onSelect(voice)
+                        dismiss()
+                    } label: {
+                        voiceLabel(
+                            name: voice.displayName,
+                            voiceID: voice.voiceID,
+                            description: voice.descriptions.first,
+                            isSelected: selection == voice.voiceID
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private func voiceLabel(
+        name: String,
+        voiceID: String,
+        description: String?,
+        isSelected: Bool
+    ) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(name)
+                    .foregroundStyle(.primary)
+                if name != voiceID {
+                    Text(voiceID)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+                if let description, !description.isEmpty {
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(2)
+                }
+            }
+            Spacer(minLength: 8)
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
+            }
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }
 
@@ -362,7 +891,6 @@ struct GeneratedAudioLibraryView: View {
         #endif
         .task {
             await store.refresh()
-            await refreshFileURLs()
         }
         .task(id: store.records.map(\.id)) {
             await refreshFileURLs()
@@ -386,6 +914,7 @@ struct GeneratedAudioLibraryView: View {
         .alert("Clear Saved Audio?", isPresented: $confirmingClear) {
             Button("Clear All", role: .destructive) {
                 SpeechService.stop()
+                BatchExplanationController.shared.cancel()
                 Task {
                     do {
                         try await store.clearAll()
@@ -413,60 +942,28 @@ struct GeneratedAudioLibraryView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
 
-            HStack(spacing: 10) {
-                Button {
-                    if isPlaying(record) {
-                        SpeechService.stop()
-                    } else {
-                        Task {
-                            do {
-                                try await SpeechService.playGeneratedAudio(recordID: record.id)
-                            } catch is CancellationError {
-                                // Starting another read-aloud action normally
-                                // supersedes this row; that is not a user error.
-                            } catch MiniMaxAudioError.cancelled {
-                                // The underlying request was intentionally
-                                // replaced or stopped.
-                            } catch {
-                                errorMessage = error.localizedDescription
-                            }
-                        }
-                    }
-                } label: {
-                    Label(
-                        isPlaying(record) ? "Stop" : "Play",
-                        systemImage: isPlaying(record)
-                            ? "stop.fill" : "play.fill"
-                    )
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    playbackButton(record)
+                    shareButton(record)
+                    exportButton(record)
+                    Spacer()
+                    deleteButton(record)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
 
-                if let url = fileURLs[record.id] {
-                    ShareLink(item: url) {
-                        Label("Share", systemImage: "square.and.arrow.up")
+                VStack(alignment: .leading, spacing: 8) {
+                    playbackButton(record)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    shareButton(record)
+                    exportButton(record)
+                    Button(role: .destructive) {
+                        delete(record)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
-
-                Button {
-                    prepareExport(record)
-                } label: {
-                    Label("Export…", systemImage: "folder.badge.plus")
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-
-                Spacer()
-
-                Button(role: .destructive) {
-                    delete(record)
-                } label: {
-                    Image(systemName: "trash")
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(Text("Delete saved audio"))
             }
         }
         .padding(.vertical, 6)
@@ -477,6 +974,65 @@ struct GeneratedAudioLibraryView: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+    }
+
+    private func playbackButton(_ record: GeneratedSpeechRecord) -> some View {
+        Button {
+            if isPlaying(record) {
+                SpeechService.stop()
+            } else {
+                Task {
+                    do {
+                        try await SpeechService.playGeneratedAudio(recordID: record.id)
+                    } catch is CancellationError {
+                        // Starting another read-aloud action normally supersedes
+                        // this row; that is not a user error.
+                    } catch MiniMaxAudioError.cancelled {
+                        // The request was intentionally replaced or stopped.
+                    } catch {
+                        errorMessage = error.localizedDescription
+                    }
+                }
+            }
+        } label: {
+            Label(
+                isPlaying(record) ? "Stop" : "Play",
+                systemImage: isPlaying(record) ? "stop.fill" : "play.fill"
+            )
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+    }
+
+    @ViewBuilder
+    private func shareButton(_ record: GeneratedSpeechRecord) -> some View {
+        if let url = fileURLs[record.id] {
+            ShareLink(item: url) {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+    }
+
+    private func exportButton(_ record: GeneratedSpeechRecord) -> some View {
+        Button {
+            prepareExport(record)
+        } label: {
+            Label("Export…", systemImage: "folder.badge.plus")
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+    }
+
+    private func deleteButton(_ record: GeneratedSpeechRecord) -> some View {
+        Button(role: .destructive) {
+            delete(record)
+        } label: {
+            Image(systemName: "trash")
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(Text("Delete saved audio"))
     }
 
     private func metadata(for record: GeneratedSpeechRecord) -> String {
@@ -516,6 +1072,7 @@ struct GeneratedAudioLibraryView: View {
     }
 
     private func delete(_ record: GeneratedSpeechRecord) {
+        BatchExplanationController.shared.cancel()
         if runtime.currentRecordID == record.id {
             SpeechService.stop()
         }

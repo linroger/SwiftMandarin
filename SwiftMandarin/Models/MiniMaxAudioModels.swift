@@ -42,6 +42,8 @@ nonisolated struct MiniMaxSpeechConfiguration: Hashable, Sendable {
     let region: MiniMaxAPIRegion
     let model: String
     let voiceID: String
+    let languageBoost: MiniMaxSpeechLanguageBoost
+    let voiceUsesCustomLanguageAssignment: Bool
     let speed: Double
     let volume: Double
     let pitch: Int
@@ -54,6 +56,8 @@ nonisolated struct MiniMaxSpeechConfiguration: Hashable, Sendable {
         region: MiniMaxAPIRegion,
         model: String,
         voiceID: String,
+        languageBoost: MiniMaxSpeechLanguageBoost,
+        voiceUsesCustomLanguageAssignment: Bool = false,
         speed: Double,
         volume: Double = 1,
         pitch: Int = 0,
@@ -65,6 +69,8 @@ nonisolated struct MiniMaxSpeechConfiguration: Hashable, Sendable {
         self.region = region
         self.model = model.trimmingCharacters(in: .whitespacesAndNewlines)
         self.voiceID = voiceID.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.languageBoost = languageBoost
+        self.voiceUsesCustomLanguageAssignment = voiceUsesCustomLanguageAssignment
         self.speed = speed
         self.volume = volume
         self.pitch = pitch
@@ -72,6 +78,21 @@ nonisolated struct MiniMaxSpeechConfiguration: Hashable, Sendable {
         self.bitrate = bitrate
         self.format = format.lowercased()
         self.channelCount = channelCount
+    }
+}
+
+/// MiniMax's explicit language selector for text-to-audio requests. The app
+/// currently supports Mandarin and English learning flows, so every paid
+/// request can be deterministic instead of relying on `auto` detection.
+nonisolated enum MiniMaxSpeechLanguageBoost: String, Codable, Hashable, Sendable {
+    case chinese = "Chinese"
+    case english = "English"
+
+    init(languageCode: String) {
+        let normalized = languageCode
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        self = normalized.hasPrefix("zh") ? .chinese : .english
     }
 }
 
@@ -83,23 +104,32 @@ extension AppPreferences {
         speedScale: Double = 1
     ) -> MiniMaxSpeechConfiguration {
         let isChinese = languageCode.lowercased().hasPrefix("zh")
+        let voiceID = isChinese ? aiAudioChineseVoice : aiAudioEnglishVoice
         let speed = min(max(aiAudioSpeed * speedScale, Self.aiAudioSpeedRange.lowerBound),
                         Self.aiAudioSpeedRange.upperBound)
         return MiniMaxSpeechConfiguration(
             region: aiAudioRegion,
             model: aiAudioModel,
-            voiceID: isChinese ? aiAudioChineseVoice : aiAudioEnglishVoice,
+            voiceID: voiceID,
+            languageBoost: isChinese ? .chinese : .english,
+            voiceUsesCustomLanguageAssignment: isChinese
+                ? aiAudioChineseVoiceUsesCustomLanguage
+                : aiAudioEnglishVoiceUsesCustomLanguage,
             speed: speed
         )
     }
 }
 
 nonisolated struct MiniMaxSpeechCacheIdentity: Hashable, Sendable {
-    static let schemaVersion = 1
+    /// Version 2 adds the explicit MiniMax language boost. Version 1 requests
+    /// used `auto`; changing the digest prevents an old, incorrectly detected
+    /// clip from masquerading as a language-correct preview or batch result.
+    static let schemaVersion = 2
 
     let cacheKey: String
     let normalizedText: String
     let languageCode: String
+    let languageBoost: MiniMaxSpeechLanguageBoost
     let configuration: MiniMaxSpeechConfiguration
 
     init(text: String, languageCode: String, configuration: MiniMaxSpeechConfiguration) {
@@ -110,6 +140,7 @@ nonisolated struct MiniMaxSpeechCacheIdentity: Hashable, Sendable {
 
         self.normalizedText = normalizedText
         self.languageCode = normalizedLanguage
+        self.languageBoost = configuration.languageBoost
         self.configuration = configuration
 
         // A length-prefixed canonical representation prevents delimiter
@@ -119,6 +150,7 @@ nonisolated struct MiniMaxSpeechCacheIdentity: Hashable, Sendable {
             String(Self.schemaVersion),
             normalizedText,
             normalizedLanguage,
+            configuration.languageBoost.rawValue,
             configuration.region.rawValue,
             configuration.model,
             configuration.voiceID,

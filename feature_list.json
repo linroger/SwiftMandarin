@@ -1,0 +1,56 @@
+[
+  {
+    "id": "feature_minimax_live_audio_catalog",
+    "category": "functional",
+    "description": "AI Audio settings expose the current documented MiniMax speech models and refresh the account's live Mandarin and English voices with resilient offline state.",
+    "steps": [
+      "Open AI Audio settings with a configured MiniMax key",
+      "Refresh the audio catalog",
+      "Verify Speech 2.8 models appear before older supported models",
+      "Verify friendly Mandarin and English voice choices are populated from MiniMax",
+      "Select voices, relaunch, and verify the selections persist",
+      "Simulate a failed refresh and verify the last successful catalog remains usable"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_minimax_language_correct_preview",
+    "category": "functional",
+    "description": "Mandarin and English MiniMax synthesis use explicit language boosts and language-aware cache identities so previews speak the intended language.",
+    "steps": [
+      "Preview Mandarin from AI Audio settings",
+      "Verify the request sends Chinese language boost and uses the selected Mandarin voice",
+      "Preview English from AI Audio settings",
+      "Verify the request sends English language boost and uses the selected English voice",
+      "Verify legacy auto-language cached audio is not reused"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_batch_ai_audio",
+    "category": "functional",
+    "description": "Batch AI Analysis can optionally generate and persist MiniMax pronunciation audio without playback while preserving explanation results on partial failure.",
+    "steps": [
+      "Open Batch AI Analysis",
+      "Enable Generate MiniMax audio after reviewing cost and privacy guidance",
+      "Run a batch containing uncached and cached terms",
+      "Verify explanations and persistent audio outcomes are reported separately",
+      "Verify generated audio appears in the saved audio library and cache hits avoid duplicate generation",
+      "Cancel a batch and inject a TTS failure to verify safe partial completion"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_audio_catalog_cross_platform",
+    "category": "compatibility",
+    "description": "The live catalog, previews, and batch audio workflow build and remain adaptive and accessible on macOS, iPhone/iOS, and iPadOS 27 Golden Gate.",
+    "steps": [
+      "Build the macOS target with Xcode 27",
+      "Build the generic iOS target with Xcode 27",
+      "Build and inspect the workflow on an iPhone simulator",
+      "Build and inspect the workflow on an iPadOS 27 simulator",
+      "Verify localized loading, error, progress, cost, and completion states"
+    ],
+    "passes": true
+  }
+]

@@ -28,6 +28,9 @@ your device as described under **Data that may leave your device** below:
 - Workbook scans, grading results, and generated review questions.
 - Cached AI word analyses.
 - App preferences (interface language, learner mode, provider configuration).
+- The last successfully fetched public MiniMax system-voice catalog for each
+  API region. API keys and account-created voice metadata are not stored in
+  this catalog cache.
 - Generated MiniMax speech files, the complete source text spoken for each
   clip, and non-secret generation metadata (such as language, model, and
   voice). These local MP3 and index entries remain in the app container until
@@ -58,11 +61,15 @@ configure:
   provider using the API key you supply. Your use of those providers is governed
   by their own privacy policies and terms. SwiftMandarin does not receive a copy
   of this traffic.
-- **MiniMax AI Audio (optional).** When you explicitly enable AI Audio, the text
-  used by any read-aloud action is sent to the MiniMax regional API you selected
-  so MiniMax can generate speech. The returned MP3 is saved locally and reused
-  for identical requests. Original recordings and imported source-audio files
-  are not sent to MiniMax by this feature.
+- **MiniMax AI Audio (optional).** When you explicitly enable AI Audio, test a
+  MiniMax voice, or confirm **Generate MiniMax Audio** in a batch, the specific
+  text selected for speech is sent to the MiniMax regional API you selected so
+  MiniMax can generate it. Settings can also request the latest public and
+  account voice metadata from MiniMax. Before batch generation, the app shows
+  the exact number of uncached clips and characters; duplicate identities and
+  matching saved clips are excluded. Returned MP3 files are saved locally and
+  reused for identical language/model/voice settings. Original recordings and
+  imported source-audio files are not sent to MiniMax by this feature.
 - **On-device / local models (optional).** If you configure a local Ollama
   server, requests are sent to the host you specify and do not reach the
   internet unless that host is remote.

@@ -423,11 +423,20 @@ final class AIModelSettings {
     /// Store or clear a cloud provider's API key (Keychain + observable mirror).
     func setAPIKey(_ value: String, for provider: AIProvider) {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previous = apiKeys[provider.rawValue] ?? ""
         KeychainHelper.set(trimmed, account: provider.keychainAccount)
         if trimmed.isEmpty {
             apiKeys.removeValue(forKey: provider.rawValue)
         } else {
             apiKeys[provider.rawValue] = trimmed
+        }
+        if provider == .minimax, previous != trimmed {
+            // MiniMax text and AI Audio intentionally share one Keychain key.
+            // Invalidate credential-scoped live voice metadata regardless of
+            // which Settings surface changed that shared credential.
+            MiniMaxAudioCatalogStore.shared.activateSharedCredential(apiKey: trimmed)
+            AppPreferences.shared.invalidateCredentialScopedVoiceProvenance()
+            BatchExplanationController.shared.cancel()
         }
     }
 
