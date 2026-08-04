@@ -215,7 +215,12 @@ struct TranslatedScreenshotOverlayView: View {
         .padding()
     }
     
-    private var processingDescription: String {
+    /// Returns a `LocalizedStringKey` rather than a `String` because the `Text`
+    /// above would otherwise use its non-localizing initializer and show these
+    /// progress lines in English even when the interface language is 中文. The
+    /// target language stays interpolated (extracted as `Translating to %@...`)
+    /// so a translation can place the language name where its grammar needs it.
+    private var processingDescription: LocalizedStringKey {
         switch store.state {
         case .stitching:
             return "Combining screenshots and removing overlapping regions..."
@@ -234,7 +239,15 @@ struct TranslatedScreenshotOverlayView: View {
         ContentUnavailableView {
             Label("Translation Failed", systemImage: "exclamationmark.triangle")
         } description: {
-            Text(store.errorMessage ?? "An unknown error occurred")
+            // Written as a branch instead of `??` because the coalescing
+            // operator folds the fallback into a plain `String`, which `Text`
+            // renders without localizing — leaving it English in the 中文
+            // interface. As its own literal it becomes a catalog key.
+            if let message = store.errorMessage {
+                Text(message)
+            } else {
+                Text("An unknown error occurred")
+            }
         } actions: {
             Button("Try Again") {
                 Task {

@@ -133,25 +133,45 @@ enum ShortcutHelpers {
         SavedTermsStore.shared.add(term)
     }
     
-    /// Parse Chinese text, segment into words/phrases, auto-detect part of speech,
-    /// translate each phrase individually, and save to vocabulary (skipping duplicates)
-    static func saveChinesePhrasesToVocabulary(
+    /// Segment the passage in the language the user is STUDYING, auto-detect
+    /// part of speech, translate each item into their native language, and
+    /// save the results to vocabulary (skipping duplicates).
+    ///
+    /// Both sides of the translation are passed in because which one is worth
+    /// capturing depends on the learner, not on the text: an English speaker
+    /// studying Mandarin wants the Chinese words, and a Mandarin speaker
+    /// studying English wants the English ones. Capturing the wrong side files
+    /// away words the user already knows — and, when the Chinese-only
+    /// two-character filter met English text, captured nothing at all.
+    static func saveStudiedPhrasesToVocabulary(
+        chineseText: String,
+        englishTranslation: String
+    ) {
+        if LocalizationManager.shared.learningIsChinese {
+            saveChinesePhrases(chineseText: chineseText, englishTranslation: englishTranslation)
+        } else {
+            saveEnglishPhrases(englishText: englishTranslation, chineseTranslation: chineseText)
+        }
+    }
+
+    /// English speaker studying Mandarin: capture the Chinese words.
+    private static func saveChinesePhrases(
         chineseText: String,
         englishTranslation: String
     ) {
         let trimmedChinese = chineseText.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedEnglish = englishTranslation.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedChinese.isEmpty else { return }
-        
+
         // Segment the Chinese text and get part of speech for each word
         let analyzedWords = ChineseTextAnalyzer.shared.segmentWithPartsOfSpeech(trimmedChinese)
-        
+
         // Filter to words with 2+ Chinese characters that aren't already in vocabulary
         let meaningfulWords = analyzedWords.filter { word in
             let chineseCharCount = word.text.filter { $0.isChineseCharacter }.count
             return chineseCharCount >= 2 && !SavedTermsStore.shared.contains(chinese: word.text)
         }
-        
+
         // If we have meaningful words, translate and save each one
         if !meaningfulWords.isEmpty {
             // Launch async task to translate each word individually
@@ -165,7 +185,7 @@ enum ShortcutHelpers {
                 // Get part of speech for the whole phrase
                 let analyzedFull = ChineseTextAnalyzer.shared.segmentWithPartsOfSpeech(trimmedChinese)
                 let pos = analyzedFull.first?.partOfSpeech.displayName.lowercased() ?? "phrase"
-                
+
                 // Use the provided English translation for the full phrase
                 let term = SavedTerm(
                     chinese: trimmedChinese,
@@ -177,23 +197,67 @@ enum ShortcutHelpers {
             }
         }
     }
-    
+
+    /// Mandarin speaker studying English: capture the English words.
+    ///
+    /// The mirror of `saveChinesePhrases`, with the two language-specific
+    /// details swapped. Chinese needs a length filter because segmentation
+    /// yields single characters that are rarely worth saving; English instead
+    /// needs a part-of-speech filter, because its tokens are already words and
+    /// the noise is function words ("the", "of") rather than fragments.
+    /// `SavedTerm.chinese` is the headword slot for whichever language is being
+    /// studied, so the English word goes there and 中文 becomes the definition.
+    private static func saveEnglishPhrases(
+        englishText: String,
+        chineseTranslation: String
+    ) {
+        let trimmedEnglish = englishText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedChinese = chineseTranslation.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedEnglish.isEmpty else { return }
+
+        let contentClasses: Set<EnglishPartOfSpeech> = [.noun, .verb, .adjective, .adverb]
+        var seen = Set<String>()
+        let meaningfulWords = EnglishTextAnalyzer.shared.analyzeWords(trimmedEnglish).filter { word in
+            guard contentClasses.contains(word.partOfSpeech) else { return false }
+            let text = word.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard text.count >= 3, !SavedTermsStore.shared.contains(chinese: text) else { return false }
+            return seen.insert(text.lowercased()).inserted
+        }
+
+        if !meaningfulWords.isEmpty {
+            Task {
+                await translateAndSaveEnglishWords(meaningfulWords)
+            }
+        } else if !trimmedChinese.isEmpty, !SavedTermsStore.shared.contains(chinese: trimmedEnglish) {
+            // Nothing worth isolating — keep the whole phrase with the
+            // translation the caller already has, so the action is never a no-op.
+            SavedTermsStore.shared.add(
+                SavedTerm(
+                    chinese: trimmedEnglish,
+                    pinyin: "",
+                    definition: trimmedChinese,
+                    partOfSpeech: "phrase"
+                )
+            )
+        }
+    }
+
     /// Translate each word individually and save to vocabulary
     private static func translateAndSaveWords(_ words: [AnalyzedWord]) async {
         // Extract just the word texts for batch translation
         let wordTexts = words.map { $0.text }
-        
+
         do {
             // Use batch translation for efficiency
             let translations = try await WordTranslationService.shared.translateBatch(wordTexts, sourceIsChinese: true)
-            
+
             // Save each word with its individual translation
             for word in words {
                 // Skip if already in vocabulary (double-check in case of race condition)
                 guard !SavedTermsStore.shared.contains(chinese: word.text) else { continue }
-                
+
                 let definition = translations[word.text] ?? word.text // Fallback to original if translation fails
-                
+
                 let term = SavedTerm(
                     chinese: word.text,
                     pinyin: PinyinConverter.convert(word.text),
@@ -206,10 +270,10 @@ enum ShortcutHelpers {
             // If batch translation fails, try translating one by one
             for word in words {
                 guard !SavedTermsStore.shared.contains(chinese: word.text) else { continue }
-                
+
                 do {
                     let definition = try await WordTranslationService.shared.translateToEnglish(word.text)
-                    
+
                     let term = SavedTerm(
                         chinese: word.text,
                         pinyin: PinyinConverter.convert(word.text),
@@ -222,6 +286,45 @@ enum ShortcutHelpers {
                     continue
                 }
             }
+        }
+    }
+
+    /// The mirror of `translateAndSaveWords`: English headwords glossed into
+    /// Mandarin. No pinyin is stored — the headword is English, and the
+    /// pronunciation slot is filled by an AI explanation (as IPA) if the user
+    /// asks for one.
+    private static func translateAndSaveEnglishWords(_ words: [AnalyzedEnglishWord]) async {
+        let wordTexts = words.map(\.text)
+
+        let translations: [String: String]
+        do {
+            translations = try await WordTranslationService.shared.translateBatch(
+                wordTexts,
+                sourceIsChinese: false
+            )
+        } catch {
+            translations = [:]
+        }
+
+        for word in words {
+            guard !SavedTermsStore.shared.contains(chinese: word.text) else { continue }
+
+            var definition = translations[word.text] ?? ""
+            if definition.isEmpty {
+                definition = (try? await WordTranslationService.shared.translateToChinese(word.text)) ?? ""
+            }
+            // A headword with no gloss is not a vocabulary entry, so drop it
+            // rather than saving a half-empty row the learner must fix by hand.
+            guard !definition.isEmpty else { continue }
+
+            SavedTermsStore.shared.add(
+                SavedTerm(
+                    chinese: word.text,
+                    pinyin: "",
+                    definition: definition,
+                    partOfSpeech: word.partOfSpeech.rawValue
+                )
+            )
         }
     }
 }

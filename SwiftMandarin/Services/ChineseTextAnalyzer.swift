@@ -279,4 +279,29 @@ extension String {
     var containsCJK: Bool {
         unicodeScalars.contains { $0.isCJKIdeograph }
     }
+
+    /// Whether this reading is an English IPA transcription rather than Hanyu
+    /// pinyin.
+    ///
+    /// One stored field carries the reading for both directions, so a term
+    /// saved while learning Mandarin holds pinyin ("xuéxí") and one saved
+    /// while learning English holds IPA ("/ˈstʌdi/"). Tone-marked pinyin is
+    /// plain Latin-with-diacritics, so it cannot be told apart by script
+    /// alone — but every IPA reading the app requests is delimited by slashes
+    /// (see `AIExplanationPromptBuilder`), and IPA additionally uses stress
+    /// marks and phonetic letters that never appear in pinyin. Requiring one
+    /// of those keeps a pinyin reading from being mislabeled when the learner
+    /// switches direction.
+    var looksLikeIPA: Bool {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !trimmed.containsCJK else { return false }
+        if trimmed.hasPrefix("/") && trimmed.hasSuffix("/") && trimmed.count > 2 { return true }
+        if trimmed.hasPrefix("[") && trimmed.hasSuffix("]") && trimmed.count > 2 { return true }
+        // Stress marks and phonetic letters with no pinyin counterpart.
+        let ipaOnly: Set<Character> = [
+            "ˈ", "ˌ", "ə", "ɪ", "ʊ", "ɛ", "æ", "ʌ", "ɔ", "ɑ", "ɒ", "ɜ", "ɝ", "ɚ",
+            "ŋ", "ʃ", "ʒ", "θ", "ð", "ʧ", "ʤ", "ɹ", "ɡ", "ː"
+        ]
+        return trimmed.contains { ipaOnly.contains($0) }
+    }
 }

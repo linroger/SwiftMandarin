@@ -276,11 +276,11 @@ enum MasteryLevel: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .new: return String(localized: "New")
-        case .learning: return String(localized: "Learning")
-        case .familiar: return String(localized: "Familiar")
-        case .proficient: return String(localized: "Proficient")
-        case .mastered: return String(localized: "Mastered")
+        case .new: return String(localized: "New", bundle: .appLanguage)
+        case .learning: return String(localized: "Learning", bundle: .appLanguage)
+        case .familiar: return String(localized: "Familiar", bundle: .appLanguage)
+        case .proficient: return String(localized: "Proficient", bundle: .appLanguage)
+        case .mastered: return String(localized: "Mastered", bundle: .appLanguage)
         }
     }
 }

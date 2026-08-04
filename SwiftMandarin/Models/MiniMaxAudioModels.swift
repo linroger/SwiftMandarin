@@ -15,7 +15,13 @@ nonisolated enum MiniMaxAPIRegion: String, CaseIterable, Codable, Identifiable, 
 
     var id: String { rawValue }
 
-    var displayName: LocalizedStringResource {
+    /// A `LocalizedStringKey` rather than a `LocalizedStringResource`, because
+    /// SwiftUI resolves the former through `Bundle.main.localizedString`, which
+    /// is the method `LocalizationManager` overrides — so it follows the in-app
+    /// language toggle. A `LocalizedStringResource` goes through Foundation's
+    /// own lookup instead, which never sees that override and would leave this
+    /// label in the device language while the rest of the screen switched.
+    var displayName: LocalizedStringKey {
         switch self {
         case .international: return "International"
         case .mainlandChina: return "Mainland China"

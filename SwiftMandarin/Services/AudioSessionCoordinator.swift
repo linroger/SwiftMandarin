@@ -45,9 +45,9 @@ nonisolated enum AudioSessionTransitionError: LocalizedError, Sendable {
     var errorDescription: String? {
         switch self {
         case .activationReturnedFalse:
-            return String(localized: "The audio player could not start.")
+            return String(localized: "The audio player could not start.", bundle: .appLanguage)
         case .deactivationReturnedFalse:
-            return "The audio session could not be deactivated."
+            return String(localized: "The audio session could not be deactivated.", bundle: .appLanguage)
         }
     }
 }

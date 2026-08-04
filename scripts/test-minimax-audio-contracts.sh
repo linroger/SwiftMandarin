@@ -10,6 +10,7 @@ binary_path="${TMPDIR:-/tmp}/swiftmandarin-minimax-audio-contract-checks"
 # construct an API credential, or call MiniMax (or any other network service).
 DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-beta.app/Contents/Developer}" \
     xcrun swiftc \
+    "$repo_root/SwiftMandarin/Models/LanguageBundleOverride.swift" \
     "$repo_root/SwiftMandarin/Models/MiniMaxAudioModels.swift" \
     "$repo_root/SwiftMandarin/Models/MiniMaxAudioCatalogModels.swift" \
     "$repo_root/SwiftMandarin/Models/MiniMaxAudioCatalogStore.swift" \

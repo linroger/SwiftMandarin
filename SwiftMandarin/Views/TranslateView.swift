@@ -28,10 +28,14 @@ struct TranslateView: View {
     // For word analysis popover - using sheet(item:) pattern to avoid race condition
     // When selectedSegment is set, the sheet automatically shows; when nil, it dismisses
     @State private var selectedSegment: RubySegment?
+
+    // The English-side counterpart, used when the learner is a Mandarin
+    // speaker studying English and the English pane is the tappable one.
+    @State private var selectedEnglishWord: AnalyzedEnglishWord?
     
     // Settings
     @AppStorage("autoTranslate") private var autoTranslate: Bool = false
-    @AppStorage("defaultDirection") private var defaultDirectionRawValue: String = TranslationDirection.englishToChinese.rawValue
+    @AppStorage("defaultDirection") private var defaultDirectionRawValue: String = TranslationDirection.persistedDefault.rawValue
     @AppStorage("translateOnPaste") private var translateOnPaste: Bool = true
     @AppStorage("copyTranslationAutomatically") private var copyTranslationAutomatically: Bool = false
     @AppStorage("saveToHistoryAutomatically") private var saveToHistoryAutomatically: Bool = true
@@ -56,6 +60,16 @@ struct TranslateView: View {
     @State private var isAITranslating: Bool = false
     @State private var aiTranslationError: String?
     @State private var aiSettings = AIModelSettings.shared
+
+    // Study notes that arrive in the same structured response as an AI
+    // translation. Apple's on-device Translation API returns none, so that
+    // path offers an explicit "Explain" action instead of paying for a second
+    // model call the learner didn't ask for.
+    @State private var translationNotes: AITranslationResult?
+    @State private var notesSourceSnapshot: String = ""
+    @State private var isFetchingNotes: Bool = false
+    @State private var notesTask: Task<Void, Never>?
+    @State private var notesError: String?
 
     // State for AI word/phrase identification (powers the tap-to-learn view
     // with proper word boundaries when a translation comes from an AI provider)
@@ -323,6 +337,8 @@ struct TranslateView: View {
                         wordIdentificationTask?.cancel()
                         aiSegments = []
                         isIdentifyingWords = false
+                        // Notes describe the old source; drop them with it.
+                        clearNotes()
                     }
 
                     if newValue.isEmpty {
@@ -629,7 +645,7 @@ struct TranslateView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    
+
                     Button {
                         ClipboardService.copy(sharedState.translatedText)
                     } label: {
@@ -637,11 +653,57 @@ struct TranslateView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    
+
                     Spacer()
                 }
                 .padding(.horizontal)
             }
+
+            translationNotesSection
+        }
+    }
+
+    // MARK: - Translation Notes Section
+
+    @ViewBuilder
+    private var translationNotesSection: some View {
+        if let notes = currentNotes {
+            TranslationNotesView(
+                result: notes,
+                onSave: { saveKeyTerm($0) },
+                isSaved: { savedTermsStore.contains(chinese: $0.term) }
+            )
+            .padding(.horizontal)
+            .padding(.top, 4)
+        } else if canExplainTranslation {
+            VStack(alignment: .leading, spacing: 6) {
+                Button {
+                    fetchTranslationNotes()
+                } label: {
+                    HStack(spacing: 6) {
+                        if isFetchingNotes {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Image(systemName: "lightbulb")
+                        }
+                        Text(isFetchingNotes ? "Explaining…" : "Explain this translation")
+                            .fitSingleLine()
+                    }
+                    .font(.subheadline)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(isFetchingNotes)
+
+                if let notesError {
+                    Text(notesError)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 4)
         }
     }
     
@@ -719,14 +781,28 @@ struct TranslateView: View {
         }
     }
     
-    /// Whether to show the English section first and prominently. The
-    /// learning language leads: a 中文 interface means the user is learning
-    /// English, so English always gets the top, prominent slot; in the
-    /// English interface the order follows the content (English first only
-    /// when the source was Chinese).
-    private var showEnglishFirst: Bool {
-        if LocalizationManager.shared.nativeIsChinese { return true }
+    /// Whether the native-language pane sits above the studied-language one.
+    ///
+    /// A Mandarin speaker never needs this: their studied pane is the English
+    /// one, so it already leads. For an English speaker the order follows the
+    /// content — English goes on top only when it is the answer they asked
+    /// for, i.e. when the source was Chinese — which is what this screen has
+    /// always done.
+    private var showsNativePaneFirst: Bool {
+        guard learningContext.interactiveReaderIsChinese else { return false }
         return containsChinese(sharedState.sourceText) && !containsChinese(sharedState.translatedText)
+    }
+
+    /// The direction this screen is teaching. Everything below keys off it:
+    /// which pane gets word-by-word annotation and taps, which text is fed to
+    /// word identification, and which reading system is shown.
+    private var learningContext: LearningContext { LearningContext.current }
+
+    /// The English text, tokenized for the tappable word grid. Local
+    /// segmentation is enough here — English word boundaries are unambiguous,
+    /// so unlike Chinese this needs no model call to look right.
+    private var englishWords: [AnalyzedEnglishWord] {
+        EnglishTextAnalyzer.shared.analyzeWords(detectedEnglishText)
     }
     
     /// Fetch additional translation when input language mismatches direction
@@ -755,83 +831,110 @@ struct TranslateView: View {
         isLoadingAdditionalTranslation = false
     }
     
+    /// Section headings, hoisted out of the view body as explicitly typed
+    /// `LocalizedStringKey`s. A literal written inline inside a ternary is
+    /// ambiguous between `Text`'s localizing and verbatim initializers, and
+    /// Xcode's string extractor does not reliably pull it into the catalog —
+    /// so each branch is stated as a key here instead.
+    private var studiedPaneHeading: LocalizedStringKey {
+        learningContext.interactiveReaderIsChinese
+            ? "CHINESE (TAP WORDS FOR DETAILS)"
+            : "ENGLISH (TAP WORDS FOR DETAILS)"
+    }
+
+    private var nativePaneHeading: LocalizedStringKey {
+        learningContext.interactiveReaderIsChinese ? "ENGLISH" : "CHINESE"
+    }
+
+    private var pendingTranslationLabel: LocalizedStringKey {
+        learningContext.interactiveReaderIsChinese
+            ? "Getting Chinese translation..."
+            : "Getting English translation..."
+    }
+
+    /// The word-by-word pane for the language being studied: Chinese with
+    /// pinyin ruby for an English speaker, English word chips for a Mandarin
+    /// speaker. Both are tappable and open the matching word-detail surface.
+    @ViewBuilder
+    private var studiedLanguagePane: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text(studiedPaneHeading)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+
+                if isIdentifyingWords {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Identifying words…")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+
+            if isLoadingAdditionalTranslation && inputLanguageMismatch {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(pendingTranslationLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else if learningContext.interactiveReaderIsChinese {
+                // Ruby text view with pinyin above each character. When the
+                // AI has identified word boundaries they drive the
+                // segmentation; otherwise it falls back to local tokenizing.
+                RubyTextView(
+                    chineseText: detectedChineseText,
+                    englishMeaning: detectedEnglishText,
+                    aiSegments: aiSegments.isEmpty ? nil : aiSegments
+                ) { segment in
+                    selectedSegment = segment
+                }
+            } else {
+                EnglishRubyTextView(
+                    words: englishWords,
+                    showTranslations: false
+                ) { word in
+                    selectedEnglishWord = word
+                }
+            }
+        }
+    }
+
+    /// The plain, unannotated pane for the language the learner already reads.
+    @ViewBuilder
+    private func nativeLanguagePane(prominent: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(nativePaneHeading)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+
+            Text(learningContext.interactiveReaderIsChinese ? detectedEnglishText : detectedChineseText)
+                .font(prominent ? .title3 : .body)
+                .fontWeight(prominent ? .medium : .regular)
+                .foregroundStyle(prominent ? .primary : .secondary)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     @ViewBuilder
     private var interactiveTranslationView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Show English first if the source was Chinese (CN→EN scenario)
-                if showEnglishFirst {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("ENGLISH")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.secondary)
-                        
-                        Text(detectedEnglishText)
-                            .font(.title3)
-                            .fontWeight(.medium)
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    
+                if showsNativePaneFirst {
+                    nativeLanguagePane(prominent: true)
                     Divider()
                 }
-                
-                // Chinese text with interleaved pinyin - always show
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Text("CHINESE (TAP WORDS FOR DETAILS)")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.secondary)
 
-                        if isIdentifyingWords {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("Identifying words…")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
+                studiedLanguagePane
 
-                    if isLoadingAdditionalTranslation && inputLanguageMismatch {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("Getting Chinese translation...")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    } else {
-                        // Ruby text view with pinyin above each character. When the
-                        // AI has identified word boundaries they drive the
-                        // segmentation; otherwise it falls back to local tokenizing.
-                        RubyTextView(
-                            chineseText: detectedChineseText,
-                            englishMeaning: detectedEnglishText,
-                            aiSegments: aiSegments.isEmpty ? nil : aiSegments
-                        ) { segment in
-                            selectedSegment = segment
-                        }
-                    }
-                }
-                
-                // Show English below if it wasn't shown above
-                if !showEnglishFirst {
+                if !showsNativePaneFirst {
                     Divider()
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("ENGLISH")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.secondary)
-                        
-                        Text(detectedEnglishText)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    nativeLanguagePane(prominent: false)
                 }
             }
             .padding()
@@ -911,8 +1014,23 @@ struct TranslateView: View {
             .localizedSurface()
         }
         #endif
+        // The English-side word detail, used when the English pane is the
+        // tappable one. `EnglishWordDetailSheet` already leads with whichever
+        // side the learner is studying, so it serves both directions.
+        #if os(iOS)
+        .sheet(item: $selectedEnglishWord) { word in
+            EnglishWordDetailSheet(word: word)
+                .localizedSurface()
+        }
+        #else
+        .popover(item: $selectedEnglishWord) { word in
+            EnglishWordDetailSheet(word: word)
+                .frame(minWidth: 320, minHeight: 380)
+                .localizedSurface()
+        }
+        #endif
     }
-    
+
     // MARK: - Actions
     
     /// Determines the actual translation direction based on detected input language
@@ -978,10 +1096,11 @@ struct TranslateView: View {
             let sourceIsChinese = containsChinese(sourceSnapshot)
             let actualDirection: TranslationDirection = sourceIsChinese ? .chineseToEnglish : .englishToChinese
 
-            let translation = try await AIWordExplanationService.shared.translateWithProvider(
+            let result = try await AIWordExplanationService.shared.translateDetailedWithProvider(
                 sourceSnapshot,
                 sourceIsChinese: sourceIsChinese
             )
+            let translation = result.translation
 
             // Only guard against a stale source text; the UI toggle is irrelevant
             // because the direction is derived from the (unchanged) source content.
@@ -991,6 +1110,8 @@ struct TranslateView: View {
             }
 
             sharedState.translatedText = translation
+            // The notes rode along in the same response — no extra round trip.
+            applyNotes(result, for: sourceSnapshot)
             isAITranslating = false
             handleCompletedTranslation(source: sourceSnapshot, target: translation, direction: actualDirection)
             // Have the AI identify the words/phrases in the Chinese side so the
@@ -1003,6 +1124,92 @@ struct TranslateView: View {
         }
     }
 
+    // MARK: - Translation Notes
+
+    /// Whether the notes panel can be offered for the current translation.
+    private var canExplainTranslation: Bool {
+        !sharedState.translatedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && aiSettings.isAnyProviderAvailable
+    }
+
+    /// Notes are only shown while they still describe the visible source.
+    private var currentNotes: AITranslationResult? {
+        guard let translationNotes,
+              notesSourceSnapshot == sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines),
+              translationNotes.hasNotes else { return nil }
+        return translationNotes
+    }
+
+    private func applyNotes(_ result: AITranslationResult, for source: String) {
+        translationNotes = result
+        notesSourceSnapshot = source
+        notesError = nil
+    }
+
+    private func clearNotes() {
+        notesTask?.cancel()
+        notesTask = nil
+        isFetchingNotes = false
+        translationNotes = nil
+        notesSourceSnapshot = ""
+        notesError = nil
+    }
+
+    /// Fetch notes for a translation that came from Apple's on-device
+    /// Translation API, which returns none. Kept behind an explicit tap so the
+    /// default, free, on-device path never silently bills a provider.
+    private func fetchTranslationNotes() {
+        let sourceSnapshot = sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !sourceSnapshot.isEmpty, aiSettings.isAnyProviderAvailable else { return }
+
+        notesTask?.cancel()
+        notesError = nil
+        isFetchingNotes = true
+        notesTask = Task {
+            do {
+                let result = try await AIWordExplanationService.shared.translateDetailedWithProvider(
+                    sourceSnapshot,
+                    sourceIsChinese: containsChinese(sourceSnapshot)
+                )
+                try Task.checkCancellation()
+                guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot else { return }
+                applyNotes(result, for: sourceSnapshot)
+                if !result.hasNotes {
+                    notesError = String(localized: "This passage didn't need any notes — nothing in it is unusual.", bundle: .appLanguage)
+                }
+            } catch is CancellationError {
+                // A newer request replaced this one.
+            } catch {
+                guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot else { return }
+                notesError = error.localizedDescription
+            }
+            isFetchingNotes = false
+            notesTask = nil
+        }
+    }
+
+    private func saveKeyTerm(_ term: AITranslationKeyTerm) {
+        let headword = term.term.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !headword.isEmpty, !savedTermsStore.contains(chinese: headword) else { return }
+        let headwordIsChinese = headword.contains { $0.isChineseCharacter }
+        // The model supplies pinyin for a Chinese headword and IPA for an
+        // English one, so the reading is worth keeping either way — blanking it
+        // for English left a Mandarin speaker with no pronunciation at all.
+        // `SavedTerm.showsPhonetic` re-validates it before rendering, so a
+        // model that ignored the contract cannot poison the field.
+        let pinyin = headwordIsChinese
+            ? (term.reading.isEmpty ? PinyinConverter.convert(headword) : term.reading)
+            : term.reading
+        savedTermsStore.add(SavedTerm(
+            chinese: headword,
+            pinyin: pinyin,
+            definition: term.meaning,
+            partOfSpeech: "phrase"
+        ))
+        triggerHaptic()
+    }
+
     /// Ask the configured AI provider to identify the words/phrases in the
     /// Chinese text, then feed them to the interactive ruby view. Cancels any
     /// in-flight identification first. Silently falls back to local
@@ -1011,6 +1218,15 @@ struct TranslateView: View {
     private func startWordIdentification(for chineseText: String) {
         wordIdentificationTask?.cancel()
         aiSegments = []
+
+        // These segments only ever drive the Chinese ruby view. A Mandarin
+        // speaker studying English reads the English pane instead, whose word
+        // boundaries `EnglishTextAnalyzer` resolves locally — so skip the
+        // model call rather than paying for segmentation nothing will render.
+        guard learningContext.interactiveReaderIsChinese else {
+            isIdentifyingWords = false
+            return
+        }
 
         let trimmed = chineseText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, aiSettings.isAnyProviderAvailable else {
@@ -1106,6 +1322,7 @@ struct TranslateView: View {
         aiTranslationError = nil
         aiSegments = []
         isIdentifyingWords = false
+        clearNotes()
         sharedState.clear()
     }
     

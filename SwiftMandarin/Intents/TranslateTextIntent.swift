@@ -46,12 +46,12 @@ struct TranslateTextIntent: AppIntent {
             direction: resolvedDirection
         )
 
-        // Save Chinese phrases to vocabulary if enabled
+        // Save the studied language's phrases to vocabulary if enabled
         if saveToVocabulary {
             let chinese = resolvedDirection == .englishToChinese ? result.translation : trimmed
             let english = resolvedDirection == .englishToChinese ? trimmed : result.translation
-            
-            ShortcutHelpers.saveChinesePhrasesToVocabulary(
+
+            ShortcutHelpers.saveStudiedPhrasesToVocabulary(
                 chineseText: chinese,
                 englishTranslation: english
             )

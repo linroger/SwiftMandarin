@@ -16,11 +16,20 @@ final class TranslationState {
     
     var sourceText: String = ""
     var translatedText: String = ""
-    var direction: TranslationDirection = .englishToChinese
+    var direction: TranslationDirection
     var isTranslating: Bool = false
     var translationError: String?
-    
-    private init() {}
+
+    /// Start on the direction the learner mode implies, rather than always
+    /// English→Chinese: a Mandarin speaker studying English opens Translate
+    /// on 中→EN. `AppPreferences` seeds this key at launch, so the fall-back
+    /// below only matters if this singleton is touched first; it derives the
+    /// same answer from the persisted interface language.
+    private init() {
+        let stored = UserDefaults.standard.string(forKey: "defaultDirection")
+            .flatMap(TranslationDirection.init(rawValue:))
+        self.direction = stored ?? .persistedDefault
+    }
     
     /// Restore from a history entry
     func restore(from entry: TranslationHistoryEntry) {

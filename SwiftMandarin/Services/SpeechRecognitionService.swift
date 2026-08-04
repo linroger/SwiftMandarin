@@ -25,17 +25,26 @@ enum SpeechRecognitionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notAuthorized:
-            return "Speech recognition is not authorized. Please enable it in Settings."
+            return String(localized: "Speech recognition is not authorized. Please enable it in Settings.", bundle: .appLanguage)
         case .notAvailable:
-            return "Speech recognition is not available on this device."
+            return String(localized: "Speech recognition is not available on this device.", bundle: .appLanguage)
         case .audioEngineError(let message):
-            return "Audio error: \(message)"
+            // The interpolated detail stays a format argument so the whole
+            // sentence is one catalog key; concatenating a translated prefix
+            // would leave the word order untranslatable.
+            return String.localizedStringWithFormat(
+                String(localized: "Audio error: %@", bundle: .appLanguage),
+                message
+            )
         case .recognitionError(let message):
-            return "Recognition error: \(message)"
+            return String.localizedStringWithFormat(
+                String(localized: "Recognition error: %@", bundle: .appLanguage),
+                message
+            )
         case .localeNotSupported:
-            return "The selected language is not supported for speech recognition."
+            return String(localized: "The selected language is not supported for speech recognition.", bundle: .appLanguage)
         case .modelNotInstalled:
-            return "The speech recognition model needs to be downloaded."
+            return String(localized: "The speech recognition model needs to be downloaded.", bundle: .appLanguage)
         }
     }
 }
@@ -46,11 +55,15 @@ enum SpeechRecognitionLanguage: String, CaseIterable {
     case chinese = "zh-CN"
     case chineseTraditional = "zh-TW"
 
+    /// Names a language to the learner, so it goes through the string catalog:
+    /// these reach the language pickers and the transcription error text, and
+    /// would otherwise stay English in the 中文 interface. The BCP-47 `rawValue`
+    /// above stays a literal — it identifies a locale to the Speech framework.
     var displayName: String {
         switch self {
-        case .english: return "English"
-        case .chinese: return "Chinese (Simplified)"
-        case .chineseTraditional: return "Chinese (Traditional)"
+        case .english: return String(localized: "English", bundle: .appLanguage)
+        case .chinese: return String(localized: "Chinese (Simplified)", bundle: .appLanguage)
+        case .chineseTraditional: return String(localized: "Chinese (Traditional)", bundle: .appLanguage)
         }
     }
 
@@ -483,7 +496,12 @@ private final class ModernSpeechEngine: SpeechRecognitionEngine {
         self.audioEngine = audioEngine
 
         guard let analyzerFormat else {
-            throw SpeechRecognitionError.audioEngineError("Could not initialize audio engine")
+            // This detail is surfaced verbatim inside the user-visible
+            // "Audio error: %@" sentence, unlike the neighbouring throws that
+            // pass an already system-localized `error.localizedDescription`.
+            throw SpeechRecognitionError.audioEngineError(
+                String(localized: "Could not initialize audio engine", bundle: .appLanguage)
+            )
         }
 
         let inputFormat = audioEngine.inputNode.outputFormat(forBus: 0)

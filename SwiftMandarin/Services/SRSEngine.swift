@@ -242,25 +242,25 @@ nonisolated struct SRSEngine {
         let hour = 3_600.0
         if seconds < hour {
             let minutes = max(Int((seconds / minute).rounded()), 1)
-            return String(localized: "\(minutes)m", comment: "Abbreviated interval: minutes")
+            return String(localized: "\(minutes)m", bundle: .appLanguage, comment: "Abbreviated interval: minutes")
         }
         if seconds < secondsPerDay {
             let hours = max(Int((seconds / hour).rounded()), 1)
-            return String(localized: "\(hours)h", comment: "Abbreviated interval: hours")
+            return String(localized: "\(hours)h", bundle: .appLanguage, comment: "Abbreviated interval: hours")
         }
         let days = seconds / secondsPerDay
         if days < 14 {
-            return String(localized: "\(max(Int(days.rounded()), 1))d", comment: "Abbreviated interval: days")
+            return String(localized: "\(max(Int(days.rounded()), 1))d", bundle: .appLanguage, comment: "Abbreviated interval: days")
         }
         if days < 56 {
-            return String(localized: "\(Int((days / 7).rounded()))w", comment: "Abbreviated interval: weeks")
+            return String(localized: "\(Int((days / 7).rounded()))w", bundle: .appLanguage, comment: "Abbreviated interval: weeks")
         }
         if days < 365 {
             // 30.44 = average Gregorian month length in days.
-            return String(localized: "\(Int((days / 30.44).rounded()))mo", comment: "Abbreviated interval: months")
+            return String(localized: "\(Int((days / 30.44).rounded()))mo", bundle: .appLanguage, comment: "Abbreviated interval: months")
         }
         let years = max(Int((days / 365.25).rounded()), 1)
-        return String(localized: "\(years)y", comment: "Abbreviated interval: years")
+        return String(localized: "\(years)y", bundle: .appLanguage, comment: "Abbreviated interval: years")
     }
 
     // MARK: Clamps

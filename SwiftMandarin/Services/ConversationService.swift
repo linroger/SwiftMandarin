@@ -50,28 +50,36 @@ enum ConversationScenario: String, CaseIterable, Codable, Identifiable, Sendable
     }
 
     /// Localization key for the scenario title (resolve with `L(_:)`).
+    ///
+    /// The literals go through `String(localized:)` so Xcode extracts them into
+    /// the string catalog. Left bare they are invisible to extraction, and the
+    /// scenario cards would fall back to English the moment the catalog is
+    /// regenerated. Call sites already wrap the result in `L(_:)`; re-resolving
+    /// an already-translated string there is a no-op, since the translation is
+    /// not itself a catalog key.
     var titleKey: String {
         switch self {
-        case .freeChat: return "Free chat"
-        case .cafe: return "At the café"
-        case .directions: return "Directions"
-        case .shopping: return "Shopping"
-        case .introductions: return "Introductions"
-        case .travel: return "Travel"
-        case .doctor: return "At the doctor"
+        case .freeChat: return String(localized: "Free chat", bundle: .appLanguage)
+        case .cafe: return String(localized: "At the café", bundle: .appLanguage)
+        case .directions: return String(localized: "Directions", bundle: .appLanguage)
+        case .shopping: return String(localized: "Shopping", bundle: .appLanguage)
+        case .introductions: return String(localized: "Introductions", bundle: .appLanguage)
+        case .travel: return String(localized: "Travel", bundle: .appLanguage)
+        case .doctor: return String(localized: "At the doctor", bundle: .appLanguage)
         }
     }
 
     /// Localization key for the one-line scenario description (resolve with `L(_:)`).
+    /// Wrapped for the same extraction reason as `titleKey`.
     var descriptionKey: String {
         switch self {
-        case .freeChat: return "Chat about anything"
-        case .cafe: return "Order drinks and snacks"
-        case .directions: return "Find your way around town"
-        case .shopping: return "Ask prices and haggle"
-        case .introductions: return "Meet someone new"
-        case .travel: return "Airports, hotels, and tickets"
-        case .doctor: return "Describe how you feel"
+        case .freeChat: return String(localized: "Chat about anything", bundle: .appLanguage)
+        case .cafe: return String(localized: "Order drinks and snacks", bundle: .appLanguage)
+        case .directions: return String(localized: "Find your way around town", bundle: .appLanguage)
+        case .shopping: return String(localized: "Ask prices and haggle", bundle: .appLanguage)
+        case .introductions: return String(localized: "Meet someone new", bundle: .appLanguage)
+        case .travel: return String(localized: "Airports, hotels, and tickets", bundle: .appLanguage)
+        case .doctor: return String(localized: "Describe how you feel", bundle: .appLanguage)
         }
     }
 
@@ -158,7 +166,7 @@ final class ConversationService {
         let settings = AIModelSettings.shared
         guard settings.isAnyProviderAvailable else {
             throw AIExplanationError.unavailable(
-                reason: String(localized: "No AI provider is configured. Add one in Settings → AI (or run a local Ollama server).")
+                reason: String(localized: "No AI provider is configured. Add one in Settings → AI (or run a local Ollama server).", bundle: .appLanguage)
             )
         }
         let provider = settings.effectiveProvider

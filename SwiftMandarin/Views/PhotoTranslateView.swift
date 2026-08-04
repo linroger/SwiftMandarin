@@ -98,6 +98,15 @@ struct PhotoTranslateView: View {
     @State private var extractedVocab: [ExtractedVocabItem] = []
     @State private var isExtractingVocab: Bool = false
 
+    // Study notes for the full Chinese → English translation. The translation
+    // itself may have come from Apple's on-device engine, which returns none,
+    // so this is fetched on demand rather than silently billing a provider.
+    @State private var translationNotes: AITranslationResult?
+    @State private var notesSourceSnapshot: String = ""
+    @State private var isFetchingNotes: Bool = false
+    @State private var notesTask: Task<Void, Never>?
+    @State private var notesError: String?
+
     // Workbook grading (tucked-away feature) + its review bank and history,
     // all kept within the Photo tab.
     @State private var showWorkbookGrading: Bool = false
@@ -789,8 +798,10 @@ struct PhotoTranslateView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(.ultraThinMaterial)
                 )
+
+                translationNotesSection
             }
-            
+
             // Word-by-word analysis using existing RubyTextView
             VStack(alignment: .leading, spacing: 12) {
                 Text("逐词分析")
@@ -826,8 +837,115 @@ struct PhotoTranslateView: View {
         }
     }
     
+    // MARK: - Translation Notes
+
+    /// Notes are only shown while they still describe the visible passage.
+    private var currentNotes: AITranslationResult? {
+        guard let translationNotes,
+              notesSourceSnapshot == cleanedChineseText,
+              translationNotes.hasNotes else { return nil }
+        return translationNotes
+    }
+
+    @ViewBuilder
+    private var translationNotesSection: some View {
+        if let notes = currentNotes {
+            TranslationNotesView(
+                result: notes,
+                onSave: { saveKeyTerm($0) },
+                isSaved: { savedTermsStore.contains(chinese: $0.term) }
+            )
+        } else if aiSettings.isAnyProviderAvailable, !cleanedChineseText.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Button {
+                    fetchTranslationNotes()
+                } label: {
+                    HStack(spacing: 6) {
+                        if isFetchingNotes {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Image(systemName: "lightbulb")
+                        }
+                        Text(isFetchingNotes ? "Explaining…" : "Explain this translation")
+                            .fitSingleLine()
+                    }
+                    .font(.subheadline)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(isFetchingNotes)
+
+                if let notesError {
+                    Text(notesError)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func fetchTranslationNotes() {
+        let source = cleanedChineseText
+        guard !source.isEmpty, aiSettings.isAnyProviderAvailable else { return }
+
+        notesTask?.cancel()
+        notesError = nil
+        isFetchingNotes = true
+        notesTask = Task {
+            do {
+                let result = try await AIWordExplanationService.shared
+                    .translateDetailedWithProvider(source, sourceIsChinese: true)
+                try Task.checkCancellation()
+                guard cleanedChineseText == source else { return }
+                translationNotes = result
+                notesSourceSnapshot = source
+                if !result.hasNotes {
+                    notesError = String(localized: "This passage didn't need any notes — nothing in it is unusual.", bundle: .appLanguage)
+                }
+            } catch is CancellationError {
+                // A newer request replaced this one.
+            } catch {
+                guard cleanedChineseText == source else { return }
+                notesError = error.localizedDescription
+            }
+            isFetchingNotes = false
+            notesTask = nil
+        }
+    }
+
+    private func clearTranslationNotes() {
+        notesTask?.cancel()
+        notesTask = nil
+        isFetchingNotes = false
+        translationNotes = nil
+        notesSourceSnapshot = ""
+        notesError = nil
+    }
+
+    private func saveKeyTerm(_ term: AITranslationKeyTerm) {
+        let headword = term.term.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !headword.isEmpty, !savedTermsStore.contains(chinese: headword) else { return }
+        let headwordIsChinese = headword.contains { $0.isChineseCharacter }
+        // The model supplies pinyin for a Chinese headword and IPA for an
+        // English one, so the reading is worth keeping either way — blanking it
+        // for English left a Mandarin speaker with no pronunciation at all.
+        // `SavedTerm.showsPhonetic` re-validates it before rendering, so a
+        // model that ignored the contract cannot poison the field.
+        let pinyin = headwordIsChinese
+            ? (term.reading.isEmpty ? PinyinConverter.convert(headword) : term.reading)
+            : term.reading
+        savedTermsStore.add(SavedTerm(
+            chinese: headword,
+            pinyin: pinyin,
+            definition: term.meaning,
+            partOfSpeech: "phrase"
+        ))
+    }
+
     // MARK: - Helper Views
-    
+
     private var processingView: some View {
         VStack(spacing: 16) {
             ProgressView()
@@ -957,7 +1075,7 @@ struct PhotoTranslateView: View {
             triggerTranslation()
             guard let translationRequestID = englishTranslationRequestID else {
                 throw MultimodalAudioTranslationFailure(
-                    message: String(localized: "Translation failed.")
+                    message: String(localized: "Translation failed.", bundle: .appLanguage)
                 )
             }
             try await waitForAudioTranslationCompletion(
@@ -969,14 +1087,14 @@ struct PhotoTranslateView: View {
                 !($0.translation ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             }) else {
                 throw MultimodalAudioTranslationFailure(
-                    message: errorMessage ?? String(localized: "Translation failed.")
+                    message: errorMessage ?? String(localized: "Translation failed.", bundle: .appLanguage)
                 )
             }
         } else {
             triggerChineseTranslation()
             guard let translationRequestID = chineseTranslationRequestID else {
                 throw MultimodalAudioTranslationFailure(
-                    message: String(localized: "Translation failed.")
+                    message: String(localized: "Translation failed.", bundle: .appLanguage)
                 )
             }
             try await waitForAudioTranslationCompletion(
@@ -986,7 +1104,7 @@ struct PhotoTranslateView: View {
             )
             guard !chineseTranslation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 throw MultimodalAudioTranslationFailure(
-                    message: errorMessage ?? String(localized: "Translation failed.")
+                    message: errorMessage ?? String(localized: "Translation failed.", bundle: .appLanguage)
                 )
             }
         }
@@ -1193,6 +1311,7 @@ struct PhotoTranslateView: View {
             cleanedChineseText = ""
             chineseTranslation = ""
             extractedVocab = []
+            clearTranslationNotes()
         }) else { return }
 
         // Determine language first (prefer the OCR-provided detection), using
@@ -1676,6 +1795,7 @@ struct PhotoTranslateView: View {
         rawOCRText = ""
         aiCleanupApplied = false
         cleanupNotice = nil
+        clearTranslationNotes()
     }
 }
 
@@ -1690,7 +1810,10 @@ struct SentenceCard: View {
         VStack(alignment: .leading, spacing: 12) {
             // Sentence type badge
             HStack {
-                Label(sentence.type.rawValue, systemImage: sentence.type.icon)
+                // The raw value is the Chinese term, which left an English
+                // reader with an untranslated badge among otherwise localized
+                // labels; `displayName` follows the interface language.
+                Label(sentence.type.displayName, systemImage: sentence.type.icon)
                     .font(.caption)
                     .foregroundStyle(sentenceTypeColor)
                     .padding(.horizontal, 8)

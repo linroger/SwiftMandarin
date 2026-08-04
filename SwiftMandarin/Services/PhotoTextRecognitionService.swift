@@ -136,16 +136,26 @@ enum RecognitionError: LocalizedError {
     case noTextFound
     case unsupportedPlatform
 
+    /// These messages were authored in Chinese and are shown as-is to every
+    /// learner today, including English speakers. The Chinese wording stays the
+    /// catalog key so nothing changes for the current interface; the catalog
+    /// still needs an English counterpart for each key so the English interface
+    /// stops showing Chinese.
     var errorDescription: String? {
         switch self {
         case .invalidImage:
-            return "无法处理图片"
+            return String(localized: "无法处理图片", bundle: .appLanguage)
         case .recognitionFailed(let message):
-            return "识别失败: \(message)"
+            // The Vision failure detail is a format argument rather than a
+            // concatenation so the translated sentence controls word order.
+            return String.localizedStringWithFormat(
+                String(localized: "识别失败: %@", bundle: .appLanguage),
+                message
+            )
         case .noTextFound:
-            return "未找到文字"
+            return String(localized: "未找到文字", bundle: .appLanguage)
         case .unsupportedPlatform:
-            return "当前平台不支持此功能"
+            return String(localized: "当前平台不支持此功能", bundle: .appLanguage)
         }
     }
 }

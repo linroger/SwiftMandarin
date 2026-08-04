@@ -394,7 +394,7 @@ struct ReviewQuestionGeneratorView: View {
                 savedIDs = []
                 isGenerating = false
                 if questions.isEmpty {
-                    errorMessage = String(localized: "The model returned no questions. Try again or adjust the instructions.")
+                    errorMessage = String(localized: "The model returned no questions. Try again or adjust the instructions.", bundle: .appLanguage)
                 }
             }
         } catch {

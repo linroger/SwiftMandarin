@@ -61,10 +61,10 @@ private struct LearningStatsSummary {
     /// Localized line-per-stat summary (follows the in-app language toggle).
     var formatted: String {
         [
-            String(localized: "Words learned: \(wordsLearned)"),
-            String(localized: "Reviews: \(reviewsCompleted)"),
-            String(localized: "Translations: \(translationsMade)"),
-            String(localized: "Current streak: \(streak)"),
+            String(localized: "Words learned: \(wordsLearned)", bundle: .appLanguage),
+            String(localized: "Reviews: \(reviewsCompleted)", bundle: .appLanguage),
+            String(localized: "Translations: \(translationsMade)", bundle: .appLanguage),
+            String(localized: "Current streak: \(streak)", bundle: .appLanguage),
         ].joined(separator: "\n")
     }
 }

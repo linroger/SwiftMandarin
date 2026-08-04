@@ -138,6 +138,28 @@ enum PartOfSpeechCategory: String, CaseIterable, Codable {
         return .other
     }
     
+    /// Human-readable label for charts and legends. The raw values are
+    /// persisted in saved activity records and matched against AI output, so
+    /// they must stay the English strings above; this separate property is
+    /// what display code should read, otherwise the Stats chart legend stays
+    /// English in the 中文 interface. Each case spells its key out as a
+    /// literal because the catalog extractor cannot follow `rawValue`.
+    var displayName: String {
+        switch self {
+        case .noun: return String(localized: "Noun", bundle: .appLanguage)
+        case .verb: return String(localized: "Verb", bundle: .appLanguage)
+        case .adjective: return String(localized: "Adjective", bundle: .appLanguage)
+        case .adverb: return String(localized: "Adverb", bundle: .appLanguage)
+        case .pronoun: return String(localized: "Pronoun", bundle: .appLanguage)
+        case .preposition: return String(localized: "Preposition", bundle: .appLanguage)
+        case .conjunction: return String(localized: "Conjunction", bundle: .appLanguage)
+        case .interjection: return String(localized: "Interjection", bundle: .appLanguage)
+        case .classifier: return String(localized: "Classifier", bundle: .appLanguage)
+        case .particle: return String(localized: "Particle", bundle: .appLanguage)
+        case .other: return String(localized: "Other", bundle: .appLanguage)
+        }
+    }
+
     var color: String {
         switch self {
         case .noun: return "blue"

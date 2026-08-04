@@ -6,3 +6,9 @@ dist/dmg_payload_*/
 # (the file-system-synchronized target would bundle them into SwiftMandarin.app)
 SwiftMandarin/logs/
 SwiftMandarin/.claude/
+
+# Session memory from coding agents — scratch state, not project content.
+.remember/
+
+# Stray capture that predates this repo and is unrelated to the app.
+Zeta_*.JPEG

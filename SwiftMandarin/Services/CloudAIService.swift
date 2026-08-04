@@ -31,25 +31,45 @@ enum CloudAIError: LocalizedError {
     case requestEncodingFailed
     case httpError(Int, String)
     case emptyResponse
+    /// The detail is interpolated into the user-visible description, so the
+    /// throw sites below pass localized text rather than raw literals — an
+    /// English fragment inside a translated sentence is what would otherwise
+    /// reach the 中文 interface.
     case unexpectedResponse(String)
 
+    /// These sentences are what a failed provider call puts in front of the
+    /// user, so each literal doubles as its localization key: assembled in
+    /// Swift rather than in a `Text` literal, they only reach the string
+    /// catalog through `String(localized:)` and would otherwise stay English
+    /// in the 中文 interface. The dynamic parts stay format placeholders so a
+    /// translation can reorder them around the injected value.
     var errorDescription: String? {
         switch self {
         case .notCloudProvider:
-            return "Selected provider is not a cloud provider."
+            return String(localized: "Selected provider is not a cloud provider.", bundle: .appLanguage)
         case .missingAPIKey(let name):
-            return "No API key configured for \(name). Add it in Settings → AI."
+            return String(
+                format: String(localized: "No API key configured for %@. Add it in Settings → AI.", bundle: .appLanguage),
+                name
+            )
         case .invalidURL:
-            return "The provider base URL is invalid."
+            return String(localized: "The provider base URL is invalid.", bundle: .appLanguage)
         case .requestEncodingFailed:
-            return "Failed to encode the request."
+            return String(localized: "Failed to encode the request.", bundle: .appLanguage)
         case .httpError(let code, let body):
             let trimmed = body.count > 300 ? String(body.prefix(300)) + "…" : body
-            return "Provider returned HTTP \(code): \(trimmed)"
+            return String.localizedStringWithFormat(
+                String(localized: "Provider returned HTTP %1$lld: %2$@", bundle: .appLanguage),
+                Int64(code),
+                trimmed
+            )
         case .emptyResponse:
-            return "The provider returned an empty response."
+            return String(localized: "The provider returned an empty response.", bundle: .appLanguage)
         case .unexpectedResponse(let detail):
-            return "Unexpected response from provider: \(detail)"
+            return String(
+                format: String(localized: "Unexpected response from provider: %@", bundle: .appLanguage),
+                detail
+            )
         }
     }
 }
@@ -139,7 +159,7 @@ final class CloudAIService {
         do {
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else {
-                throw CloudAIError.unexpectedResponse("No HTTP response")
+                throw CloudAIError.unexpectedResponse(String(localized: "No HTTP response", bundle: .appLanguage))
             }
             guard (200...299).contains(http.statusCode) else {
                 throw CloudAIError.httpError(http.statusCode, String(data: data, encoding: .utf8) ?? "")
@@ -269,7 +289,7 @@ final class CloudAIService {
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else {
-            throw CloudAIError.unexpectedResponse("No HTTP response")
+            throw CloudAIError.unexpectedResponse(String(localized: "No HTTP response", bundle: .appLanguage))
         }
         guard (200...299).contains(http.statusCode) else {
             throw CloudAIError.httpError(http.statusCode, String(data: data, encoding: .utf8) ?? "")
@@ -281,10 +301,8 @@ final class CloudAIService {
         case .anthropic: content = Self.parseAnthropicContent(from: data)
         }
 
-        guard let text = content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw CloudAIError.emptyResponse
-        }
-        return text
+        guard let text = content else { throw CloudAIError.emptyResponse }
+        return try Self.answerText(from: text)
     }
 
     /// Send a multi-turn chat request and return the assistant's text content.
@@ -342,7 +360,7 @@ final class CloudAIService {
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else {
-            throw CloudAIError.unexpectedResponse("No HTTP response")
+            throw CloudAIError.unexpectedResponse(String(localized: "No HTTP response", bundle: .appLanguage))
         }
         guard (200...299).contains(http.statusCode) else {
             throw CloudAIError.httpError(http.statusCode, String(data: data, encoding: .utf8) ?? "")
@@ -354,18 +372,193 @@ final class CloudAIService {
         case .anthropic: content = Self.parseAnthropicContent(from: data)
         }
 
-        guard let text = content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard let text = content else { throw CloudAIError.emptyResponse }
+        return try Self.answerText(from: text)
+    }
+
+    /// The assistant's answer with any inline chain of thought removed.
+    ///
+    /// Thinking models on OpenAI-compatible gateways interleave reasoning with
+    /// the answer as `<think>…</think>` inside `content`. Left in place it
+    /// reaches the UI verbatim, and its braces break the tolerant JSON
+    /// extraction every structured feature depends on. A response that is
+    /// nothing but reasoning has produced no answer, so it fails here rather
+    /// than surfacing the reasoning as a result.
+    private static func answerText(from content: String) throws -> String {
+        let answer = AIResponseSanitizer.strippingReasoning(content)
+        guard !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw CloudAIError.emptyResponse
         }
-        return text
+        return answer
     }
 
     /// Translate text using a cloud provider.
-    func translate(_ text: String, sourceIsChinese: Bool, provider: AIProvider, model: String) async throws -> String {
-        let system = AITranslationPromptBuilder.instructions
-        let user = AITranslationPromptBuilder.request(text: text, sourceIsChinese: sourceIsChinese)
-        let result = try await chat(provider: provider, model: model, system: system, user: user, maxTokens: 2048)
-        return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    ///
+    /// Requests the shared JSON envelope rather than a bare string: anything
+    /// the model writes around the `translation` field — a preface, an outline
+    /// of the passage, a translator's note — is dropped by the parser instead
+    /// of being displayed, spoken, and saved to history as the translation. The
+    /// same envelope carries the study notes, so the explanation costs no
+    /// second round trip.
+    func translate(
+        _ text: String,
+        context: AITranslationContext,
+        provider: AIProvider,
+        model: String
+    ) async throws -> AITranslationResult {
+        let system = AITranslationPromptBuilder.instructions(for: context)
+            + "\n\n"
+            + AITranslationPromptBuilder.jsonOutputContract(for: context)
+        let user = AITranslationPromptBuilder.request(text: text, context: context)
+        let raw = try await chat(
+            provider: provider,
+            model: model,
+            system: system,
+            user: user,
+            jsonMode: true,
+            maxTokens: AIOutputBudget.tokens(forSourceLength: text.count)
+        )
+        return try AITranslationResponseParser.result(from: raw)
+    }
+
+    // MARK: - Audio Transcription
+
+    /// Transcribe an audio file through a provider's OpenAI-compatible
+    /// `POST /audio/transcriptions` route.
+    ///
+    /// This is the alternative to Apple Speech for learners whose device has no
+    /// dictation model for the language, or whose recording Apple cannot read.
+    /// The audio leaves the device, which is why the caller must opt in.
+    ///
+    /// - Parameters:
+    ///   - languageCode: ISO-639-1 hint ("en", "zh"). Sent when the provider
+    ///     supports it; a wrong guess is worse than none, so callers pass the
+    ///     language the learner selected rather than a detection.
+    func transcribeAudio(
+        provider: AIProvider,
+        model: String,
+        audioURL: URL,
+        languageCode: String?
+    ) async throws -> String {
+        guard provider.isCloud else { throw CloudAIError.notCloudProvider }
+        let settings = AIModelSettings.shared
+        let key = settings.apiKey(for: provider)
+        guard !key.isEmpty else { throw CloudAIError.missingAPIKey(provider.displayName) }
+        guard !model.isEmpty else {
+            throw CloudAIError.unexpectedResponse(
+                String(
+                    format: String(localized: "No transcription model selected for %@", bundle: .appLanguage),
+                    provider.displayName
+                )
+            )
+        }
+        guard let url = Self.buildURL(
+            base: settings.baseURL(for: provider),
+            path: provider.transcriptionPath
+        ) else { throw CloudAIError.invalidURL }
+
+        let audioData = try Data(contentsOf: audioURL)
+        let boundary = "swiftmandarin.\(UUID().uuidString)"
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        // Transcription is always Bearer-authenticated; `applyAuthHeaders`
+        // would also set the JSON content type this multipart body must not use.
+        request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var fields: [(name: String, value: String)] = [
+            ("model", model),
+            ("response_format", "json"),
+        ]
+        if let languageCode, !languageCode.isEmpty {
+            fields.append(("language", languageCode))
+        }
+        request.httpBody = Self.multipartBody(
+            boundary: boundary,
+            fields: fields,
+            fileField: "file",
+            fileName: audioURL.lastPathComponent,
+            fileType: Self.audioMediaType(for: audioURL),
+            fileData: audioData
+        )
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw CloudAIError.unexpectedResponse(String(localized: "No HTTP response", bundle: .appLanguage))
+        }
+        guard (200...299).contains(http.statusCode) else {
+            throw CloudAIError.httpError(http.statusCode, String(data: data, encoding: .utf8) ?? "")
+        }
+
+        guard let transcript = Self.parseTranscription(from: data) else {
+            throw CloudAIError.unexpectedResponse(String(localized: "No transcript in the response", bundle: .appLanguage))
+        }
+        let trimmed = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw CloudAIError.emptyResponse }
+        return trimmed
+    }
+
+    /// Read the transcript out of the response, tolerating the shapes providers
+    /// use: OpenAI's `{"text": …}`, and DashScope-style nesting under `output`.
+    private static func parseTranscription(from data: Data) -> String? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            // `response_format=text` gateways answer with the bare transcript.
+            return String(data: data, encoding: .utf8)
+        }
+        if let text = json["text"] as? String { return text }
+        if let output = json["output"] as? [String: Any] {
+            if let text = output["text"] as? String { return text }
+            if let sentences = output["sentence"] as? [[String: Any]] {
+                let joined = sentences.compactMap { $0["text"] as? String }.joined(separator: " ")
+                return joined.isEmpty ? nil : joined
+            }
+        }
+        if let results = json["results"] as? [[String: Any]] {
+            let joined = results.compactMap { $0["text"] as? String }.joined(separator: " ")
+            return joined.isEmpty ? nil : joined
+        }
+        return nil
+    }
+
+    private static func multipartBody(
+        boundary: String,
+        fields: [(name: String, value: String)],
+        fileField: String,
+        fileName: String,
+        fileType: String,
+        fileData: Data
+    ) -> Data {
+        var body = Data()
+        let newline = "\r\n"
+        for field in fields {
+            body.append(Data("--\(boundary)\(newline)".utf8))
+            body.append(Data("Content-Disposition: form-data; name=\"\(field.name)\"\(newline)\(newline)".utf8))
+            body.append(Data("\(field.value)\(newline)".utf8))
+        }
+        body.append(Data("--\(boundary)\(newline)".utf8))
+        body.append(Data(
+            "Content-Disposition: form-data; name=\"\(fileField)\"; filename=\"\(fileName)\"\(newline)".utf8
+        ))
+        body.append(Data("Content-Type: \(fileType)\(newline)\(newline)".utf8))
+        body.append(fileData)
+        body.append(Data(newline.utf8))
+        body.append(Data("--\(boundary)--\(newline)".utf8))
+        return body
+    }
+
+    private static func audioMediaType(for url: URL) -> String {
+        switch url.pathExtension.lowercased() {
+        case "mp3": return "audio/mpeg"
+        case "wav": return "audio/wav"
+        case "aif", "aiff": return "audio/aiff"
+        case "caf": return "audio/x-caf"
+        case "aac": return "audio/aac"
+        case "flac": return "audio/flac"
+        case "ogg": return "audio/ogg"
+        case "webm": return "audio/webm"
+        default: return "audio/m4a"
+        }
     }
 
     // MARK: - Request Building

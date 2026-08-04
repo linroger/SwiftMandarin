@@ -239,7 +239,11 @@ final class BatchExplanationController {
                     analysisTargets.append(
                         BatchAnalysisTarget(
                             word: word,
-                            pinyin: term.pinyin,
+                            // The reading is a sense hint for `word`, so it
+                            // must belong to the side that became the headword
+                            // — a Chinese-side pinyin is noise under an
+                            // English headword in reverse mode.
+                            pinyin: term.headwordReading,
                             context: term.glossText.isEmpty ? nil : term.glossText,
                             directionToken: token
                         )
@@ -307,7 +311,7 @@ final class BatchExplanationController {
         let settings = AIModelSettings.shared
         if plan.analysisCount > 0, !settings.isAnyProviderAvailable {
             resetCounters(for: plan)
-            lastErrorMessage = String(localized: "No AI provider is configured. Add one in Settings → AI (or run a local Ollama server).")
+            lastErrorMessage = String(localized: "No AI provider is configured. Add one in Settings → AI (or run a local Ollama server).", bundle: .appLanguage)
             status = .failed(summary())
             return
         }
@@ -315,7 +319,7 @@ final class BatchExplanationController {
         if plan.analysisCount > 0,
            !plan.analysisConfiguration.matchesCurrentSettings() {
             resetCounters(for: plan)
-            lastErrorMessage = String(localized: "AI settings changed after this batch was reviewed. Review the batch again before starting.")
+            lastErrorMessage = String(localized: "AI settings changed after this batch was reviewed. Review the batch again before starting.", bundle: .appLanguage)
             status = .failed(summary())
             return
         }
@@ -324,7 +328,7 @@ final class BatchExplanationController {
             ExplanationDirection.current(forWord: $0.word).cacheToken != $0.directionToken
         }) {
             resetCounters(for: plan)
-            lastErrorMessage = String(localized: "Language settings changed after this batch was reviewed. Review the batch again before starting.")
+            lastErrorMessage = String(localized: "Language settings changed after this batch was reviewed. Review the batch again before starting.", bundle: .appLanguage)
             status = .failed(summary())
             return
         }
@@ -332,7 +336,7 @@ final class BatchExplanationController {
         if plan.audioPlan?.scope == .learningLanguage,
            plan.audioLearningIsChinese != LocalizationManager.shared.learningIsChinese {
             resetCounters(for: plan)
-            lastErrorMessage = String(localized: "Language settings changed after this batch was reviewed. Review the batch again before starting.")
+            lastErrorMessage = String(localized: "Language settings changed after this batch was reviewed. Review the batch again before starting.", bundle: .appLanguage)
             status = .failed(summary())
             return
         }
@@ -341,14 +345,14 @@ final class BatchExplanationController {
         if plan.newAudioCount > 0,
            apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             resetCounters(for: plan)
-            lastErrorMessage = String(localized: "Add a MiniMax API key in AI Audio settings before generating batch audio.")
+            lastErrorMessage = String(localized: "Add a MiniMax API key in AI Audio settings before generating batch audio.", bundle: .appLanguage)
             status = .failed(summary())
             return
         }
         if plan.newAudioCount > 0,
            plan.audioCredentialFingerprint != BatchCredentialFingerprint.make(apiKey) {
             resetCounters(for: plan)
-            lastErrorMessage = String(localized: "The MiniMax API key changed after this batch was reviewed. Review the batch again before starting.")
+            lastErrorMessage = String(localized: "The MiniMax API key changed after this batch was reviewed. Review the batch again before starting.", bundle: .appLanguage)
             status = .failed(summary())
             return
         }
@@ -501,7 +505,7 @@ final class BatchExplanationController {
               ExplanationDirection.current(forWord: target.word).cacheToken == target.directionToken else {
             return .failed(
                 word: target.word,
-                message: String(localized: "AI or language settings changed while the batch was running. Start a new reviewed batch to continue."),
+                message: String(localized: "AI or language settings changed while the batch was running. Start a new reviewed batch to continue.", bundle: .appLanguage),
                 stopRemaining: true
             )
         }
@@ -521,7 +525,7 @@ final class BatchExplanationController {
                   ExplanationDirection.current(forWord: target.word).cacheToken == target.directionToken else {
                 return .failed(
                     word: target.word,
-                    message: String(localized: "AI or language settings changed while the batch was running. The completed response was not cached under stale settings."),
+                    message: String(localized: "AI or language settings changed while the batch was running. The completed response was not cached under stale settings.", bundle: .appLanguage),
                     stopRemaining: true
                 )
             }
@@ -622,7 +626,7 @@ final class BatchExplanationController {
                   ) else {
                 return .failed(
                     word: target.displayWord,
-                    message: String(localized: "The MiniMax API key changed while the batch was running. Start a new reviewed batch to continue."),
+                    message: String(localized: "The MiniMax API key changed while the batch was running. Start a new reviewed batch to continue.", bundle: .appLanguage),
                     stopRemaining: true
                 )
             }

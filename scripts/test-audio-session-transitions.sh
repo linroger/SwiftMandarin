@@ -42,6 +42,7 @@ rg -Fq 'AudioSessionTransitionError.deactivationReturnedFalse' "$coordinator"
 
 DEVELOPER_DIR="$developer_dir" xcrun swiftc \
     "$coordinator" \
+    "$repo_root/SwiftMandarin/Models/LanguageBundleOverride.swift" \
     "$repo_root/scripts/audio-session-checks/AudioSessionTransitionChecksRunner.swift" \
     -D AUDIO_SESSION_CHECKS \
     -swift-version 6 \
@@ -58,6 +59,7 @@ DEVELOPER_DIR="$developer_dir" xcrun swiftc \
 ios_sdk=$(DEVELOPER_DIR="$developer_dir" xcrun --sdk iphonesimulator --show-sdk-path)
 DEVELOPER_DIR="$developer_dir" xcrun swiftc \
     "$coordinator" \
+    "$repo_root/SwiftMandarin/Models/LanguageBundleOverride.swift" \
     -D AUDIO_SESSION_CHECKS \
     -swift-version 6 \
     -strict-concurrency=complete \

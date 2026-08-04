@@ -211,7 +211,7 @@ struct AISettingsTab: View {
 struct TranslationSettingsTab: View {
     @AppStorage("autoTranslate") private var autoTranslate: Bool = false
     @AppStorage("autoSpeak") private var autoSpeak: Bool = false
-    @AppStorage("defaultDirection") private var defaultDirection: String = TranslationDirection.englishToChinese.rawValue
+    @AppStorage("defaultDirection") private var defaultDirection: String = TranslationDirection.persistedDefault.rawValue
     @AppStorage("translateOnPaste") private var translateOnPaste: Bool = true
     @AppStorage("copyTranslationAutomatically") private var copyTranslationAutomatically: Bool = false
     @AppStorage("saveToHistoryAutomatically") private var saveToHistoryAutomatically: Bool = true
@@ -265,47 +265,60 @@ struct TranslationSettingsTab: View {
 struct AppearanceSettingsTab: View {
     @AppStorage("showPinyin") private var showPinyin: Bool = true
     @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
-    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 20
+    // Sizes the vocabulary headword, which is Chinese for an English
+    // speaker and English for a Mandarin one. The storage key keeps its
+    // original name so existing preferences survive.
+    @AppStorage("vocabularyChineseFontSize") private var headwordFontSize: Double = 20
     @AppStorage("chineseFont") private var chineseFont: String = "System"
     @AppStorage("toneColors") private var toneColors: Bool = true
     @AppStorage("wordBorders") private var wordBorders: Bool = true
     @AppStorage("compactMode") private var compactMode: Bool = false
     @AppStorage("vocabularyDetailUsesInspector") private var vocabularyDetailUsesInspector: Bool = true
     @State private var prefs = AppPreferences.shared
+    @State private var localization = LocalizationManager.shared
 
     var body: some View {
         Form {
-            Section {
-                Toggle("Show Pinyin", isOn: $showPinyin)
-                
-                Picker("Pinyin Position", selection: $pinyinPosition) {
-                    Text("Above Characters").tag("above")
-                    Text("Below Characters").tag("below")
-                    Text("Inline").tag("inline")
-                }
-                .disabled(!showPinyin)
-                
-                Toggle("Tone Colors", isOn: $toneColors)
+            // Pinyin is scaffolding for reading Chinese, so this whole section
+            // belongs to the learner who is decoding it. A native Mandarin
+            // reader studying English sees Typography and Layout only.
+            if localization.learningIsChinese {
+                Section {
+                    Toggle("Show Pinyin", isOn: $showPinyin)
+
+                    Picker("Pinyin Position", selection: $pinyinPosition) {
+                        Text("Above Characters").tag("above")
+                        Text("Below Characters").tag("below")
+                        Text("Inline").tag("inline")
+                    }
                     .disabled(!showPinyin)
-            } header: {
-                Text("Pinyin Display")
+
+                    Toggle("Tone Colors", isOn: $toneColors)
+                        .disabled(!showPinyin)
+                } header: {
+                    Text("Pinyin Display")
+                }
             }
-            
+
             Section {
                 LabeledContent("Vocabulary Text Size") {
-                    Slider(value: $chineseFontSize, in: 14...40, step: 2) {
+                    Slider(value: $headwordFontSize, in: 14...40, step: 2) {
                         Text("Size")
                     }
-                    Text(verbatim: "\(Int(chineseFontSize)) pt")
+                    Text(verbatim: "\(Int(headwordFontSize)) pt")
                         .foregroundStyle(.secondary)
                         .frame(width: 50, alignment: .trailing)
                 }
-                
-                Picker("Chinese Font", selection: $chineseFont) {
-                    Text("System Default").tag("System")
-                    Text("PingFang SC").tag("PingFang SC")
-                    Text("STSong").tag("STSong")
-                    Text("Kaiti SC").tag("Kaiti SC")
+
+                // The Chinese typeface only affects Han glyphs, so it is
+                // offered to the learner who spends their time reading them.
+                if localization.learningIsChinese {
+                    Picker("Chinese Font", selection: $chineseFont) {
+                        Text("System Default").tag("System")
+                        Text("PingFang SC").tag("PingFang SC")
+                        Text("STSong").tag("STSong")
+                        Text("Kaiti SC").tag("Kaiti SC")
+                    }
                 }
             } header: {
                 Text("Typography")
@@ -534,7 +547,9 @@ struct DataSettingsTab: View {
         .alert("Import Complete", isPresented: $showingImportResult) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text(importResult?.summary ?? "Import completed")
+            // `??` binds the literal as a plain `String`, so `Text` renders it
+            // verbatim and this fallback stayed English in the Chinese UI.
+            Text(importResult?.summary ?? String(localized: "Import completed", bundle: .appLanguage))
         }
         .alert("Export Successful", isPresented: $showExportSuccess) {
             Button("OK", role: .cancel) { }

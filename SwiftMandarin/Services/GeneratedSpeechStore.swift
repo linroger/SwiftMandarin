@@ -164,7 +164,7 @@ actor GeneratedSpeechRepository {
                 try FileManager.default.removeItem(at: fileURL)
             } catch {
                 throw MiniMaxAudioError.persistence(
-                    String(localized: "The library entry was deleted, but its audio file could not be removed:")
+                    String(localized: "The library entry was deleted, but its audio file could not be removed:", bundle: .appLanguage)
                         + " " + error.localizedDescription
                 )
             }
@@ -210,7 +210,7 @@ actor GeneratedSpeechRepository {
         }
         if let firstCleanupError {
             throw MiniMaxAudioError.persistence(
-                String(localized: "The library was cleared, but one or more audio files could not be removed:")
+                String(localized: "The library was cleared, but one or more audio files could not be removed:", bundle: .appLanguage)
                     + " " + firstCleanupError.localizedDescription
             )
         }

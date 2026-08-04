@@ -58,19 +58,25 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// One-line explanation shown beneath each provider in the AI settings
+    /// pane. These are sentences rather than brand names, and they are handed
+    /// to `Text` as an already-built `String`, so only `String(localized:)`
+    /// gets them into the string catalog — without it the picker stays English
+    /// in the 中文 interface. The brand names stay inside the key because they
+    /// are not translated.
     var description: String {
         switch self {
-        case .appleIntelligence: return "On-device AI powered by Apple's Foundation Models"
-        case .ollama: return "Local AI models running via Ollama server"
-        case .openAI: return "GPT models via the OpenAI API"
-        case .anthropic: return "Claude models via the Anthropic API"
-        case .deepseek: return "DeepSeek chat & reasoning models"
-        case .doubao: return "ByteDance Doubao models via Volcengine Ark"
-        case .qwen: return "Alibaba Qwen models via DashScope"
-        case .kimi: return "Moonshot Kimi models"
-        case .zhipu: return "Zhipu GLM models"
-        case .minimax: return "MiniMax abab models"
-        case .quotio: return "Local OpenAI-compatible proxy routing to many model backends"
+        case .appleIntelligence: return String(localized: "On-device AI powered by Apple's Foundation Models", bundle: .appLanguage)
+        case .ollama: return String(localized: "Local AI models running via Ollama server", bundle: .appLanguage)
+        case .openAI: return String(localized: "GPT models via the OpenAI API", bundle: .appLanguage)
+        case .anthropic: return String(localized: "Claude models via the Anthropic API", bundle: .appLanguage)
+        case .deepseek: return String(localized: "DeepSeek chat & reasoning models", bundle: .appLanguage)
+        case .doubao: return String(localized: "ByteDance Doubao models via Volcengine Ark", bundle: .appLanguage)
+        case .qwen: return String(localized: "Alibaba Qwen models via DashScope", bundle: .appLanguage)
+        case .kimi: return String(localized: "Moonshot Kimi models", bundle: .appLanguage)
+        case .zhipu: return String(localized: "Zhipu GLM models", bundle: .appLanguage)
+        case .minimax: return String(localized: "MiniMax abab models", bundle: .appLanguage)
+        case .quotio: return String(localized: "Local OpenAI-compatible proxy routing to many model backends", bundle: .appLanguage)
         }
     }
 
@@ -124,6 +130,36 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .appleIntelligence, .ollama, .deepseek, .minimax, .quotio: return false
         }
     }
+
+    /// Whether the provider serves OpenAI's `POST /audio/transcriptions`
+    /// multipart speech-to-text route at its configured base URL.
+    ///
+    /// These are the gateways documented to expose that route; because the
+    /// base URL and model are both user-editable, anyone running another
+    /// OpenAI-compatible ASR endpoint can reach it through Quotio. A provider
+    /// that turns out not to serve the route answers with its own HTTP error,
+    /// which is surfaced verbatim rather than hidden.
+    var supportsAudioTranscription: Bool {
+        switch self {
+        case .openAI, .qwen, .quotio: return true
+        case .anthropic, .deepseek, .doubao, .zhipu, .minimax, .kimi,
+             .appleIntelligence, .ollama: return false
+        }
+    }
+
+    /// Curated speech-to-text model IDs. Editable in the audio pane, since
+    /// availability varies by account and region.
+    var defaultTranscriptionModels: [String] {
+        switch self {
+        case .openAI: return ["gpt-4o-transcribe", "gpt-4o-mini-transcribe", "whisper-1"]
+        case .qwen: return ["qwen3-asr-flash", "qwen-audio-asr"]
+        case .quotio: return ["whisper-1"]
+        default: return []
+        }
+    }
+
+    /// Speech-to-text path appended to the base URL.
+    var transcriptionPath: String { "/audio/transcriptions" }
 
     /// Whether the OpenAI-style `response_format: {type: json_object}` is
     /// supported. Providers without it still receive the JSON schema in the
@@ -298,6 +334,8 @@ final class AIModelSettings {
         static let cloudAPIStyles = "cloud_api_style_overrides" // [providerRaw: "openai"|"anthropic"]
         static let aiPhotoCleanup = "ai_photo_cleanup_enabled"
         static let batchConcurrency = "ai_batch_concurrency"
+        static let transcriptionEngine = "ai_transcription_engine"
+        static let transcriptionModels = "ai_transcription_models"  // [providerRaw: modelID]
     }
 
     /// Allowed range for batch-analysis parallelism. Capped low enough that a
@@ -356,6 +394,16 @@ final class AIModelSettings {
         }
     }
 
+    /// Which engine transcribes recorded and imported audio.
+    var transcriptionEngine: AudioTranscriptionEngine {
+        didSet { UserDefaults.standard.set(transcriptionEngine.rawValue, forKey: Keys.transcriptionEngine) }
+    }
+
+    /// Per-provider selected speech-to-text model IDs.
+    private(set) var transcriptionModelSelections: [String: String] {
+        didSet { persistDictionary(transcriptionModelSelections, key: Keys.transcriptionModels) }
+    }
+
     /// Per-provider selected cloud model IDs.
     private(set) var cloudModelSelections: [String: String] {
         didSet { persistDictionary(cloudModelSelections, key: Keys.cloudModels) }
@@ -397,7 +445,13 @@ final class AIModelSettings {
         self.batchConcurrency = min(max(savedConcurrency, AIModelSettings.batchConcurrencyRange.lowerBound),
                                     AIModelSettings.batchConcurrencyRange.upperBound)
 
+        // Apple Speech stays the default: it is free, needs no key, and keeps
+        // the audio on device whenever the locale's model is installed.
+        let savedEngine = UserDefaults.standard.string(forKey: Keys.transcriptionEngine) ?? ""
+        self.transcriptionEngine = AudioTranscriptionEngine(rawValue: savedEngine) ?? .appleSpeech
+
         self.cloudModelSelections = AIModelSettings.loadDictionary(key: Keys.cloudModels)
+        self.transcriptionModelSelections = AIModelSettings.loadDictionary(key: Keys.transcriptionModels)
         self.cloudBaseURLOverrides = AIModelSettings.loadDictionary(key: Keys.cloudBaseURLs)
         self.apiStyleOverrides = AIModelSettings.loadDictionary(key: Keys.cloudAPIStyles)
 
@@ -546,6 +600,38 @@ final class AIModelSettings {
         }
     }
 
+    // MARK: - Audio Transcription
+
+    /// The provider that will serve an AI transcription request: the effective
+    /// provider when it can do speech-to-text, otherwise the first configured
+    /// one that can. Returns `nil` when no configured provider offers it.
+    func transcriptionProvider() -> AIProvider? {
+        let effective = effectiveProvider
+        if effective.supportsAudioTranscription, isAvailable(effective) { return effective }
+        return AIProvider.allCases.first { $0.supportsAudioTranscription && isAvailable($0) }
+    }
+
+    /// Whether AI transcription can run right now.
+    var isAITranscriptionAvailable: Bool { transcriptionProvider() != nil }
+
+    /// The selected speech-to-text model for a provider, falling back to its
+    /// first curated default.
+    func transcriptionModel(for provider: AIProvider) -> String {
+        if let chosen = transcriptionModelSelections[provider.rawValue], !chosen.isEmpty {
+            return chosen
+        }
+        return provider.defaultTranscriptionModels.first ?? ""
+    }
+
+    func setTranscriptionModel(_ model: String, for provider: AIProvider) {
+        let trimmed = model.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            transcriptionModelSelections.removeValue(forKey: provider.rawValue)
+        } else {
+            transcriptionModelSelections[provider.rawValue] = trimmed
+        }
+    }
+
     // MARK: - Availability
 
     /// Whether Apple Intelligence is available.
@@ -587,23 +673,35 @@ final class AIModelSettings {
     }
 
     /// Status message for the current configuration.
+    ///
+    /// The settings pane renders this as an already-built `String`, so nothing
+    /// here is extracted by Xcode unless it goes through `String(localized:)`;
+    /// left as plain literals the AI status line reports in English even when
+    /// the rest of the 中文 interface is translated. Model names and provider
+    /// brand names are substituted as `%@` so they stay verbatim while the
+    /// sentence around them can be reordered by a translation.
     var statusMessage: String {
         switch provider {
         case .appleIntelligence:
             return isAppleIntelligenceAvailable
-                ? "Apple Intelligence is ready"
-                : (AIWordExplanationService.shared.unavailabilityReason ?? "Apple Intelligence is not available")
+                ? String(localized: "Apple Intelligence is ready", bundle: .appLanguage)
+                : (AIWordExplanationService.shared.unavailabilityReason
+                    ?? String(localized: "Apple Intelligence is not available", bundle: .appLanguage))
         case .ollama:
             if OllamaService.shared.isConnected {
-                return ollamaModel.isEmpty ? "Connected — select a model" : "Connected to \(ollamaModel)"
+                return ollamaModel.isEmpty
+                    ? String(localized: "Connected — select a model", bundle: .appLanguage)
+                    : String(format: String(localized: "Connected to %@", bundle: .appLanguage), ollamaModel)
             }
-            return OllamaService.shared.connectionError ?? "Not connected to Ollama"
+            return OllamaService.shared.connectionError ?? String(localized: "Not connected to Ollama", bundle: .appLanguage)
         default:
             if apiKey(for: provider).isEmpty {
-                return "Add your \(provider.displayName) API key"
+                return String(format: String(localized: "Add your %@ API key", bundle: .appLanguage), provider.displayName)
             }
             let model = selectedModel(for: provider)
-            return model.isEmpty ? "Ready — select a model" : "Using \(model)"
+            return model.isEmpty
+                ? String(localized: "Ready — select a model", bundle: .appLanguage)
+                : String(format: String(localized: "Using %@", bundle: .appLanguage), model)
         }
     }
 

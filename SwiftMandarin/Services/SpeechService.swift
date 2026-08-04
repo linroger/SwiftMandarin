@@ -147,7 +147,7 @@ enum SpeechService {
         activeAudioSessionOwner = sessionOwner
         AIAudioRuntimeState.shared.update(
             phase: .cacheHit,
-            message: String(localized: "Preparing saved AI audio…"),
+            message: String(localized: "Preparing saved AI audio…", bundle: .appLanguage),
             currentRecordID: recordID,
             usedCache: true
         )
@@ -170,7 +170,7 @@ enum SpeechService {
             }
             AIAudioRuntimeState.shared.update(
                 phase: .cacheHit,
-                message: String(localized: "Playing saved AI audio"),
+                message: String(localized: "Playing saved AI audio", bundle: .appLanguage),
                 currentRecordID: recordID,
                 usedCache: true
             )
@@ -263,7 +263,7 @@ enum SpeechService {
         )
         AIAudioRuntimeState.shared.update(
             phase: .generating,
-            message: String(localized: "Generating AI audio…")
+            message: String(localized: "Generating AI audio…", bundle: .appLanguage)
         )
 
         let fallback = requireMiniMax ? false : preferences.aiAudioFallbackToSystemSpeech
@@ -291,8 +291,8 @@ enum SpeechService {
                 AIAudioRuntimeState.shared.update(
                     phase: generated.wasCached ? .cacheHit : .playing,
                     message: generated.wasCached
-                        ? String(localized: "Playing saved AI audio")
-                        : String(localized: "Playing AI audio"),
+                        ? String(localized: "Playing saved AI audio", bundle: .appLanguage)
+                        : String(localized: "Playing AI audio", bundle: .appLanguage),
                     currentRecordID: generated.record.id,
                     usedCache: generated.wasCached
                 )
@@ -341,7 +341,7 @@ enum SpeechService {
         generationTask = nil
         let message = error.localizedDescription
         if shouldFallback {
-            let notice = message + " " + String(localized: "Using the system voice.")
+            let notice = message + " " + String(localized: "Using the system voice.", bundle: .appLanguage)
             AIAudioRuntimeState.shared.update(
                 phase: .localFallback,
                 message: notice
@@ -382,7 +382,7 @@ enum SpeechService {
             player.delegate = generatedAudioDelegate
             guard player.prepareToPlay() else {
                 throw GeneratedAudioFileUnreadable(
-                    message: String(localized: "The audio player could not start.")
+                    message: String(localized: "The audio player could not start.", bundle: .appLanguage)
                 )
             }
         } catch let error as GeneratedAudioFileUnreadable {
@@ -416,7 +416,7 @@ enum SpeechService {
             guard player.play() else {
                 generatedAudioPlayer = nil
                 throw MiniMaxAudioError.playback(
-                    String(localized: "The audio player could not start.")
+                    String(localized: "The audio player could not start.", bundle: .appLanguage)
                 )
             }
         } catch let error as MiniMaxAudioError {
@@ -458,7 +458,7 @@ enum SpeechService {
             }
             AIAudioRuntimeState.shared.update(phase: .idle)
         } else {
-            let message = String(localized: "The generated audio stopped before it finished.")
+            let message = String(localized: "The generated audio stopped before it finished.", bundle: .appLanguage)
             if let requestID {
                 completeTrackedRequest(requestID, outcome: .failed(message))
             }

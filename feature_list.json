@@ -66,5 +66,79 @@
       "Build and run regression checks for macOS, iPhone iOS 27, and iPadOS 27"
     ],
     "passes": true
+  },
+  {
+    "id": "bug_ai_translation_structured_output",
+    "category": "reliability",
+    "description": "AI translation and OCR cleanup return a parsed one-field structured result, so model commentary, chain-of-thought, labels, and notes can never be displayed, spoken, or saved as the answer.",
+    "steps": [
+      "Configure a cloud provider whose model emits inline <think> reasoning and translate a long passage from the Translate, Photo, or Reader screen",
+      "Verify the displayed translation contains no reasoning, preface, label, markdown fence, or trailing translator's note",
+      "Ask a reasoning-heavy model to translate an article and verify it renders the passage rather than an outline or summary of it",
+      "Translate a passage long enough to have been truncated at the previous 2048-token ceiling and verify the whole translation arrives intact",
+      "Force a response that is nothing but commentary and verify an actionable error appears instead of the commentary",
+      "Repeat through Ollama and Apple Intelligence and verify all three providers behave identically",
+      "Run scripts/test-ai-prompt-contracts.sh and build macOS and iOS with no new warnings"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_translation_study_notes",
+    "category": "functional",
+    "description": "An AI translation returns, in the same structured response, a short explanation of what made the passage tricky and the key terms a learner would have to look up, scaled to the passage and excluding elementary vocabulary.",
+    "steps": [
+      "Translate a short easy phrase with an AI provider and verify no notes panel appears",
+      "Translate an idiomatic sentence and verify the explanation names the actual difficulty and quotes the source words",
+      "Verify the key terms exclude pronouns, particles, numbers, and everyday vocabulary",
+      "Translate a long passage and verify the terms are drawn from across the whole text and capped at eight",
+      "Switch the interface language and verify the notes are written in the new native language",
+      "Save a key term from the notes panel and verify it appears in the vocabulary book",
+      "Translate with Apple's on-device engine and verify Explain this translation fetches the notes on demand"
+    ],
+    "passes": true
+  },
+  {
+    "id": "bug_audio_transcription_no_fallback",
+    "category": "reliability",
+    "description": "Recorded and imported audio transcribes even when the locale's on-device dictation model is missing, the recognizer reports availability late, or Speech never answers.",
+    "steps": [
+      "Transcribe a Chinese clip on a device without the Chinese dictation model and verify it falls back to Apple's service instead of failing",
+      "Transcribe immediately after switching audio language and verify a transient unavailable recognizer is not rejected",
+      "Verify a stalled recognition ends with an actionable timeout instead of an endless spinner",
+      "Verify the transcript arrives with sentence punctuation",
+      "Verify a failure message carries the underlying Speech error domain and code"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_ai_transcription",
+    "category": "functional",
+    "description": "Audio can be transcribed through a configured AI provider's OpenAI-compatible speech-to-text endpoint and translated in the same flow, with Apple Speech remaining the on-device default.",
+    "steps": [
+      "Open the Multimodal audio pane and verify the engine picker defaults to Apple Speech",
+      "Switch to AI Provider with an OpenAI key configured and verify the model field appears",
+      "Record a clip, choose Transcribe to Editor, and verify the AI transcript reaches the editor",
+      "Choose Translate Audio and verify the transcript is transcribed then translated end to end",
+      "Verify the privacy notice changes to say the audio is uploaded and billed",
+      "Force an Apple Speech failure and verify Retry with AI and Retry & Translate appear and work",
+      "Select AI Provider with no capable provider configured and verify an actionable message appears"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_reverse_learner_mode",
+    "category": "functional",
+    "description": "Selecting the Chinese-speaker-learning-English mode mirrors the whole app: AI explains English headwords in Mandarin with IPA instead of pinyin, the vocabulary list puts the English word in the main font with 中文 beneath, the tappable reader annotates English, Mandarin-only affordances are hidden, and the interface renders in 中文.",
+    "steps": [
+      "Open Settings and pick 中文母语者学英语, then verify the whole interface switches to 中文",
+      "Open Translate and verify it starts on 中 to EN and that the English pane is the tappable, word-by-word one with 中文 shown small beneath it",
+      "Tap an English word and verify the detail sheet leads with the English word and glosses it in 中文",
+      "Open Vocabulary and verify each row shows the English word in the main font with the Chinese gloss in the smaller font, and that the Pinyin sort option is absent",
+      "Ask for an AI explanation of an English word and verify the prose is Mandarin and the pronunciation field holds IPA, not pinyin",
+      "Read a saved word aloud and verify the English side is spoken",
+      "Open Display settings and verify the pinyin and tone-color controls are hidden, and that Practice no longer offers tone drills",
+      "Switch back to the English-speaker mode and verify every screen returns to its original Mandarin-learner behavior"
+    ],
+    "passes": true
   }
 ]

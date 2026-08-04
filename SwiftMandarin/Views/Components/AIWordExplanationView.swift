@@ -428,9 +428,17 @@ struct AIWordExplanationView: View {
     
     // MARK: - Section Components
     
+    /// `title` is a `LocalizedStringKey` rather than a `String` because a
+    /// `String` sends `Text` down its non-localizing initializer, which left all
+    /// nine section headings ("Definition", "Examples", …) in English even when
+    /// the interface language is 中文. As a key, each heading the call sites pass
+    /// as a literal is extracted into the string catalog and translated.
+    /// `id` deliberately stays a plain `String`: it is the expand/collapse
+    /// identity tracked in `expandedSections`/`allSectionIDs`, so it must remain
+    /// stable across languages and never follow the heading's translation.
     @ViewBuilder
     private func collapsibleSection<Content: View>(
-        title: String,
+        title: LocalizedStringKey,
         icon: String,
         id: String,
         @ViewBuilder content: () -> Content
@@ -476,14 +484,25 @@ struct AIWordExplanationView: View {
         HStack(alignment: .top, spacing: 8) {
             VStack(alignment: .leading, spacing: 4) {
                 // The sentence is in the word's own language (the learning
-                // target), so it leads; pinyin only exists for Chinese text.
+                // target), so it leads. The reading below it is pinyin for a
+                // Chinese sentence and IPA for an English one — the same field
+                // serving both directions.
                 Text(sentence.sentence)
                     .font(.body)
                     .fontWeight(.medium)
 
                 if !sentence.pinyin.isEmpty {
-                    Text(PinyinConverter.coloredPinyin(fromPinyin: sentence.pinyin))
-                        .font(.caption)
+                    // Tone coloring segments by pinyin syllable rules, so it
+                    // would chop an IPA transcription into arbitrary pieces and
+                    // paint them with tones English does not have.
+                    if sentence.pinyin.looksLikeIPA {
+                        Text(sentence.pinyin)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(PinyinConverter.coloredPinyin(fromPinyin: sentence.pinyin))
+                            .font(.caption)
+                    }
                 }
 
                 Text(sentence.translation)

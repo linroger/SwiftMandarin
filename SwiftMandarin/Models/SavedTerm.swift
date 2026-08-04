@@ -83,26 +83,67 @@ extension SavedTerm {
     }
 
     /// The text shown big — the side in the language the user is learning.
-    /// Falls back to the headword when the entry has no text in that language.
+    ///
+    /// A one-sided entry (saved before the learner switched direction, or
+    /// captured with only a headword) has nothing in the studied language. It
+    /// still has to render *something*, so the other side is promoted rather
+    /// than leaving a blank row — and `glossText` then correctly returns "",
+    /// because the promoted text is already on screen.
     @MainActor
     var headlineText: String {
-        let primary = LocalizationManager.shared.learningIsChinese ? chineseSide : englishSide
-        return primary.isEmpty ? chinese : primary
+        let context = LearningContext.current
+        let primary = context.primary(chinese: chineseSide, english: englishSide)
+        guard primary.isEmpty else { return primary }
+        let fallback = context.secondary(chinese: chineseSide, english: englishSide)
+        return fallback.isEmpty ? chinese : fallback
     }
 
     /// The small secondary text — the side in the user's native language.
     /// Empty when the entry has nothing beyond the headline.
     @MainActor
     var glossText: String {
-        let secondary = LocalizationManager.shared.learningIsChinese ? englishSide : chineseSide
+        let secondary = LearningContext.current.secondary(chinese: chineseSide, english: englishSide)
         return secondary == headlineText ? "" : secondary
     }
 
     /// Pinyin is a learner aid for reading Chinese: shown only when the user
     /// is learning Chinese (English UI) and the entry has a Chinese side.
+    ///
+    /// The mirror aid — an English pronunciation for a Mandarin speaker — is
+    /// `showsPhonetic`, since the two are never useful at the same time.
     @MainActor
     var showsPinyin: Bool {
-        LocalizationManager.shared.learningIsChinese && !chineseSide.isEmpty && !pinyin.isEmpty
+        LearningContext.current.showsPinyinAffordances && !chineseSide.isEmpty && !pinyin.isEmpty
+    }
+
+    /// Whether the stored reading should be shown as an English pronunciation
+    /// under an English headword.
+    ///
+    /// In reverse mode the AI fills the same `pinyin` slot with IPA (see
+    /// `AIExplanationPromptBuilder`), so no new storage is needed — only a
+    /// rule for when to read it that way. The `looksLikeIPA` guard matters:
+    /// a term saved while learning Mandarin holds *pinyin* there, and showing
+    /// "xuéxí" under the headword "study" would be worse than showing nothing.
+    @MainActor
+    var showsPhonetic: Bool {
+        !LearningContext.current.showsPinyinAffordances
+            && !englishSide.isEmpty
+            && pinyin.looksLikeIPA
+            && headlineText == englishSide
+    }
+
+    /// The stored reading, but only when it actually belongs to `headlineText`.
+    ///
+    /// One field holds the reading for both directions, so an entry saved
+    /// while learning Mandarin carries pinyin for its Chinese side. Handing
+    /// that to an explanation request for the English headword — where it is
+    /// read as a sense hint — would be misleading noise, and pasting it into a
+    /// copied English word would be nonsense. Empty when the two don't match.
+    @MainActor
+    var headwordReading: String {
+        if showsPinyin, headlineText == chineseSide { return pinyin }
+        if showsPhonetic { return pinyin }
+        return ""
     }
 
     /// Headword forms an AI explanation might be cached under. The analyzed word
@@ -148,9 +189,17 @@ final class SavedTermsStore {
     /// Normalize a term for duplicate comparison: AI/OCR sources can attach
     /// invisible characters (zero-width space/joiners, BOM) or stray
     /// whitespace, which would defeat plain string equality.
+    ///
+    /// Case is folded too. Han characters have no case, so this changes
+    /// nothing for a Mandarin headword — but an English headword captured at
+    /// the start of a sentence ("Charge") would otherwise be stored a second
+    /// time alongside the same word met mid-sentence ("charge"). This mirrors
+    /// `WordExplanationCacheStore`, which already folds case for the same
+    /// reason.
     private static func normalizedKey(_ s: String) -> String {
         String(s.unicodeScalars.filter { ![0x200B, 0x200C, 0x200D, 0xFEFF].contains($0.value) })
             .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
     }
 
     func add(_ term: SavedTerm) {

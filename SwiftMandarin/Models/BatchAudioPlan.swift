@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 nonisolated enum BatchAudioScope: String, CaseIterable, Identifiable, Sendable {
     case learningLanguage
@@ -13,10 +14,18 @@ nonisolated enum BatchAudioScope: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
-    var displayName: LocalizedStringResource {
+    /// "Mandarin and English" named the two languages in the English
+    /// speaker's reading order. The scope is symmetric, so the label is too.
+    /// A `LocalizedStringKey` rather than a `LocalizedStringResource`, because
+    /// SwiftUI resolves the former through `Bundle.main.localizedString`, which
+    /// is the method `LocalizationManager` overrides — so it follows the in-app
+    /// language toggle. A `LocalizedStringResource` goes through Foundation's
+    /// own lookup instead, which never sees that override and would leave this
+    /// label in the device language while the rest of the screen switched.
+    var displayName: LocalizedStringKey {
         switch self {
         case .learningLanguage: return "Learning Language Only"
-        case .bothLanguages: return "Mandarin and English"
+        case .bothLanguages: return "Both Languages"
         }
     }
 }
@@ -60,7 +69,7 @@ nonisolated enum BatchAudioPlanRevalidationError: LocalizedError, Sendable {
     var errorDescription: String? {
         switch self {
         case .reviewedSavedAudioChanged:
-            return String(localized: "Saved audio changed after this batch was reviewed. Review the batch again before starting any paid requests.")
+            return String(localized: "Saved audio changed after this batch was reviewed. Review the batch again before starting any paid requests.", bundle: .appLanguage)
         }
     }
 }
@@ -144,18 +153,20 @@ nonisolated enum BatchAudioPlanner {
                     )
                 }
             case .bothLanguages:
-                append(
-                    text: term.chineseText,
-                    languageCode: "zh-CN",
-                    configuration: chineseConfiguration,
-                    term: term
-                )
-                append(
-                    text: term.englishText,
-                    languageCode: "en-US",
-                    configuration: englishConfiguration,
-                    term: term
-                )
+                // Queue the studied language first so the clips the learner
+                // actually practises with are ready earliest, and so a run
+                // stopped part-way still leaves a usable library. Which side
+                // leads mirrors the learner mode.
+                let chineseSide = (term.chineseText, "zh-CN", chineseConfiguration)
+                let englishSide = (term.englishText, "en-US", englishConfiguration)
+                for side in learningIsChinese ? [chineseSide, englishSide] : [englishSide, chineseSide] {
+                    append(
+                        text: side.0,
+                        languageCode: side.1,
+                        configuration: side.2,
+                        term: term
+                    )
+                }
             }
         }
 

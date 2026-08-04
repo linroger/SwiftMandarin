@@ -191,7 +191,7 @@ struct ReaderView: View {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .first { !$0.isEmpty } ?? ""
         guard !firstLine.isEmpty else {
-            return String(localized: "Untitled")
+            return String(localized: "Untitled", bundle: .appLanguage)
         }
         return String(firstLine.prefix(60))
     }

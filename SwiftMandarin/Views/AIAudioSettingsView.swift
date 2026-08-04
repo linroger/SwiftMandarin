@@ -398,7 +398,7 @@ struct AIAudioSettingsView: View {
         .alert("AI Audio Error", isPresented: errorBinding) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(errorMessage ?? String(localized: "The AI Audio action could not be completed."))
+            Text(errorMessage ?? String(localized: "The AI Audio action could not be completed.", bundle: .appLanguage))
         }
     }
 
@@ -481,8 +481,8 @@ struct AIAudioSettingsView: View {
 
     private func catalogStatus(_ catalog: MiniMaxVoiceCatalog) -> String {
         let source = catalog.origin == .live
-            ? String(localized: "Live")
-            : String(localized: "Saved Offline")
+            ? String(localized: "Live", bundle: .appLanguage)
+            : String(localized: "Saved Offline", bundle: .appLanguage)
         return source + " · " + catalog.fetchedAt.formatted(
             date: .abbreviated,
             time: .shortened
@@ -516,7 +516,7 @@ struct AIAudioSettingsView: View {
                     languageCode: languageCode
                 )
                 try Task.checkCancellation()
-                previewMessage = String(localized: "Played with MiniMax")
+                previewMessage = String(localized: "Played with MiniMax", bundle: .appLanguage)
                     + " · \(voiceName) · \(modelName)"
                 previewIsError = false
             } catch is CancellationError {
@@ -714,7 +714,7 @@ private struct MiniMaxVoiceSelectionView: View {
                             voiceLabel(
                                 name: selection,
                                 voiceID: selection,
-                                description: String(localized: "This voice is not in the current live catalog."),
+                                description: String(localized: "This voice is not in the current live catalog.", bundle: .appLanguage),
                                 isSelected: true
                             )
                         }
@@ -909,7 +909,7 @@ struct GeneratedAudioLibraryView: View {
         .alert("Saved Audio Error", isPresented: errorBinding) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(errorMessage ?? String(localized: "The saved-audio action could not be completed."))
+            Text(errorMessage ?? String(localized: "The saved-audio action could not be completed.", bundle: .appLanguage))
         }
         .alert("Clear Saved Audio?", isPresented: $confirmingClear) {
             Button("Clear All", role: .destructive) {

@@ -39,8 +39,8 @@ enum TranslationDirection: String, CaseIterable, Identifiable, Codable {
     /// the in-app language toggle (e.g. 中文 UI shows 输入英文…/输入中文…).
     var placeholder: String {
         switch self {
-        case .englishToChinese: return String(localized: "Enter English text...")
-        case .chineseToEnglish: return String(localized: "输入中文...")
+        case .englishToChinese: return String(localized: "Enter English text...", bundle: .appLanguage)
+        case .chineseToEnglish: return String(localized: "输入中文...", bundle: .appLanguage)
         }
     }
     
@@ -80,19 +80,33 @@ enum TranslationDirection: String, CaseIterable, Identifiable, Codable {
     /// section headers built from them follow the in-app language toggle).
     var sourceLanguageName: String {
         switch self {
-        case .englishToChinese: return String(localized: "English")
-        case .chineseToEnglish: return String(localized: "Chinese")
+        case .englishToChinese: return String(localized: "English", bundle: .appLanguage)
+        case .chineseToEnglish: return String(localized: "Chinese", bundle: .appLanguage)
         }
     }
 
     var targetLanguageName: String {
         switch self {
-        case .englishToChinese: return String(localized: "Chinese")
-        case .chineseToEnglish: return String(localized: "English")
+        case .englishToChinese: return String(localized: "Chinese", bundle: .appLanguage)
+        case .chineseToEnglish: return String(localized: "English", bundle: .appLanguage)
         }
     }
     
     func toggled() -> TranslationDirection {
         opposite
+    }
+
+    /// The direction to start on when the user has expressed no preference.
+    ///
+    /// Every screen that reads the shared `defaultDirection` preference needs
+    /// a fall-back for the moment before it is written. Hard-coding
+    /// `.englishToChinese` there quietly made English-speaker orientation the
+    /// app's universal default, so a Mandarin speaker learning English opened
+    /// Translate pointing the wrong way. Deriving it from the persisted
+    /// interface language — which is the user's native language — gives each
+    /// audience the direction they actually want. Nonisolated so it can serve
+    /// as an `@AppStorage` default and be read from a nonisolated `init`.
+    static var persistedDefault: TranslationDirection {
+        AppLanguage.persisted == .chinese ? .chineseToEnglish : .englishToChinese
     }
 }

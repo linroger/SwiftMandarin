@@ -45,6 +45,10 @@ enum EnglishPartOfSpeech: String, CaseIterable, Codable {
         }
     }
     
+    /// The grammar term in English. Deliberately fixed rather than localized:
+    /// the word-detail sheet shows it beside the Chinese `rawValue` so the pair
+    /// reads "Noun 名词", which teaches the term to whichever audience does not
+    /// already know it. It is also what gets written into `SavedTerm`.
     var englishName: String {
         switch self {
         case .noun: return "Noun"
@@ -157,6 +161,21 @@ enum SentenceType: String, CaseIterable {
     case imperative = "祈使句"
     case negative = "否定句"
     
+    /// Localized sentence-type label — the property the UI should render.
+    /// The raw value is Chinese and is the case's stable identifier, so it
+    /// cannot be translated in place; rendering it leaves the badge on a
+    /// sentence card reading 陈述句 to an English speaker. This mirror resolves
+    /// the term through the string catalog so it follows the UI language.
+    var displayName: String {
+        switch self {
+        case .declarative: return String(localized: "Declarative", bundle: .appLanguage)
+        case .question: return String(localized: "Question", bundle: .appLanguage)
+        case .exclamation: return String(localized: "Exclamation", bundle: .appLanguage)
+        case .imperative: return String(localized: "Imperative", bundle: .appLanguage)
+        case .negative: return String(localized: "Negative", bundle: .appLanguage)
+        }
+    }
+
     var englishName: String {
         switch self {
         case .declarative: return "Declarative"
@@ -347,56 +366,56 @@ final class EnglishTextAnalyzer {
 
         // Detect tenses
         if lowercased.contains("ing") && (lowercased.contains("is ") || lowercased.contains("are ") || lowercased.contains("am ")) {
-            points.append(String(localized: "Present continuous: be + verb-ing"))
+            points.append(String(localized: "Present continuous: be + verb-ing", bundle: .appLanguage))
         }
 
         if lowercased.contains("ed") || lowercased.contains("went") || lowercased.contains("was") || lowercased.contains("were") {
-            points.append(String(localized: "Simple past: verb in past form"))
+            points.append(String(localized: "Simple past: verb in past form", bundle: .appLanguage))
         }
 
         if lowercased.contains("will ") || lowercased.contains("going to") {
-            points.append(String(localized: "Simple future: will / be going to + base verb"))
+            points.append(String(localized: "Simple future: will / be going to + base verb", bundle: .appLanguage))
         }
 
         // Detect common structures
         if lowercased.contains("there is") || lowercased.contains("there are") {
-            points.append(String(localized: "'There be' pattern: expresses existence"))
+            points.append(String(localized: "'There be' pattern: expresses existence", bundle: .appLanguage))
         }
 
         if lowercased.contains("have to") || lowercased.contains("has to") {
-            points.append(String(localized: "have to: must, to be obliged to"))
+            points.append(String(localized: "have to: must, to be obliged to", bundle: .appLanguage))
         }
 
         if lowercased.contains("would like") || lowercased.contains("want to") {
-            points.append(String(localized: "Expressing wants: would like to / want to"))
+            points.append(String(localized: "Expressing wants: would like to / want to", bundle: .appLanguage))
         }
 
         // Detect question patterns
         if lowercased.hasPrefix("what") {
-            points.append(String(localized: "'What' question: asking about a thing"))
+            points.append(String(localized: "'What' question: asking about a thing", bundle: .appLanguage))
         } else if lowercased.hasPrefix("where") {
-            points.append(String(localized: "'Where' question: asking about a place"))
+            points.append(String(localized: "'Where' question: asking about a place", bundle: .appLanguage))
         } else if lowercased.hasPrefix("when") {
-            points.append(String(localized: "'When' question: asking about a time"))
+            points.append(String(localized: "'When' question: asking about a time", bundle: .appLanguage))
         } else if lowercased.hasPrefix("how") {
             if lowercased.hasPrefix("how many") {
-                points.append(String(localized: "How many: asking about countable quantity"))
+                points.append(String(localized: "How many: asking about countable quantity", bundle: .appLanguage))
             } else if lowercased.hasPrefix("how much") {
-                points.append(String(localized: "How much: asking about uncountable quantity or price"))
+                points.append(String(localized: "How much: asking about uncountable quantity or price", bundle: .appLanguage))
             } else if lowercased.hasPrefix("how old") {
-                points.append(String(localized: "How old: asking about age"))
+                points.append(String(localized: "How old: asking about age", bundle: .appLanguage))
             } else {
-                points.append(String(localized: "'How' question: asking about manner"))
+                points.append(String(localized: "'How' question: asking about manner", bundle: .appLanguage))
             }
         }
 
         // Detect comparatives and superlatives
         if lowercased.contains("er than") || lowercased.contains("more ") && lowercased.contains(" than") {
-            points.append(String(localized: "Comparative: adjective + -er / more + adjective"))
+            points.append(String(localized: "Comparative: adjective + -er / more + adjective", bundle: .appLanguage))
         }
 
         if lowercased.contains("the most") || lowercased.contains("est ") {
-            points.append(String(localized: "Superlative: the + adjective-est / the most + adjective"))
+            points.append(String(localized: "Superlative: the + adjective-est / the most + adjective", bundle: .appLanguage))
         }
 
         return points

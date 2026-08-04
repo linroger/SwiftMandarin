@@ -190,8 +190,16 @@ final class OllamaService {
             think: enableThinking,
             keepAlive: .minutes(10)
         )
-        
-        return (content: response.message.content, thinking: response.message.thinking)
+
+        // Ollama reports a model's reasoning in `thinking`, but models that
+        // were trained to emit `<think>` tags still write them into `content`
+        // when the server does not split them out. Strip them here so no caller
+        // has to, and so the shared JSON extraction never trips over a brace
+        // inside a chain of thought.
+        return (
+            content: AIResponseSanitizer.strippingReasoning(response.message.content),
+            thinking: response.message.thinking
+        )
     }
     
     /// Generate a streaming chat completion
@@ -254,8 +262,8 @@ final class OllamaService {
             think: enableThinking,
             keepAlive: .minutes(10)
         )
-        
-        return response.message.content
+
+        return AIResponseSanitizer.strippingReasoning(response.message.content)
     }
     
     /// Generate structured output and decode it to a Codable type
@@ -288,32 +296,86 @@ final class OllamaService {
     
     // MARK: - Translation
     
+    /// JSON schema for the shared translation envelope: the answer plus the
+    /// optional study notes that explain it.
+    static func translationSchema(for context: AITranslationContext) -> Ollama.Value {
+        let native: Ollama.Value = .string(context.explanationLanguageName)
+        return [
+            "type": "object",
+            "properties": [
+                "translation": [
+                    "type": "string",
+                    "description": "The complete translation of the source text into the target language, and nothing else",
+                ],
+                "explanation": [
+                    "type": "string",
+                    "description": .string(
+                        "At most three sentences in \(context.explanationLanguageName) on what a learner would get "
+                            + "wrong here and why this rendering is right, quoting the exact source words; empty when "
+                            + "the source is straightforward"
+                    ),
+                ],
+                "keyTerms": [
+                    "type": "array",
+                    "items": [
+                        "type": "object",
+                        "properties": [
+                            "term": [
+                                "type": "string",
+                                "description": .string(
+                                    "A word or phrase in \(context.sourceLanguageName), quoted exactly as it appears "
+                                        + "in the source, that a learner would have to look up"
+                                ),
+                            ],
+                            "reading": [
+                                "type": "string",
+                                "description": .string(context.readingDescription),
+                            ],
+                            "meaning": ["type": "string", "description": .string("Short gloss in \(context.explanationLanguageName) for the sense used here")],
+                            "note": ["type": "string", "description": .string("At most one sentence in \(context.explanationLanguageName) on the nuance or trap; empty when unnecessary")],
+                        ],
+                        "required": ["term", "reading", "meaning", "note"],
+                    ],
+                    "description": .string(
+                        "0 items for an easy source, 2-4 for a sentence or short paragraph, at most 8 for a long "
+                            + "passage; skip beginner vocabulary and never pad. Notes in \(native)."
+                    ),
+                ],
+            ],
+            "required": ["translation", "explanation", "keyTerms"],
+        ]
+    }
+
     /// Translate text using Ollama
+    ///
+    /// Uses schema-constrained generation rather than a free-form completion:
+    /// a local model asked for a bare string readily prefixes a label, appends
+    /// a note, or describes the passage instead of translating it, and all of
+    /// that used to reach the learner as the translation.
     /// - Parameters:
     ///   - text: The text to translate
-    ///   - sourceIsChinese: Whether the source is Chinese (true) or English (false)
+    ///   - context: Translation direction plus the learner's note language
     ///   - model: The model to use
-    /// - Returns: The translated text
+    /// - Returns: The translation and its study notes
     func translate(
         _ text: String,
-        sourceIsChinese: Bool,
+        context: AITranslationContext,
         model: String
-    ) async throws -> String {
-        let systemPrompt = AITranslationPromptBuilder.instructions
-        let userPrompt = AITranslationPromptBuilder.request(
-            text: text,
-            sourceIsChinese: sourceIsChinese
-        )
-        
-        let (content, _) = try await chat(
+    ) async throws -> AITranslationResult {
+        let systemPrompt = AITranslationPromptBuilder.instructions(for: context)
+            + "\n\n"
+            + AITranslationPromptBuilder.jsonOutputContract(for: context)
+        let userPrompt = AITranslationPromptBuilder.request(text: text, context: context)
+
+        let raw = try await generateStructured(
             model: model,
             systemPrompt: systemPrompt,
             userPrompt: userPrompt,
-            enableThinking: false, // Translation doesn't need reasoning
-            options: Self.defaultOptions
+            schema: Self.translationSchema(for: context),
+            enableThinking: false // Translation doesn't need reasoning
         )
-        
-        return content.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return try AITranslationResponseParser.result(from: raw)
     }
 }
 

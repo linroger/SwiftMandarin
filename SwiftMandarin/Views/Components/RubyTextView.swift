@@ -159,6 +159,17 @@ struct RubyWordView: View {
     @AppStorage("showPinyin") private var showPinyin: Bool = true
     @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
     @AppStorage("toneColors") private var toneColors: Bool = true
+    @State private var localization = LocalizationManager.shared
+
+    /// The ruby line teaches a learner how to read the characters. A native
+    /// Mandarin reader — who sees this view only when a Chinese passage turns
+    /// up while they are studying English — already reads them, so annotating
+    /// every word would be visual noise over their own language. The
+    /// `showPinyin` preference still applies on top of this for the learner
+    /// who does want it hidden.
+    private var showsRuby: Bool {
+        showPinyin && localization.learningIsChinese
+    }
 
     var body: some View {
         Button(action: action) {
@@ -184,7 +195,7 @@ struct RubyWordView: View {
 
     @ViewBuilder
     private var wordLayout: some View {
-        if !showPinyin {
+        if !showsRuby {
             characterText
         } else {
             switch pinyinPosition {

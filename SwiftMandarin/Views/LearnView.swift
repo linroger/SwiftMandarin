@@ -667,12 +667,12 @@ struct MasteryBadge: View {
 extension ReviewQuality {
     var label: String {
         switch self {
-        case .blackout: return String(localized: "Again")
-        case .incorrect: return String(localized: "Wrong")
-        case .difficult: return String(localized: "Difficult")
-        case .hard: return String(localized: "Hard")
-        case .good: return String(localized: "Good")
-        case .easy: return String(localized: "Easy")
+        case .blackout: return String(localized: "Again", bundle: .appLanguage)
+        case .incorrect: return String(localized: "Wrong", bundle: .appLanguage)
+        case .difficult: return String(localized: "Difficult", bundle: .appLanguage)
+        case .hard: return String(localized: "Hard", bundle: .appLanguage)
+        case .good: return String(localized: "Good", bundle: .appLanguage)
+        case .easy: return String(localized: "Easy", bundle: .appLanguage)
         }
     }
 

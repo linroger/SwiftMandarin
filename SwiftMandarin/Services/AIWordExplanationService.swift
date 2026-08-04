@@ -53,6 +53,23 @@ struct ExplanationDirection: Equatable {
     }
 }
 
+// MARK: - Translation Direction
+
+extension AITranslationContext {
+    /// The context for one translation request.
+    ///
+    /// The translation direction comes from the source text, but the study
+    /// notes are written in the learner's NATIVE language — the interface
+    /// language — so they read naturally whichever way the translation runs.
+    @MainActor
+    static func current(sourceIsChinese: Bool) -> AITranslationContext {
+        AITranslationContext(
+            sourceIsChinese: sourceIsChinese,
+            explainInChinese: LocalizationManager.shared.nativeIsChinese
+        )
+    }
+}
+
 // MARK: - Word Explanation Models
 
 /// Structured response for a detailed word explanation.
@@ -101,7 +118,7 @@ struct ExampleSentence {
     @Guide(description: "A short, idiomatic sentence in the headword's language that demonstrates the selected sense; the set must include an exact-headword anchor, but another sentence may use a natural inflected or separated form of the same lexeme, never a synonym")
     let sentence: String
 
-    @Guide(description: "Hanyu pinyin with accurate tone marks (ā á ǎ à) exactly matching the sentence when the sentence is Chinese; an EMPTY string when the sentence is English")
+    @Guide(description: "The reading of this sentence: Hanyu pinyin with accurate tone marks (ā á ǎ à) when the sentence is Chinese, or IPA between slashes with primary stress marked when the sentence is English. Match the sentence exactly and never mix the two systems")
     let pinyin: String
 
     @Guide(description: "When the languages differ, a natural meaning-preserving translation into the learner's native language; when they match, a short plain-language paraphrase that does not duplicate the source sentence")
@@ -114,7 +131,7 @@ struct RelatedWord {
     @Guide(description: "The related word, in the same language as the word being explained")
     let word: String
 
-    @Guide(description: "Hanyu pinyin with accurate tone marks exactly matching the word when it is Chinese; an EMPTY string when it is English")
+    @Guide(description: "The reading of this word: Hanyu pinyin with accurate tone marks when it is Chinese, or IPA between slashes with primary stress marked when it is English. Match the word exactly and never mix the two systems")
     let pinyin: String
 
     @Guide(description: "Brief meaning, in the learner's native language")
@@ -130,11 +147,57 @@ struct Collocation {
     @Guide(description: "A high-value idiomatic collocation in the headword's language using the selected lexeme; the set must include an exact-headword anchor, but another phrase may use a natural inflected or separated form")
     let phrase: String
 
-    @Guide(description: "Hanyu pinyin with accurate tone marks exactly matching the phrase when it is Chinese; an EMPTY string when it is English")
+    @Guide(description: "The reading of this phrase: Hanyu pinyin with accurate tone marks when it is Chinese, or IPA between slashes with primary stress marked when it is English. Match the phrase exactly and never mix the two systems")
     let pinyin: String
 
     @Guide(description: "When the languages differ, a natural translation into the learner's native language; when they match, a short plain-language paraphrase that does not duplicate the source phrase")
     let translation: String
+}
+
+/// The structured result of a translation request.
+///
+/// Guided generation is the Apple Intelligence equivalent of the JSON envelope
+/// the cloud and Ollama paths request: it gives each kind of answer exactly one
+/// slot, so a preface, an outline of the passage, or a translator's note has
+/// nowhere to land where the app would read it as the translation.
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+struct TranslationOutput {
+    @Guide(description: "The complete translation of the source text into the target language and nothing else: no label, preface, quotation marks, romanization, alternative rendering, note, or commentary. Preserve the source's paragraph breaks.")
+    let translation: String
+
+    @Guide(description: "In the learner's native language, at most three sentences on what a learner would most likely get wrong here and why this rendering is right — a non-literal idiom, a reordered clause, an omitted subject, an aspect or measure-word decision, a register choice, or a cultural reference — quoting the exact source words involved. Never restate the translation or retell the content. An EMPTY string when the source is genuinely straightforward.")
+    let explanation: String
+
+    @Guide(description: "Only words or phrases a learner would actually have to look up. Skip beginner vocabulary, function words, pronouns, numbers, and anything the context makes obvious. Return none for a short or easy source, two to four for a sentence or short paragraph, and at most eight for a long passage, drawn from across the whole text. Never pad the list.", .maximumCount(8))
+    let keyTerms: [TranslationKeyTerm]
+}
+
+/// One studied term from a translation request.
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+struct TranslationKeyTerm {
+    @Guide(description: "The word or phrase exactly as it appears in the source text, preferring the whole word, set phrase, or collocation over a single character")
+    let term: String
+
+    @Guide(description: "The reading of this term: Hanyu pinyin with accurate tone marks (ā á ǎ à) when the term is Chinese, or IPA between slashes with primary stress marked when the term is English. Match the term exactly and never mix the two systems")
+    let reading: String
+
+    @Guide(description: "A short gloss in the learner's native language for the sense used in this passage, not a list of dictionary senses")
+    let meaning: String
+
+    @Guide(description: "At most one sentence in the learner's native language on the nuance, structure, register, or trap worth remembering; an EMPTY string when the meaning already says everything")
+    let note: String
+}
+
+/// The single-field result of an OCR cleanup request. Scoped the same way as
+/// `TranslationOutput`, because this text becomes the learner's source material
+/// for the rest of the photo pipeline.
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+struct CleanedTextOutput {
+    @Guide(description: "The corrected passage in its original language and nothing else: no translation, summary, description, label, heading, or commentary. Keep the passage's own wording, ordering, and paragraph breaks.")
+    let text: String
 }
 #endif
 
@@ -321,7 +384,7 @@ final class AIWordExplanationService {
 
         #if canImport(FoundationModels)
         guard #available(iOS 26.0, macOS 26.0, *) else {
-            throw AIExplanationError.unavailable(reason: String(localized: "Apple Intelligence requires iOS 26 or later"))
+            throw AIExplanationError.unavailable(reason: String(localized: "Apple Intelligence requires iOS 26 or later", bundle: .appLanguage))
         }
         guard isAvailable else {
             throw AIExplanationError.unavailable(reason: unavailabilityReason ?? "Unknown")
@@ -395,25 +458,48 @@ final class AIWordExplanationService {
     /// Translate text using Apple Intelligence
     /// - Parameters:
     ///   - text: The text to translate
-    ///   - sourceIsChinese: Whether the source text is Chinese (true) or English (false)
-    /// - Returns: The translated text
-    func translate(_ text: String, sourceIsChinese: Bool) async throws -> String {
+    ///   - context: Translation direction plus the learner's note language
+    /// - Returns: The translation and its study notes
+    func translate(_ text: String, context: AITranslationContext) async throws -> AITranslationResult {
         #if canImport(FoundationModels)
         guard #available(iOS 26.0, macOS 26.0, *) else {
-            throw AIExplanationError.unavailable(reason: String(localized: "Apple Intelligence requires iOS 26 or later"))
+            throw AIExplanationError.unavailable(reason: String(localized: "Apple Intelligence requires iOS 26 or later", bundle: .appLanguage))
         }
         guard isAvailable else {
             throw AIExplanationError.unavailable(reason: unavailabilityReason ?? "Unknown")
         }
-        
-        let prompt = AITranslationPromptBuilder.request(text: text, sourceIsChinese: sourceIsChinese)
-        
+
+        let prompt = AITranslationPromptBuilder.request(text: text, context: context)
+
         // Create session with translation instructions
-        let session = LanguageModelSession(instructions: AITranslationPromptBuilder.instructions)
-        
-        // Generate translation
-        let response = try await session.respond(to: prompt)
-        return response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        let session = LanguageModelSession(instructions: AITranslationPromptBuilder.instructions(for: context))
+
+        // Generate a structured translation. Guided generation is what keeps
+        // commentary out of the result; the parser then removes any wrapper the
+        // model still put inside the field.
+        let response = try await session.respond(to: prompt, generating: TranslationOutput.self)
+        let output = response.content
+        let translation = AITranslationResponseParser.sanitizedEnvelopeValue(output.translation)
+        guard !translation.isEmpty else {
+            throw AITranslationResponseError.noTranslation
+        }
+        return AITranslationResult(
+            translation: translation,
+            explanation: AITranslationResponseParser.sanitizedEnvelopeValue(output.explanation),
+            keyTerms: output.keyTerms
+                .prefix(AITranslationResponseParser.maximumKeyTerms)
+                .compactMap { term in
+                    let name = AITranslationResponseParser.sanitizedEnvelopeValue(term.term)
+                    let meaning = AITranslationResponseParser.sanitizedEnvelopeValue(term.meaning)
+                    guard !name.isEmpty, !meaning.isEmpty else { return nil }
+                    return AITranslationKeyTerm(
+                        term: name,
+                        reading: AITranslationResponseParser.sanitizedEnvelopeValue(term.reading),
+                        meaning: meaning,
+                        note: AITranslationResponseParser.sanitizedEnvelopeValue(term.note)
+                    )
+                }
+        )
         #else
         throw AIExplanationError.unavailable(reason: "FoundationModels framework not available")
         #endif
@@ -467,29 +553,46 @@ final class AIWordExplanationService {
     ///   - text: The text to translate
     ///   - sourceIsChinese: Whether the source is Chinese
     /// - Returns: The translated text
+    ///
+    /// Callers that only display or speak the translation use this; the study
+    /// notes come from `translateDetailedWithProvider` in the same round trip.
     func translateWithProvider(_ text: String, sourceIsChinese: Bool) async throws -> String {
+        try await translateDetailedWithProvider(text, sourceIsChinese: sourceIsChinese).translation
+    }
+
+    /// Translate text using the configured AI provider, keeping the study
+    /// notes the model returned alongside the translation.
+    /// - Parameters:
+    ///   - text: The text to translate
+    ///   - sourceIsChinese: Whether the source is Chinese
+    /// - Returns: The translation plus its explanation and key terms
+    func translateDetailedWithProvider(
+        _ text: String,
+        sourceIsChinese: Bool
+    ) async throws -> AITranslationResult {
         let settings = AIModelSettings.shared
         // On systems without Apple's Translation API this is the only
         // translation backend, so fail with actionable guidance.
         guard settings.isAnyProviderAvailable else {
             throw AIExplanationError.unavailable(
-                reason: String(localized: "No AI provider is configured. Add one in Settings → AI (or run a local Ollama server).")
+                reason: String(localized: "No AI provider is configured. Add one in Settings → AI (or run a local Ollama server).", bundle: .appLanguage)
             )
         }
         let provider = settings.effectiveProvider
+        let context = AITranslationContext.current(sourceIsChinese: sourceIsChinese)
 
         switch provider {
         case .appleIntelligence:
-            return try await translate(text, sourceIsChinese: sourceIsChinese)
+            return try await translate(text, context: context)
         case .ollama:
-            return try await translateWithOllama(text, sourceIsChinese: sourceIsChinese)
+            return try await translateWithOllama(text, context: context)
         default:
             let model = settings.selectedModel(for: provider)
             guard !settings.apiKey(for: provider).isEmpty else {
                 throw AIExplanationError.unavailable(reason: "No API key for \(provider.displayName)")
             }
             return try await CloudAIService.shared.translate(
-                text, sourceIsChinese: sourceIsChinese, provider: provider, model: model
+                text, context: context, provider: provider, model: model
             )
         }
     }
@@ -534,7 +637,7 @@ final class AIWordExplanationService {
         let wordLang = direction.wordLanguageName
         let pinyinDesc: Ollama.Value = direction.wordIsChinese
             ? "Hanyu pinyin with tone marks (ā á ǎ à) exactly matching the text"
-            : "Empty string (the text is English)"
+            : "IPA between slashes with primary stress marked, e.g. /kəˈmɪt/, exactly matching the English text"
         let sameLanguage = direction.wordIsChinese == direction.explainInChinese
         let definitionDesc: Ollama.Value = sameLanguage
             ? "Non-circular plain-language definition or paraphrase plus semantic essence in \(native), at most two short sentences"
@@ -544,7 +647,7 @@ final class AIWordExplanationService {
             : "Natural meaning-preserving translation into \(native), not a rigid gloss"
         let nuancesDesc: Ollama.Value = direction.wordIsChinese
             ? "One compact line per character or morpheme and its honest semantic, phonetic, transliterated, grammatical, fossilized, or uncertain role; a localized Together bridge to the whole; then register, feeling, and a practical contrast, in \(native); never invent etymology"
-            : "Genuine morphology only when useful; otherwise register, feeling, and a practical contrast in \(native), without repeating the definition"
+            : "One compact line per real prefix, root, suffix, compound half, or phrasal-verb particle and its contribution; a localized Together bridge to the whole; the common word-family forms and any irregular inflection worth knowing; then register, feeling, and a practical contrast, in \(native); never invent etymology"
 
         // JSON schema for structured output (direction-aware descriptions)
         let schema: Ollama.Value = [
@@ -642,20 +745,23 @@ final class AIWordExplanationService {
     }
     
     /// Translate text using Ollama
-    private func translateWithOllama(_ text: String, sourceIsChinese: Bool) async throws -> String {
+    private func translateWithOllama(
+        _ text: String,
+        context: AITranslationContext
+    ) async throws -> AITranslationResult {
         let settings = AIModelSettings.shared
-        
+
         guard OllamaService.shared.isConnected else {
             throw AIExplanationError.ollamaNotConnected
         }
-        
+
         guard !settings.ollamaModel.isEmpty else {
             throw AIExplanationError.ollamaNoModelSelected
         }
-        
+
         return try await OllamaService.shared.translate(
             text,
-            sourceIsChinese: sourceIsChinese,
+            context: context,
             model: settings.ollamaModel
         )
     }
@@ -755,13 +861,24 @@ final class AIWordExplanationService {
         default: languageNote = ""
         }
 
+        // The corrected passage replaces the scanned text for the whole photo
+        // pipeline — segmentation, translation, vocabulary — so it is asked for
+        // in a named field. A preface or summary written around that field is
+        // then discarded instead of being adopted as the learner's source text.
         let system = """
         You are an OCR post-processor. You receive raw text extracted from a photo \
-        (and may also receive the source image). Return ONLY the corrected text exactly \
+        (and may also receive the source image). Return the corrected text exactly \
         as it appears in the source. Preserve the original language — do NOT translate.\(languageNote) \
         Fix obvious OCR errors, merge lines that were wrongly split mid-sentence, remove \
         page noise and artifacts, and keep the original meaning and ordering. \
-        Output plain text only, with no commentary, labels, or quotation marks.
+        Never summarize, describe, annotate, or comment on the passage, and never add \
+        labels, headings, or quotation marks of your own.
+        """
+        let jsonContract = """
+        Return ONLY one valid JSON object with exactly this shape, and nothing before or after it:
+        {"text": "<the corrected passage and nothing else>"}
+        Escape line breaks as \\n so the object stays valid, and keep the passage's own line and \
+        paragraph breaks. Add no other keys and no commentary.
         """
         let user = "Raw OCR text:\n\n\(raw)"
 
@@ -769,9 +886,11 @@ final class AIWordExplanationService {
         case .appleIntelligence:
             #if canImport(FoundationModels)
             guard #available(iOS 26.0, macOS 26.0, *), isAvailable else { return nil }
+            // Guided generation is this path's equivalent of the JSON contract.
             let session = LanguageModelSession(instructions: system)
-            let response = try await session.respond(to: user)
-            return response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let response = try await session.respond(to: user, generating: CleanedTextOutput.self)
+            let cleaned = AITranslationResponseParser.sanitizedEnvelopeValue(response.content.text)
+            return cleaned.isEmpty ? nil : cleaned
             #else
             return nil
             #endif
@@ -779,11 +898,11 @@ final class AIWordExplanationService {
             guard OllamaService.shared.isConnected, !settings.ollamaModel.isEmpty else { return nil }
             let (content, _) = try await OllamaService.shared.chat(
                 model: settings.ollamaModel,
-                systemPrompt: system,
+                systemPrompt: system + "\n\n" + jsonContract,
                 userPrompt: user,
                 enableThinking: false
             )
-            return content.trimmingCharacters(in: .whitespacesAndNewlines)
+            return AITextCleanupResponseParser.cleanedText(from: content)
         default:
             // Use a vision model when an image is supplied; text model otherwise.
             let model = imageData != nil
@@ -793,13 +912,13 @@ final class AIWordExplanationService {
             let content = try await CloudAIService.shared.chat(
                 provider: provider,
                 model: model,
-                system: system,
+                system: system + "\n\n" + jsonContract,
                 user: user,
                 imageData: imageData,
-                jsonMode: false,
-                maxTokens: 4096
+                jsonMode: true,
+                maxTokens: AIOutputBudget.tokens(forSourceLength: raw.count)
             )
-            return content.trimmingCharacters(in: .whitespacesAndNewlines)
+            return AITextCleanupResponseParser.cleanedText(from: content)
         }
     }
 
@@ -824,7 +943,7 @@ final class AIWordExplanationService {
         let langDesc = sourceIsChinese ? "Chinese (中文)" : "English"
         let readingNote = sourceIsChinese
             ? "the Hanyu pinyin with tone marks (ā á ǎ à)"
-            : "a short pronunciation hint (may be an empty string)"
+            : "the IPA between slashes with primary stress marked, e.g. /kəˈmɪt/"
         // Meanings are written in the learner's NATIVE language (= the
         // interface language) so the study list reads naturally for them.
         let nativeDesc = LocalizationManager.shared.nativeIsChinese
@@ -906,18 +1025,18 @@ final class AIWordExplanationService {
         customInstructions: String?
     ) async throws -> GradingResult {
         guard !workbookImages.isEmpty || !answerImages.isEmpty else {
-            throw AIExplanationError.generationFailed(String(localized: "Add at least one workbook image."))
+            throw AIExplanationError.generationFailed(String(localized: "Add at least one workbook image.", bundle: .appLanguage))
         }
 
         guard let provider = Self.gradingProvider() else {
-            throw AIExplanationError.unavailable(reason: String(localized: "Workbook grading needs a vision-capable provider with an API key (OpenAI, Claude, Qwen, Doubao, Zhipu, or Kimi). Configure one in Settings → AI."))
+            throw AIExplanationError.unavailable(reason: String(localized: "Workbook grading needs a vision-capable provider with an API key (OpenAI, Claude, Qwen, Doubao, Zhipu, or Kimi). Configure one in Settings → AI.", bundle: .appLanguage))
         }
 
         let settings = AIModelSettings.shared
         // Grading needs a VISION model — the user's selected model may be
         // text-only (e.g. qwen-plus), which would "see" no pages.
         guard let model = settings.visionModel(for: provider), !model.isEmpty else {
-            throw AIExplanationError.unavailable(reason: String(localized: "No vision-capable model available for \(provider.displayName). Choose a vision model (e.g. qwen-vl-max, gpt-4o) in Settings → AI."))
+            throw AIExplanationError.unavailable(reason: String(localized: "No vision-capable model available for \(provider.displayName). Choose a vision model (e.g. qwen-vl-max, gpt-4o) in Settings → AI.", bundle: .appLanguage))
         }
 
         // The student's native language is the interface language; the
@@ -932,7 +1051,7 @@ final class AIWordExplanationService {
             : "English"
         let readingNote = LocalizationManager.shared.learningIsChinese
             ? "pinyin with tone marks (the studied terms are Chinese)"
-            : "pinyin with tone marks if the term is Chinese (otherwise a short pronunciation hint or empty string)"
+            : "IPA between slashes with primary stress marked (the studied terms are English), or pinyin with tone marks for any Chinese term"
 
         var system = """
         You are a meticulous, encouraging teacher grading a student's workbook from photos. \
@@ -1003,13 +1122,13 @@ final class AIWordExplanationService {
         // questions — surface that instead of silently reporting "0/0".
         if lastDecoded != nil {
             throw AIExplanationError.generationFailed(
-                String(localized: "The model could not find any questions in the images — the pages may be blank or unreadable, or the model may lack vision capability. Try clearer photos or a stronger vision model (e.g. qwen-vl-max, gpt-4o) in Settings → AI.")
+                String(localized: "The model could not find any questions in the images — the pages may be blank or unreadable, or the model may lack vision capability. Try clearer photos or a stronger vision model (e.g. qwen-vl-max, gpt-4o) in Settings → AI.", bundle: .appLanguage)
             )
         }
         throw AIExplanationError.generationFailed(
             lastRaw.isEmpty
-                ? String(localized: "The model returned an empty response. Try again or pick a different vision model.")
-                : String(localized: "The model's response couldn't be read as grading data. Try a more capable vision model (e.g. qwen-vl-max or qwen-vl-plus) in Settings → AI.")
+                ? String(localized: "The model returned an empty response. Try again or pick a different vision model.", bundle: .appLanguage)
+                : String(localized: "The model's response couldn't be read as grading data. Try a more capable vision model (e.g. qwen-vl-max or qwen-vl-plus) in Settings → AI.", bundle: .appLanguage)
         )
     }
 
@@ -1041,7 +1160,7 @@ final class AIWordExplanationService {
             : "English"
         let readingNote = LocalizationManager.shared.learningIsChinese
             ? "pinyin with tone marks (the studied terms are Chinese)"
-            : "a short pronunciation hint if helpful, otherwise an empty string"
+            : "IPA between slashes with primary stress marked (the studied terms are English)"
 
         // Prioritize questions the student got wrong or that carry vocab — those
         // are the weak spots worth re-drilling — and cap the prompt size.
@@ -1107,7 +1226,7 @@ final class AIWordExplanationService {
         default:
             let model = settings.selectedModel(for: provider)
             guard !settings.apiKey(for: provider).isEmpty, !model.isEmpty else {
-                throw AIExplanationError.unavailable(reason: String(localized: "No API key/model for \(provider.displayName). Configure one in Settings → AI."))
+                throw AIExplanationError.unavailable(reason: String(localized: "No API key/model for \(provider.displayName). Configure one in Settings → AI.", bundle: .appLanguage))
             }
             json = try await CloudAIService.shared.chat(
                 provider: provider, model: model, system: system, user: user,
@@ -1116,7 +1235,7 @@ final class AIWordExplanationService {
         }
 
         guard let data = Self.extractJSONObject(from: json) else {
-            throw AIExplanationError.generationFailed(String(localized: "The model's response couldn't be read as questions. Try again or pick a different model."))
+            throw AIExplanationError.generationFailed(String(localized: "The model's response couldn't be read as questions. Try again or pick a different model.", bundle: .appLanguage))
         }
         if let decoded = try? JSONDecoder().decode(GeneratedReviewResponse.self, from: data) {
             return decoded.questions.filter { !$0.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -1127,7 +1246,7 @@ final class AIWordExplanationService {
            let decoded = try? JSONDecoder().decode(GeneratedReviewResponse.self, from: rdata) {
             return decoded.questions.filter { !$0.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         }
-        throw AIExplanationError.generationFailed(String(localized: "Couldn't parse generated questions. Try again or pick a different model."))
+        throw AIExplanationError.generationFailed(String(localized: "Couldn't parse generated questions. Try again or pick a different model.", bundle: .appLanguage))
     }
 
     /// Decode a grading response, repairing common LLM JSON mistakes if needed.
@@ -1219,7 +1338,7 @@ final class AIWordExplanationService {
         guard !nuances.isEmpty else {
             let missingFocus = direction.wordIsChinese
                 ? "the requested character, word-building, and usage explanation"
-                : "the requested nuance, usage, and contrast explanation"
+                : "the requested word-building, nuance, and contrast explanation"
             throw AIExplanationError.generationFailed(
                 "The model returned an explanation without \(missingFocus). Please regenerate it."
             )

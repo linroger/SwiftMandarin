@@ -59,7 +59,7 @@ struct BatchAIAnalysisControls: View {
         .alert("Batch Preparation Failed", isPresented: preparationErrorBinding) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(preparationError ?? String(localized: "The batch plan could not be prepared."))
+            Text(preparationError ?? String(localized: "The batch plan could not be prepared.", bundle: .appLanguage))
         }
     }
 
@@ -430,7 +430,12 @@ private struct BatchAudioPreflightView: View {
 
                 if let audioPlan {
                     Section("MiniMax Snapshot") {
-                        LabeledContent("Languages", value: String(localized: audioPlan.scope.displayName))
+                        // The content-closure form rather than `value:`, so the
+                        // scope name goes through `Text`'s localizing initializer
+                        // and follows the in-app language like the row's label.
+                        LabeledContent("Languages") {
+                            Text(audioPlan.scope.displayName)
+                        }
                         LabeledContent("Speech Model", value: configuration?.model ?? "—")
                         if let mandarinVoice {
                             LabeledContent("Mandarin Voice", value: mandarinVoice)

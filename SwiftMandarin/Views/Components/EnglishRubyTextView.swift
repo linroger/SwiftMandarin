@@ -60,8 +60,10 @@ struct EnglishWordDetailSheet: View {
     @State private var isLoading: Bool = false
     @State private var fullTranslation: String = ""
     
+    /// Keyed on whatever `saveToVocabulary` would actually store, so the
+    /// button does not offer to save a word that is already in the list.
     private var isSaved: Bool {
-        !chineseTranslation.isEmpty && savedTermsStore.contains(chinese: chineseTranslation)
+        !storedHeadword.isEmpty && savedTermsStore.contains(chinese: storedHeadword)
     }
     
     /// Get the best available Chinese translation
@@ -260,7 +262,11 @@ struct EnglishWordDetailSheet: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(isSaved || chineseTranslation.isEmpty)
+                    // A missing Chinese translation blocks the save only when
+                    // Chinese is what gets stored. A Mandarin speaker studying
+                    // English can save the English headword whether or not the
+                    // gloss has arrived yet.
+                    .disabled(isSaved || storedHeadword.isEmpty)
                 }
                 .padding()
             }
@@ -298,15 +304,43 @@ struct EnglishWordDetailSheet: View {
         }
     }
     
+    /// The word as it will be stored — `SavedTerm.chinese` is the *headword*
+    /// slot, and the headword is always the language being studied.
+    ///
+    /// Storing the Chinese side unconditionally made this the odd one out
+    /// among the reverse-mode writers (`ShortcutHelpers.saveEnglishPhrases`,
+    /// `TranslateView.saveKeyTerm`), so the same word saved from here and from
+    /// there produced two rows that render identically — duplicate-detection
+    /// keys off the headword, and the two headwords disagreed.
+    private var storedHeadword: String {
+        learningChinese ? chineseTranslation : englishForm
+    }
+
+    private var storedDefinition: String {
+        learningChinese ? englishForm : chineseTranslation
+    }
+
+    /// The English word, with its dictionary form appended when it differs, so
+    /// an inflected token still carries the lemma a learner would look up.
+    private var englishForm: String {
+        word.lemma.caseInsensitiveCompare(word.text) == .orderedSame
+            ? word.text
+            : "\(word.text) (\(word.lemma))"
+    }
+
     private func saveToVocabulary() {
-        // Save with Chinese translation as the main term, English word as definition
-        let term = SavedTerm(
-            chinese: chineseTranslation,
-            pinyin: PinyinConverter.convert(chineseTranslation),
-            definition: word.lemma.caseInsensitiveCompare(word.text) == .orderedSame ? word.text : "\(word.text) (\(word.lemma))",
-            partOfSpeech: word.partOfSpeech.rawValue
+        let headword = storedHeadword
+        guard !headword.isEmpty else { return }
+        savedTermsStore.add(
+            SavedTerm(
+                // Pinyin belongs to a Chinese headword only; an English one
+                // takes its reading from an AI explanation, as IPA.
+                chinese: headword,
+                pinyin: learningChinese ? PinyinConverter.convert(headword) : "",
+                definition: storedDefinition,
+                partOfSpeech: word.partOfSpeech.rawValue
+            )
         )
-        savedTermsStore.add(term)
     }
 }
 

@@ -53,7 +53,16 @@ struct AIProviderConfigView: View {
                     .foregroundStyle(.green)
             } else {
                 Label {
-                    Text(AIWordExplanationService.shared.unavailabilityReason ?? "Apple Intelligence is not available")
+                    // Written as a branch instead of `??` because the coalescing
+                    // operator folds the fallback into a plain `String`, which
+                    // `Text` renders without localizing — leaving it English in
+                    // the 中文 interface. As its own literal it becomes a catalog
+                    // key; the service's own reason string is localized there.
+                    if let reason = AIWordExplanationService.shared.unavailabilityReason {
+                        Text(reason)
+                    } else {
+                        Text("Apple Intelligence is not available")
+                    }
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                 }
@@ -281,12 +290,16 @@ struct AIProviderConfigView: View {
         connectionTest = .testing
         let model = settings.selectedModel(for: provider)
         do {
+            // Generous enough that a thinking model can finish its reasoning
+            // and still emit the word. The service now treats a response that
+            // is nothing but reasoning as empty, so a 32-token ceiling would
+            // fail the check on a healthy connection.
             _ = try await CloudAIService.shared.chat(
                 provider: provider,
                 model: model,
                 system: "You are a connectivity check.",
                 user: "Reply with the single word: OK",
-                maxTokens: 32
+                maxTokens: 512
             )
             connectionTest = .success(model: model)
         } catch {
@@ -311,7 +324,11 @@ struct AIProviderConfigView: View {
 
     // MARK: - Helpers
 
-    private func refreshButton(title: String, action: @escaping () async -> Void) -> some View {
+    /// `title` is a `LocalizedStringKey` because a `String` sends `Label` down
+    /// its non-localizing initializer, which kept the Ollama "Test Connection"
+    /// button English in the 中文 interface even though the catalog already
+    /// carries that key. The literal call site needs no change.
+    private func refreshButton(title: LocalizedStringKey, action: @escaping () async -> Void) -> some View {
         Button {
             Task { isRefreshing = true; await action(); isRefreshing = false }
         } label: {

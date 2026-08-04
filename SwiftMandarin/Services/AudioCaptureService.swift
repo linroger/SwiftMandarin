@@ -28,32 +28,32 @@ nonisolated enum AudioCaptureError: LocalizedError {
         switch self {
         case .microphoneNotAuthorized:
             #if os(iOS)
-            return String(localized: "Microphone access is required to record audio. Enable it in Settings, or import an audio file instead.")
+            return String(localized: "Microphone access is required to record audio. Enable it in Settings, or import an audio file instead.", bundle: .appLanguage)
             #else
-            return String(localized: "Microphone access is required to record audio. Enable it in System Settings, or import an audio file instead.")
+            return String(localized: "Microphone access is required to record audio. Enable it in System Settings, or import an audio file instead.", bundle: .appLanguage)
             #endif
         case .recorderCouldNotStart:
-            return String(localized: "The audio recorder could not start. Check that another app is not using the microphone and try again.")
+            return String(localized: "The audio recorder could not start. Check that another app is not using the microphone and try again.", bundle: .appLanguage)
         case .noActiveRecording:
-            return String(localized: "There is no recording to stop.")
+            return String(localized: "There is no recording to stop.", bundle: .appLanguage)
         case .emptyRecording:
-            return String(localized: "The recording did not contain any audio. Please record again.")
+            return String(localized: "The recording did not contain any audio. Please record again.", bundle: .appLanguage)
         case .unsupportedFile:
-            return String(localized: "Choose a playable audio file such as M4A, MP3, WAV, AIFF, or CAF.")
+            return String(localized: "Choose a playable audio file such as M4A, MP3, WAV, AIFF, or CAF.", bundle: .appLanguage)
         case .fileTooLarge(let maximumMegabytes):
             return String.localizedStringWithFormat(
-                String(localized: "This audio file is too large. Choose a file smaller than %lld MB."),
+                String(localized: "This audio file is too large. Choose a file smaller than %lld MB.", bundle: .appLanguage),
                 Int64(maximumMegabytes)
             )
         case .audioTooLong(let maximumSeconds):
             return String.localizedStringWithFormat(
-                String(localized: "This audio is too long. Choose or record a clip no longer than %lld seconds."),
+                String(localized: "This audio is too long. Choose or record a clip no longer than %lld seconds.", bundle: .appLanguage),
                 Int64(maximumSeconds)
             )
         case .fileAccessFailed(let message):
-            return String(localized: "The audio file could not be prepared:") + " " + message
+            return String(localized: "The audio file could not be prepared:", bundle: .appLanguage) + " " + message
         case .previewFailed(let message):
-            return String(localized: "The audio preview could not start:") + " " + message
+            return String(localized: "The audio preview could not start:", bundle: .appLanguage) + " " + message
         }
     }
 }
@@ -103,7 +103,7 @@ nonisolated enum AudioInputFileStore {
 
     static func importAudio(from sourceURL: URL) async throws -> PreparedAudioFile {
         let originalName = sourceURL.lastPathComponent.isEmpty
-            ? String(localized: "Imported Audio")
+            ? String(localized: "Imported Audio", bundle: .appLanguage)
             : sourceURL.lastPathComponent
         let copiedURL: URL
 
@@ -153,7 +153,7 @@ nonisolated enum AudioInputFileStore {
         do {
             return try await inspectOwnedAudio(
                 at: url,
-                displayName: String(localized: "Recorded Audio.m4a"),
+                displayName: String(localized: "Recorded Audio.m4a", bundle: .appLanguage),
                 source: .recording
             )
         } catch {
@@ -350,7 +350,7 @@ final class SourceAudioActivityCoordinator {
                   AVAudioSession.InterruptionType(rawValue: rawValue) == .began else { return }
             Task { @MainActor [weak self] in
                 await self?.handleAudioSessionLoss(
-                    message: String(localized: "Audio was interrupted by another app. Please try again.")
+                    message: String(localized: "Audio was interrupted by another app. Please try again.", bundle: .appLanguage)
                 )
             }
         }
@@ -363,7 +363,7 @@ final class SourceAudioActivityCoordinator {
                   AVAudioSession.RouteChangeReason(rawValue: rawValue) == .oldDeviceUnavailable else { return }
             Task { @MainActor [weak self] in
                 await self?.handleAudioSessionLoss(
-                    message: String(localized: "Audio stopped because the playback or recording device was disconnected.")
+                    message: String(localized: "Audio stopped because the playback or recording device was disconnected.", bundle: .appLanguage)
                 )
             }
         }
@@ -552,7 +552,7 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
             player.delegate = self
             guard player.prepareToPlay() else {
                 throw AudioCaptureError.previewFailed(
-                    String(localized: "The player could not decode this file.")
+                    String(localized: "The player could not decode this file.", bundle: .appLanguage)
                 )
             }
 
@@ -576,7 +576,7 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
                 self.player = nil
                 playingURL = nil
                 throw AudioCaptureError.previewFailed(
-                    String(localized: "The player could not decode this file.")
+                    String(localized: "The player could not decode this file.", bundle: .appLanguage)
                 )
             }
         } catch {
@@ -649,7 +649,7 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
         self.player = nil
         playingURL = nil
         if !flag {
-            playbackErrorMessage = String(localized: "The audio preview stopped before it finished.")
+            playbackErrorMessage = String(localized: "The audio preview stopped before it finished.", bundle: .appLanguage)
         }
         if let sessionOwner {
             AudioSessionCoordinator.shared.release(sessionOwner)
@@ -664,7 +664,7 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
         self.player = nil
         playingURL = nil
         playbackErrorMessage = AudioCaptureError.previewFailed(
-            error?.localizedDescription ?? String(localized: "The player could not decode this file.")
+            error?.localizedDescription ?? String(localized: "The player could not decode this file.", bundle: .appLanguage)
         ).localizedDescription
         if let sessionOwner {
             AudioSessionCoordinator.shared.release(sessionOwner)
@@ -674,7 +674,7 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
 
     fileprivate func stopForExclusiveAudioHandoff() {
         handleAudioSessionLoss(
-            message: String(localized: "Audio stopped because another SwiftMandarin window started using audio.")
+            message: String(localized: "Audio stopped because another SwiftMandarin window started using audio.", bundle: .appLanguage)
         )
     }
 

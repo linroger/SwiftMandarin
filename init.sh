@@ -11,5 +11,7 @@ python3 -m json.tool feature_list.json >/dev/null
 python3 -m json.tool SwiftMandarin/Localizable.xcstrings >/dev/null
 zsh scripts/test-minimax-audio-contracts.sh
 zsh scripts/test-audio-session-transitions.sh
+zsh scripts/test-ai-prompt-contracts.sh
+zsh scripts/test-learning-direction.sh
 
 echo "SwiftMandarin smoke checks passed."

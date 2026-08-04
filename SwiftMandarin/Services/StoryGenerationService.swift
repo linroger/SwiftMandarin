@@ -61,7 +61,7 @@ enum StoryGenerationError: LocalizedError {
         case .unavailable(let reason):
             return reason
         case .generationFailed(let message):
-            return String(localized: "Story generation failed: \(message)")
+            return String(localized: "Story generation failed: \(message)", bundle: .appLanguage)
         }
     }
 }
@@ -92,7 +92,7 @@ final class StoryGenerationService {
         let settings = AIModelSettings.shared
         guard settings.isAnyProviderAvailable else {
             throw StoryGenerationError.unavailable(
-                reason: String(localized: "No AI provider is configured. Add one in Settings → AI (or run a local Ollama server).")
+                reason: String(localized: "No AI provider is configured. Add one in Settings → AI (or run a local Ollama server).", bundle: .appLanguage)
             )
         }
         let provider = settings.effectiveProvider
@@ -141,25 +141,25 @@ final class StoryGenerationService {
         }
 
         guard let data = AIWordExplanationService.extractJSONObject(from: json) else {
-            throw StoryGenerationError.generationFailed(String(localized: "No JSON object found in the response."))
+            throw StoryGenerationError.generationFailed(String(localized: "No JSON object found in the response.", bundle: .appLanguage))
         }
         let decoded: StoryResponse
         do {
             decoded = try JSONDecoder().decode(StoryResponse.self, from: data)
         } catch {
-            throw StoryGenerationError.generationFailed(String(localized: "The response could not be read."))
+            throw StoryGenerationError.generationFailed(String(localized: "The response could not be read.", bundle: .appLanguage))
         }
 
         let body = decoded.story.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !body.isEmpty else {
-            throw StoryGenerationError.generationFailed(String(localized: "The model returned an empty story."))
+            throw StoryGenerationError.generationFailed(String(localized: "The model returned an empty story.", bundle: .appLanguage))
         }
         var title = decoded.title.trimmingCharacters(in: .whitespacesAndNewlines)
         if title.isEmpty {
             title = topic?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         }
         if title.isEmpty {
-            title = String(localized: "Generated Story")
+            title = String(localized: "Generated Story", bundle: .appLanguage)
         }
         return (title: title, body: body)
     }

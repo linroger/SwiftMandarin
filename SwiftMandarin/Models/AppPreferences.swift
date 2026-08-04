@@ -51,14 +51,22 @@ enum LearnerMode: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Explanatory footer under the mode picker. Unlike `displayName` and
+    /// `shortLabel` — which stay in each audience's own language so the picker
+    /// is readable before any language preference exists — this sentence is
+    /// prose the reader has to parse, so it must follow the interface language
+    /// rather than the option it describes. Every case therefore goes through
+    /// the string catalog with English source text, including
+    /// `.mandarinToEnglish`, whose hard-coded Chinese used to leak into the
+    /// English interface.
     var detail: String {
         switch self {
         case .englishToMandarin:
-            return "Interface and defaults favor translating into Chinese; narration leads with Mandarin."
+            return String(localized: "Interface and defaults favor translating into Chinese; narration leads with Mandarin.", bundle: .appLanguage)
         case .mandarinToEnglish:
-            return "界面与默认方向偏向译成英文；朗读以英文为主。"
+            return String(localized: "Interface and defaults favor translating into English; narration leads with English.", bundle: .appLanguage)
         case .bilingual:
-            return "Balanced defaults for studying both languages; both narrations are always offered."
+            return String(localized: "Balanced defaults for studying both languages; both narrations are always offered.", bundle: .appLanguage)
         }
     }
 
@@ -142,6 +150,9 @@ final class AppPreferences {
 
     private enum Keys {
         static let learnerMode = "learner_mode"
+        /// Shared with the `@AppStorage("defaultDirection")` readers in the
+        /// Translate screen and settings, and with `TranslationState`.
+        static let defaultDirection = "defaultDirection"
         static let photoScanLanguage = "photo_scan_language"
         static let dualNarration = "dual_narration"
         static let ttsRate = "tts_rate"
@@ -171,7 +182,7 @@ final class AppPreferences {
             guard oldValue != learnerMode else { return }
             UserDefaults.standard.set(learnerMode.rawValue, forKey: Keys.learnerMode)
             // Adapt the shared default translation direction so all features follow.
-            UserDefaults.standard.set(learnerMode.defaultDirection.rawValue, forKey: "defaultDirection")
+            UserDefaults.standard.set(learnerMode.defaultDirection.rawValue, forKey: Keys.defaultDirection)
             // Bidirectional sync: a single-direction mode also re-orients the
             // interface (= native) language, so the many views that key off
             // `LocalizationManager.learningIsChinese` actually follow the picker
@@ -354,6 +365,20 @@ final class AppPreferences {
         let derivedDefault: LearnerMode =
             LocalizationManager.shared.language == .chinese ? .mandarinToEnglish : .englishToMandarin
         self.learnerMode = savedMode.flatMap(LearnerMode.init(rawValue:)) ?? derivedDefault
+
+        // Assigning a stored property in `init` does not run its `didSet`, and
+        // that observer is the only writer of the shared `defaultDirection`
+        // key. Without this seed the key stays absent on a fresh install, every
+        // reader falls back to its own `.englishToChinese` literal, and a
+        // first-launch Mandarin speaker lands on EN→中 — the wrong way round.
+        // Seed only when absent, so an explicit choice in Translation settings
+        // survives relaunch.
+        if UserDefaults.standard.string(forKey: Keys.defaultDirection) == nil {
+            UserDefaults.standard.set(
+                self.learnerMode.defaultDirection.rawValue,
+                forKey: Keys.defaultDirection
+            )
+        }
 
         let savedScan = UserDefaults.standard.string(forKey: Keys.photoScanLanguage)
         self.photoScanLanguage = savedScan.flatMap(PhotoScanLanguage.init(rawValue:)) ?? .auto

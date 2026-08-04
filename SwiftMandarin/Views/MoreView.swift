@@ -124,6 +124,15 @@ struct MoreView: View {
         }
     }
 
+    /// The pinyin controls inside `DisplaySettingsView` only exist for a
+    /// Mandarin learner, so only their entry point advertises them. Typed
+    /// explicitly rather than written inline: a literal inside a ternary is
+    /// ambiguous between the localizing and verbatim initializers, and Xcode's
+    /// extractor does not reliably catalog it.
+    private var displaySettingsTitle: LocalizedStringKey {
+        localization.learningIsChinese ? "Display & Pinyin" : "Display"
+    }
+
     private var settingsSection: some View {
         Section {
             NavigationLink {
@@ -176,7 +185,7 @@ struct MoreView: View {
             NavigationLink {
                 DisplaySettingsView()
             } label: {
-                Label("Display & Pinyin", systemImage: "textformat")
+                Label(displaySettingsTitle, systemImage: "textformat")
             }
 
             NavigationLink {
@@ -257,7 +266,7 @@ struct GeneralSettingsView: View {
 // MARK: - Translation Settings
 
 struct TranslationSettingsView: View {
-    @AppStorage("defaultDirection") private var defaultDirection: String = TranslationDirection.englishToChinese.rawValue
+    @AppStorage("defaultDirection") private var defaultDirection: String = TranslationDirection.persistedDefault.rawValue
     @AppStorage("autoTranslate") private var autoTranslate: Bool = false
     @AppStorage("translateOnPaste") private var translateOnPaste: Bool = true
     @AppStorage("autoSpeak") private var autoSpeak: Bool = false
@@ -306,42 +315,58 @@ struct DisplaySettingsView: View {
     @AppStorage("showPinyin") private var showPinyin: Bool = true
     @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
     @AppStorage("toneColors") private var toneColors: Bool = true
-    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 20
+    // Sizes the vocabulary headword, which is Chinese for an English
+    // speaker and English for a Mandarin one. The storage key keeps its
+    // original name so existing preferences survive.
+    @AppStorage("vocabularyChineseFontSize") private var headwordFontSize: Double = 20
     @AppStorage("hapticFeedback") private var hapticFeedback: Bool = true
     @State private var prefs = AppPreferences.shared
+    @State private var localization = LocalizationManager.shared
+
+    /// Matches the entry point in the settings list: the pinyin controls below
+    /// only exist for a Mandarin learner, so only they see the longer title.
+    private var screenTitle: LocalizedStringKey {
+        localization.learningIsChinese ? "Display & Pinyin" : "Display"
+    }
 
     /// Sample sentence for previewing the speech rate, in the learning language.
     private var speechSample: String {
-        LocalizationManager.shared.learningIsChinese ? "你好，很高兴认识你。" : "Hello, nice to meet you."
+        localization.learningIsChinese ? "你好，很高兴认识你。" : "Hello, nice to meet you."
     }
 
     var body: some View {
         Form {
             Section {
-                Toggle("Show Pinyin", isOn: $showPinyin)
+                // Pinyin is scaffolding for reading Chinese. A native Mandarin
+                // reader studying English never needs it, and these controls
+                // would only clutter their settings with rules about a script
+                // they already read — so the whole group is theirs alone.
+                if localization.learningIsChinese {
+                    Toggle("Show Pinyin", isOn: $showPinyin)
 
-                Picker("Pinyin Position", selection: $pinyinPosition) {
-                    Text("Above Characters").tag("above")
-                    Text("Below Characters").tag("below")
-                    Text("Inline").tag("inline")
-                }
-                .disabled(!showPinyin)
-
-                Toggle("Tone Colors", isOn: $toneColors)
+                    Picker("Pinyin Position", selection: $pinyinPosition) {
+                        Text("Above Characters").tag("above")
+                        Text("Below Characters").tag("below")
+                        Text("Inline").tag("inline")
+                    }
                     .disabled(!showPinyin)
 
-                Text("Color-code pinyin based on tones (1st=red, 2nd=orange, 3rd=green, 4th=blue)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    Toggle("Tone Colors", isOn: $toneColors)
+                        .disabled(!showPinyin)
+
+                    Text("Color-code pinyin based on tones (1st=red, 2nd=orange, 3rd=green, 4th=blue)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 VStack(alignment: .leading) {
                     HStack {
                         Text("Vocabulary Text Size")
                         Spacer()
-                        Text(verbatim: "\(Int(chineseFontSize)) pt")
+                        Text(verbatim: "\(Int(headwordFontSize)) pt")
                             .foregroundStyle(.secondary)
                     }
-                    Slider(value: $chineseFontSize, in: 14...40, step: 2) {
+                    Slider(value: $headwordFontSize, in: 14...40, step: 2) {
                         Text("Vocabulary Text Size")
                     } minimumValueLabel: {
                         Text("A")
@@ -393,7 +418,7 @@ struct DisplaySettingsView: View {
                 Text("Feedback")
             }
         }
-        .navigationTitle("Display & Pinyin")
+        .navigationTitle(screenTitle)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -634,7 +659,11 @@ struct AboutView: View {
                     Text("About")
                         .font(.headline)
 
-                    Text("SwiftMandarin is a modern Mandarin Chinese translation and learning app built with SwiftUI for iOS 17 and later. It features real-time translation, vocabulary management, flashcard learning with spaced repetition, and a comprehensive phrase library.")
+                    // Both learner modes read this screen, so the copy here and
+                    // in the feature list below describes a two-way English and
+                    // Chinese app instead of framing it as Mandarin study,
+                    // which excluded the Mandarin speaker studying English.
+                    Text("SwiftMandarin is an English and Chinese translation and learning app for speakers of either language, built with SwiftUI for iOS 17 and later. It features real-time translation, vocabulary management, flashcard learning with spaced repetition, and a comprehensive phrase library.")
                         .font(.body)
                         .foregroundStyle(.secondary)
                 }
@@ -646,7 +675,7 @@ struct AboutView: View {
                     Text("Features")
                         .font(.headline)
 
-                    FeatureRow(icon: "character.bubble", title: "Translation", description: "Bidirectional English-Chinese translation with pinyin")
+                    FeatureRow(icon: "character.bubble", title: "Translation", description: "Translate between English and Chinese in either direction")
                     FeatureRow(icon: "text.book.closed", title: "Vocabulary", description: "Save and organize words you're learning")
                     FeatureRow(icon: "brain.head.profile", title: "Flashcards", description: "Learn with spaced repetition")
                     FeatureRow(icon: "quote.bubble", title: "Phrases", description: "Common phrases organized by category")
@@ -684,8 +713,12 @@ struct AboutView: View {
 
 struct FeatureRow: View {
     let icon: String
-    let title: String
-    let description: String
+    // Plain `String`s render through `Text`'s verbatim initializer, so the
+    // literals at each call site never reached the string catalog and the whole
+    // feature list stayed English for a Mandarin reader. `LocalizedStringKey`
+    // makes them extractable and translatable, exactly as `HeroActionRow` does.
+    let title: LocalizedStringKey
+    let description: LocalizedStringKey
 
     var body: some View {
         HStack(spacing: 12) {

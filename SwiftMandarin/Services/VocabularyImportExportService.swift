@@ -46,21 +46,57 @@ struct ImportResult {
     /// AI word-analyses restored into the explanation cache during this import.
     var explanationsRestored: Int = 0
 
+    /// One-line result shown in the "Import Complete" alert.
+    ///
+    /// Every clause is a format string resolved through the string catalog
+    /// instead of hand-concatenated English, because the assembled sentence was
+    /// invisible to localization and reached a 中文 interface as English with
+    /// English word order. `String.localizedStringWithFormat` is required for
+    /// the counts because it is the only formatter that expands the plural
+    /// variations a translator can later attach to these keys; it also formats
+    /// the number for the active locale, so a four-digit count now reads
+    /// "1,000" rather than "1000". The singular and plural wordings stay
+    /// separate keys so English keeps its exact current phrasing until those
+    /// plural rules exist.
     var summary: String {
         var parts: [String] = []
         if imported > 0 {
-            parts.append("\(imported) word\(imported == 1 ? "" : "s") imported")
+            parts.append(String.localizedStringWithFormat(
+                imported == 1
+                    ? String(localized: "%lld word imported", bundle: .appLanguage)
+                    : String(localized: "%lld words imported", bundle: .appLanguage),
+                imported
+            ))
         }
         if skipped > 0 {
-            parts.append("\(skipped) duplicate\(skipped == 1 ? "" : "s") skipped")
+            parts.append(String.localizedStringWithFormat(
+                skipped == 1
+                    ? String(localized: "%lld duplicate skipped", bundle: .appLanguage)
+                    : String(localized: "%lld duplicates skipped", bundle: .appLanguage),
+                skipped
+            ))
         }
         if explanationsRestored > 0 {
-            parts.append("\(explanationsRestored) AI analys\(explanationsRestored == 1 ? "is" : "es") restored")
+            parts.append(String.localizedStringWithFormat(
+                explanationsRestored == 1
+                    ? String(localized: "%lld AI analysis restored", bundle: .appLanguage)
+                    : String(localized: "%lld AI analyses restored", bundle: .appLanguage),
+                explanationsRestored
+            ))
         }
-        var summary = parts.joined(separator: ", ")
-        if summary.isEmpty { summary = "Nothing to import" }
+        // Chinese uses a full-width comma between clauses, so even the joiner
+        // has to come from the catalog rather than being a hard-coded ", ".
+        var summary = parts.joined(separator: String(
+            localized: ", ",
+            comment: "Separator between the clauses of the vocabulary import summary."
+        ))
+        if summary.isEmpty { summary = String(localized: "Nothing to import", bundle: .appLanguage) }
         if !errors.isEmpty {
-            summary += ". Errors: \(errors.count)"
+            summary = String.localizedStringWithFormat(
+                String(localized: "%1$@. Errors: %2$lld", bundle: .appLanguage),
+                summary,
+                errors.count
+            )
         }
         return summary
     }
@@ -252,8 +288,10 @@ final class VocabularyImportExportService {
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [.init(filenameExtension: format.fileExtension)!]
         savePanel.nameFieldStringValue = "SwiftMandarin_Vocabulary.\(format.fileExtension)"
-        savePanel.title = "Export Vocabulary"
-        savePanel.message = "Choose where to save your vocabulary export"
+        // The panel chrome is app-supplied text, so it stays English unless it
+        // is routed through the catalog (the file name is data, not UI).
+        savePanel.title = String(localized: "Export Vocabulary", bundle: .appLanguage)
+        savePanel.message = String(localized: "Choose where to save your vocabulary export", bundle: .appLanguage)
         
         savePanel.begin { response in
             if response == .OK, let url = savePanel.url {
@@ -489,8 +527,9 @@ final class VocabularyImportExportService {
             .init(filenameExtension: "csv")!
         ]
         openPanel.allowsMultipleSelection = false
-        openPanel.title = "Import Vocabulary"
-        openPanel.message = "Select a vocabulary file to import"
+        // Same reason as the export panel: this chrome is ours to localize.
+        openPanel.title = String(localized: "Import Vocabulary", bundle: .appLanguage)
+        openPanel.message = String(localized: "Select a vocabulary file to import", bundle: .appLanguage)
         
         openPanel.begin { response in
             if response == .OK, let url = openPanel.url {

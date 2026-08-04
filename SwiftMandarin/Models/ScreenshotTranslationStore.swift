@@ -62,20 +62,25 @@ enum ScreenshotProcessingState: Equatable, Sendable {
         }
     }
     
+    /// Progress label rendered by `TranslatedScreenshotOverlayView` through
+    /// `Text(String)`, which does no lookup of its own — so these have to
+    /// resolve here or the overlay stays English in the 中文 interface. The
+    /// error case keeps its placeholder inside the key so translators can move
+    /// the substituted message where their grammar needs it.
     var statusMessage: String {
         switch self {
         case .idle:
-            return "Ready"
+            return String(localized: "Ready", bundle: .appLanguage)
         case .stitching:
-            return "Stitching screenshots..."
+            return String(localized: "Stitching screenshots...", bundle: .appLanguage)
         case .recognizingText:
-            return "Recognizing text..."
+            return String(localized: "Recognizing text...", bundle: .appLanguage)
         case .translating:
-            return "Translating..."
+            return String(localized: "Translating...", bundle: .appLanguage)
         case .completed:
-            return "Complete"
+            return String(localized: "Complete", bundle: .appLanguage)
         case .error(let message):
-            return "Error: \(message)"
+            return String(format: String(localized: "Error: %@", bundle: .appLanguage), message)
         }
     }
 }
@@ -98,10 +103,22 @@ final class ScreenshotTranslationStore {
     #endif
     
     /// Target language for translation. Screenshot translation is a
-    /// comprehension aid, so it defaults to the user's NATIVE language (= the
-    /// interface language, set in `init`); an explicit intent parameter can
-    /// still override.
-    var targetLanguage: ScreenshotTargetLanguage = .english
+    /// comprehension aid, so it follows the user's NATIVE language (= the
+    /// interface language) until something sets it explicitly — an App Intent
+    /// parameter, or the picker in the overlay.
+    ///
+    /// Backed by an optional rather than derived once in `init`, because this
+    /// is a long-lived singleton: a user who opened screenshot translation
+    /// before switching to 中文母语者学英语 would otherwise keep translating INTO
+    /// English for the rest of the session. Reading through the interface
+    /// language means the default re-derives itself, while an explicit choice
+    /// still sticks.
+    var targetLanguage: ScreenshotTargetLanguage {
+        get { explicitTargetLanguage ?? (LocalizationManager.shared.nativeIsChinese ? .chinese : .english) }
+        set { explicitTargetLanguage = newValue }
+    }
+
+    private var explicitTargetLanguage: ScreenshotTargetLanguage?
     
     // MARK: - Processing State
     
@@ -151,10 +168,7 @@ final class ScreenshotTranslationStore {
     
     // MARK: - Initialization
     
-    private init() {
-        // Default to translating INTO the user's native language.
-        targetLanguage = LocalizationManager.shared.nativeIsChinese ? .chinese : .english
-    }
+    private init() {}
     
     // MARK: - Public Methods
     

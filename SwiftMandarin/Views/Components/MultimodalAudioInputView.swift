@@ -65,6 +65,10 @@ struct MultimodalAudioInputView: View {
     @State private var captureService = AudioCaptureService()
     @State private var transcriptionService = AudioTranscriptionService()
     @State private var preferences = AppPreferences.shared
+    @State private var aiSettings = AIModelSettings.shared
+    /// Set when an Apple Speech attempt failed and an AI provider could take
+    /// over, so the learner is offered the switch instead of a dead end.
+    @State private var offerAIFallback = false
     @State private var selectedAudio: PreparedAudioFile?
     @AppStorage("multimodal_audio_recognition_language")
     private var savedRecognitionLanguage = ""
@@ -177,11 +181,36 @@ struct MultimodalAudioInputView: View {
             }
 
             if let errorMessage {
-                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityLabel(String(localized: "Audio error:") + " " + errorMessage)
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityLabel(String(localized: "Audio error:", bundle: .appLanguage) + " " + errorMessage)
+
+                    if offerAIFallback {
+                        HStack(spacing: 8) {
+                            Button {
+                                retryWithAI(.transcribeToEditor)
+                            } label: {
+                                Label("Retry with AI", systemImage: "sparkles")
+                                    .fitSingleLine(0.7)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+
+                            Button {
+                                retryWithAI(.translateAudio)
+                            } label: {
+                                Label("Retry & Translate", systemImage: "translate")
+                                    .fitSingleLine(0.7)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                        .disabled(selectedAudio == nil)
+                    }
+                }
             } else if let statusMessage {
                 Label(statusMessage, systemImage: statusSymbol)
                     .font(.caption)
@@ -189,13 +218,10 @@ struct MultimodalAudioInputView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Label(
-                "Transcription uses Apple Speech and prefers on-device recognition when available. When on-device recognition is unavailable, Apple may process the audio using its speech service. Your selected audio is not sent to MiniMax; Translate Audio may send the transcript to your configured translation provider.",
-                systemImage: "hand.raised.fill"
-            )
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
+            Label(privacyNotice, systemImage: "hand.raised.fill")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
         .background(
@@ -218,7 +244,7 @@ struct MultimodalAudioInputView: View {
             guard newURL != nil, let url = captureService.takeCompletedRecordingURL() else { return }
             cancelRecordingLimit()
             prepareRecording(at: url)
-            statusMessage = String(localized: "Recording stopped because read-aloud started. Your clip is being prepared.")
+            statusMessage = String(localized: "Recording stopped because read-aloud started. Your clip is being prepared.", bundle: .appLanguage)
             statusKind = .neutral
         }
         .onChange(of: captureService.playbackErrorMessage) { _, newMessage in
@@ -235,6 +261,17 @@ struct MultimodalAudioInputView: View {
                 AudioInputFileStore.remove(selectedAudio.url)
             }
             transcriptionService.cancel()
+        }
+    }
+
+    /// The privacy line has to track the engine: the two choices send the audio
+    /// to different places, and the learner is picking between them right above.
+    private var privacyNotice: LocalizedStringKey {
+        switch aiSettings.transcriptionEngine {
+        case .appleSpeech:
+            return "Transcription uses Apple Speech and prefers on-device recognition when available. When on-device recognition is unavailable, Apple may process the audio using its speech service. Your selected audio is not sent to MiniMax; Translate Audio may send the transcript to your configured translation provider."
+        case .aiProvider:
+            return "AI transcription uploads the selected audio to your configured AI provider, which usually bills for it. The audio is not sent to MiniMax. Translate Audio also sends the transcript to your translation provider. Switch to Apple Speech to keep the audio on device."
         }
     }
 
@@ -331,23 +368,108 @@ struct MultimodalAudioInputView: View {
     }
 
     private var recognitionControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Label("Audio Language", systemImage: "character.bubble")
+                        .font(.subheadline)
+                    Text("Choose the language spoken in the recording.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Picker("Audio Language", selection: recognitionLanguageBinding) {
+                    ForEach(SpeechRecognitionLanguage.allCases, id: \.rawValue) { language in
+                        Text(localizedTitle(for: language)).tag(language)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .disabled(isBusy || captureService.isRecording)
+            }
+
+            engineControls
+        }
+    }
+
+    /// Engine choice, plus the model field the AI engine needs. Shown inline
+    /// because this is where a learner discovers they need it — after Apple
+    /// Speech has failed on their language.
+    @ViewBuilder
+    private var engineControls: some View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                Label("Audio Language", systemImage: "character.bubble")
+                Label("Transcription Engine", systemImage: "waveform.and.person.filled")
                     .font(.subheadline)
-                Text("Choose the language spoken in the recording.")
+                Text(engineFootnote)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
-            Picker("Audio Language", selection: recognitionLanguageBinding) {
-                ForEach(SpeechRecognitionLanguage.allCases, id: \.rawValue) { language in
-                    Text(localizedTitle(for: language)).tag(language)
+            Picker("Transcription Engine", selection: engineBinding) {
+                ForEach(AudioTranscriptionEngine.allCases) { engine in
+                    Text(localizedTitle(for: engine)).tag(engine)
                 }
             }
             .labelsHidden()
             .pickerStyle(.menu)
             .disabled(isBusy || captureService.isRecording)
+        }
+
+        if aiSettings.transcriptionEngine == .aiProvider {
+            if let provider = aiSettings.transcriptionProvider() {
+                HStack(spacing: 10) {
+                    Label {
+                        Text("Model")
+                            .font(.caption)
+                    } icon: {
+                        ProviderIcon(provider: provider, size: 14)
+                    }
+                    TextField(
+                        provider.defaultTranscriptionModels.first ?? "model id",
+                        text: transcriptionModelBinding(for: provider)
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .font(.caption)
+                    #if os(iOS)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    #endif
+                    .disabled(isBusy || captureService.isRecording)
+                }
+            } else {
+                Label(
+                    "AI transcription needs a provider with a speech-to-text endpoint (OpenAI, Qwen, or Quotio). Add an API key in Settings → AI.",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .font(.caption2)
+                .foregroundStyle(.orange)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var engineBinding: Binding<AudioTranscriptionEngine> {
+        Binding(
+            get: { aiSettings.transcriptionEngine },
+            set: { aiSettings.transcriptionEngine = $0 }
+        )
+    }
+
+    private func transcriptionModelBinding(for provider: AIProvider) -> Binding<String> {
+        Binding(
+            get: { aiSettings.transcriptionModel(for: provider) },
+            set: { aiSettings.setTranscriptionModel($0, for: provider) }
+        )
+    }
+
+    private var engineFootnote: LocalizedStringKey {
+        switch aiSettings.transcriptionEngine {
+        case .appleSpeech:
+            return "On-device when the language is installed; free."
+        case .aiProvider:
+            return "Sends the audio to your AI provider; usually billed."
         }
     }
 
@@ -442,7 +564,7 @@ struct MultimodalAudioInputView: View {
                     return
                 }
                 replaceSelection(with: prepared)
-                statusMessage = String(localized: "Recording ready for transcription.")
+                statusMessage = String(localized: "Recording ready for transcription.", bundle: .appLanguage)
                 statusKind = .success
             } catch is CancellationError {
                 AudioInputFileStore.remove(url)
@@ -477,7 +599,7 @@ struct MultimodalAudioInputView: View {
                     return
                 }
                 replaceSelection(with: prepared)
-                statusMessage = String(localized: "Audio file ready for transcription.")
+                statusMessage = String(localized: "Audio file ready for transcription.", bundle: .appLanguage)
                 statusKind = .success
             } catch is CancellationError {
                 // Picker dismissal or replacement is not an error.
@@ -530,15 +652,18 @@ struct MultimodalAudioInputView: View {
         captureService.stopPlayback()
         errorMessage = nil
         statusMessage = nil
+        offerAIFallback = false
         operation = action == .transcribeToEditor ? .transcribing : .translating
         let requestID = UUID()
         operationID = requestID
+        let engine = aiSettings.transcriptionEngine
 
         operationTask = Task {
             do {
                 let transcript = try await transcriptionService.transcribe(
                     audioURL: selectedAudio.url,
-                    language: recognitionLanguage
+                    language: recognitionLanguage,
+                    engine: engine
                 )
                 try Task.checkCancellation()
                 guard operationID == requestID else { return }
@@ -546,17 +671,21 @@ struct MultimodalAudioInputView: View {
                 try Task.checkCancellation()
                 guard operationID == requestID else { return }
                 statusMessage = action == .transcribeToEditor
-                    ? String(localized: "Transcript added to the editor.")
-                    : String(localized: "Translation complete.")
+                    ? String(localized: "Transcript added to the editor.", bundle: .appLanguage)
+                    : String(localized: "Translation complete.", bundle: .appLanguage)
                 statusKind = .success
             } catch is CancellationError {
                 if operationID == requestID {
-                    statusMessage = String(localized: "Cancelled.")
+                    statusMessage = String(localized: "Cancelled.", bundle: .appLanguage)
                     statusKind = .neutral
                 }
             } catch {
                 if operationID == requestID {
                     errorMessage = error.localizedDescription
+                    // Apple Speech has no model for this language on a lot of
+                    // devices. Offer the switch rather than leaving a dead end.
+                    offerAIFallback = engine == .appleSpeech
+                        && aiSettings.isAITranscriptionAvailable
                 }
             }
             if operationID == requestID {
@@ -567,6 +696,13 @@ struct MultimodalAudioInputView: View {
         }
     }
 
+    /// Switch to the AI engine and retry the same action.
+    private func retryWithAI(_ action: MultimodalAudioAction) {
+        aiSettings.transcriptionEngine = .aiProvider
+        offerAIFallback = false
+        begin(action)
+    }
+
     private func cancelOperation(showStatus: Bool = true) {
         operationTask?.cancel()
         transcriptionService.cancel()
@@ -574,7 +710,7 @@ struct MultimodalAudioInputView: View {
         operationID = nil
         operation = nil
         if showStatus {
-            statusMessage = String(localized: "Cancelled.")
+            statusMessage = String(localized: "Cancelled.", bundle: .appLanguage)
             statusKind = .neutral
         }
     }
@@ -637,8 +773,8 @@ struct MultimodalAudioInputView: View {
         }
         components.append(
             audio.source == .recording
-                ? String(localized: "Recording")
-                : String(localized: "Imported file")
+                ? String(localized: "Recording", bundle: .appLanguage)
+                : String(localized: "Imported file", bundle: .appLanguage)
         )
         return components.joined(separator: " · ")
     }
@@ -653,6 +789,13 @@ struct MultimodalAudioInputView: View {
         case .english: return "English"
         case .chinese: return "Chinese (Simplified)"
         case .chineseTraditional: return "Chinese (Traditional)"
+        }
+    }
+
+    private func localizedTitle(for engine: AudioTranscriptionEngine) -> LocalizedStringKey {
+        switch engine {
+        case .appleSpeech: return "Apple Speech"
+        case .aiProvider: return "AI Provider"
         }
     }
 }

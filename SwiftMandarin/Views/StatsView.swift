@@ -32,11 +32,33 @@ struct StatsView: View {
             case .twoWeeks: return 14
             }
         }
+
+        /// The raw values are the stable case identity, so the range toggle
+        /// renders this key instead. Drawing `rawValue` left the picker in
+        /// English even when the interface language is 中文. Each case spells
+        /// its key out as a literal because the catalog extractor cannot
+        /// follow `rawValue`.
+        var titleKey: LocalizedStringKey {
+            switch self {
+            case .week: return "7 Days"
+            case .twoWeeks: return "14 Days"
+            }
+        }
     }
 
     enum VocabularyMasterySegment: String, CaseIterable {
         case learning = "Learning"
         case mastered = "Mastered"
+
+        /// The raw values are the donut chart's foreground-style-scale domain
+        /// and must keep matching it, so the center label and the legend read
+        /// this key instead of `rawValue` to follow the interface language.
+        var titleKey: LocalizedStringKey {
+            switch self {
+            case .learning: return "Learning"
+            case .mastered: return "Mastered"
+            }
+        }
     }
     
     /// Platform detection for adaptive layouts
@@ -332,7 +354,7 @@ struct StatsView: View {
                                 barChartTimeRange = range
                             }
                         } label: {
-                            Text(range.rawValue)
+                            Text(range.titleKey)
                                 .font(.subheadline.weight(.medium))
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
@@ -422,6 +444,14 @@ struct StatsView: View {
         ]
     }
     
+    /// Chart rows carry the English raw value ("Noun") because that is what the
+    /// activity records persist and what the color scale is keyed on, so a label
+    /// has to be mapped back to its category to pick up the translation.
+    /// Strings that no longer match a case render as-is rather than disappearing.
+    private func displayNameForPartOfSpeech(_ pos: String) -> String {
+        PartOfSpeechCategory(rawValue: pos)?.displayName ?? pos
+    }
+
     private func colorForPartOfSpeech(_ pos: String) -> Color {
         switch pos {
         case PartOfSpeechCategory.noun.rawValue: return .blue
@@ -529,7 +559,7 @@ struct StatsView: View {
                                 Text("\(item.count)")
                                     .font(.system(size: 22, weight: .bold, design: .rounded))
                                     .foregroundStyle(colorForVocabularyMastery(selected))
-                                Text(selected.rawValue)
+                                Text(selected.titleKey)
                                     .font(.caption)
                                     .foregroundStyle(colorForVocabularyMastery(selected))
                             } else {
@@ -550,7 +580,7 @@ struct StatsView: View {
                                 Circle()
                                     .fill(colorForVocabularyMastery(item.segment))
                                     .frame(width: 8, height: 8)
-                                Text(item.segment.rawValue)
+                                Text(item.segment.titleKey)
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
@@ -651,7 +681,7 @@ struct StatsView: View {
                                 Text("\(item.count)")
                                     .font(.system(size: 22, weight: .bold, design: .rounded))
                                     .foregroundStyle(colorForPartOfSpeech(selected))
-                                Text(selected)
+                                Text(displayNameForPartOfSpeech(selected))
                                     .font(.caption)
                                     .foregroundStyle(colorForPartOfSpeech(selected))
                             } else {
@@ -672,7 +702,7 @@ struct StatsView: View {
                                 Circle()
                                     .fill(colorForPartOfSpeech(item.partOfSpeech))
                                     .frame(width: 8, height: 8)
-                                Text(item.partOfSpeech)
+                                Text(displayNameForPartOfSpeech(item.partOfSpeech))
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
@@ -689,8 +719,11 @@ struct StatsView: View {
         .background(.background, in: RoundedRectangle(cornerRadius: 16))
     }
     
+    /// `message` is a `LocalizedStringKey` so the literals the call sites pass
+    /// keep reaching the string catalog; as a plain `String` they bypassed it
+    /// and stayed English in the 中文 interface.
     @ViewBuilder
-    private func emptyChartPlaceholder(icon: String, message: String) -> some View {
+    private func emptyChartPlaceholder(icon: String, message: LocalizedStringKey) -> some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.largeTitle)
@@ -811,7 +844,10 @@ struct StackedBarDataPoint: Identifiable {
 struct HeroStatItem: View {
     let icon: String
     let value: String
-    let label: String
+    /// A `LocalizedStringKey` rather than a `String` so the caption literals the
+    /// call sites pass are extracted into the string catalog; as plain `String`
+    /// they never reached it and stayed English in the 中文 interface.
+    let label: LocalizedStringKey
     let color: Color
     
     var body: some View {
@@ -835,7 +871,9 @@ struct HeroStatItem: View {
 
 struct QuickStatCell: View {
     let value: String
-    let label: String
+    /// See `HeroStatItem.label`: keying on `LocalizedStringKey` is what routes
+    /// the caller's literal through the string catalog.
+    let label: LocalizedStringKey
     let icon: String
     
     var body: some View {
@@ -862,7 +900,9 @@ struct QuickStatCell: View {
 struct CompactStatCard: View {
     let icon: String
     let value: String
-    let label: String
+    /// See `HeroStatItem.label`: keying on `LocalizedStringKey` is what routes
+    /// the caller's literal through the string catalog.
+    let label: LocalizedStringKey
     let color: Color
     
     var body: some View {
@@ -908,6 +948,21 @@ struct ContributionHeatmap: View {
         return Calendar.current.component(.weekday, from: first.date) - 1
     }
 
+    /// Gutter labels for the seven weekday rows, index 0 = Sunday to match
+    /// `leadingEmptyDays`. Only the alternating rows are labeled so the
+    /// initials do not crowd the grid — that is the M/W/F pattern the English
+    /// build has always drawn. The symbols come from the *app* language rather
+    /// than a hard-coded English array, which otherwise printed M/W/F even in
+    /// the 中文 interface (where they should read 一/三/五).
+    private var weekdayInitials: [String] {
+        let formatter = DateFormatter()
+        formatter.locale = LocalizationManager.shared.locale
+        guard let symbols = formatter.veryShortWeekdaySymbols, symbols.count == 7 else {
+            return ["", "M", "", "W", "", "F", ""]
+        }
+        return (0..<7).map { $0 % 2 == 1 ? symbols[$0] : "" }
+    }
+
     var body: some View {
         GeometryReader { geometry in
             let availableWidth = geometry.size.width - (isCompact ? 24 : 32) - labelWidth
@@ -924,7 +979,7 @@ struct ContributionHeatmap: View {
                 HStack(alignment: .top, spacing: isCompact ? 2 : 4) {
                     // Day labels - show fewer on compact
                     VStack(alignment: .trailing, spacing: spacing) {
-                        ForEach(Array((isCompact ? ["", "M", "", "W", "", "F", ""] : ["", "M", "", "W", "", "F", ""]).enumerated()), id: \.offset) { _, day in
+                        ForEach(Array(weekdayInitials.enumerated()), id: \.offset) { _, day in
                             Text(day)
                                 .font(.system(size: isCompact ? 7 : 9, weight: .medium))
                                 .foregroundStyle(.secondary)
@@ -1024,6 +1079,11 @@ struct ContributionHeatmap: View {
         
         let calendar = Calendar.current
         let monthFormatter = DateFormatter()
+        // Without an explicit locale the abbreviations follow the *device*
+        // language, so the strip stayed English for a 中文 interface (and could
+        // even show 月份 names to an English user on a Chinese device). Pin it
+        // to the in-app language instead.
+        monthFormatter.locale = LocalizationManager.shared.locale
         monthFormatter.dateFormat = "MMM"
         
         var positions: [MonthPosition] = []
@@ -1109,13 +1169,17 @@ extension MasteryLevel {
         }
     }
     
+    /// Wrapped in `String(localized:)` because this is a plain `String` handed
+    /// to callers verbatim — as a bare literal it bypassed the string catalog
+    /// and stayed English in the 中文 interface. The keys match
+    /// `MasteryLevel.label`, so both properties share one catalog entry.
     var displayName: String {
         switch self {
-        case .new: return "New"
-        case .learning: return "Learning"
-        case .familiar: return "Familiar"
-        case .proficient: return "Proficient"
-        case .mastered: return "Mastered"
+        case .new: return String(localized: "New", bundle: .appLanguage)
+        case .learning: return String(localized: "Learning", bundle: .appLanguage)
+        case .familiar: return String(localized: "Familiar", bundle: .appLanguage)
+        case .proficient: return String(localized: "Proficient", bundle: .appLanguage)
+        case .mastered: return String(localized: "Mastered", bundle: .appLanguage)
         }
     }
 }

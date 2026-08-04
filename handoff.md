@@ -1,7 +1,9 @@
 # Handoff.md — SwiftMandarin: Bilingual + Multi-Provider AI Overhaul
 
-**Last Updated (UTC):** 2026-07-07
-**Status:** In Progress (iter 16 — step-change overhaul on branch `jul-07-2026-step-change-overhaul`: RECOMMENDATIONS.md + Home dashboard + FSRS + Reader + AI conversation + UI overhaul)
+**Last Updated (UTC):** 2026-07-27
+**Status:** In Progress (iter 28 — translation study notes, transcription repair, AI transcription; see Iteration 28)
+**Prior Status:** In Progress (iter 27 — structured AI translation output; see Iteration 27)
+**Prior Status:** In Progress (iter 16 — step-change overhaul on branch `jul-07-2026-step-change-overhaul`: RECOMMENDATIONS.md + Home dashboard + FSRS + Reader + AI conversation + UI overhaul)
 **Current Focus (latest):** Photo-tab workbook expansion — direct camera capture, a review-question **database** (bank), AI **review-question generation**, **grading history** with the original scanned photos, **analytics** integration (graded questions in the contribution heatmap), and a decluttered **More** tab. Plus a 43-agent codebase audit written to `EXECPLAN2.md` (132 findings, 23 confirmed). See Updates iter 11.
 **Prior Focus:** Interface-language-driven tailoring: when the UI is 中文 the user is treated as a native Mandarin speaker learning English (AI explanations written in Mandarin; saved words show ENGLISH as the big headline with Mandarin small; English TTS emphasis) and vice versa for English UI. Full audit + plan: docs/language-direction-audit.md (11-agent parallel map + completeness critic, 2026-06-13).
 **Prior Focus:** Full-app audit + overhaul: 18 verified bug fixes, integration wins (unified history/stats, pinyin position, provider test connection), zero-warning builds, bilingual READMEs — see Updates iter 8 (2026-06-10).
@@ -815,7 +817,7 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - Feature commit `170af655cd1b5c323decebe438d66ff0220c39e5` is pushed on `origin/codex/minimax-audio-catalog-batch`. Two-parent merge `335e8c90285a3293d2f4355854ed5c4ac328dafd` has parents `4879c53` and `170af65` and is pushed on `origin/main`.
 - The exact uncommitted merge tree passed `zsh init.sh` (191/191 strict contracts) and fresh Xcode 27 builds for macOS, iPhone 17 Pro/iOS 27, and iPad Pro 13-inch/iPadOS 27. `/tmp/SwiftMandarin-audio-catalog-merge-{macos,iphone27,ipad27}.log` each contains one success marker and zero warning/error diagnostics; final secret, audio-artifact, localization, plist, duplicate-Sources, and diff gates also passed before the merge commit was created.
 
-### 7) Remaining Work & Next Steps
+### 8) Remaining Work & Next Steps
 
 - No implementation, verification, or Git delivery work remains for this feature. The feature branch and remote main contain the verified commits above; the primary dirty checkout was not changed.
 - Separate security follow-up remains: rotate chat-exposed and historically logged credentials, then remediate the already tracked root logs with explicit history-rewrite coordination. This is not silently folded into the feature commit.
@@ -910,3 +912,249 @@ Branch: `jul-07-2026-step-change-overhaul`. Four user-reported issues addressed 
 - 2026-07-21T14:27:39Z: Created Iteration 26 before production edits; recorded the reported warning, SDK contract, lifecycle invariants, isolated-worktree boundary, race analysis, implementation plan, and traceable acceptance checks.
 - 2026-07-21T14:40:50Z: Completed the first production slice: one FIFO four-profile transition coordinator, async iOS 27 and non-main legacy backends, request/owner reconciliation across speech/capture/recognition, and preliminary clean macOS/iPhone builds. Started deterministic test implementation and two independent concurrency/integration reviews.
 - 2026-07-21T15:02:36Z: Closed R26.1–R26.6 after 27 deterministic transitions, the full 191-contract project suite, exact API/source guards, warning-free macOS/iPhone/iPadOS 27 builds, named-simulator launches, hygiene checks, and two blocker-free final reviews. Marked `bug_async_av_audio_session` passing and the isolated branch ready for Git delivery.
+
+## Iteration 27 — Structured AI translation output (2026-07-27)
+
+### 1) Request & Context
+
+- **User's request:** a screenshot showing a translation surface filled with rambling, first-person, partly repetitive model prose where clean target-language text belongs, plus: "read through the codebase, especially the parts related to the AI features and translations, and fix this issue, perhaps by having the AI return a structured output which the app can parse."
+- **Scope boundary:** the AI provider paths only. Apple's on-device `Translation` API (iOS 18+/macOS 15+) already returns clean text and is untouched; so are the explanation, grading, conversation, story, and word-identification flows, which already use structured output.
+
+### 2) Verified Root Cause
+
+Translation was the one AI feature in the app with **no output contract at all**. `AIWordExplanationService.translateWithProvider` → `translate` / `OllamaService.translate` / `CloudAIService.translate` each took a `String` and returned the model's completion verbatim, trimmed. Three consequences, all of which reached the learner:
+
+1. **No slot for the answer.** A model that decided to summarize, outline, or annotate the passage instead of translating it had nowhere else to put that text. The old prompt asked for "ONLY the translation" in prose and nothing enforced it.
+2. **Chain-of-thought leakage.** `CloudAIService.parseOpenAIContent` returned `message.content` untouched. Thinking models on OpenAI-compatible gateways (DeepSeek, Qwen, Zhipu, Kimi, MiniMax, Doubao and their Ollama equivalents) interleave reasoning as `<think>…</think>` — matched, opener-dropped, or never closed when truncated. All three variants were displayed, spoken by `SpeechService`, and written to `TranslationHistoryStore`. A brace inside a chain of thought also corrupted `AIWordExplanationService.extractJSONObject`, which every structured feature relies on.
+3. **Truncation.** `CloudAIService.translate` hard-coded `maxTokens: 2048`, which cuts a Reader paragraph, scanned page, or pasted article mid-sentence.
+
+The same shape applied to `cleanupRecognizedText`: its free-form completion becomes `sourceText` for the entire photo pipeline, so a "Here is the corrected text:" preface plus a summary was adopted as the learner's source material.
+
+Every affected surface — Translate, Photo/Multimodal, Reader, Live Speech, menu-bar translate, screenshot overlay, and the Shortcuts intents — funnels through those three provider methods, so all of them shared the single defect.
+
+### 3) Change
+
+- **New `SwiftMandarin/Services/AIResponseParsing.swift`** (Foundation-only, so the harness can exercise it without a model or credentials):
+  - `AIResponseSanitizer` — reasoning-tag removal for matched pairs, stray closers, and stray openers, across ASCII `<think>` and MiniMax `◁think▷`, plus code-fence and wrapping-quote removal.
+  - `AIStructuredResponse` — balanced, string-aware JSON object scanning (braces and quotes inside the answer never end the object early), with a salvage pass for envelopes truncated mid-string or written with unescaped line breaks.
+  - `AITranslationResponseParser` / `AITextCleanupResponseParser` — the ladder from strict parse → salvage → sanitized free-form, and rejection of machine data with no answer in it.
+- **`AITranslationPromptBuilder`** gained an ANSWER SCOPE section (translate, never summarize/outline/analyze; never answer a question the source asks; never emit reasoning) and a `jsonOutputContract` describing `{"translation": "…"}`.
+- **`AIOutputBudget.tokens(forSourceLength:)`** replaces the fixed 2048 ceiling, scaling to 8192.
+- **Provider wiring:** Apple Intelligence uses `@Generable TranslationOutput` / `CleanedTextOutput` guided generation; Ollama uses schema-constrained `generateStructured`; cloud requests the JSON envelope with `jsonMode: true`. All three parse through the shared parser. Both `CloudAIService.chat` and `chatTurns` now route content through `answerText(from:)`, so reasoning stripping protects every structured feature, not just translation.
+- **`AIProviderConfigView.testConnection`** raised from 32 to 512 max tokens: with a response that is nothing but reasoning now treated as empty, the old ceiling would have failed the check on a healthy connection.
+
+### 4) Decisions
+
+- **Envelope over bare string, everywhere.** Matches the pattern `ConversationService`, `GradingResult`, and `ExtractedVocabResponse` already use. A named field means commentary is discarded by construction rather than by pattern-matching prose.
+- **Parse ladder consults the untouched response too.** `AIStructuredResponse.envelopeValue` prefers a strict parse of the reasoning-free text, then a strict parse of the original, then salvages. That ordering is what lets a legitimate answer *containing* `<think>` (translating a sentence about the tag) survive intact instead of being truncated by the sanitizer.
+- **Label and note stripping runs only on the free-form fallback.** Inside the envelope those patterns are far more likely to be genuine content — a source line reading `翻译：…` really does translate to `Translation: …`.
+- **No degenerate-repetition collapsing.** Considered, because the screenshot appears to show repeated fragments, but rejected: any heuristic that rewrites repeated content risks damaging a legitimate refrain, and the structured contract addresses the cause rather than that symptom.
+- **A response with no answer fails loudly.** `AITranslationResponseError.noTranslation` (localized, with a zh-Hans entry) is shown instead of the model's prose.
+
+### 5) Requirements → Acceptance Checks
+
+| Requirement | Check | Evidence |
+|---|---|---|
+| R27.1 Commentary around the answer is discarded | Envelope parse with prose before/after, fenced envelope, brace in surrounding prose | `test-ai-prompt-contracts.sh` — 9 envelope cases |
+| R27.2 Chain-of-thought never reaches the UI | Matched pair, stray closer, unclosed opener, MiniMax brackets, case/attributes, multiple pairs | 8 sanitizer cases |
+| R27.3 Answer content is not damaged | Braces/quotes in the value, ordinary prose containing "think", `<think>` inside a valid answer, quotes inside a sentence, mid-passage note-like line, label word without a colon | 6 preservation cases |
+| R27.4 Damaged envelopes still yield the answer | Truncated mid-string, unescaped line break inside the JSON string | 2 salvage cases |
+| R27.5 Non-compliant models keep working | Bare string, English/Chinese/markdown labels, wrapping quotes, trailing notes | 9 free-form cases |
+| R27.6 A commentary-only response is an error, not a result | Empty, whitespace, reasoning-only, analysis object, echoed request payload | 5 rejection cases |
+| R27.7 Long passages are not truncated | Budget scales 2048 → 6512 → 8192 | 3 budget cases |
+| R27.8 All three providers are wired the same way | Per-provider grep assertions for guided generation, schema, envelope contract, and parser use | 22/22 wiring checks |
+
+### 6) Verification Summary
+
+- `zsh scripts/test-ai-prompt-contracts.sh`: **124/124** prompt + response-parsing checks, **22/22** provider-wiring checks. The runner now compiles the production parser with `-swift-version 6 -strict-concurrency=complete -warnings-as-errors`, matching the MiniMax harness.
+- `zsh init.sh`: **191/191** MiniMax contracts, **27/27** audio-session transitions, **124/124 + 22/22** AI contracts, project smoke checks — all pass. The AI contract script is now part of `init.sh` so this fix stays guarded.
+- Xcode 27 Debug builds: macOS and generic iOS Simulator both `BUILD SUCCEEDED` with **zero** `warning:` or `error:` diagnostics.
+- **Mutation testing** (the checks are not vacuous): returning the raw completion from `CloudAIService.translate` → "Expected the cloud translation to parse its response through the shared parser; found 0". Emptying the reasoning-tag list → "A matched reasoning pair is removed; expected Good morning. but got `<think>`Weigh the register first.`</think>`Good morning." Removing the salvage rungs → "A truncated envelope yields the partial answer instead of raw JSON; expected … but got `{"translation":"…`". All three restored and re-verified green.
+- `python3 -m json.tool` passes on `SwiftMandarin/Localizable.xcstrings` and `feature_list.json`.
+
+### 8) Remaining Work & Next Steps
+
+- **Live provider QA is not done** and cannot be from here: no API keys were used and no request was sent to any provider. Worth exercising before release — a thinking model (Qwen/Zhipu/Kimi/MiniMax) translating a long article, a truncation at the new 8192 ceiling, and the Apple Intelligence path on a device with Apple Intelligence enabled.
+- **Screen attribution is inferred, not confirmed.** The screenshot's resolution did not allow identifying which surface produced it. The fix is at the shared provider choke point, so Translate, Photo, Reader, Live Speech, menu bar, screenshot overlay, and Shortcuts are all covered regardless — but if the reported symptom persists on one specific screen, that screen has a second, separate cause worth investigating.
+- Other free-form AI surfaces deliberately left alone because they already parse structured output: explanations, grading, review-question generation, conversation, story generation, word identification, vocabulary extraction.
+- The credential-rotation follow-up from Iterations 25–26 is unchanged and untouched by this work.
+
+### 8) Updates
+
+- 2026-07-27: Created Iteration 27. Audited the AI/translation paths, identified the missing output contract as the shared root cause, implemented the structured envelope across all three providers plus OCR cleanup, added 42 response-parsing checks and 7 wiring assertions, mutation-tested them, and verified clean macOS/iOS builds and a green `init.sh`. Marked `bug_ai_translation_structured_output` passing.
+
+## Iteration 28 — Translation study notes, transcription repair, AI transcription (2026-07-27)
+
+### 1) Request & Context
+
+Three asks in one message, following Iteration 27:
+
+1. **Explain the translation.** "For the AI translation, perhaps have the AI provide an explanation of the translation to help users understand it, perhaps including what the major important characters or phrases mean, as part of the structured output. Write a prompt … that works for both long and short inputs, and doesn't include easy characters."
+2. **Audio transcription doesn't work.**
+3. **Add a feature for AI transcription and translation.**
+
+### 2) Change 1 — Study notes in the same envelope
+
+Iteration 27 gave translation a one-field envelope. That envelope now carries two more fields, so the explanation costs **no extra round trip** on the AI translation path:
+
+```json
+{"translation": "…", "explanation": "…", "keyTerms": [{"term","reading","meaning","note"}]}
+```
+
+- `AITranslationContext` (Foundation-only) carries the direction *and* the learner's native language, because notes must read natively whichever way the translation runs. `AITranslationContext.current(sourceIsChinese:)` in the service layer reads `LocalizationManager.nativeIsChinese`.
+- `AITranslationPromptBuilder.studyNotesContract(for:)` is the new prompt. Two rules carry the user's requirements:
+  - **Scale** — "A short or easy source gets none. A sentence or short paragraph gets about two to four. A long passage gets at most eight, chosen from across the whole text rather than the opening lines… Never pad the list to reach a number." One prompt is therefore correct for a two-word lookup and a full article.
+  - **Skip easy items** — for Chinese: "pronouns, numbers, dates, weekdays, particles and function words such as 的, 了, 是, 在, 有, 不, 很, 也, 就, 会, 能, greetings, and the ordinary high-frequency nouns, verbs, and adjectives of daily life"; the English branch names function words and everyday vocabulary instead. Plus "Prefer the whole word, set phrase, chengyu, or collocation over a single character."
+  - `explanation` is constrained to *why this rendering is right* — idiom, clause order, omitted subject, aspect/measure word, register, pun, cultural reference — with the exact source words quoted, and an explicit "return an empty string rather than inventing a difficulty."
+- All three providers carry it: Apple Intelligence via `@Generable TranslationOutput` + `TranslationKeyTerm`, Ollama via an extended schema, cloud via the prompt contract. `AITranslationResponseParser.result(from:)` returns `AITranslationResult`; a damaged response still yields the translation and simply loses the optional notes.
+- Key terms are capped at 8, deduplicated, and rows with no term or no meaning are dropped — a row that teaches nothing is worse than a shorter list.
+- **UI:** new `TranslationNotesView` (collapsible, one-tap save to vocabulary) on **Translate** and on **Multimodal**'s Chinese→English card. On the AI path the notes arrive automatically; on Apple's on-device Translation path — which returns none — an explicit **Explain this translation** button fetches them, so the free on-device path never silently bills a provider.
+
+### 3) Change 2 — Why transcription didn't work
+
+`AudioTranscriptionService` had three defects, all of which produced "it just doesn't work":
+
+1. **On-device forced with no fallback.** `if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }`. That property says the *recognizer* can work offline; it does **not** promise the locale's assets are installed. On a device without the Chinese (or any) dictation model downloaded, every attempt failed or returned nothing, and there was no server pass to fall back to. Now: on-device is attempted first, and `.recognitionFailed`, `.emptyTranscript`, and `.timedOut` all retry through Apple's service.
+2. **Availability checked one instruction after construction.** `SFSpeechRecognizer(locale:)` reports `isAvailable == false` for a short window while Speech resolves the locale, so a perfectly good recognizer was rejected outright. Now polled for up to 3 seconds.
+3. **No timeout.** Speech can accept a URL request and never call back, leaving the spinner forever. Now a 120 s deadline resolves the exactly-once gate with `.timedOut`.
+
+Also: `addsPunctuation = true` (a transcript is used as editor text and translation input), and Speech's opaque errors now carry their domain and code — the only way to tell a missing on-device asset from a network failure. Usage descriptions and the `com.apple.security.device.audio-input` entitlement were already correct and were not the cause.
+
+### 4) Change 3 — AI transcription and translation
+
+- `AIProvider.supportsAudioTranscription` + `defaultTranscriptionModels` + `transcriptionPath` for the providers documented to serve OpenAI's `POST /audio/transcriptions`: **OpenAI, Qwen, Quotio**. Because base URL and model are both user-editable, any other OpenAI-compatible ASR gateway is reachable through Quotio; a provider that turns out not to serve the route answers with its own HTTP error, surfaced verbatim rather than hidden.
+- `CloudAIService.transcribeAudio(provider:model:audioURL:languageCode:)` builds the multipart request by hand (no third-party dependency) and reads the transcript from `{"text": …}`, DashScope-style `output.text` / `output.sentence[]`, or `results[]`.
+- `AudioTranscriptionEngine` (`appleSpeech` | `aiProvider`) persists in `AIModelSettings`, defaulting to Apple Speech. Routing lives in `AudioTranscriptionService.transcribe(audioURL:language:engine:)` so every audio surface shares one preference and neither engine silently substitutes for the other — switching to AI uploads the recording, and that stays an explicit choice.
+- **UI:** engine picker + editable model field in the Multimodal audio pane, an engine-specific privacy notice, and — after an Apple Speech failure with a provider configured — **Retry with AI** / **Retry & Translate** buttons, so a learner whose language has no dictation model is not left at a dead end. "Translate Audio" then runs AI transcription → AI translation end to end.
+
+### 5) Decisions
+
+- **Notes ride in the translation envelope, not a second call.** The AI path pays nothing extra. The on-device path gets an explicit button rather than an automatic second (billed) request.
+- **Notes are allowed to be empty.** The prompt says an easy passage gets none, so `hasNotes == false` is a correct result; `TranslationNotesView` renders nothing rather than an empty-state placeholder.
+- **Free-form label/note stripping is *not* applied to OCR cleanup** (carried over from Iteration 27) and, for the same reason, key-term rows are filtered but never rewritten.
+- **No silent engine substitution for audio.** Apple → AI is offered on failure, never automatic: the two engines differ in where the audio goes and who bills for it.
+- **`testConnection` raised 32 → 512 max tokens** (Iteration 27 follow-through): with a reasoning-only response now treated as empty, 32 tokens would fail the check on a healthy connection.
+
+### 6) Requirements → Acceptance Checks
+
+| Requirement | Check | Evidence |
+|---|---|---|
+| R28.1 Notes ride in the same structured response | Envelope with explanation + keyTerms parses into one result | `test-ai-prompt-contracts.sh` — 6 result cases |
+| R28.2 The prompt scales to input length | Contract asserts "A short or easy source gets none" / "A long passage gets at most eight" / "across the whole text" / "Never pad the list" | 4 prompt assertions |
+| R28.3 Easy characters are excluded | Contract asserts the elementary-skip rule and the named Chinese function words; the English branch must not carry the Chinese list | 4 prompt assertions |
+| R28.4 Notes follow the learner's native language | Chinese-source context says "in English"; English-source context says "in Simplified Chinese (简体中文)" and asks for no pinyin | 4 prompt assertions |
+| R28.5 Malformed note lists degrade safely | Cap at 8; blank / meaningless / duplicate rows dropped; alias field names accepted; notes survive reasoning stripping | 12 parser assertions |
+| R28.6 Transcription no longer dead-ends | No forced `requiresOnDeviceRecognition = true`; two server-fallback passes; a `.timedOut` deadline exists | 3 wiring assertions |
+| R28.7 AI transcription exists end to end | Service routes to the cloud client; exactly one multipart client | 2 wiring assertions |
+| R28.8 Notes reach real screens | `TranslationNotesView` on both translation surfaces; both request the notes-bearing translation | 2 wiring assertions |
+
+### 7) Verification Summary
+
+- `zsh init.sh`: **191/191** MiniMax, **27/27** audio-session, **161/161** AI prompt + parsing, **29/29** provider wiring — all pass.
+- Xcode 27 Debug builds: macOS and generic iOS Simulator both succeed with **zero** `warning:` / `error:` diagnostics.
+- **Mutation testing:** forcing `requiresOnDeviceRecognition = true` → "Transcription forces on-device recognition with no fallback (1 site(s))". Removing `TranslationNotesView` from one surface → "Expected translation notes on both the Translate and Multimodal surfaces; found 1". Both restored and re-verified green.
+- The rendered prompt was dumped and read end to end (not only asserted on fragments) to confirm the scale and skip rules read as intended for both directions.
+- 20 new user-facing strings added to `Localizable.xcstrings` with zh-Hans translations; catalog and `feature_list.json` both parse.
+
+### 8) Remaining Work & Next Steps
+
+- **No live provider or device call was made** — no API keys were used, and Apple Speech was not exercised on real hardware. Before release: (a) transcribe a Chinese clip on a device *without* the zh dictation model installed and confirm the server fallback carries it; (b) run AI transcription against OpenAI and against Qwen — **Qwen's `/audio/transcriptions` support is asserted from documentation, not verified here**, and if it 404s the fix is a base-URL/model change, not code; (c) confirm the notes panel on a long article with a thinking model.
+- The Reader and Live Speech surfaces reuse `translateWithProvider` and so still show translation only. Adding `TranslationNotesView` there is a small, mechanical follow-up if wanted.
+- Iteration 25–26's credential-rotation follow-up is unchanged and untouched.
+
+### 9) Updates
+
+- 2026-07-27: Created Iteration 28. Added study notes to the translation envelope with a length-scaling, easy-vocabulary-excluding prompt; diagnosed and repaired the three transcription defects; added an AI transcription engine with an OpenAI-compatible multipart client and an engine picker. 38 new prompt/parser checks and 7 new wiring assertions, mutation-tested; clean macOS/iOS builds and a green `init.sh`.
+
+## Iteration 29 — Chinese-speaker-learning-English as a true mirror (2026-08-05)
+
+### 1) Request & Context
+
+> "study the whole codebase. study the logic of the english speaker learning mandarin. i want the logic in reverse for the chinese speaker learning english mode in the settings. change all aspects to be tailored to this, including prompt instructions for the language reversal, explanations in mandarin, and audio generated in english for the chinese speaker learning english mode. these should only be activated in the chinese speaker learning english. dont change the mode for the english speaker learning mandarin, which is already perfect, but implement the reverse mode throughout the app for the chinese speaker learning english, including in the vocab list, where the english work should be in the main font, and the chinese word should be in the smaller font. also make sure the interface language is changed throughout the app once the user changes to chinese speaker learning english."
+
+Constraint that shaped every decision: **the English-speaker mode is finished and must not change.** The safe form of almost every edit was therefore *additive* — a new branch taken only when `learningIsChinese == false`, or a literal turned into a localization key whose key text is the old literal (so English output is byte-identical and only the 中文 rendering is new).
+
+### 2) What was already there, and what actually wasn't
+
+A 9-agent parallel audit read the whole codebase (333 findings, 33 critical). The result was more nuanced than "reverse mode is missing": Iteration 8's language-direction work had already made `SavedTerm.headlineText/glossText/showsPinyin`, `PracticeItem`, `ConversationService`, `StoryGenerationService`, `BatchAudioPlanner`, `LearnView`, `PhrasesView`, `DictationView`, and `QuizView` correctly bidirectional. The reverse mode was not absent; it was **half-applied**, and the half that was missing followed a pattern — the *text* had been swapped everywhere, but the *learner aids*, *prompt contracts*, *defaults*, and *interface strings* attached to that text had not.
+
+Concretely:
+
+1. **The AI prompt told the model to give a Mandarin speaker nothing to pronounce with.** `AIExplanationPromptBuilder` said, for an English headword: `"All pinyin fields must be empty strings because the headword is English."` A Chinese learner therefore received an English word with no reading at all, while an English learner received pinyin with tone marks — the single most useful scaffold, present in one direction and explicitly forbidden in the other. The English word-building contract was five prohibitive lines against the Chinese branch's sixteen teaching lines. Worse, `AIExplanationPromptChecksRunner.swift:100` **asserted the defect** (`expectContains(englishTeacher, "pinyin fields must be empty")`), so it was locked in.
+2. **The tappable reader was Chinese-only.** `TranslateView.interactiveTranslationView` rendered `RubyTextView` unconditionally under a hard-coded `"CHINESE (TAP WORDS FOR DETAILS)"` header, with the English shown as flat, untappable text. `EnglishRubyTextView` — the exact mirror component — already existed and was used by ReaderSessionView and PhotoTranslateView, but never here. `WordIdentificationService` was Mandarin-only end to end: its prompt segmented 中文, demanded pinyin, and glossed in English regardless of the learner.
+3. **A first-launch Mandarin speaker opened Translate pointing the wrong way.** `AppPreferences.init()` assigns `learnerMode` directly, so its `didSet` — the only writer of the shared `defaultDirection` key — never ran at launch. Every reader then fell back to its own `TranslationDirection.englishToChinese` literal, and `TranslationState.direction` was hard-coded to the same.
+4. **Mandarin-only affordances were shown to native Mandarin readers**: the whole Pinyin Display settings group on both platforms, the Chinese-font picker, the pinyin sort order in Vocabulary, and pinyin ruby over every Chinese word.
+5. **~155 user-facing strings never reached the string catalog**, because they were raw Swift `String`s: every error message in the speech, cloud-AI, and import/export services; the Stats screen's stat labels; the About screen; the nine section headings of the AI explanation card. Plus 69 catalog keys with no zh-Hans translation.
+
+### 3) The change
+
+**A shared vocabulary for the mirror.** `SwiftMandarin/Models/LearningContext.swift` (new) is a pure, `Sendable`, Foundation-only value holding one fact — `learningIsChinese` — and projecting it onto the questions call sites kept re-deriving: `primary(chinese:english:)` / `secondary(chinese:english:)`, `showsPinyinAffordances`, `interactiveReaderIsChinese`, and `mirrored`. It exists because re-deriving the swap inline is what let the text reverse while the pinyin affordance stayed pinned to the original audience.
+
+**Prompts (`AIExplanationPromptBuilder`, `AIWordExplanationService`, `WordIdentificationService`).** The `pinyin` slot is now the *pronunciation* slot: pinyin with tone marks for a Chinese item, **IPA between slashes with primary stress** (`/kəˈmɪt/`) for an English one — stated in the teacher contract, the cloud JSON schema, the Ollama schema, and every `@Guide` on the Foundation Models path (those are compile-time literals, so they were rewritten direction-neutrally rather than branched). The English word-building contract now mirrors the Chinese one line for line: one compact line per real prefix/root/suffix/compound-half/particle, a localized "Together:" bridge, the word family the learner gets for free, and irregular inflections — instead of "do not split an English word into arbitrary letters." `AITranslationContext.readingDescription` gained the same treatment, so English key terms in translation study notes carry IPA instead of an explicitly empty field. `WordIdentificationService` became direction-parameterized: English segmentation keeps phrasal verbs and idioms together as one dictionary entry (the mirror of keeping 学习 intact), asks for IPA, uses an English POS inventory, and glosses in the learner's native language — with the cache re-keyed by direction so switching modes re-glosses instead of serving back the old language.
+
+**Vocabulary list.** `renderedHeadwordFontSize` sizes the headword by *its own script* — Han characters carry more detail per glyph, so an English headword steps down to 0.85× (0.6× in the 96 pt detail view) to look equally weighted at the same slider position; the storage keys keep their old names so existing preferences survive. `SavedTerm` gained `showsPhonetic` and `headwordReading`; the `looksLikeIPA` guard (`ChineseTextAnalyzer.swift`) stops a term saved while learning Mandarin from rendering "xuéxí" under the headword "study". The `headlineText` fallback no longer promotes the raw `chinese` field into the large font for a one-sided entry. The Pinyin sort option is filtered out of the menu and ignored if persisted. `normalizedKey` now folds case, so "Charge" and "charge" stop duplicating.
+
+**Reader and defaults.** `TranslateView` splits into `studiedLanguagePane` / `nativeLanguagePane(prominent:)`: a Mandarin speaker gets the tappable `EnglishRubyTextView` on top with 中文 plain beneath, and word identification is skipped entirely (English boundaries are unambiguous locally, so the model call would buy nothing). `TranslationDirection.persistedDefault` derives the fallback from the persisted interface language and is now used by all four readers; `AppPreferences.init()` seeds `defaultDirection` when absent, without overwriting an explicit choice.
+
+**Interface language.** Hard-coded strings in 17 files were routed through the catalog using their existing English text as the key, so English rendering is unchanged. 149 zh-Hans translations were added: 57 for the previously-untranslated bilingual and English keys, 89 for the newly-created ones, plus 5 for the new direction-aware headings. Catalog coverage went from 1141/1210 to **1290/1301** — the 11 remaining are punctuation and format scaffolding (`""`, `" "`, `"→ %@"`, `"%lld/%lld"`) that correctly need none.
+
+### 4) Decisions
+
+- **Never change what English mode renders.** For a bilingual key like `"作业 · Workbook"` this meant adding a zh-Hans value of `"作业"` rather than re-keying to English: 中文 mode becomes pure Chinese while English mode keeps the exact string it had. For English literals it meant keeping the literal as the key.
+- **IPA reuses the `pinyin` field rather than adding a phonetics column.** The wire format, the response structs, the explanation cache, and `SavedTerm` all keep their shape; only the field's *description* is direction-aware. Adding an IPA column would have meant a schema migration for an aid the model can already produce.
+- **Hide Mandarin-only features rather than invent English counterparts.** Tone drills, the tone-color legend, the pinyin position picker, and the Chinese-font picker are hidden for a native Mandarin reader. Building a stress-drill counterpart is a product decision, not a reversal.
+- **The pure core is testable; the live accessor is compiled out of the runner.** `LearningContext.current` sits behind `#if !LEARNING_DIRECTION_CHECKS` so the mirror invariants can be asserted without dragging in `LocalizationManager`.
+- **Literals were hoisted out of ternaries.** `Text(cond ? "A" : "B")` is ambiguous between `Text`'s localizing and verbatim initializers, and Xcode's extractor does not reliably catalog it — so each is now an explicitly typed `LocalizedStringKey` property.
+
+### 5) Requirements → Acceptance Checks
+
+| Requirement | Check | Evidence |
+|---|---|---|
+| R29.1 Prompts explain English headwords in Mandarin | English-direction contract names 简体中文 as the explanation language and omits the Chinese decomposition rules | `test-ai-prompt-contracts.sh` |
+| R29.2 The reverse direction gets a pronunciation, not an empty field | English contract requests IPA + primary stress; the old "pinyin fields must be empty" assertion is inverted; the Chinese branch must not request IPA | 12 new prompt assertions |
+| R29.3 Audio follows the studied language | Batch `.bothLanguages` queues the studied language first; scope label no longer names Mandarin | `test-minimax-audio-contracts.sh` (191/191) |
+| R29.4 English word large, Chinese word small | Headword sized by its own script at 2 sites; the English pronunciation line renders at 3 sites | `test-learning-direction.sh` wiring checks |
+| R29.5 The tappable reader mirrors | Translate consults `interactiveReaderIsChinese` and offers `EnglishRubyTextView` | wiring checks |
+| R29.6 Pinyin ruby is a learner aid only | `RubyWordView` gates ruby on `showPinyin && learningIsChinese` | wiring check |
+| R29.7 A Mandarin speaker opens on 中→EN | All four readers of the default direction use `persistedDefault` | wiring check |
+| R29.8 The two modes are genuine mirrors | Every accessor differs between directions and equals its mirrored counterpart; primary/secondary swap and remain exhaustive | 28 assertions in `LearningDirectionChecksRunner` |
+| R29.9 The interface renders in 中文 | Catalog coverage 1290/1301; every remaining gap is punctuation or format scaffolding | catalog audit |
+
+### 6) The bug the verification pass found — `String(localized:)` never followed the toggle
+
+An adversarial review of the finished change caught something that would have quietly undone most of it, and it is the most important thing in this iteration to remember.
+
+`LocalizationManager` switches language by re-classing `Bundle.main` and overriding the ObjC method `localizedString(forKey:value:table:)`. SwiftUI's `Text("…")` and `NSLocalizedString` both call that method — which is why view literals have always followed the in-app toggle. **`String(localized:)` does not.** It resolves through Foundation's own machinery, which never sees the override, so every string assembled in a model or service followed the *device* language instead.
+
+This was verified empirically rather than argued, with a standalone binary that installs the same override against real `en.lproj` / `zh-Hans.lproj` resources:
+
+```
+Bundle.main.localizedString : 陈述句     ← override honored
+NSLocalizedString           : 陈述句     ← override honored
+String(localized:)          : Declarative ← override BYPASSED
+```
+
+It was a pre-existing app-wide flaw (~184 call sites before this change), not something the localization pass introduced — but the pass added ~110 more and documented several of them as "resolves through the string catalog so it follows the in-app toggle", which was false. The canonical symptom: an English-language device with the app set to 中文 — precisely the reverse-mode user, since the app only defaults to 中文 on a Chinese device — would read `TranslateView`'s language chips and placeholder in English while every neighbouring literal on the same screen was Chinese.
+
+The fix keeps `String(localized:)`'s ergonomics (interpolation, Xcode extraction) and simply names the bundle: `String(localized: "…", bundle: .appLanguage)`, where `Bundle.appLanguage` returns the installed override. That was applied to all **294** call sites. `LocalizedStringResource` has the same flaw and no `Bundle` parameter, so the two enums using it (`BatchAudioScope`, `MiniMaxAPIRegion`) became `LocalizedStringKey`, which SwiftUI resolves through the override.
+
+Two supporting changes fell out of it. The `Bundle` override machinery moved from `LocalizationManager.swift` into its own Foundation-only `LanguageBundleOverride.swift`, because several files that now resolve strings are compiled standalone by the contract runners and could not drag in SwiftUI and `AppPreferences`. And `test-learning-direction.sh` gained two guards — one that fails when any `String(localized:)` omits the bundle, one that catches `comment:` written before `bundle:` (an argument-order *build* error, which is how the bulk rewrite first broke `SRSEngine`). Both are mutation-tested.
+
+### 7) Verification Summary
+
+- `zsh init.sh`: **191/191** MiniMax audio, **27/27** audio-session, **173/173** AI prompt + parsing (was 161), **29/29** provider wiring, **28/28** learning-direction mirror, **8/8** direction wiring. All green; the new suite is wired into `init.sh`.
+- **Full-app type-check, views included.** Xcode is not installed here (Command Line Tools only), so `xcodebuild` cannot run — but the two things it supplies are both recoverable. The `Ollama` SwiftPM dependency was compiled from the checkout Xcode had already resolved into DerivedData, and the project's real build settings were restated on the command line (`-swift-version 5`, `-default-isolation MainActor`, `-target arm64-apple-macos26.2`, `MemberImportVisibility`). Against that, all 112 Swift files — every SwiftUI view body included — type-check with **zero** errors; the only diagnostics left are 26 instances of the SwiftUI macro plugin being absent, which is an environment artifact and nothing else. A `swiftc -parse` sweep is also clean.
+- **Mutation testing.** Un-routing one `String(localized:)` → "A String(localized:) call bypasses the in-app language override (1 site(s))". Inverting `comment:`/`bundle:` → "passes comment: before bundle: (1 site(s))". Both restored and re-verified green.
+- The string catalog is edited by a script that reproduces Xcode's serialization byte for byte (verified by a round-trip self-test), so the diff is the added translations rather than a reformat of all 315 KB. Every added translation was checked for format-specifier compatibility with its key — which caught `"%lld word%@ ready to export"`, whose Chinese translation was consuming the English plural-suffix argument and dropping a stray Latin "s" into Chinese text.
+
+### 8) Remaining Work & Next Steps
+
+- **No `xcodebuild` and no device run.** The full-app type-check above covers the macOS slice with the project's real settings, so the remaining uncovered surface is the iOS-only `#if os(iOS)` code — Command Line Tools ship no iOS SDK. Those regions were read by hand; the only substantial one is `VocabularyView`'s iOS detail session, which is expression-for-expression the same shape as the macOS inspector that does type-check. First action on a machine with Xcode: build macOS + iOS Debug.
+- **No live model call.** The IPA contract is asserted against the rendered prompt, not against a real provider's output. Worth confirming with one cloud provider and one Ollama model that an English headword actually comes back with `/…/` in the pronunciation field.
+- **Mandarin-only features are hidden, not mirrored.** Tone drills have no English counterpart (a stress- or minimal-pair drill would be the analogue), `LearningDeck.cards` is a 15-card Mandarin starter deck whose English side serves as the reverse-mode deck, and `LearningCard.exampleSentence` is Chinese-only. `GrammarKnowledgeBase` (`Models/GrammarPoint.swift`) is a complete Chinese-explanations-of-English-grammar dataset that **nothing in the app references** — it is the ready-made content for a reverse-mode grammar surface.
+- `LearnerMode.bilingual` still leaves the interface language at whatever it was, because `syncLearnerMode` deliberately preserves an explicit bilingual choice. That mode has no defined native language, which is a product question rather than a bug.
+
+### 9) Updates
+
+- 2026-08-05: Created Iteration 29. Audited the codebase with 9 parallel readers, then made the Chinese-speaker-learning-English mode a true mirror: IPA-for-pinyin in every prompt contract, an English tappable reader, script-aware headword sizing in the vocabulary list, direction-derived defaults, Mandarin-only affordances gated, and ~150 zh-Hans translations taking catalog coverage to 1289/1300. Added `LearningContext` plus a 36-assertion contract suite wired into `init.sh`; inverted the prompt check that had locked in the missing-pronunciation defect.
+- 2026-08-05 (same session, after adversarial verification): Fixed the two defects that review found. (a) `String(localized:)` never followed the in-app language toggle — proved with a runnable experiment, then routed all 294 call sites through `Bundle.appLanguage` and added two mutation-tested guards so it cannot regress; the override machinery moved to its own Foundation-only file so the contract runners can still compile standalone. (b) Every save path discarded the IPA the reverse-mode prompts ask for, making `showsPhonetic` unreachable — the model-supplied reading is now kept for English headwords. Also: `EnglishWordDetailSheet` stored the two sides swapped in reverse mode (duplicate rows), `ScreenshotTranslationStore` never re-derived its target language after a mode switch, and four catalog defects (a Chinese translation consuming an English plural argument, four Chinese-keyed errors with no English localization, a stale marker, and a `Learning` key shared between an SRS state and a Settings tab).

@@ -30,6 +30,7 @@ struct StudyHubView: View {
     @Environment(SavedTermsStore.self) private var savedTermsStore
     @Environment(LearningProgressStore.self) private var progressStore
     @State private var path: [StudyRoute] = []
+    @State private var localization = LocalizationManager.shared
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -105,6 +106,17 @@ struct StudyHubView: View {
 
     // MARK: - Practice & immersion
 
+    /// Tone drills are Mandarin-only and `PracticeHubView` hides that card for
+    /// a Mandarin speaker, so the summary must not promise a drill that will
+    /// not be there. Typed explicitly rather than written inline: a literal
+    /// inside a ternary is ambiguous between the localizing and verbatim
+    /// initializers, and Xcode's extractor does not reliably catalog it.
+    private var practiceSubtitle: LocalizedStringKey {
+        localization.learningIsChinese
+            ? "Quizzes, dictation, and tone drills"
+            : "Quizzes and dictation"
+    }
+
     private var practiceSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SMSectionHeader(titleKey: "Practice & Immersion")
@@ -112,7 +124,7 @@ struct StudyHubView: View {
                 icon: AppTab.practice.icon,
                 tint: .purple,
                 titleKey: "Practice",
-                subtitleKey: "Quizzes, dictation, and tone drills"
+                subtitleKey: practiceSubtitle
             ) {
                 path.append(.practice)
             }

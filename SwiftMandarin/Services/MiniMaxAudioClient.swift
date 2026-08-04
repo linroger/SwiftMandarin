@@ -44,68 +44,68 @@ nonisolated enum MiniMaxAudioError: LocalizedError, Sendable {
     var errorDescription: String? {
         switch self {
         case .cancelled:
-            return String(localized: "AI Audio was cancelled.")
+            return String(localized: "AI Audio was cancelled.", bundle: .appLanguage)
         case .emptyText:
-            return String(localized: "Enter some text before generating speech.")
+            return String(localized: "Enter some text before generating speech.", bundle: .appLanguage)
         case let .textTooLong(actual, maximumExclusive):
             return String.localizedStringWithFormat(
-                String(localized: "AI Audio supports fewer than %1$lld characters; this text has %2$lld."),
+                String(localized: "AI Audio supports fewer than %1$lld characters; this text has %2$lld.", bundle: .appLanguage),
                 Int64(maximumExclusive),
                 Int64(actual)
             )
         case .missingAPIKey:
-            return String(localized: "Add a MiniMax API key in AI Audio settings.")
+            return String(localized: "Add a MiniMax API key in AI Audio settings.", bundle: .appLanguage)
         case let .invalidConfiguration(reason):
-            return String(localized: "AI Audio settings are invalid:") + " " + reason
+            return String(localized: "AI Audio settings are invalid:", bundle: .appLanguage) + " " + reason
         case .invalidHTTPResponse:
-            return String(localized: "MiniMax returned an invalid network response.")
+            return String(localized: "MiniMax returned an invalid network response.", bundle: .appLanguage)
         case let .httpStatus(status):
             return String.localizedStringWithFormat(
-                String(localized: "MiniMax returned HTTP status %lld."),
+                String(localized: "MiniMax returned HTTP status %lld.", bundle: .appLanguage),
                 Int64(status)
             )
         case let .transport(message):
-            return String(localized: "MiniMax could not be reached:") + " " + message
+            return String(localized: "MiniMax could not be reached:", bundle: .appLanguage) + " " + message
         case .responseDecoding:
-            return String(localized: "MiniMax returned a response the app could not read.")
+            return String(localized: "MiniMax returned a response the app could not read.", bundle: .appLanguage)
         case let .apiStatus(code, message):
             if let message, !message.isEmpty {
                 return String.localizedStringWithFormat(
-                    String(localized: "MiniMax error %lld:"),
+                    String(localized: "MiniMax error %lld:", bundle: .appLanguage),
                     Int64(code)
                 ) + " " + message
             }
             return String.localizedStringWithFormat(
-                String(localized: "MiniMax returned error %lld."),
+                String(localized: "MiniMax returned error %lld.", bundle: .appLanguage),
                 Int64(code)
             )
         case let .incompleteAudio(status):
             if let status {
                 return String.localizedStringWithFormat(
-                    String(localized: "MiniMax did not finish the audio (status %lld)."),
+                    String(localized: "MiniMax did not finish the audio (status %lld).", bundle: .appLanguage),
                     Int64(status)
                 )
             }
-            return String(localized: "MiniMax did not return an audio completion status.")
+            return String(localized: "MiniMax did not return an audio completion status.", bundle: .appLanguage)
         case .missingAudio:
-            return String(localized: "MiniMax completed the request without returning audio.")
+            return String(localized: "MiniMax completed the request without returning audio.", bundle: .appLanguage)
         case .malformedHexAudio:
-            return String(localized: "MiniMax returned malformed audio data.")
+            return String(localized: "MiniMax returned malformed audio data.", bundle: .appLanguage)
         case .emptyAudio:
-            return String(localized: "MiniMax returned an empty audio file.")
+            return String(localized: "MiniMax returned an empty audio file.", bundle: .appLanguage)
         case let .responseMetadataMismatch(reason):
-            return String(localized: "MiniMax returned inconsistent audio metadata:") + " " + reason
+            return String(localized: "MiniMax returned inconsistent audio metadata:", bundle: .appLanguage) + " " + reason
         case let .persistence(message):
-            return String(localized: "The generated audio could not be saved:") + " " + message
+            return String(localized: "The generated audio could not be saved:", bundle: .appLanguage) + " " + message
         case let .unsupportedSavedAudioIndex(version):
             return String.localizedStringWithFormat(
-                String(localized: "This saved-audio library was created by a newer app version (schema %lld). Update SwiftMandarin to open it, or use Clear All to reset it."),
+                String(localized: "This saved-audio library was created by a newer app version (schema %lld). Update SwiftMandarin to open it, or use Clear All to reset it.", bundle: .appLanguage),
                 Int64(version)
             )
         case .missingPersistedAudio:
-            return String(localized: "The saved audio file is missing.")
+            return String(localized: "The saved audio file is missing.", bundle: .appLanguage)
         case let .playback(message):
-            return String(localized: "The generated audio could not be played:") + " " + message
+            return String(localized: "The generated audio could not be played:", bundle: .appLanguage) + " " + message
         }
     }
 }
@@ -149,7 +149,7 @@ actor MiniMaxAudioClient {
             languageCode: identity.languageCode
         ) else {
             throw MiniMaxAudioError.invalidConfiguration(
-                String(localized: "The selected voice language does not match the spoken text language.")
+                String(localized: "The selected voice language does not match the spoken text language.", bundle: .appLanguage)
             )
         }
         if !configuration.voiceUsesCustomLanguageAssignment,
@@ -161,13 +161,13 @@ actor MiniMaxAudioClient {
                 : .english
             guard knownVoiceLanguage == expectedVoiceLanguage else {
                 throw MiniMaxAudioError.invalidConfiguration(
-                    String(localized: "The selected voice language does not match the spoken text language.")
+                    String(localized: "The selected voice language does not match the spoken text language.", bundle: .appLanguage)
                 )
             }
         }
         guard let endpoint = configuration.region.t2aEndpoint else {
             throw MiniMaxAudioError.invalidConfiguration(
-                String(localized: "The regional API URL is invalid.")
+                String(localized: "The regional API URL is invalid.", bundle: .appLanguage)
             )
         }
 
@@ -201,7 +201,7 @@ actor MiniMaxAudioClient {
             request.httpBody = try encoder.encode(payload)
         } catch {
             throw MiniMaxAudioError.invalidConfiguration(
-                String(localized: "The request could not be encoded.")
+                String(localized: "The request could not be encoded.", bundle: .appLanguage)
             )
         }
 
@@ -300,14 +300,14 @@ actor MiniMaxAudioClient {
 
     private static func validate(_ configuration: MiniMaxSpeechConfiguration) throws {
         guard !configuration.model.isEmpty else {
-            throw MiniMaxAudioError.invalidConfiguration(String(localized: "Choose a speech model."))
+            throw MiniMaxAudioError.invalidConfiguration(String(localized: "Choose a speech model.", bundle: .appLanguage))
         }
         guard !configuration.voiceID.isEmpty else {
-            throw MiniMaxAudioError.invalidConfiguration(String(localized: "Choose a voice."))
+            throw MiniMaxAudioError.invalidConfiguration(String(localized: "Choose a voice.", bundle: .appLanguage))
         }
         guard (0.5...2).contains(configuration.speed) else {
             throw MiniMaxAudioError.invalidConfiguration(
-                String(localized: "Speed must be between 0.5 and 2.0.")
+                String(localized: "Speed must be between 0.5 and 2.0.", bundle: .appLanguage)
             )
         }
         guard configuration.volume == 1,
@@ -317,7 +317,7 @@ actor MiniMaxAudioClient {
               configuration.format == "mp3",
               configuration.channelCount == 1 else {
             throw MiniMaxAudioError.invalidConfiguration(
-                String(localized: "Playback requires mono 32 kHz, 128 kbps MP3 with default volume and pitch.")
+                String(localized: "Playback requires mono 32 kHz, 128 kbps MP3 with default volume and pitch.", bundle: .appLanguage)
             )
         }
     }

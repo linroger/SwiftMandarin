@@ -629,7 +629,7 @@ struct WorkbookGradingView: View {
                 // (the grade result itself is unaffected and still shown).
                 let lostScans = (wbImages.count - wbIDs.count) + (ansImages.count - ansIDs.count)
                 if lostScans > 0 {
-                    errorMessage = String(localized: "Graded successfully, but \(lostScans) scan(s) couldn't be saved to history.")
+                    errorMessage = String(localized: "Graded successfully, but \(lostScans) scan(s) couldn't be saved to history.", bundle: .appLanguage)
                 }
                 didSaveSession = true
                 result = graded

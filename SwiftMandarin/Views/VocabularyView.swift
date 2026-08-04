@@ -34,9 +34,12 @@ struct VocabularyView: View {
     /// Term selected for AI explanation
     @State private var aiExplanationTerm: SavedTerm?
 
-    /// Font size for Chinese characters in the vocabulary list (persisted).
-    /// Also driven by the "Text Size" slider in Settings.
-    @AppStorage("vocabularyChineseFontSize") private var chineseFontSize: Double = 20
+    /// Font size for the headword in the vocabulary list (persisted). The
+    /// headword is whichever language the user is studying, so this sizes the
+    /// Chinese word for an English speaker and the English word for a Mandarin
+    /// speaker. The storage key keeps its original name so existing
+    /// preferences survive; also driven by the "Text Size" slider in Settings.
+    @AppStorage("vocabularyChineseFontSize") private var headwordFontSize: Double = 20
     @AppStorage("vocabularyDetailUsesInspector") private var vocabularyDetailUsesInspector: Bool = true
     
     enum SortOrder: String, CaseIterable {
@@ -51,12 +54,30 @@ struct VocabularyView: View {
             case .pinyin: "Pinyin"
             }
         }
+
+        /// Sorting by pinyin orders Chinese headwords by their reading — the
+        /// Mandarin equivalent of alphabetical order. For a Mandarin speaker
+        /// studying English the headwords are already alphabetical, so the
+        /// option is redundant and is left out of the menu.
+        @MainActor
+        static var available: [SortOrder] {
+            LearningContext.current.showsPinyinAffordances
+                ? allCases
+                : allCases.filter { $0 != .pinyin }
+        }
     }
-    
+
+    /// The effective sort, ignoring a stored `.pinyin` choice that the current
+    /// direction no longer offers so the list never sorts by an invisible key.
+    private var effectiveSortOrder: SortOrder {
+        SortOrder.available.contains(sortOrder) ? sortOrder : .dateAdded
+    }
+
     private var filteredTerms: [SavedTerm] {
         var terms = savedTermsStore.terms
-        
-        // Apply search filter
+
+        // Apply search filter. Both sides and the reading are searchable, so a
+        // learner can find an entry by whichever half they remember.
         if !searchText.isEmpty {
             terms = terms.filter { term in
                 term.chinese.localizedCaseInsensitiveContains(searchText) ||
@@ -64,10 +85,10 @@ struct VocabularyView: View {
                 term.definition.localizedCaseInsensitiveContains(searchText)
             }
         }
-        
+
         // Apply sort with direction (alphabetical sorts the visible headword,
         // which is the learning-language side)
-        switch sortOrder {
+        switch effectiveSortOrder {
         case .dateAdded:
             return terms.sorted { lhs, rhs in
                 if lhs.dateAdded == rhs.dateAdded {
@@ -95,7 +116,7 @@ struct VocabularyView: View {
     }
 
     private var sortDirectionTitle: LocalizedStringKey {
-        switch sortOrder {
+        switch effectiveSortOrder {
         case .dateAdded:
             sortAscending ? "Oldest First" : "Newest First"
         case .alphabetical, .pinyin:
@@ -183,24 +204,24 @@ struct VocabularyView: View {
                 ToolbarItemGroup(placement: .primaryAction) {
                     // Font size controls
                     Button {
-                        if chineseFontSize > 14 {
-                            chineseFontSize -= 2
+                        if headwordFontSize > 14 {
+                            headwordFontSize -= 2
                         }
                     } label: {
                         Label("Decrease Font Size", systemImage: "textformat.size.smaller")
                     }
-                    .disabled(chineseFontSize <= 14)
+                    .disabled(headwordFontSize <= 14)
                     .help("Decrease headword font size (⌘-)")
                     .keyboardShortcut("-", modifiers: .command)
                     
                     Button {
-                        if chineseFontSize < 48 {
-                            chineseFontSize += 2
+                        if headwordFontSize < 48 {
+                            headwordFontSize += 2
                         }
                     } label: {
                         Label("Increase Font Size", systemImage: "textformat.size.larger")
                     }
-                    .disabled(chineseFontSize >= 48)
+                    .disabled(headwordFontSize >= 48)
                     .help("Increase headword font size (⌘+)")
                     .keyboardShortcut("=", modifiers: .command)
                     
@@ -228,7 +249,7 @@ struct VocabularyView: View {
                     
                     Menu {
                         Picker("Sort by", selection: $sortOrder) {
-                            ForEach(SortOrder.allCases, id: \.self) { order in
+                            ForEach(SortOrder.available, id: \.self) { order in
                                 Text(order.title).tag(order)
                             }
                         }
@@ -262,7 +283,7 @@ struct VocabularyView: View {
                     // adopts the current Liquid Glass treatment automatically.
                     Menu {
                         Picker("Sort by", selection: $sortOrder) {
-                            ForEach(SortOrder.allCases, id: \.self) { order in
+                            ForEach(SortOrder.available, id: \.self) { order in
                                 Text(order.title).tag(order)
                             }
                         }
@@ -279,18 +300,18 @@ struct VocabularyView: View {
                         Divider()
 
                         Button {
-                            chineseFontSize = max(14, chineseFontSize - 2)
+                            headwordFontSize = max(14, headwordFontSize - 2)
                         } label: {
                             Label("Decrease Headword Size", systemImage: "textformat.size.smaller")
                         }
-                        .disabled(chineseFontSize <= 14)
+                        .disabled(headwordFontSize <= 14)
 
                         Button {
-                            chineseFontSize = min(48, chineseFontSize + 2)
+                            headwordFontSize = min(48, headwordFontSize + 2)
                         } label: {
                             Label("Increase Headword Size", systemImage: "textformat.size.larger")
                         }
-                        .disabled(chineseFontSize >= 48)
+                        .disabled(headwordFontSize >= 48)
 
                         Divider()
 
@@ -462,7 +483,7 @@ struct VocabularyView: View {
             ForEach(filteredTerms) { term in
                 VocabularyRow(
                     term: term,
-                    chineseFontSize: chineseFontSize,
+                    headwordFontSize: headwordFontSize,
                     isSelected: selectedTerm?.id == term.id,
                     onMasteredToggle: {
                         savedTermsStore.toggleMastered(term)
@@ -540,14 +561,22 @@ struct VocabularyView: View {
 
 struct VocabularyRow: View {
     let term: SavedTerm
-    var chineseFontSize: Double = 20
+    /// Size of the headword — the word in the language being studied, which is
+    /// Chinese for an English speaker and English for a Mandarin speaker. The
+    /// storage key is still named for Chinese for backward compatibility.
+    var headwordFontSize: Double = 20
     var isSelected: Bool = false
     var onMasteredToggle: (() -> Void)?
     var onAIExplainTap: (() -> Void)?
     @ScaledMetric(relativeTo: .title2) private var dynamicTypeScale: CGFloat = 1
 
-    private var renderedChineseFontSize: CGFloat {
-        CGFloat(chineseFontSize) * min(dynamicTypeScale, 1.5)
+    /// Han characters carry far more detail per glyph than Latin letters, so
+    /// the same point size reads as noticeably smaller for Chinese. The slider
+    /// is calibrated for Chinese headwords; an English headword is stepped
+    /// down so the two directions look equally weighted in the row.
+    private var renderedHeadwordFontSize: CGFloat {
+        let base = CGFloat(headwordFontSize) * min(dynamicTypeScale, 1.5)
+        return term.headlineText.containsCJK ? base : base * 0.85
     }
 
     private var secondaryControlSize: CGFloat {
@@ -578,8 +607,11 @@ struct VocabularyRow: View {
             // the row's secondary actions on narrow, resizable windows.
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    // The headword — always the language being studied. A
+                    // Mandarin speaker learning English sees the English word
+                    // here, in the main font, with 中文 below as the gloss.
                     Text(term.headlineText)
-                        .font(.system(size: renderedChineseFontSize, weight: .medium))
+                        .font(.system(size: renderedHeadwordFontSize, weight: .medium))
                         .lineLimit(2)
                         .minimumScaleFactor(0.7)
 
@@ -593,15 +625,16 @@ struct VocabularyRow: View {
                     }
                 }
 
-                // Pinyin with tone colors — a learner aid, shown only when
-                // the user is learning Chinese.
+                // The reading, scaled with the headword so enlarging the word
+                // also enlarges its pronunciation. Pinyin gets tone colors;
+                // IPA is monospaced so the phonetic symbols stay legible.
                 if term.showsPinyin {
-                    // Scale the pinyin with the headword so enlarging the
-                    // character also enlarges the pinyin and its tone marks
-                    // (previously a fixed size, which stayed hard to read).
-                    // Kept noticeably smaller than the headword for balance.
                     Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
-                        .font(.system(size: renderedChineseFontSize * 0.5))
+                        .font(.system(size: renderedHeadwordFontSize * 0.5))
+                } else if term.showsPhonetic {
+                    Text(term.pinyin)
+                        .font(.system(size: renderedHeadwordFontSize * 0.55, design: .monospaced))
+                        .foregroundStyle(.secondary)
                 }
 
                 // Native-language gloss, kept small.
@@ -618,7 +651,7 @@ struct VocabularyRow: View {
             if let onAIExplainTap = onAIExplainTap {
                 AIExplainButton(
                     word: term.headlineText,
-                    pinyin: term.pinyin,
+                    pinyin: term.headwordReading,
                     onTap: onAIExplainTap
                 )
             }
@@ -1271,8 +1304,9 @@ private struct TermDetailPage: View {
     @State private var translationTask: Task<Void, Never>?
     @State private var copyResetTask: Task<Void, Never>?
     @AccessibilityFocusState private var isHeadwordFocused: Bool
-    /// Persisted size of the Chinese headword in the detail view; the −/+
-    /// buttons adjust it and the pinyin scales with it.
+    /// Persisted size of the headword in the detail view; the −/+ buttons
+    /// adjust it and the reading scales with it. The stored key keeps its
+    /// original name so existing preferences survive.
     @AppStorage("vocabularyDetailChineseFontSize") private var detailFontSize: Double = 96
     @ScaledMetric(relativeTo: .largeTitle) private var dynamicTypeScale: CGFloat = 1
 
@@ -1281,8 +1315,13 @@ private struct TermDetailPage: View {
         case all
     }
 
+    /// 96 pt suits one or two Han characters. An English headword is a word,
+    /// not a glyph, so the same size overflows the block and immediately hits
+    /// `minimumScaleFactor` — stepping it down keeps the two directions
+    /// visually equivalent instead of merely equal in points.
     private var renderedDetailFontSize: CGFloat {
-        CGFloat(detailFontSize) * min(dynamicTypeScale, 1.4)
+        let base = CGFloat(detailFontSize) * min(dynamicTypeScale, 1.4)
+        return term.headlineText.containsCJK ? base : base * 0.6
     }
 
     /// The gloss to display — the native-language side of the entry, or a
@@ -1330,6 +1369,12 @@ private struct TermDetailPage: View {
                         if term.showsPinyin {
                             Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
                                 .font(.system(size: renderedDetailFontSize * 0.45))
+                        } else if term.showsPhonetic {
+                            Text(term.pinyin)
+                                .font(.system(size: renderedDetailFontSize * 0.42, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
                         }
 
                         if !term.partOfSpeech.isEmpty {
@@ -1498,7 +1543,7 @@ private struct TermDetailPage: View {
                         
                         AIWordExplanationView(
                             word: term.headlineText,
-                            pinyin: term.pinyin,
+                            pinyin: term.headwordReading,
                             context: term.glossText.isEmpty ? nil : term.glossText,
                             contentLayout: .embedded,
                             isActive: isCurrent
@@ -1570,7 +1615,7 @@ private struct TermDetailPage: View {
         case .all:
             text = [
                 term.headlineText,
-                term.showsPinyin ? term.pinyin : "",
+                term.headwordReading,
                 displayDefinition
             ]
             .filter { !$0.isEmpty }
@@ -1649,8 +1694,12 @@ struct TermDetailInspector: View {
         case all
     }
 
+    /// See `TermDetailPage.renderedDetailFontSize`: an English headword is a
+    /// word rather than one or two glyphs, so it is stepped down to stay
+    /// visually equivalent to a Chinese one at the same slider position.
     private var renderedDetailFontSize: CGFloat {
-        CGFloat(detailFontSize) * min(dynamicTypeScale, 1.4)
+        let base = CGFloat(detailFontSize) * min(dynamicTypeScale, 1.4)
+        return term.headlineText.containsCJK ? base : base * 0.6
     }
 
     // MARK: Prev/Next Navigation
@@ -1781,6 +1830,12 @@ struct TermDetailInspector: View {
                     if term.showsPinyin {
                         Text(PinyinConverter.coloredPinyin(preferred: term.pinyin, fallbackText: term.chineseSide))
                             .font(.system(size: renderedDetailFontSize * 0.45))
+                    } else if term.showsPhonetic {
+                        Text(term.pinyin)
+                            .font(.system(size: renderedDetailFontSize * 0.42, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                     }
 
                     if !term.partOfSpeech.isEmpty {
@@ -1890,7 +1945,7 @@ struct TermDetailInspector: View {
                     Button {
                         let parts = [
                             term.headlineText,
-                            term.showsPinyin ? term.pinyin : "",
+                            term.headwordReading,
                             displayDefinition
                         ].filter { !$0.isEmpty }
                         let text = parts.joined(separator: "\n")
@@ -1940,7 +1995,7 @@ struct TermDetailInspector: View {
                     
                     AIWordExplanationView(
                         word: term.headlineText,
-                        pinyin: term.pinyin,
+                        pinyin: term.headwordReading,
                         context: term.glossText.isEmpty ? nil : term.glossText,
                         contentLayout: .embedded
                     )
@@ -2031,7 +2086,7 @@ struct ExportSheet: View {
     @State private var exportFormat: VocabularyExportFormat = .json
     @State private var includeAIAnalysis: Bool = true
     @State private var showExportSuccess: Bool = false
-    @State private var exportSuccessMessage: String = String(localized: "Exported Successfully")
+    @State private var exportSuccessMessage: String = String(localized: "Exported Successfully", bundle: .appLanguage)
 
     /// How many of the exported words have a saved AI analysis to bundle.
     private var aiAnalysisCount: Int {
@@ -2147,7 +2202,7 @@ struct ExportSheet: View {
                         subtitle: "Choose location and filename"
                     ) {
                         VocabularyImportExportService.shared.exportToFile(terms: terms, format: exportFormat, includeAIAnalysis: includeAIAnalysis)
-                        exportSuccessMessage = String(localized: "Saved to File")
+                        exportSuccessMessage = String(localized: "Saved to File", bundle: .appLanguage)
                         showExportSuccess = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                             dismiss()
@@ -2165,7 +2220,7 @@ struct ExportSheet: View {
                            let content = String(data: data, encoding: .utf8) {
                             ClipboardService.copy(content)
                         }
-                        exportSuccessMessage = String(localized: "Copied to Clipboard")
+                        exportSuccessMessage = String(localized: "Copied to Clipboard", bundle: .appLanguage)
                         showExportSuccess = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                             dismiss()
@@ -2349,7 +2404,7 @@ struct AIExplanationSheet: View {
             
             AIWordExplanationView(
                 word: term.headlineText,
-                pinyin: term.pinyin,
+                pinyin: term.headwordReading,
                 context: term.glossText.isEmpty ? nil : term.glossText
             )
         }
@@ -2358,7 +2413,7 @@ struct AIExplanationSheet: View {
         NavigationStack {
             AIWordExplanationView(
                 word: term.headlineText,
-                pinyin: term.pinyin,
+                pinyin: term.headwordReading,
                 context: term.glossText.isEmpty ? nil : term.glossText
             )
             .navigationTitle("AI Word Analysis")

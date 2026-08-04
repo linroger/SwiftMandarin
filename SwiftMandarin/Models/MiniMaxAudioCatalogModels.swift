@@ -266,43 +266,43 @@ nonisolated enum MiniMaxVoiceCatalogError: LocalizedError, Sendable {
     var errorDescription: String? {
         switch self {
         case .cancelled:
-            return String(localized: "MiniMax voice refresh was cancelled.")
+            return String(localized: "MiniMax voice refresh was cancelled.", bundle: .appLanguage)
         case .missingAPIKey:
-            return String(localized: "Add a MiniMax API key before refreshing voices.")
+            return String(localized: "Add a MiniMax API key before refreshing voices.", bundle: .appLanguage)
         case .invalidEndpoint:
-            return String(localized: "The MiniMax voice-catalog URL is invalid.")
+            return String(localized: "The MiniMax voice-catalog URL is invalid.", bundle: .appLanguage)
         case .invalidHTTPResponse:
-            return String(localized: "MiniMax returned an invalid voice-catalog response.")
+            return String(localized: "MiniMax returned an invalid voice-catalog response.", bundle: .appLanguage)
         case let .httpStatus(status):
             return String.localizedStringWithFormat(
-                String(localized: "MiniMax returned HTTP status %lld while refreshing voices."),
+                String(localized: "MiniMax returned HTTP status %lld while refreshing voices.", bundle: .appLanguage),
                 Int64(status)
             )
         case let .transport(message):
-            return String(localized: "MiniMax voices could not be refreshed:") + " " + message
+            return String(localized: "MiniMax voices could not be refreshed:", bundle: .appLanguage) + " " + message
         case .responseDecoding:
-            return String(localized: "MiniMax returned a voice catalog the app could not read.")
+            return String(localized: "MiniMax returned a voice catalog the app could not read.", bundle: .appLanguage)
         case let .apiStatus(code, message):
             if let message, !message.isEmpty {
                 return String.localizedStringWithFormat(
-                    String(localized: "MiniMax voice-catalog error %lld:"),
+                    String(localized: "MiniMax voice-catalog error %lld:", bundle: .appLanguage),
                     Int64(code)
                 ) + " " + message
             }
             return String.localizedStringWithFormat(
-                String(localized: "MiniMax returned voice-catalog error %lld."),
+                String(localized: "MiniMax returned voice-catalog error %lld.", bundle: .appLanguage),
                 Int64(code)
             )
         case let .persistence(message):
-            return String(localized: "The public MiniMax voice catalog could not be saved:")
+            return String(localized: "The public MiniMax voice catalog could not be saved:", bundle: .appLanguage)
                 + " " + message
         case let .unsupportedCacheVersion(version):
             return String.localizedStringWithFormat(
-                String(localized: "The saved MiniMax voice catalog uses unsupported schema %lld."),
+                String(localized: "The saved MiniMax voice catalog uses unsupported schema %lld.", bundle: .appLanguage),
                 Int64(version)
             )
         case .cachedRegionMismatch:
-            return String(localized: "The saved MiniMax voice catalog belongs to another API region.")
+            return String(localized: "The saved MiniMax voice catalog belongs to another API region.", bundle: .appLanguage)
         }
     }
 }
