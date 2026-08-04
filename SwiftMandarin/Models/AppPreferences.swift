@@ -364,7 +364,11 @@ final class AppPreferences {
         // language (中文 UI → native Mandarin speaker learning English).
         let derivedDefault: LearnerMode =
             LocalizationManager.shared.language == .chinese ? .mandarinToEnglish : .englishToMandarin
-        self.learnerMode = savedMode.flatMap(LearnerMode.init(rawValue:)) ?? derivedDefault
+        // Held in a local as well as the property: reading `self.learnerMode`
+        // below would be a `self` access before every stored property is
+        // initialized, which Swift rejects.
+        let resolvedMode = savedMode.flatMap(LearnerMode.init(rawValue:)) ?? derivedDefault
+        self.learnerMode = resolvedMode
 
         // Assigning a stored property in `init` does not run its `didSet`, and
         // that observer is the only writer of the shared `defaultDirection`
@@ -375,7 +379,7 @@ final class AppPreferences {
         // survives relaunch.
         if UserDefaults.standard.string(forKey: Keys.defaultDirection) == nil {
             UserDefaults.standard.set(
-                self.learnerMode.defaultDirection.rawValue,
+                resolvedMode.defaultDirection.rawValue,
                 forKey: Keys.defaultDirection
             )
         }

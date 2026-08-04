@@ -24,11 +24,17 @@ import Foundation
 /// standalone contract runners compile with as an error rather than a warning.
 nonisolated(unsafe) private var bundleLanguageAssociationKey: UInt8 = 0
 
+// Every member here is explicitly `nonisolated`. The target builds with
+// `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, which would otherwise make them
+// main-actor-isolated — and these are reached from contexts that are not on the
+// main actor: `localizedString(forKey:value:table:)` overrides a nonisolated
+// ObjC method, and `appLanguage` is read by `String(localized:bundle:)` calls
+// throughout the models and services.
 extension Bundle {
 
     /// Swap `Bundle.main`'s class exactly once so its localized-string lookups
     /// can be redirected at runtime. Idempotent and thread-safe.
-    private static let installLanguageOverrideOnce: Void = {
+    nonisolated private static let installLanguageOverrideOnce: Void = {
         object_setClass(Bundle.main, LanguageOverrideBundle.self)
     }()
 
@@ -36,7 +42,7 @@ extension Bundle {
     /// If that `.lproj` is missing (e.g. the source language has no compiled
     /// `.lproj`), the override is cleared and lookups fall back to the normal
     /// bundle, which already serves the development-language strings.
-    static func setLanguageOverride(_ code: String?) {
+    nonisolated static func setLanguageOverride(_ code: String?) {
         _ = installLanguageOverrideOnce
         let override: Bundle?
         if let code,
@@ -55,7 +61,7 @@ extension Bundle {
     }
 
     /// The currently installed override bundle, if any.
-    fileprivate var languageOverrideBundle: Bundle? {
+    nonisolated fileprivate var languageOverrideBundle: Bundle? {
         objc_getAssociatedObject(self, &bundleLanguageAssociationKey) as? Bundle
     }
 
@@ -84,7 +90,7 @@ extension Bundle {
 /// user-selected language bundle. Adds no stored properties (required for
 /// `object_setClass` to be safe).
 private final class LanguageOverrideBundle: Bundle, @unchecked Sendable {
-    override func localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
+    nonisolated override func localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
         if let override = languageOverrideBundle {
             return override.localizedString(forKey: key, value: value, table: tableName)
         }
