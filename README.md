@@ -5,7 +5,7 @@
 <h1 align="center">SwiftMandarin</h1>
 
 <p align="center">
-  <strong>Your Complete Mandarin Chinese Learning Companion</strong>
+  <strong>Your Complete English ⇄ Chinese Learning Companion</strong>
 </p>
 
 <p align="center">
@@ -32,9 +32,9 @@
 
 ## Overview
 
-**SwiftMandarin** is a beautifully designed, native Apple app that combines powerful translation, intelligent vocabulary building, and effective flashcard-based learning into one seamless experience. Built entirely with SwiftUI and Apple's Translation framework, it delivers a premium Mandarin Chinese learning experience across iPhone, iPad, and Mac.
+**SwiftMandarin** is a beautifully designed, native Apple app that combines powerful translation, intelligent vocabulary building, and effective flashcard-based learning into one seamless experience. Built entirely with SwiftUI and Apple's Translation framework, it delivers a premium language-learning experience across iPhone, iPad, and Mac.
 
-Whether you're a beginner taking your first steps into Mandarin or an advanced learner looking to expand your vocabulary, SwiftMandarin provides all the tools you need to learn Chinese effectively and enjoyably.
+It works in **both directions**. An English speaker studying Mandarin and a Mandarin speaker studying English get the same features with the two languages swapped — not a translated menu bar over a one-way app. Pick which one you are in Settings and the whole app re-orients: the word you are studying takes the headline, explanations arrive in the language you already read, and the pronunciation guide switches between pinyin and IPA.
 
 ### Why SwiftMandarin?
 
@@ -45,6 +45,7 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 - **Camera & Photo OCR**: Scan textbooks, signs, and worksheets, then translate and study the text
 - **Beautiful Visualizations**: GitHub-style activity heatmaps and interactive charts track your progress
 - **Cross-Platform**: Seamless experience across iPhone, iPad, and Mac with platform-optimized interfaces
+- **Two Learning Directions, Fully Mirrored**: English→中文 and 中文→English are the same app reflected, down to the pronunciation system and which word gets the big font
 - **Switchable Bilingual Interface**: The entire app runs in English or Simplified Chinese (简体中文)—flip it anytime from Settings
 
 ---
@@ -238,9 +239,10 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
 ### ⚙️ Customizable Settings
 
 - **Language & Learning**:
-  - App language toggle (English / 中文)
-  - Learner mode (English→中, 中→English, or bilingual)
-  - Dual-language narration
+  - Learner mode (English→中, 中→English, or bilingual) — re-orients the whole app, including the interface language
+  - App language toggle (English / 中文), kept in sync with the learner mode
+  - Dual-language narration (studied language first, native gloss second)
+  - Pinyin display options (position, tone colors) appear only for a Mandarin learner — a native Mandarin reader has nothing to configure there
 - **AI Provider**:
   - Pick a provider, enter an API key, fetch live model lists, and test the connection end-to-end
   - See at a glance whether the provider supports vision (images) and JSON mode
@@ -268,6 +270,23 @@ Whether you're a beginner taking your first steps into Mandarin or an advanced l
   - Clear vocabulary
   - Clear history
   - Reset learning progress
+
+### 🔄 Two Learning Directions
+
+Choose **Settings → I am a…** and the app re-orients around you. The interface language *is* your native language, so the two settings stay in sync — picking 中文母语者学英语 switches the interface to 中文 and the study material to English in one gesture.
+
+|                          | English speaker learning 中文 | Mandarin speaker learning English |
+| ------------------------ | ----------------------------- | --------------------------------- |
+| Interface                 | English                       | 简体中文                           |
+| Vocabulary headline       | 中文 word, large              | English word, large               |
+| Secondary line            | English gloss, small          | 中文 gloss, small                  |
+| Pronunciation guide       | Pinyin with tone colors       | IPA with primary stress (`/kəˈmɪt/`) |
+| AI explanations written in | English                       | 简体中文                           |
+| Tappable word-by-word text | Chinese, pinyin above         | English word chips                |
+| Read aloud                 | Mandarin leads                | English leads                     |
+| Tone drills                | Available                     | Hidden (nothing to train)         |
+
+Nothing is a stripped-down version of the other: the reverse direction gets the same depth of word-building explanation, the same worked examples, and the same read-aloud coverage — with the pronunciation system, fonts, and prompt language swapped to match.
 
 ### 🌐 Localization
 
@@ -332,7 +351,7 @@ Download SwiftMandarin from the [App Store](https://apps.apple.com/app/swiftmand
 ### macOS DMG Installer
 
 1. Download the latest DMG from [Releases](https://github.com/linroger/SwiftMandarin/releases)
-2. Open `SwiftMandarin-2.0-macOS.dmg`
+2. Open `SwiftMandarin-4.2.0-macOS.dmg`
 3. Drag `SwiftMandarin.app` to your Applications folder
 4. Launch SwiftMandarin from Applications
 

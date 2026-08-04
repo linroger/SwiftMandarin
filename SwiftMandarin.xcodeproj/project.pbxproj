@@ -223,6 +223,7 @@
 		0427A9B0BBAFAF5798E3677B /* session_end.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = session_end.json; path = logs/session_end.json; sourceTree = SOURCE_ROOT; };
 		0491598C7BD7E0485FE48BAE /* MiniMaxAudioModels.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = MiniMaxAudioModels.swift; path = SwiftMandarin/Models/MiniMaxAudioModels.swift; sourceTree = SOURCE_ROOT; };
 		08AA6ACFB44BE38BD960B148 /* chat.json */ = {isa = PBXFileReference; explicitFileType = text.json; lastKnownFileType = text.json; name = chat.json; path = "logs/a13d39bd-2416-4373-ab40-fa0ccad7aa92/chat.json"; sourceTree = SOURCE_ROOT; };
+		0921DBB884F55676F6F0DABD /* README.zh-Hans.md */ = {isa = PBXFileReference; explicitFileType = net.daringfireball.markdown; lastKnownFileType = net.daringfireball.markdown; name = "README.zh-Hans.md"; path = "README.zh-Hans.md"; sourceTree = SOURCE_ROOT; };
 		0B7C16ADE30EC9C8D683C85A /* BatchAudioPlan.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = BatchAudioPlan.swift; path = SwiftMandarin/Models/BatchAudioPlan.swift; sourceTree = SOURCE_ROOT; };
 		0CE424F641498140B5E3AC63 /* subagent_stop.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = subagent_stop.json; path = "logs/b5f41151-0aed-461b-8504-2e6443986013/subagent_stop.json"; sourceTree = SOURCE_ROOT; };
 		0ECD2911C79AA6418E9ED7DD /* AIModelSettings.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = AIModelSettings.swift; path = SwiftMandarin/Models/AIModelSettings.swift; sourceTree = SOURCE_ROOT; };
@@ -305,6 +306,7 @@
 		F0402C067A978CC3CD32B5D9 /* today-2026-07-28.done.md */ = {isa = PBXFileReference; explicitFileType = net.daringfireball.markdown; name = "today-2026-07-28.done.md"; path = ".remember/today-2026-07-28.done.md"; sourceTree = SOURCE_ROOT; };
 		F2CADE27EA46C5C3605EDAD7 /* StatsView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = StatsView.swift; path = SwiftMandarin/Views/StatsView.swift; sourceTree = SOURCE_ROOT; };
 		F6483332AF11929120E6C690 /* EnglishRubyTextView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = EnglishRubyTextView.swift; path = SwiftMandarin/Views/Components/EnglishRubyTextView.swift; sourceTree = SOURCE_ROOT; };
+		F6FC32AA45AD6BEE42B9BECF /* README.md */ = {isa = PBXFileReference; explicitFileType = net.daringfireball.markdown; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = README.md; sourceTree = SOURCE_ROOT; };
 		F820335535DD2A490E2A72D9 /* StoryGenerationService.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = StoryGenerationService.swift; path = SwiftMandarin/Services/StoryGenerationService.swift; sourceTree = SOURCE_ROOT; };
 		FC19C54F4E1D4ECADBDF8CEE /* LearnView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = LearnView.swift; path = SwiftMandarin/Views/LearnView.swift; sourceTree = SOURCE_ROOT; };
 		FCA315278436A72F8C74DE97 /* stop.json */ = {isa = PBXFileReference; explicitFileType = text.json; name = stop.json; path = "logs/9b0d0365-c7e9-4f0c-b32d-f1212a5c6a2b/stop.json"; sourceTree = SOURCE_ROOT; };
@@ -439,6 +441,8 @@
 				F6483332AF11929120E6C690 /* EnglishRubyTextView.swift */,
 				08AA6ACFB44BE38BD960B148 /* chat.json */,
 				E319E79869B53805C4DCEE08 /* stop.json */,
+				F6FC32AA45AD6BEE42B9BECF /* README.md */,
+				0921DBB884F55676F6F0DABD /* README.zh-Hans.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -868,7 +872,7 @@
 				CODE_SIGN_ENTITLEMENTS = SwiftMandarin/SwiftMandarin.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 42;
 				DEVELOPMENT_TEAM = X8AD8YC886;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
@@ -909,7 +913,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 3.0;
+				MARKETING_VERSION = 4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = linroger022.SwiftMandarin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -941,7 +945,7 @@
 				CODE_SIGN_ENTITLEMENTS = SwiftMandarin/SwiftMandarin.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 42;
 				DEVELOPMENT_TEAM = X8AD8YC886;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
@@ -982,7 +986,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 3.0;
+				MARKETING_VERSION = 4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = linroger022.SwiftMandarin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
