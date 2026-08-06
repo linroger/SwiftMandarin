@@ -1,10 +1,13 @@
 # Handoff.md — SwiftMandarin: Bilingual + Multi-Provider AI Overhaul
 
-**Last Updated (UTC):** 2026-07-27
-**Status:** In Progress (iter 28 — translation study notes, transcription repair, AI transcription; see Iteration 28)
+**Last Updated (UTC):** 2026-08-06
+**Status:** In Progress (iter 30 — automatic AI analysis of newly saved words; see Iteration 30)
+**Prior Status:** In Progress (iter 29 — Chinese-speaker-learning-English as a true mirror; see Iteration 29)
+**Prior Status:** In Progress (iter 28 — translation study notes, transcription repair, AI transcription; see Iteration 28)
 **Prior Status:** In Progress (iter 27 — structured AI translation output; see Iteration 27)
 **Prior Status:** In Progress (iter 16 — step-change overhaul on branch `jul-07-2026-step-change-overhaul`: RECOMMENDATIONS.md + Home dashboard + FSRS + Reader + AI conversation + UI overhaul)
-**Current Focus (latest):** Photo-tab workbook expansion — direct camera capture, a review-question **database** (bank), AI **review-question generation**, **grading history** with the original scanned photos, **analytics** integration (graded questions in the contribution heatmap), and a decluttered **More** tab. Plus a 43-agent codebase audit written to `EXECPLAN2.md` (132 findings, 23 confirmed). See Updates iter 11.
+**Current Focus (latest):** An opt-in **Auto-Translate New Words** toggle in the Batch AI Analysis menu: every word saved to the vocabulary list is translated and analyzed in the background by the selected LLM provider, through a bounded, resumable queue that shares its cache with the reviewed batch run. See Iteration 30.
+**Prior Focus:** Photo-tab workbook expansion — direct camera capture, a review-question **database** (bank), AI **review-question generation**, **grading history** with the original scanned photos, **analytics** integration (graded questions in the contribution heatmap), and a decluttered **More** tab. Plus a 43-agent codebase audit written to `EXECPLAN2.md` (132 findings, 23 confirmed). See Updates iter 11.
 **Prior Focus:** Interface-language-driven tailoring: when the UI is 中文 the user is treated as a native Mandarin speaker learning English (AI explanations written in Mandarin; saved words show ENGLISH as the big headline with Mandarin small; English TTS emphasis) and vice versa for English UI. Full audit + plan: docs/language-direction-audit.md (11-agent parallel map + completeness critic, 2026-06-13).
 **Prior Focus:** Full-app audit + overhaul: 18 verified bug fixes, integration wins (unified history/stats, pinyin position, provider test connection), zero-warning builds, bilingual READMEs — see Updates iter 8 (2026-06-10).
 **Prior Focus:** Full UI localization (English ⇄ 中文) with a runtime in-app language toggle — see Updates iter 5 (2026-06-07).
@@ -1163,3 +1166,141 @@ Two supporting changes fell out of it. The `Bundle` override machinery moved fro
 - 2026-08-05: Created Iteration 29. Audited the codebase with 9 parallel readers, then made the Chinese-speaker-learning-English mode a true mirror: IPA-for-pinyin in every prompt contract, an English tappable reader, script-aware headword sizing in the vocabulary list, direction-derived defaults, Mandarin-only affordances gated, and ~150 zh-Hans translations taking catalog coverage to 1289/1300. Added `LearningContext` plus a 36-assertion contract suite wired into `init.sh`; inverted the prompt check that had locked in the missing-pronunciation defect.
 - 2026-08-05 (after the first real Xcode build): Fixed the two errors `xcodebuild` reported and the local harness had missed — `self` accessed before full initialization in `AppPreferences.init` (the `@Observable` expansion makes `learnerMode` a computed access, so the seed now reads a local), and `Bundle.languageOverrideBundle` being main-actor-isolated under `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` while `appLanguage` is `nonisolated` (every member of that extension is now explicitly `nonisolated`). macOS and iOS Debug both build clean, zero warnings.
 - 2026-08-05 (same session, after adversarial verification): Fixed the two defects that review found. (a) `String(localized:)` never followed the in-app language toggle — proved with a runnable experiment, then routed all 294 call sites through `Bundle.appLanguage` and added two mutation-tested guards so it cannot regress; the override machinery moved to its own Foundation-only file so the contract runners can still compile standalone. (b) Every save path discarded the IPA the reverse-mode prompts ask for, making `showsPhonetic` unreachable — the model-supplied reading is now kept for English headwords. Also: `EnglishWordDetailSheet` stored the two sides swapped in reverse mode (duplicate rows), `ScreenshotTranslationStore` never re-derived its target language after a mode switch, and four catalog defects (a Chinese translation consuming an English plural argument, four Chinese-keyed errors with no English localization, a stale marker, and a `Learning` key shared between an SRS state and a Settings tab).
+
+## Iteration 30 — Automatic AI analysis of newly saved words (2026-08-06)
+
+### 1) Request & Context
+
+> "add a feature to the batch ai translation menu that lets users toggle on an auto-translate feature, so that whenever a new word or phrase is added to the vocab list, it get automatically processed by the selected llm provider, and translated and analyzed."
+
+The scope is exactly the automatic sibling of the button that was already there. `BatchExplanationController` translates and analyzes saved words on demand after a reviewed plan; this iteration adds the same work, per word, at the moment the word is saved. "Translated and analyzed" is not a second pipeline: the existing word-explanation result *is* the translation (its `definition` field is "the closest natural translation for the selected sense") plus the analysis, so the correct implementation reuses that path rather than inventing a parallel one.
+
+### 2) The decision that shaped the design: this spends money with nobody watching
+
+A reviewed batch has a human in front of it — a preflight sheet, a request count, a press. Automatic analysis has none of that, and it fires on a code path (`SavedTermsStore.add`) that a bulk CSV import calls in a loop. Every design choice follows from that asymmetry:
+
+| Risk | Guardrail |
+|---|---|
+| Silent spending the user never asked for | Off by default; nothing is queued or dispatched unless `AIModelSettings.autoAnalyzeNewTerms` is on |
+| One word billed twice | Deduplicated on the same normalized key `SavedTermsStore` and `WordExplanationCacheStore` use (zero-width stripped, trimmed, case-folded); dispatch removes the word from the pending half first, so two workers cannot take it |
+| A 10,000-row import becoming 10,000 paid requests | Queue capped at 500 outstanding; words past the ceiling are **refused and counted**, never evicting an accepted word, and the count is reported in the UI with a pointer to the manual batch |
+| A broken endpoint re-billed once per saved word | At most 3 dispatches per word, and the queue pauses itself after 3 consecutive failures, surfacing the error with an explicit Resume |
+| Doubling the request rate against one provider | Yields to a running `BatchExplanationController`, polling until it finishes |
+| Paid audio triggered without a preflight | The coordinator never references the speech pipeline at all — enforced by a check that fails on any audio/speech/MiniMax reference *in code* in that file |
+| Work lost to a quit mid-request | Both queue halves persist; `restoreInFlight()` at launch returns anything that never got a verdict to the head of the queue with its attempt count untouched |
+
+### 3) The change
+
+**`SwiftMandarin/Models/AutoAnalysisQueue.swift` (new, pure).** A `Sendable`, Foundation-only value holding `pending` + `inFlight` + a refusal count, with `enqueue/dequeue/complete/retry/returnToQueue/restoreInFlight`. It has no app dependencies on purpose, so every rule above is assertable by a standalone runner without a provider, a cache, a bundle, or a main actor — the same shape as `LearningContext` in Iteration 29.
+
+It deliberately stores **no direction token**. The learning direction can flip while a word waits, and the only correct token is the one current at dispatch.
+
+**`SwiftMandarin/Models/AutoAnalysisCoordinator.swift` (new, `@Observable @MainActor`).** Drains the queue with `AIModelSettings.batchConcurrency` workers. It resolves the headword, reading, and gloss *exactly* the way `BatchExplanationController.preparePlan` does (`headlineText`, `headwordReading`, `glossText`) and writes to the same `WordExplanationCacheStore` key, which is what makes the two runs one system: whichever reaches a word first spares the other, and the batch screen's "Needs Analysis" count falls as the automatic queue drains. It re-verifies `BatchAnalysisConfigurationSnapshot.matchesCurrentSettings()` and the direction token *after* the response returns and refuses to cache under changed settings — the same honesty guarantee the manual batch makes about what produced a cached explanation.
+
+**One hook, every surface.** `SavedTermsStore.add` (both overloads) notifies the coordinator. Translate, photos, the reader, the menu-bar panel, Shortcuts, and import all save through it, so no capture path can be added later that quietly opts out.
+
+**UI.** A new "Automatic Analysis" section at the top of `BatchAIAnalysisControls` (shared by the iOS hub and the macOS Settings pane) with the toggle, a live queued/analyzed count, the word being analyzed, the reason a non-empty queue is not moving, Resume, and Clear. `BatchAIAnalysisStatusBadge` now also shows the automatic queue when no manual batch is running, so a stalled queue is visible from the hub root.
+
+### 4) Findings & decisions
+
+- **Import merges explanations *after* adding terms.** `VocabularyImportExportService.importVocabulary` calls `store.add` in a loop and only then `WordExplanationCacheStore.merge`. A synchronous dispatch would therefore re-analyze words whose analysis arrived in the same file. Two things prevent it: a 2-second coalescing delay before the first dispatch, and a cache re-check immediately before each request.
+- **The saved term is not mutated.** Filling an empty `definition` from the analysis was considered and rejected: the model's `definition` is a translation *plus* two essence sentences, which is wrong for a one-line vocabulary row, and `WordExplanationResult` carries no standalone pinyin field to fill either. The analysis lives where the app already shows analyses.
+- **Words saved *before* the toggle was turned on are left alone.** The request is about new words; back-filling an existing library would be an unrequested bill. The footer says so, and the manual batch is one press away.
+- **Timing constants are `nonisolated`.** One of them is a default argument, which Swift evaluates outside the main actor — the first build flagged it as a Swift 6 error-to-be.
+- **Cancellation cannot resurrect a cleared queue.** Each drain carries a generation number; disabling the toggle or clearing the queue bumps it, so outcomes still arriving from the abandoned pass are ignored rather than re-adding words the user just discarded.
+
+### 5) Requirements → Acceptance Checks
+
+| Requirement | Check | Evidence |
+|---|---|---|
+| R30.1 A new word is analyzed automatically when the toggle is on | Both `add` overloads notify the coordinator; the coordinator gates on the opt-in | `test-auto-analysis.sh` wiring checks; mutation test M1 |
+| R30.2 It uses the selected LLM provider | Analysis goes through `AIWordExplanationService.generateExplanationWithProvider` and caches under `BatchAnalysisConfigurationSnapshot.providerName` | shared path with the reviewed batch |
+| R30.3 No word is analyzed twice | Dedupe on the shared normalized key across both queue halves, plus a cache re-check at dispatch | 556 queue assertions |
+| R30.4 A bulk import cannot bill without bound | Capacity refusals are counted, never evict, and are reported | queue assertions |
+| R30.5 A failing provider does not repeat forever | At most `maxAttempts` dispatches; pause after consecutive failures | queue assertions; mutation test M2 |
+| R30.6 Automatic work never competes with a reviewed batch | Drain waits on `BatchExplanationController.shared.isRunning` | wiring check; mutation test M3 |
+| R30.7 Nothing paid for audio happens automatically | No audio/speech reference in the coordinator's code | wiring check; mutation test M4 |
+| R30.8 A quit mid-request loses nothing | Both halves persist; `restoreInFlight` recovers at launch | queue assertions; `ContentView` wiring check |
+| R30.9 A stale response is never cached | Settings snapshot and direction token re-verified after the response | wiring check |
+| R30.10 The feature reads in 中文 | All 17 new keys translated; keys verified against Xcode's extracted `.stringsdata`, not guessed | catalog check; mutation test M5 |
+
+### 6) Verification Summary
+
+- `zsh init.sh`: **191/191** MiniMax audio, **27/27** audio-session, **173/173** AI prompt + parsing, **29/29** provider wiring, **28/28** learning-direction mirror, **8/8** direction wiring, plus the new **556/556** auto-analysis queue contracts and **9/9** auto-analysis wiring checks. The new suite is wired into `init.sh`.
+- **Real Xcode builds, both platforms.** macOS Debug and generic iOS Simulator Debug both report `** BUILD SUCCEEDED **` with zero errors and zero warnings (`DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer`). The pre-existing "Skipping duplicate build file" project-file noise is unchanged and is documented in Iteration 29's remaining work.
+- **Mutation testing (5/5 caught).** Removing one `noteTermAdded` hook → "found 1 of 2 add() overloads". Removing the retry bound → "Retries terminate". Removing the batch yield → "no longer yields to a running batch". Adding a `GeneratedSpeechStore` call → "must never spend on speech". Deleting one translation → "missing a zh-Hans translation (1)". All restored and re-verified green.
+- **Localization keys verified, not assumed.** Xcode's own `.stringsdata` from the build was dumped and compared against the catalog: all 81 keys in `BatchAIAnalysisView` and the 1 in `AutoAnalysisCoordinator` are present and translated. The catalog was edited by the Iteration 29 byte-identical round-trip writer, so the diff is 170 added lines rather than a reformat.
+
+### 7) Remaining Work & Next Steps
+
+- **No live provider call, no device run.** The queue's behavior against a real endpoint — rate-limit responses in particular, which is the case the failure pause exists for — is asserted through contracts and the shared provider path, not observed. Worth one session with a cloud key: save five words in a row with the toggle on and watch the queue drain, then revoke the key mid-run and confirm the pause message.
+- **Capacity refusals are reported but not re-offered.** A user who imports 2,000 words sees "1,500 words were not queued" and must run the manual batch. A future refinement could top the queue back up as it drains; it was left out because silently resuming a 2,000-word bill is exactly what the ceiling exists to prevent.
+- **The queue is not shared across devices.** It lives in UserDefaults on one device, like every other store in the app.
+
+### 8) Updates
+
+- 2026-08-06: Created Iteration 30. Added the opt-in `Auto-Translate New Words` toggle to the Batch AI Analysis menu, backed by a pure `AutoAnalysisQueue` and an `@Observable @MainActor AutoAnalysisCoordinator` that translates and analyzes every newly saved word through the selected provider and into the batch run's own cache. Wired one notification into `SavedTermsStore.add` so all six capture surfaces are covered, added a 556-assertion contract runner plus nine wiring/localization guards to `init.sh`, and translated all 17 new strings after verifying their keys against Xcode's extracted `.stringsdata`. Five mutation tests confirm the guards fail when a save hook, the retry bound, the batch yield, the no-audio rule, or a translation is removed; macOS and iOS Debug both build with zero warnings.
+- 2026-08-06 (same session, self-review pass): Fixed two defects the first read of the finished drain loop found, neither of which any check would have caught. (a) The follow-up pass that exists to pick up a word saved in the race window between the loop's last look at the queue and the task clearing itself was scheduled unconditionally — so a pass that ended in `.waitingForProvider` immediately rescheduled itself, spinning once a second for as long as no provider was configured. It now only follows up from `.idle`; the blocked states are resumed by `kick()` or the next save. (b) `resumePendingWork()` returned every in-flight request to the queue on every call, and it is not called once: the root view's identity is keyed to the interface language, so an in-app language switch re-runs its `task` and would have re-dispatched — and paid for — a request that was still running. Recovery now only runs when no pass owns the in-flight half.
+
+## Iteration 31 — Record-and-transcribe actually works (2026-08-06)
+
+### 1) Request & Context
+
+> "for the multimodal tab feature, for the audio portion of record and transcribe audio, it doesnt work. why isnt it set to the same audio model as the selected audio model. also, the default apple speech recognition model doesnt work. fix these"
+
+Two independent defects behind one symptom, both confirmed by reading the code rather than guessed at.
+
+### 2) Root cause A — file transcription never installed a speech model
+
+`SpeechRecognitionService` (live dictation) and `AudioTranscriptionService` (record/import, the Multimodal tab) had diverged. The live path had already been modernized: on iOS 26 / macOS 26 it uses `SpeechAnalyzer` + `SpeechTranscriber`, and — the part that matters — it calls `AssetInventory.assetInstallationRequest` to **download the locale's recognition model** before recognizing anything.
+
+The file path did neither. It used only `SFSpeechRecognizer` + `SFSpeechURLRecognitionRequest` and installed nothing:
+
+```
+$ grep -c AssetInventory Services/SpeechRecognitionService.swift   # 1
+$ grep -c AssetInventory Services/AudioTranscriptionService.swift  # 0
+```
+
+On these releases recognition assets are managed by `AssetInventory`, so a locale whose model has never been downloaded has no working recognizer of *either* kind. `SFSpeechRecognizer.isAvailable` then stays false, and the file path's three-second availability poll gives up with "Apple Speech has no recognizer available for …". That is exactly the reported shape: live dictation works, record-and-transcribe does not, on the same device.
+
+**Fix.** `AudioTranscriptionService` now runs `SpeechAnalyzer` + `SpeechTranscriber` first — installing the locale's model when it is missing, with download progress surfaced in the pane — and keeps `SFSpeechRecognizer` for iOS 17–25 and as the fallback when the analyzer cannot serve the locale (its server pass can still read audio the on-device model returned nothing for). When both fail on OS 26 the analyzer's error is reported, because the legacy engine's "no recognizer available" is a symptom of the same missing model and would send the user hunting in the wrong place.
+
+Two smaller repairs came with it. The on-device pass now has its own 20-second deadline instead of sharing the 120-second one: a stalled first attempt used to delay the server retry by two minutes, which reads as a hang rather than a fallback. And a first-run model download reports progress, so the slowest run is no longer the one that looks dead.
+
+### 3) Root cause B — AI transcription ignored the selected provider
+
+`transcriptionProvider()` filtered the user's own selection through `supportsAudioTranscription`, which is true for exactly OpenAI, Qwen, and Quotio:
+
+```swift
+if effective.supportsAudioTranscription, isAvailable(effective) { return effective }
+return AIProvider.allCases.first { $0.supportsAudioTranscription && isAvailable($0) }
+```
+
+So a learner whose selected provider was Zhipu, MiniMax, DeepSeek, Claude, or Doubao did not get their selection. Their recording was uploaded to whichever *other* provider they happened to hold a key for — silently, with only a small brand icon to hint at it — or the feature refused outright. Silently choosing where a recording is uploaded is the one thing this decision must never do.
+
+**Fix.** The selection comes first: any configured cloud provider is used as chosen, and the documented-endpoint list now only picks the *fallback* and the curated model ids. This matches the intent already written into `supportsAudioTranscription`'s own comment — that the base URL and model are user-editable and "a provider that turns out not to serve the route answers with its own HTTP error, which is surfaced verbatim rather than hidden". The pane now states in words which provider the audio goes to, and says plainly when the selected one is outside the documented set.
+
+### 4) Requirements → Acceptance Checks
+
+| Requirement | Check | Evidence |
+|---|---|---|
+| R31.1 Apple Speech transcribes a recorded clip | File path installs the locale model and uses the analyzer | `test-audio-transcription.sh`; mutation test T1 |
+| R31.2 Older iOS keeps working | `SFSpeechURLRecognitionRequest` fallback retained | wiring check |
+| R31.3 A stalled on-device pass falls back promptly | On-device deadline is separate and shorter | wiring check; mutation test T3 |
+| R31.4 Audio goes to the provider the user selected | `transcriptionProvider()` honors the selection | wiring check; mutation test T2 |
+| R31.5 The destination is stated, not implied | Pane names the provider in words | wiring check; mutation test T4 |
+| R31.6 A model download is not mistaken for a hang | Progress surfaced in the pane | wiring check |
+| R31.7 The feature reads in 中文 | 7 new keys translated | catalog check |
+
+### 5) Verification Summary
+
+- `zsh init.sh` green — 191/191 MiniMax, 27/27 audio-session, 173/173 AI prompt, 29/29 provider wiring, 28/28 learning-direction, 8/8 direction wiring, 556/556 auto-analysis queue, 9/9 auto-analysis wiring, and the new 8/8 transcription wiring checks.
+- macOS and generic iOS Simulator Debug builds: `** BUILD SUCCEEDED **`, zero errors, zero warnings.
+- Mutation testing (4/4 caught): removing the asset install, restoring the old provider gate, dropping the shorter on-device deadline, and removing the provider name each fail the suite. All restored and re-verified.
+- **Localization coverage is now checked correctly, and the earlier check was not.** The Iteration 30 sweep parsed `.stringsdata` `tables` as a dictionary; Xcode writes it as an *array* of `{key, comment, location}` records, so the comparison matched nothing and "0 missing, 0 untranslated" was vacuous. Re-run with a parser that handles both shapes over all 1,219 extracted keys: every key added in Iterations 30 and 31 is present and translated. The only remaining gaps are pre-existing and benign — ten `${applicationName}` App Intents phrases (handled by AppShortcuts, not the catalog), eleven punctuation/format-scaffolding keys with no words in them, and five deliberately bilingual keys whose Chinese localization drops the English clause.
+
+### 6) Remaining Work & Next Steps
+
+- **No device run.** The analyzer path is asserted through the SDK's declared API and a clean build on both platforms; it has not been exercised against a real recording, and the model download in particular has not been watched end to end.
+- **Provider ASR support is still documentation-derived.** OpenAI is certain; Qwen and Quotio were asserted from documentation in Iteration 28 and remain unverified. The change makes this honest rather than resolved: an unsupported provider now reports its own HTTP error instead of being silently swapped out.
+- **The two engines' language lists can disagree.** `SpeechTranscriber.supportedLocale(equivalentTo:)` decides for the analyzer; the legacy recognizer decides for itself. A locale one supports and the other does not will simply fall through, which is correct but untested.

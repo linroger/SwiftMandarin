@@ -13,5 +13,7 @@ zsh scripts/test-minimax-audio-contracts.sh
 zsh scripts/test-audio-session-transitions.sh
 zsh scripts/test-ai-prompt-contracts.sh
 zsh scripts/test-learning-direction.sh
+zsh scripts/test-auto-analysis.sh
+zsh scripts/test-audio-transcription.sh
 
 echo "SwiftMandarin smoke checks passed."

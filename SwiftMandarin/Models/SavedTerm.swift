@@ -210,6 +210,11 @@ final class SavedTermsStore {
         terms.append(newTerm)
         // Track activity with part of speech
         LearningActivityStore.shared.recordWordLearned(partOfSpeech: term.partOfSpeech)
+        // Every capture surface (translate, photo, reader, Shortcuts, import)
+        // funnels through here, so this one call is what makes "analyze new
+        // words automatically" cover all of them. It is inert unless the user
+        // has opted in.
+        AutoAnalysisCoordinator.shared.noteTermAdded(newTerm)
     }
 
     func add(chinese: String, pinyin: String, definition: String, partOfSpeech: String = "") {
@@ -226,6 +231,7 @@ final class SavedTermsStore {
         terms.append(newTerm)
         // Track activity with part of speech
         LearningActivityStore.shared.recordWordLearned(partOfSpeech: partOfSpeech)
+        AutoAnalysisCoordinator.shared.noteTermAdded(newTerm)
     }
     
     func remove(at offsets: IndexSet) {

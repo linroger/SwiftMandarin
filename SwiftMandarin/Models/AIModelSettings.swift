@@ -334,6 +334,7 @@ final class AIModelSettings {
         static let cloudAPIStyles = "cloud_api_style_overrides" // [providerRaw: "openai"|"anthropic"]
         static let aiPhotoCleanup = "ai_photo_cleanup_enabled"
         static let batchConcurrency = "ai_batch_concurrency"
+        static let autoAnalyzeNewTerms = "ai_auto_analyze_new_terms"
         static let transcriptionEngine = "ai_transcription_engine"
         static let transcriptionModels = "ai_transcription_models"  // [providerRaw: modelID]
     }
@@ -347,7 +348,11 @@ final class AIModelSettings {
 
     /// The currently selected AI provider.
     var provider: AIProvider {
-        didSet { UserDefaults.standard.set(provider.rawValue, forKey: Keys.provider) }
+        didSet {
+            UserDefaults.standard.set(provider.rawValue, forKey: Keys.provider)
+            // A queue parked on "no provider configured" can move again.
+            AutoAnalysisCoordinator.shared.kick()
+        }
     }
 
     /// The selected Ollama model name.
@@ -391,6 +396,18 @@ final class AIModelSettings {
                 return  // the re-assignment re-enters didSet and persists the clamped value
             }
             UserDefaults.standard.set(batchConcurrency, forKey: Keys.batchConcurrency)
+        }
+    }
+
+    /// When enabled, every word saved to the vocabulary list is translated and
+    /// analyzed in the background by the selected provider, instead of waiting
+    /// for a reviewed batch run. Off by default: it spends API tokens without a
+    /// press, so it is opt-in. See `AutoAnalysisCoordinator`.
+    var autoAnalyzeNewTerms: Bool {
+        didSet {
+            UserDefaults.standard.set(autoAnalyzeNewTerms, forKey: Keys.autoAnalyzeNewTerms)
+            guard oldValue != autoAnalyzeNewTerms else { return }
+            AutoAnalysisCoordinator.shared.enabledDidChange()
         }
     }
 
@@ -445,6 +462,8 @@ final class AIModelSettings {
         self.batchConcurrency = min(max(savedConcurrency, AIModelSettings.batchConcurrencyRange.lowerBound),
                                     AIModelSettings.batchConcurrencyRange.upperBound)
 
+        self.autoAnalyzeNewTerms = UserDefaults.standard.object(forKey: Keys.autoAnalyzeNewTerms) as? Bool ?? false
+
         // Apple Speech stays the default: it is free, needs no key, and keeps
         // the audio on device whenever the locale's model is installed.
         let savedEngine = UserDefaults.standard.string(forKey: Keys.transcriptionEngine) ?? ""
@@ -492,6 +511,9 @@ final class AIModelSettings {
             AppPreferences.shared.invalidateCredentialScopedVoiceProvenance()
             BatchExplanationController.shared.cancel()
         }
+        // A key that was missing (or wrong) may be what the automatic queue was
+        // waiting on, so give it a nudge once the new key is in place.
+        AutoAnalysisCoordinator.shared.kick()
     }
 
     /// The effective base URL for a cloud provider (override or default).
@@ -602,12 +624,21 @@ final class AIModelSettings {
 
     // MARK: - Audio Transcription
 
-    /// The provider that will serve an AI transcription request: the effective
-    /// provider when it can do speech-to-text, otherwise the first configured
-    /// one that can. Returns `nil` when no configured provider offers it.
+    /// The provider that will serve an AI transcription request.
+    ///
+    /// The user's own selection comes first, and it is *not* filtered by
+    /// `supportsAudioTranscription`. That flag records which providers are
+    /// documented to serve `/audio/transcriptions`; using it as a gate meant a
+    /// learner who had selected, say, Zhipu or MiniMax had their audio quietly
+    /// uploaded to a different account they happened to have a key for — the
+    /// one thing an audio-privacy decision must never do silently. Since the
+    /// base URL and model are both user-editable, a provider that does not
+    /// serve the route answers with its own HTTP error, which is surfaced
+    /// verbatim. Only when the selected provider cannot be used at all (it is
+    /// on-device, or has no key) does this fall back to a documented one.
     func transcriptionProvider() -> AIProvider? {
         let effective = effectiveProvider
-        if effective.supportsAudioTranscription, isAvailable(effective) { return effective }
+        if effective.isCloud, isAvailable(effective) { return effective }
         return AIProvider.allCases.first { $0.supportsAudioTranscription && isAvailable($0) }
     }
 

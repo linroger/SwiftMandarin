@@ -122,6 +122,7 @@ It works in **both directions**. An English speaker studying Mandarin and a Mand
 - **Counts Toward Your Stats**: Photo translations are saved to History and your daily activity, just like typed ones
 - **Recorded or Imported Audio**: Record speech or choose an audio file up to 60 seconds, preview it locally, and transcribe it into the same editable source-text workspace
 - **Transcribe and Translate**: Run transcription and the existing translation flow in one action while still exposing the transcript for correction
+- **Two Transcription Engines**: Apple Speech downloads and uses the on-device model for your chosen language (with visible download progress on first use), or send the clip to the AI provider **you selected**—the pane names the destination in words before anything is uploaded
 
 ### 🎙️ Voice Translation
 
@@ -139,6 +140,7 @@ It works in **both directions**. An English speaker studying Mandarin and a Mand
 - **Secure Key Storage**: API keys are stored in the system **Keychain**, never in plain files or the cloud
 - **Optional MiniMax AI Audio**: Refresh your account's live Mandarin/English voice catalog, choose the latest Speech 2.8 model or an older compatible 2.6/02/01 model, route every read-aloud action through MiniMax TTS, persist the generated MP3, replay it without another paid request, and share or export it
 - **Batch AI Analysis & Audio**: Analyze missing saved words and optionally pre-generate deduplicated, persistent Mandarin and English MiniMax clips after an exact paid-request/character preflight
+- **Auto-Translate New Words**: Opt in and every word you save—from Translate, a photo, the reader, Shortcuts, or an import—is translated and analyzed in the background by your selected provider, so opening it later shows a finished analysis. The queue is deduplicated, capped, resumed after a relaunch, yields to a manual batch run, pauses itself after repeated failures, and never generates paid audio
 - **Learner Mode**: Tell the app whether you're an English speaker learning Mandarin, a Mandarin speaker learning English, or both—defaults adapt accordingly
 - **Entirely Optional**: Leave AI off and every core feature still works fully on-device
 
