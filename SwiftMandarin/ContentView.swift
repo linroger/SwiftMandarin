@@ -33,6 +33,13 @@ struct ContentView: View {
             .onAppear {
                 SwiftMandarinShortcutsProvider.updateAppShortcutParameters()
             }
+            .task {
+                // Words saved just before the app was quit are still queued for
+                // automatic analysis; pick that work back up at launch. Safe to
+                // re-enter — this view's identity is keyed to the interface
+                // language, so it also runs on an in-app language switch.
+                AutoAnalysisCoordinator.shared.resumePendingWork()
+            }
             .onChange(of: scenePhase) { _, newPhase in
                 if newPhase == .active {
                     SwiftMandarinShortcutsProvider.updateAppShortcutParameters()

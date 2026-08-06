@@ -427,7 +427,8 @@ struct MultimodalAudioInputView: View {
                         ProviderIcon(provider: provider, size: 14)
                     }
                     TextField(
-                        provider.defaultTranscriptionModels.first ?? "model id",
+                        provider.defaultTranscriptionModels.first
+                            ?? String(localized: "speech-to-text model id", bundle: .appLanguage),
                         text: transcriptionModelBinding(for: provider)
                     )
                     .textFieldStyle(.roundedBorder)
@@ -438,9 +439,27 @@ struct MultimodalAudioInputView: View {
                     #endif
                     .disabled(isBusy || captureService.isRecording)
                 }
+
+                // Naming the account the audio goes to is the point: this is a
+                // decision about where a recording is uploaded, so it must not
+                // be inferable only from a small icon.
+                Text("Audio is sent to \(provider.displayName).")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if !provider.supportsAudioTranscription {
+                    Label(
+                        "OpenAI, Qwen, and Quotio are the providers documented to transcribe audio. \(provider.displayName) is your selected provider, so it is asked too — enter its speech-to-text model id below. If it does not offer one, it will say so and you can switch providers or use Apple Speech.",
+                        systemImage: "info.circle"
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
             } else {
                 Label(
-                    "AI transcription needs a provider with a speech-to-text endpoint (OpenAI, Qwen, or Quotio). Add an API key in Settings → AI.",
+                    "AI transcription needs a cloud provider. Add an API key in Settings → AI, or switch back to Apple Speech.",
                     systemImage: "exclamationmark.triangle.fill"
                 )
                 .font(.caption2)
@@ -497,18 +516,33 @@ struct MultimodalAudioInputView: View {
     }
 
     private func operationProgress(_ operation: AudioInputOperation) -> some View {
-        HStack(spacing: 10) {
-            ProgressView()
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                ProgressView()
+                    .controlSize(.small)
+                Text(operation.progressTitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button("Cancel", role: .cancel) {
+                    cancelOperation()
+                }
+                .buttonStyle(.bordered)
                 .controlSize(.small)
-            Text(operation.progressTitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Button("Cancel", role: .cancel) {
-                cancelOperation()
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
+
+            // The first transcription in a language downloads its on-device
+            // model, which can take a while. Without this the pane looks hung
+            // on exactly the run that is doing the most work.
+            if let progress = transcriptionService.modelDownloadProgress {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Downloading the \(recognitionLanguage.displayName) speech model…")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    ProgressView(value: min(max(progress, 0), 1))
+                        .accessibilityLabel("Speech model download")
+                }
+            }
         }
         .accessibilityElement(children: .contain)
     }

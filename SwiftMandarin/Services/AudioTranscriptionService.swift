@@ -2,12 +2,26 @@
 //  AudioTranscriptionService.swift
 //  SwiftMandarin
 //
-//  One-shot transcription for recorded or imported audio files. This uses the
-//  Apple Speech URL recognizer and prefers on-device recognition whenever the
-//  selected locale supports it.
+//  One-shot transcription for recorded or imported audio files.
+//
+//  Two Apple Speech engines, in order of preference:
+//
+//  1. `SpeechAnalyzer` + `SpeechTranscriber` (iOS 26 / macOS 26). This is the
+//     engine the live dictation path already uses, and — crucially — the only
+//     one whose on-device model this app can *install*. Recognition assets are
+//     managed by `AssetInventory` on these releases; a locale whose asset has
+//     never been downloaded simply has no working recognizer, which is why
+//     file transcription used to fail on the very devices where live dictation
+//     worked (live recognition installs the asset first, file transcription
+//     did not).
+//  2. `SFSpeechRecognizer` + `SFSpeechURLRecognitionRequest`, kept for iOS 17
+//     through 25 and as a fallback when the modern engine cannot serve the
+//     locale. Its server pass can also read audio the on-device model missed.
 //
 
 import Foundation
+import Observation
+@preconcurrency import AVFAudio
 @preconcurrency import Speech
 
 /// Which engine turns a recorded or imported clip into text.
@@ -27,6 +41,7 @@ nonisolated enum AudioTranscriptionError: LocalizedError {
     case notAuthorized
     case restricted
     case recognizerUnavailable(language: String)
+    case speechModelInstallFailed(language: String, reason: String)
     case emptyTranscript
     case recognitionFailed(String)
     case timedOut
@@ -46,6 +61,12 @@ nonisolated enum AudioTranscriptionError: LocalizedError {
             return String.localizedStringWithFormat(
                 String(localized: "Apple Speech has no recognizer available for %@. Turn on Dictation in Settings (which downloads the language), check your network connection, or switch to an AI transcription provider.", bundle: .appLanguage),
                 language
+            )
+        case let .speechModelInstallFailed(language, reason):
+            return String.localizedStringWithFormat(
+                String(localized: "The on-device speech model for %@ could not be downloaded: %@. Check your network connection and try again, or switch to an AI transcription provider.", bundle: .appLanguage),
+                language,
+                reason
             )
         case .emptyTranscript:
             return String(localized: "Apple Speech could not find spoken words in this audio. Check the recognition language and audio quality, then try again.", bundle: .appLanguage)
@@ -123,15 +144,29 @@ nonisolated private final class AudioRecognitionGate: @unchecked Sendable {
 }
 
 @MainActor
+@Observable
 final class AudioTranscriptionService {
-    private var activeTask: SFSpeechRecognitionTask?
-    private var activeGate: AudioRecognitionGate?
+    /// Fraction complete while the on-device speech model for the chosen
+    /// language downloads, or `nil` when no download is in progress. The first
+    /// transcription in a language can pull a sizeable asset, and without this
+    /// the pane would sit on "Transcribing audio…" looking hung.
+    private(set) var modelDownloadProgress: Double?
+
+    @ObservationIgnored private var activeTask: SFSpeechRecognitionTask?
+    @ObservationIgnored private var activeGate: AudioRecognitionGate?
 
     /// How long a single recognition pass may run before it is treated as
     /// stalled. Speech can accept a URL request and then never call back — for
     /// an unavailable on-device asset, or when the service drops the request —
     /// which used to leave the UI spinning forever with no way out but Cancel.
     private static let recognitionTimeout: Duration = .seconds(120)
+
+    /// The on-device pass gets a much shorter leash, because it is only the
+    /// first of two attempts: a stalled on-device request that burned the full
+    /// timeout used to delay the server retry by two minutes, which reads as a
+    /// hang rather than a fallback. A minute of audio transcribes on device in
+    /// seconds, so this is generous.
+    private static let onDeviceRecognitionTimeout: Duration = .seconds(20)
 
     /// How long to wait for a freshly constructed recognizer to report itself
     /// available. `SFSpeechRecognizer.isAvailable` is false for a short window
@@ -185,13 +220,12 @@ final class AudioTranscriptionService {
 
     /// Transcribe one app-owned audio file with Apple Speech.
     ///
-    /// On-device recognition is preferred for privacy and offline use, but
-    /// `supportsOnDeviceRecognition` only says the *recognizer* can work
-    /// offline — it does not promise the locale's assets are installed. When
-    /// the on-device pass fails or hears nothing, this retries through Apple's
-    /// service rather than reporting a dead end, which is what made
-    /// transcription look broken on devices without the Chinese (or any)
-    /// dictation model downloaded.
+    /// The modern analyzer runs first where it exists, because it is the only
+    /// engine whose on-device model this app can install — and an uninstalled
+    /// model is the usual reason recognition fails at all. The legacy URL
+    /// recognizer remains the path on older iOS, and the safety net when the
+    /// analyzer cannot serve the locale: its server pass sometimes reads audio
+    /// the on-device model returned nothing for.
     func transcribe(
         audioURL: URL,
         language: SpeechRecognitionLanguage
@@ -200,6 +234,179 @@ final class AudioTranscriptionService {
         try await ensureAuthorization()
         try Task.checkCancellation()
 
+        var modernFailure: Error?
+        if #available(iOS 26.0, macOS 26.0, *) {
+            do {
+                return try await transcribeWithAnalyzer(audioURL: audioURL, language: language)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                modernFailure = error
+            }
+        }
+
+        do {
+            return try await transcribeWithURLRecognizer(audioURL: audioURL, language: language)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            // Where the analyzer is the primary engine, its error names the
+            // real cause (locale unsupported, model not installed, analysis
+            // failed). The legacy recognizer's "no recognizer available" is a
+            // symptom of the same thing and would send the user hunting in the
+            // wrong place, so the primary engine's report wins.
+            throw modernFailure ?? error
+        }
+    }
+
+    // MARK: - Modern engine (SpeechAnalyzer, iOS 26+/macOS 26+)
+
+    /// Transcribe a file with `SpeechAnalyzer`, installing the locale's
+    /// on-device model first when it is missing.
+    @available(iOS 26.0, macOS 26.0, *)
+    private func transcribeWithAnalyzer(
+        audioURL: URL,
+        language: SpeechRecognitionLanguage
+    ) async throws -> String {
+        // Ask Speech which locale it considers equivalent rather than matching
+        // identifiers ourselves: "zh-CN" and "zh_CN" are the same language to a
+        // learner and different strings to `Locale`.
+        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: language.locale) else {
+            throw AudioTranscriptionError.recognizerUnavailable(language: language.displayName)
+        }
+        try Task.checkCancellation()
+
+        // No volatile results: a file is transcribed once, and every result
+        // this reports is final.
+        let transcriber = SpeechTranscriber(
+            locale: locale,
+            transcriptionOptions: [],
+            reportingOptions: [],
+            attributeOptions: []
+        )
+        try await installSpeechModelIfNeeded(for: transcriber, language: language)
+        try Task.checkCancellation()
+
+        let audioFile: AVAudioFile
+        do {
+            audioFile = try AVAudioFile(forReading: audioURL)
+        } catch {
+            throw AudioTranscriptionError.recognitionFailed(Self.describe(error))
+        }
+
+        let analyzer = SpeechAnalyzer(modules: [transcriber])
+        // `transcriber.results` is a live sequence: it delivers while the
+        // analysis runs and terminates when the analyzer finishes. So the
+        // collector has to be started before the analysis rather than drained
+        // after it.
+        let collector = Task {
+            var text = AttributedString()
+            for try await result in transcriber.results {
+                text += result.text
+            }
+            return String(text.characters)
+        }
+
+        do {
+            try await withTaskCancellationHandler {
+                if let lastSample = try await analyzer.analyzeSequence(from: audioFile) {
+                    try await analyzer.finalizeAndFinish(through: lastSample)
+                } else {
+                    await analyzer.cancelAndFinishNow()
+                }
+            } onCancel: {
+                Task { await analyzer.cancelAndFinishNow() }
+            }
+        } catch {
+            collector.cancel()
+            if error is CancellationError { throw CancellationError() }
+            throw AudioTranscriptionError.recognitionFailed(Self.describe(error))
+        }
+
+        let transcript: String
+        do {
+            transcript = try await collector.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            throw AudioTranscriptionError.recognitionFailed(Self.describe(error))
+        }
+
+        guard !transcript.isEmpty else { throw AudioTranscriptionError.emptyTranscript }
+        return transcript
+    }
+
+    /// Download and install the locale's recognition assets when they are not
+    /// already present. This is the step whose absence made file transcription
+    /// fail on devices where live dictation worked — the live path has always
+    /// installed them, and on these releases an uninstalled locale has no
+    /// working recognizer of either kind.
+    @available(iOS 26.0, macOS 26.0, *)
+    private func installSpeechModelIfNeeded(
+        for transcriber: SpeechTranscriber,
+        language: SpeechRecognitionLanguage
+    ) async throws {
+        switch await AssetInventory.status(forModules: [transcriber]) {
+        case .installed:
+            return
+        case .unsupported:
+            throw AudioTranscriptionError.recognizerUnavailable(language: language.displayName)
+        case .downloading, .supported:
+            break
+        @unknown default:
+            break
+        }
+        try Task.checkCancellation()
+
+        let request: AssetInstallationRequest?
+        do {
+            request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber])
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            throw AudioTranscriptionError.speechModelInstallFailed(
+                language: language.displayName,
+                reason: Self.describe(error)
+            )
+        }
+        // Nothing left to install — another download already completed it.
+        guard let request else { return }
+
+        let progress = request.progress
+        modelDownloadProgress = progress.fractionCompleted
+        let monitor = Task { [weak self] in
+            while !Task.isCancelled, !progress.isFinished, !progress.isCancelled {
+                self?.modelDownloadProgress = progress.fractionCompleted
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+        }
+        defer {
+            monitor.cancel()
+            modelDownloadProgress = nil
+        }
+
+        do {
+            try await request.downloadAndInstall()
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            throw AudioTranscriptionError.speechModelInstallFailed(
+                language: language.displayName,
+                reason: Self.describe(error)
+            )
+        }
+    }
+
+    // MARK: - Legacy engine (SFSpeechRecognizer)
+
+    /// Transcribe with the URL recognizer, preferring on-device recognition and
+    /// retrying through Apple's service when that pass fails or hears nothing.
+    /// `supportsOnDeviceRecognition` only says the *recognizer* can work
+    /// offline; it does not promise the locale's assets are installed.
+    private func transcribeWithURLRecognizer(
+        audioURL: URL,
+        language: SpeechRecognitionLanguage
+    ) async throws -> String {
         guard let recognizer = SFSpeechRecognizer(locale: language.locale) else {
             throw AudioTranscriptionError.recognizerUnavailable(language: language.displayName)
         }
@@ -218,7 +425,8 @@ final class AudioTranscriptionService {
                 // service can still read this audio, so try it before failing.
                 try Task.checkCancellation()
                 return try await runRecognition(recognizer: recognizer, audioURL: audioURL, onDevice: false)
-            case .notAuthorized, .restricted, .recognizerUnavailable, .noTranscriptionProvider:
+            case .notAuthorized, .restricted, .recognizerUnavailable,
+                 .speechModelInstallFailed, .noTranscriptionProvider:
                 throw error
             }
         }
@@ -261,8 +469,9 @@ final class AudioTranscriptionService {
 
         // The gate resolves exactly once, so this fires only if Speech never
         // does; a late timeout after a successful result is a no-op.
+        let deadline = onDevice ? Self.onDeviceRecognitionTimeout : Self.recognitionTimeout
         let timeout = Task {
-            try? await Task.sleep(for: Self.recognitionTimeout)
+            try? await Task.sleep(for: deadline)
             guard !Task.isCancelled else { return }
             gate.fail(AudioTranscriptionError.timedOut)
         }

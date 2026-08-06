@@ -11,6 +11,7 @@ import SwiftUI
 struct BatchAIAnalysisControls: View {
     @Environment(SavedTermsStore.self) private var savedTermsStore
     @State private var controller = BatchExplanationController.shared
+    @State private var autoAnalysis = AutoAnalysisCoordinator.shared
     @State private var settings = AIModelSettings.shared
     @State private var preferences = AppPreferences.shared
     @State private var generatedAudio = GeneratedSpeechStore.shared
@@ -34,12 +35,16 @@ struct BatchAIAnalysisControls: View {
         let remaining = controller.remainingCount(from: savedTermsStore.terms)
         Group {
             overviewSection(remaining: remaining)
+            automaticSection
             parallelismSection
             outputSection
             actionSection(remaining: remaining)
         }
         .task {
             await generatedAudio.refresh()
+            // Opening this screen is the moment a user has just finished
+            // configuring a provider, so retry anything the queue parked.
+            autoAnalysis.kick()
         }
         .sheet(item: $pendingPlan) { plan in
             BatchAudioPreflightView(
@@ -84,6 +89,111 @@ struct BatchAIAnalysisControls: View {
             Text("Batch AI Analysis & Audio")
         } footer: {
             Text("Analyze missing saved words and optionally prepare persistent MiniMax pronunciation audio. Existing analyses and matching audio are reused.")
+        }
+    }
+
+    /// Automatic analysis of newly saved words — the opt-in, always-running
+    /// sibling of the reviewed batch. It shares the explanation cache with the
+    /// batch, so whichever gets to a word first spares the other the work.
+    private var automaticSection: some View {
+        Section {
+            Toggle("Auto-Translate New Words", isOn: $settings.autoAnalyzeNewTerms)
+
+            if settings.autoAnalyzeNewTerms {
+                LabeledContent("Queued") {
+                    Text("\(autoAnalysis.outstandingCount)")
+                        .monospacedDigit()
+                        .foregroundStyle(autoAnalysis.outstandingCount > 0 ? .primary : .secondary)
+                }
+                LabeledContent("Analyzed Automatically") {
+                    Text("\(autoAnalysis.analyzedCount)")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+                automaticStatusRow
+
+                if autoAnalysis.rejectedByCapacity > 0 {
+                    Label("\(autoAnalysis.rejectedByCapacity) words were not queued because the queue was full. Run the batch below to analyze them.", systemImage: "tray.full")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if autoAnalysis.isPaused {
+                    Button {
+                        autoAnalysis.resumeAfterFailures()
+                    } label: {
+                        Label("Resume Automatic Analysis", systemImage: "play.circle")
+                    }
+                }
+
+                if autoAnalysis.outstandingCount > 0 {
+                    Button(role: .destructive) {
+                        autoAnalysis.clearQueue()
+                    } label: {
+                        Label("Clear Automatic Queue", systemImage: "trash")
+                    }
+                }
+            }
+        } header: {
+            Text("Automatic Analysis")
+        } footer: {
+            automaticFooter
+        }
+    }
+
+    @ViewBuilder
+    private var automaticStatusRow: some View {
+        switch autoAnalysis.status {
+        case .analyzing:
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                    .accessibilityHidden(true)
+                if let word = autoAnalysis.currentWord, !word.isEmpty {
+                    Text("Analyzing \(word)…")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                } else {
+                    Text("Analyzing…")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        case .waitingForProvider:
+            Label("Waiting for an AI provider. Configure one in Settings → AI.", systemImage: "exclamationmark.triangle")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        case .waitingForBatch:
+            Label("Waiting for the reviewed batch run to finish.", systemImage: "hourglass")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .pausedAfterFailures:
+            VStack(alignment: .leading, spacing: 4) {
+                Label("Paused after repeated failures.", systemImage: "pause.circle")
+                    .foregroundStyle(.orange)
+                if let error = autoAnalysis.lastErrorMessage {
+                    Text(error)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .font(.caption)
+        case .idle:
+            if let word = autoAnalysis.lastAnalyzedWord, !word.isEmpty {
+                Text("Last analyzed: \(word)")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var automaticFooter: some View {
+        if settings.autoAnalyzeNewTerms {
+            Text("Every word or phrase you save is translated and analyzed in the background by \(settings.effectiveProvider.displayName), so opening it later shows a finished analysis. Results go into the same store as a batch run, and no audio is ever generated automatically.")
+        } else {
+            Text("Turn this on to translate and analyze each word as you save it, instead of running a batch later. Words already saved are not analyzed — use the batch run for those.")
         }
     }
 
@@ -502,6 +612,7 @@ struct BatchAIAnalysisView: View {
 
 struct BatchAIAnalysisStatusBadge: View {
     @State private var controller = BatchExplanationController.shared
+    @State private var autoAnalysis = AutoAnalysisCoordinator.shared
 
     var body: some View {
         if controller.isRunning {
@@ -517,6 +628,27 @@ struct BatchAIAnalysisStatusBadge: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Batch progress")
             .accessibilityValue("\(controller.processed) of \(controller.total) complete")
+        } else if autoAnalysis.isEnabled, autoAnalysis.outstandingCount > 0 {
+            // The automatic queue works without anyone pressing anything, so the
+            // hub row is where a stalled or paused queue becomes visible.
+            HStack(spacing: 6) {
+                if autoAnalysis.isAnalyzing {
+                    ProgressView()
+                        .controlSize(.small)
+                        .accessibilityHidden(true)
+                } else {
+                    Image(systemName: autoAnalysis.isPaused ? "pause.circle" : "clock")
+                        .foregroundStyle(autoAnalysis.isPaused ? .orange : .secondary)
+                        .accessibilityHidden(true)
+                }
+                Text("\(autoAnalysis.outstandingCount)")
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Automatic analysis queue")
+            .accessibilityValue("\(autoAnalysis.outstandingCount) words waiting")
         }
     }
 }

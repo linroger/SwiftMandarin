@@ -140,5 +140,43 @@
       "Switch back to the English-speaker mode and verify every screen returns to its original Mandarin-learner behavior"
     ],
     "passes": true
+  },
+  {
+    "id": "feature_auto_analyze_new_terms",
+    "category": "functional",
+    "description": "A toggle in the Batch AI Analysis menu makes every newly saved word or phrase get translated and analyzed automatically by the selected LLM provider, with a deduplicated, capped, relaunch-resumable queue that yields to a manual batch run, pauses after repeated failures, and never generates paid audio.",
+    "steps": [
+      "Open Batch AI Analysis and turn on Auto-Translate New Words",
+      "Save a new word from Translate and verify the queue count rises and then falls as it is analyzed",
+      "Open that word's AI analysis and verify it appears instantly with no spinner and no new request",
+      "Verify the batch screen's Needs Analysis count fell by one without pressing the batch button",
+      "Save the same word again from another surface and verify it is not queued or analyzed twice",
+      "Turn off every AI provider, save a word, and verify the queue holds it and reports that it is waiting for a provider",
+      "Configure a provider again and verify the held word is analyzed without another save",
+      "Start a reviewed batch run while words are queued and verify automatic analysis waits until the batch finishes",
+      "Quit the app with words still queued, relaunch, and verify the queue resumes rather than losing them",
+      "Point the provider at an unreachable endpoint, save several words, and verify the queue pauses itself and shows the error instead of retrying forever",
+      "Turn the toggle off and verify no newly saved word is queued or analyzed",
+      "Verify no MiniMax audio is generated at any point in the above"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_multimodal_audio_transcription",
+    "category": "functional",
+    "description": "Recording or importing audio in the Multimodal tab transcribes reliably: Apple Speech installs the locale's on-device model before recognizing (as live dictation already did), and AI transcription uses the provider the user actually selected rather than silently uploading the recording to another configured account.",
+    "steps": [
+      "Open the Multimodal tab and switch the input mode to Audio",
+      "With the engine set to Apple Speech, record a short clip and press Transcribe to Editor",
+      "On the first run in a language, verify a speech-model download with visible progress appears instead of an apparent hang",
+      "Verify the transcript reaches the editor rather than an 'Apple Speech has no recognizer available' error",
+      "Repeat with the audio language set to the other language and verify it also transcribes",
+      "Switch the engine to AI Provider and verify the pane names the provider the audio will be sent to",
+      "Select a provider outside OpenAI/Qwen/Quotio and verify it is used as selected, with a note explaining it may not offer the endpoint",
+      "Select a provider with no speech-to-text model set and verify the error names the missing model instead of failing silently",
+      "Press Cancel during a transcription and verify it stops promptly",
+      "Verify the whole pane renders in 中文 when the interface language is Chinese"
+    ],
+    "passes": true
   }
 ]
