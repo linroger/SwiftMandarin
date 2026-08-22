@@ -15,5 +15,7 @@ zsh scripts/test-ai-prompt-contracts.sh
 zsh scripts/test-learning-direction.sh
 zsh scripts/test-auto-analysis.sh
 zsh scripts/test-audio-transcription.sh
+zsh scripts/test-stats-heatmap.sh
+zsh scripts/test-macos-surfaces.sh
 
 echo "SwiftMandarin smoke checks passed."

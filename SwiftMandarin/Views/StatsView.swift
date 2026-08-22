@@ -25,11 +25,13 @@ struct StatsView: View {
     enum BarChartTimeRange: String, CaseIterable {
         case week = "7 Days"
         case twoWeeks = "14 Days"
-        
+        case month = "30 Days"
+
         var days: Int {
             switch self {
             case .week: return 7
             case .twoWeeks: return 14
+            case .month: return 30
             }
         }
 
@@ -42,7 +44,25 @@ struct StatsView: View {
             switch self {
             case .week: return "7 Days"
             case .twoWeeks: return "14 Days"
+            case .month: return "30 Days"
             }
+        }
+
+        /// How many days apart the x-axis labels sit. 30 individually labelled
+        /// days collapse into an unreadable smear even on a Mac window, so the
+        /// month range labels every third day; the shorter ranges still label
+        /// every one.
+        var axisLabelStride: Int {
+            switch self {
+            case .week, .twoWeeks: return 1
+            case .month: return 3
+            }
+        }
+
+        /// Weekday initials only stay unambiguous over a single week; longer
+        /// ranges repeat every weekday, so they switch to day-of-month numbers.
+        var usesWeekdayAxisLabels: Bool {
+            self == .week
         }
     }
 
@@ -107,11 +127,10 @@ struct StatsView: View {
             }
             .padding(.vertical, isCompactWidth ? 12 : 16)
         }
-        #if os(iOS)
-        .background(Color(.systemGroupedBackground))
-        #else
-        .background(Color(.windowBackgroundColor))
-        #endif
+        // Same grouped page/card pairing as every other screen. Reading the
+        // platform colors here directly is what left the cards invisible on
+        // macOS, where the window and control backgrounds resolve identically.
+        .background(SMTheme.pageBackground)
         .navigationTitle("Statistics")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
@@ -284,35 +303,45 @@ struct StatsView: View {
             }
         }
         .padding(.vertical, 16)
-        .background(.background, in: RoundedRectangle(cornerRadius: 20))
+        .smCardSurface(cornerRadius: 20)
         .padding(.horizontal)
     }
     
     @ViewBuilder
     private func selectedDateDetail(_ activity: DailyActivity) -> some View {
-        HStack(spacing: 14) {
-            Group {
-                Label("\(activity.wordsLearned)", systemImage: "character.book.closed")
-                Label("\(activity.reviewsCompleted)", systemImage: "checkmark.circle")
-                Label("\(activity.translationsMade)", systemImage: "globe")
-                Label("\(activity.questionsGraded)", systemImage: "checkmark.rectangle.stack")
-            }
-            .font(.subheadline.weight(.medium))
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            Spacer(minLength: 4)
-            // Keep the date intact; let the metric counts shrink instead.
+        VStack(alignment: .leading, spacing: 8) {
             Text(activity.date, style: .date)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-                .layoutPriority(1)
+
+            // Five metrics no longer fit one iPhone-width line, and shrinking
+            // them further (the previous fix) would leave the counts unreadable,
+            // so they wrap onto a second line instead.
+            FlowLayout(spacing: 14) {
+                dayMetric(activity.wordsLearned, icon: "character.book.closed", label: "Words Learned")
+                dayMetric(activity.wordsMastered, icon: "checkmark.seal", label: "Words Mastered")
+                dayMetric(activity.reviewsCompleted, icon: "checkmark.circle", label: "Reviews")
+                dayMetric(activity.translationsMade, icon: "globe", label: "Translations")
+                dayMetric(activity.questionsGraded, icon: "checkmark.rectangle.stack", label: "Questions Graded")
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
         .padding(.vertical, 10)
         .background(.tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal)
+    }
+
+    /// One icon + count pair in the selected-day breakdown. The icons alone are
+    /// ambiguous to a screen reader (and "checkmark.seal" vs "checkmark.circle"
+    /// is a fine distinction visually too), so each carries the same name its
+    /// Overview tile uses.
+    private func dayMetric(_ count: Int, icon: String, label: LocalizedStringKey) -> some View {
+        Label("\(count)", systemImage: icon)
+            .font(.subheadline.weight(.medium))
+            .lineLimit(1)
+            .accessibilityLabel(Text(label))
+            .accessibilityValue(Text("\(count)"))
     }
     
     private var contributionMaxScore: Int {
@@ -335,45 +364,24 @@ struct StatsView: View {
     
     private var stackedBarChartSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Words Learned")
-                        .font(.title3.weight(.semibold))
-                    Text("By Part of Speech")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-                
-                // Time range toggle
-                HStack(spacing: 0) {
-                    ForEach(BarChartTimeRange.allCases, id: \.self) { range in
-                        Button {
-                            withAnimation(.smooth) {
-                                barChartTimeRange = range
-                            }
-                        } label: {
-                            Text(range.titleKey)
-                                .font(.subheadline.weight(.medium))
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(barChartTimeRange == range ? .primary : .secondary)
-                        .background {
-                            if barChartTimeRange == range {
-                                Capsule()
-                                    .fill(.tint.opacity(0.15))
-                                    .matchedGeometryEffect(id: "barChartRange", in: namespace)
-                            }
-                        }
+            // A third range no longer fits beside the title on an iPhone, so
+            // the toggle drops onto its own row there instead of squeezing.
+            Group {
+                if isCompactWidth {
+                    VStack(alignment: .leading, spacing: 12) {
+                        stackedBarChartTitle
+                        barChartRangePicker
+                    }
+                } else {
+                    HStack {
+                        stackedBarChartTitle
+                        Spacer()
+                        barChartRangePicker
                     }
                 }
-                .glassEffectCapsuleCompat()
             }
             .padding(.horizontal)
-            
+
             let chartData = prepareStackedBarData()
             
             if chartData.isEmpty || chartData.allSatisfy({ $0.count == 0 }) {
@@ -403,15 +411,12 @@ struct StatsView: View {
                     }
                 }
                 .chartXAxis {
-                    AxisMarks(values: .stride(by: .day)) { value in
+                    AxisMarks(values: .stride(by: .day, count: barChartTimeRange.axisLabelStride)) { value in
                         if let date = value.as(Date.self) {
                             AxisValueLabel {
-                                // 14 days repeat every weekday label twice, so
-                                // the wider range switches to day-of-month
-                                // numbers to keep every label unambiguous.
-                                Text(date, format: barChartTimeRange == .twoWeeks
-                                     ? .dateTime.day()
-                                     : .dateTime.weekday(.abbreviated))
+                                Text(date, format: barChartTimeRange.usesWeekdayAxisLabels
+                                     ? .dateTime.weekday(.abbreviated)
+                                     : .dateTime.day())
                                     .font(.caption2)
                             }
                         }
@@ -424,10 +429,47 @@ struct StatsView: View {
             }
         }
         .padding(.vertical, 16)
-        .background(.background, in: RoundedRectangle(cornerRadius: 20))
+        .smCardSurface(cornerRadius: 20)
         .padding(.horizontal)
     }
-    
+
+    private var stackedBarChartTitle: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Words Learned")
+                .font(.title3.weight(.semibold))
+            Text("By Part of Speech")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var barChartRangePicker: some View {
+        HStack(spacing: 0) {
+            ForEach(BarChartTimeRange.allCases, id: \.self) { range in
+                Button {
+                    withAnimation(.smooth) {
+                        barChartTimeRange = range
+                    }
+                } label: {
+                    Text(range.titleKey)
+                        .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(barChartTimeRange == range ? .primary : .secondary)
+                .background {
+                    if barChartTimeRange == range {
+                        Capsule()
+                            .fill(.tint.opacity(0.15))
+                            .matchedGeometryEffect(id: "barChartRange", in: namespace)
+                    }
+                }
+            }
+        }
+        .glassEffectCapsuleCompat()
+    }
+
     private var posColorScale: KeyValuePairs<String, Color> {
         [
             PartOfSpeechCategory.noun.rawValue: .blue,
@@ -594,7 +636,7 @@ struct StatsView: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .smCardSurface(cornerRadius: 16)
     }
 
     private func colorForVocabularyMastery(_ segment: VocabularyMasterySegment) -> Color {
@@ -716,7 +758,7 @@ struct StatsView: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .smCardSurface(cornerRadius: 16)
     }
     
     /// `message` is a `LocalizedStringKey` so the literals the call sites pass
@@ -814,7 +856,7 @@ struct StatsView: View {
             .padding(.horizontal)
         }
         .padding(.vertical, 16)
-        .background(.background, in: RoundedRectangle(cornerRadius: 20))
+        .smCardSurface(cornerRadius: 20)
         .padding(.horizontal)
     }
     

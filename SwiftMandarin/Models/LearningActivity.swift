@@ -16,10 +16,20 @@ struct DailyActivity: Codable, Identifiable {
     
     /// Number of new vocabulary terms saved on this day
     var wordsLearned: Int
-    
+
+    /// Number of saved terms (single words *and* multi-character phrases —
+    /// both are stored as `SavedTerm`) marked mastered on this day.
+    ///
+    /// Un-mastering gives the count back to the day it was *earned* on rather
+    /// than to the day of the undo, so a mis-tap corrects itself and undoing an
+    /// old word never eats one of today's milestones — see
+    /// `undoWordMastered(on:)`. Deleting a mastered word leaves the day alone,
+    /// matching how `wordsLearned` already keeps the day a word was saved.
+    var wordsMastered: Int
+
     /// Number of flashcard reviews completed
     var reviewsCompleted: Int
-    
+
     /// Number of translations made
     var translationsMade: Int
 
@@ -29,9 +39,11 @@ struct DailyActivity: Codable, Identifiable {
     /// Words learned broken down by part of speech
     var wordsByPartOfSpeech: [String: Int]
 
-    /// Computed total activity score for heatmap intensity
+    /// Computed total activity score for heatmap intensity.
+    /// Mastering a term sits between saving one (3) and a single review (1):
+    /// it is a deliberate milestone, but one the user awards themselves.
     var activityScore: Int {
-        wordsLearned * 3 + reviewsCompleted + translationsMade + questionsGraded
+        wordsLearned * 3 + wordsMastered * 2 + reviewsCompleted + translationsMade + questionsGraded
     }
     
     /// The actual date represented by this activity
@@ -52,18 +64,20 @@ struct DailyActivity: Codable, Identifiable {
         return formatter
     }()
 
-    init(dateKey: String, wordsLearned: Int = 0, reviewsCompleted: Int = 0, translationsMade: Int = 0, questionsGraded: Int = 0, wordsByPartOfSpeech: [String: Int] = [:]) {
+    init(dateKey: String, wordsLearned: Int = 0, wordsMastered: Int = 0, reviewsCompleted: Int = 0, translationsMade: Int = 0, questionsGraded: Int = 0, wordsByPartOfSpeech: [String: Int] = [:]) {
         self.dateKey = dateKey
         self.wordsLearned = wordsLearned
+        self.wordsMastered = wordsMastered
         self.reviewsCompleted = reviewsCompleted
         self.translationsMade = translationsMade
         self.questionsGraded = questionsGraded
         self.wordsByPartOfSpeech = wordsByPartOfSpeech
     }
 
-    init(date: Date, wordsLearned: Int = 0, reviewsCompleted: Int = 0, translationsMade: Int = 0, questionsGraded: Int = 0, wordsByPartOfSpeech: [String: Int] = [:]) {
+    init(date: Date, wordsLearned: Int = 0, wordsMastered: Int = 0, reviewsCompleted: Int = 0, translationsMade: Int = 0, questionsGraded: Int = 0, wordsByPartOfSpeech: [String: Int] = [:]) {
         self.dateKey = DailyActivity.keyFormatter.string(from: date)
         self.wordsLearned = wordsLearned
+        self.wordsMastered = wordsMastered
         self.reviewsCompleted = reviewsCompleted
         self.translationsMade = translationsMade
         self.questionsGraded = questionsGraded
@@ -71,16 +85,18 @@ struct DailyActivity: Codable, Identifiable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case dateKey, wordsLearned, reviewsCompleted, translationsMade, questionsGraded, wordsByPartOfSpeech
+        case dateKey, wordsLearned, wordsMastered, reviewsCompleted, translationsMade, questionsGraded, wordsByPartOfSpeech
     }
 
-    // Tolerant decode: `questionsGraded` was added later, so older saved
-    // payloads omit it. Defaulting every field (rather than letting a missing
-    // key throw) keeps existing heatmap/streak data from being discarded.
+    // Tolerant decode: `questionsGraded` and `wordsMastered` were added later,
+    // so older saved payloads omit them. Defaulting every field (rather than
+    // letting a missing key throw) keeps existing heatmap/streak data from
+    // being discarded.
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         dateKey = (try? c.decode(String.self, forKey: .dateKey)) ?? DailyActivity.keyFormatter.string(from: Date())
         wordsLearned = (try? c.decode(Int.self, forKey: .wordsLearned)) ?? 0
+        wordsMastered = (try? c.decode(Int.self, forKey: .wordsMastered)) ?? 0
         reviewsCompleted = (try? c.decode(Int.self, forKey: .reviewsCompleted)) ?? 0
         translationsMade = (try? c.decode(Int.self, forKey: .translationsMade)) ?? 0
         questionsGraded = (try? c.decode(Int.self, forKey: .questionsGraded)) ?? 0
@@ -231,7 +247,16 @@ final class LearningActivityStore {
     var totalWordsLearned: Int {
         activities.values.reduce(0) { $0 + $1.wordsLearned }
     }
-    
+
+    /// Total mastery milestones recorded all time. This counts only terms
+    /// mastered since per-day mastery tracking shipped, so it can trail
+    /// `SavedTermsStore.masteredCount` on an existing library — use that store
+    /// for "how many words are mastered", and this for "how much mastering has
+    /// the heatmap seen".
+    var totalWordsMastered: Int {
+        activities.values.reduce(0) { $0 + $1.wordsMastered }
+    }
+
     /// Total reviews completed all time
     var totalReviewsCompleted: Int {
         activities.values.reduce(0) { $0 + $1.reviewsCompleted }
@@ -267,6 +292,38 @@ final class LearningActivityStore {
         saveActivities()
     }
     
+    /// Record that a saved term (word or phrase) was marked mastered today.
+    /// Call this only on a genuine not-mastered → mastered transition;
+    /// `SavedTermsStore` is the single caller and guards that.
+    func recordWordMastered() {
+        var activity = todayActivity
+        activity.wordsMastered += 1
+        activities[activity.dateKey] = activity
+        updateLongestStreak()
+        saveActivities()
+    }
+
+    /// Give back a mastery milestone that was recorded on `date`.
+    ///
+    /// The credit is removed from the day the term was *mastered*, not from
+    /// today: un-mastering a word earned last week must not eat one of today's
+    /// milestones, and un-mastering a mis-tap from a minute ago must leave
+    /// today back where it started. `date` therefore comes from the term's own
+    /// `dateMastered`; terms mastered before that field existed carry `nil` and
+    /// were never counted, so callers skip the undo entirely for them.
+    ///
+    /// Days with no record, or with nothing left to give back, are left alone
+    /// rather than going negative.
+    func undoWordMastered(on date: Date) {
+        let key = dateKey(for: date)
+        guard var activity = activities[key], activity.wordsMastered > 0 else { return }
+        activity.wordsMastered -= 1
+        activities[key] = activity
+        // Only `longestStreak` is persisted as a high-water mark and it can
+        // never grow here, so there is nothing to recompute.
+        saveActivities()
+    }
+
     /// Record that a review was completed today
     func recordReviewCompleted() {
         var activity = todayActivity

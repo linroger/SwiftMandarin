@@ -18,7 +18,15 @@ struct SavedTerm: Identifiable, Codable, Equatable, Hashable {
     let dateAdded: Date
     var sortOrder: Int
     var isMastered: Bool
-    
+
+    /// When this term was marked mastered, so the mastery milestone can be
+    /// returned to the right day in the activity heatmap if it is un-mastered
+    /// later. `nil` means either "not mastered" or "mastered before this field
+    /// existed" — in both cases no daily milestone was ever recorded for it,
+    /// which is exactly when the undo must do nothing. Maintained by
+    /// `SavedTermsStore`; see `LearningActivityStore.undoWordMastered(on:)`.
+    var dateMastered: Date?
+
     init(
         id: UUID = UUID(),
         chinese: String,
@@ -27,7 +35,8 @@ struct SavedTerm: Identifiable, Codable, Equatable, Hashable {
         partOfSpeech: String = "",
         dateAdded: Date = Date(),
         sortOrder: Int = 0,
-        isMastered: Bool = false
+        isMastered: Bool = false,
+        dateMastered: Date? = nil
     ) {
         self.id = id
         self.chinese = chinese
@@ -37,10 +46,11 @@ struct SavedTerm: Identifiable, Codable, Equatable, Hashable {
         self.dateAdded = dateAdded
         self.sortOrder = sortOrder
         self.isMastered = isMastered
+        self.dateMastered = dateMastered
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, chinese, pinyin, definition, partOfSpeech, dateAdded, sortOrder, isMastered
+        case id, chinese, pinyin, definition, partOfSpeech, dateAdded, sortOrder, isMastered, dateMastered
     }
 
     /// Tolerant decoder: a missing or malformed field falls back to a default
@@ -55,6 +65,7 @@ struct SavedTerm: Identifiable, Codable, Equatable, Hashable {
         dateAdded = (try? c.decode(Date.self, forKey: .dateAdded)) ?? Date()
         sortOrder = (try? c.decode(Int.self, forKey: .sortOrder)) ?? 0
         isMastered = (try? c.decode(Bool.self, forKey: .isMastered)) ?? false
+        dateMastered = try? c.decodeIfPresent(Date.self, forKey: .dateMastered)
     }
 }
 
@@ -261,12 +272,24 @@ final class SavedTermsStore {
     /// Replace a stored term. Returns `false` when the term no longer exists
     /// (e.g. it was deleted while a detail view held a stale copy), so callers
     /// can surface the failure instead of silently dropping the edit.
+    ///
+    /// Store-owned bookkeeping is carried over from the stored element rather
+    /// than taken from the caller's copy. Callers build `updatedTerm` field by
+    /// field to change content (a re-fetched definition, say), so anything they
+    /// forget to copy would otherwise be silently reset. `sortOrder` has always
+    /// been protected this way; mastery is too, because it has its own API
+    /// (`setMastered`/`toggleMastered`) that also records the milestone in the
+    /// activity heatmap — letting an edit change it here would move the flag
+    /// without the matching heatmap entry, or drop the `dateMastered` that the
+    /// undo path needs.
     @discardableResult
     func update(_ updatedTerm: SavedTerm) -> Bool {
         guard let index = terms.firstIndex(where: { $0.id == updatedTerm.id }) else { return false }
 
         var replacement = updatedTerm
         replacement.sortOrder = terms[index].sortOrder
+        replacement.isMastered = terms[index].isMastered
+        replacement.dateMastered = terms[index].dateMastered
         terms[index] = replacement
         return true
     }
@@ -291,15 +314,40 @@ final class SavedTermsStore {
     /// Toggle the mastered status of a term
     func toggleMastered(_ term: SavedTerm) {
         guard let index = terms.firstIndex(where: { $0.id == term.id }) else { return }
-        terms[index].isMastered.toggle()
+        applyMastered(!terms[index].isMastered, at: index)
     }
-    
+
     /// Set the mastered status of a term
     func setMastered(_ term: SavedTerm, isMastered: Bool) {
         guard let index = terms.firstIndex(where: { $0.id == term.id }) else { return }
-        terms[index].isMastered = isMastered
+        applyMastered(isMastered, at: index)
     }
-    
+
+    /// The one place mastery changes, so the activity heatmap sees every
+    /// not-mastered → mastered transition exactly once.
+    ///
+    /// Re-applying the value a term already has is a no-op: the stores are
+    /// reachable from a swipe action, a detail-sheet toggle and a context menu,
+    /// and a redundant `setMastered(term, isMastered: true)` from any of them
+    /// must not award a second milestone for the same word.
+    private func applyMastered(_ isMastered: Bool, at index: Int) {
+        guard terms[index].isMastered != isMastered else { return }
+
+        // Read the earned-on date before overwriting it, and write both fields
+        // through a single element assignment so `terms.didSet` persists once.
+        let earnedOn = terms[index].dateMastered
+        var updated = terms[index]
+        updated.isMastered = isMastered
+        updated.dateMastered = isMastered ? Date() : nil
+        terms[index] = updated
+
+        if isMastered {
+            LearningActivityStore.shared.recordWordMastered()
+        } else if let earnedOn {
+            LearningActivityStore.shared.undoWordMastered(on: earnedOn)
+        }
+    }
+
     /// Count of mastered terms
     var masteredCount: Int {
         terms.filter { $0.isMastered }.count

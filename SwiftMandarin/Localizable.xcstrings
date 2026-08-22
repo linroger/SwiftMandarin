@@ -828,6 +828,16 @@
         }
       }
     },
+    "30 Days" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30天"
+          }
+        }
+      }
+    },
     "32K" : {
       "localizations" : {
         "zh-Hans" : {

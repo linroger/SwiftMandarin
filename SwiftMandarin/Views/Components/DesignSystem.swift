@@ -15,20 +15,36 @@ import SwiftUI
 /// Centralized colors/metrics so features don't re-derive platform colors.
 enum SMTheme {
     /// Grouped-list style page background.
+    ///
+    /// On macOS the obvious pairing — `windowBackgroundColor` behind
+    /// `controlBackgroundColor` — does not work: AppKit resolves both to the
+    /// *same* value, `#FFFFFF` in Aqua and `#1E1E1E` in Dark Aqua, so every
+    /// card was drawn in exactly the page color and vanished into it. The two
+    /// surfaces therefore pick different system colors per appearance, always
+    /// arranged so the card is the lighter one (see `cardFill`).
     static var pageBackground: Color {
         #if os(iOS)
         Color(uiColor: .systemGroupedBackground)
         #else
-        Color(nsColor: .windowBackgroundColor)
+        Color(nsColor: NSColor(name: "SMPageBackground") { appearance in
+            // Dark: stay on the window color so the page meets the toolbar and
+            // the window frame seamlessly, and let the card rise above it.
+            // Light: drop to the page-backdrop gray so a white card can rise
+            // above *it* — the same direction iOS gets from its grouped colors.
+            appearance.smIsDark ? .windowBackgroundColor : .underPageBackgroundColor
+        })
         #endif
     }
 
-    /// Elevated card fill (over `pageBackground`).
+    /// Elevated card fill (over `pageBackground`), always the lighter of the
+    /// two so cards read as raised rather than recessed on both platforms.
     static var cardFill: Color {
         #if os(iOS)
         Color(uiColor: .secondarySystemGroupedBackground)
         #else
-        Color(nsColor: .controlBackgroundColor)
+        Color(nsColor: NSColor(name: "SMCardFill") { appearance in
+            appearance.smIsDark ? .underPageBackgroundColor : .controlBackgroundColor
+        })
         #endif
     }
 
@@ -43,20 +59,43 @@ enum SMTheme {
         startPoint: .topLeading, endPoint: .bottomTrailing
     )
 
-    /// Hairline card border. Essential on macOS, where the card fill and the
-    /// window background are nearly identical and cards would otherwise be
-    /// invisible; a gentle definition on iOS too.
+    /// Hairline card border. The fills above differ by only ~10/255, which is
+    /// the same gentle step iOS uses — enough once an edge is drawn, but not on
+    /// its own. This is that edge, so it is at full separator strength on macOS
+    /// rather than faded.
     static var cardStroke: Color {
         #if os(iOS)
         Color(uiColor: .separator).opacity(0.5)
         #else
-        Color(nsColor: .separatorColor).opacity(0.7)
+        Color(nsColor: .separatorColor)
         #endif
     }
 
-    /// Soft drop shadow that lifts cards off the page background.
-    static let cardShadow = Color.black.opacity(0.06)
+    /// Soft drop shadow that lifts cards off the page background. A 6% black
+    /// shadow is invisible against a `#1E1E1E` page, so the dark appearance
+    /// gets a deeper one; it is what makes the card edge legible at a glance
+    /// rather than only on inspection.
+    static var cardShadow: Color {
+        #if os(iOS)
+        Color.black.opacity(0.06)
+        #else
+        Color(nsColor: NSColor(name: "SMCardShadow") { appearance in
+            NSColor.black.withAlphaComponent(appearance.smIsDark ? 0.45 : 0.06)
+        })
+        #endif
+    }
 }
+
+#if os(macOS)
+extension NSAppearance {
+    /// Whether this appearance is one of the dark variants. `name == .darkAqua`
+    /// would miss `.accessibilityHighContrastDarkAqua`, which is a distinct
+    /// appearance that must still be treated as dark.
+    var smIsDark: Bool {
+        bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+    }
+}
+#endif
 
 // MARK: - Card surface
 

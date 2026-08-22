@@ -178,5 +178,39 @@
       "Verify the whole pane renders in 中文 when the interface language is Chinese"
     ],
     "passes": true
+  },
+  {
+    "id": "feature_stats_mastery_and_month_range",
+    "category": "functional",
+    "description": "The Statistics screen counts words and phrases mastered each day in the activity heatmap, and the Words Learned chart offers a 30-day range alongside 7 and 14 days.",
+    "steps": [
+      "Open Statistics and mark a saved word as mastered from the vocabulary list",
+      "Tap today's cell in the activity heatmap and verify the breakdown shows one word mastered",
+      "Verify the cell shades darker, since mastering counts toward the day's activity",
+      "Un-master the same word and verify today's mastered count returns to its previous value",
+      "Master a word, wait until the next day, un-master it, and verify the earlier day loses the count rather than the current day",
+      "Verify a day with only mastery activity keeps the streak alive",
+      "In the Words Learned chart, verify a 30 Days option sits beside 7 Days and 14 Days",
+      "Select 30 Days and verify the chart redraws over 30 days with readable, non-overlapping date labels",
+      "On an iPhone-width layout, verify the range toggle drops below the title instead of overflowing",
+      "Verify the range toggle and the day breakdown read in 中文 when the interface language is Chinese"
+    ],
+    "passes": true
+  },
+  {
+    "id": "bug_macos_invisible_card_surfaces",
+    "category": "bug",
+    "description": "Cards read as distinct raised panels on macOS. The page and card fills previously resolved to the same system color in both appearances, so every rounded-rectangle surface was drawn in exactly the page color and disappeared into it.",
+    "steps": [
+      "Open the app on macOS in Dark appearance and view Home",
+      "Verify Word of the Day, the quick-actions row, This Week, the stat tiles, and the Recent Saves chips each read as a panel raised off the page",
+      "Open Statistics and verify the hero cards, Activity Heatmap, Words Learned, the two donut charts, and Overview all read as panels",
+      "Switch the system to Light appearance and verify the same surfaces stay distinct, with white cards on a lighter-gray page",
+      "Verify the card is the lighter of the two in both appearances, so it reads as raised rather than recessed",
+      "Verify the page still meets the window toolbar and frame without a visible seam in Dark appearance",
+      "Verify Reader's current paragraph and Quiz's unanswered options are also visible as surfaces",
+      "Verify the same screens on iPhone/iPad are unchanged in Light and correct in Dark"
+    ],
+    "passes": true
   }
 ]
