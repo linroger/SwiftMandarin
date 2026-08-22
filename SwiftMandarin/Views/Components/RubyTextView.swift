@@ -280,6 +280,13 @@ struct WordDetailPopover: View {
     /// narration, and the plain Copy button.
     private var headlineWord: String { learningChinese ? chineseWord : englishDefinition }
 
+    /// The word-level gloss — the side opposite the tapped word. Empty when
+    /// the lookup failed, so Save can refuse rather than storing the whole
+    /// sentence's translation as this one word's definition.
+    private var wordDefinition: String {
+        segmentIsChinese ? englishDefinition : chineseWord
+    }
+
     private var isSaved: Bool {
         savedTermsStore.contains(chinese: chineseWord.isEmpty ? segment.text : chineseWord)
     }
@@ -354,6 +361,13 @@ struct WordDetailPopover: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+
+                        Button("Try Again") {
+                            Task { await fetchWordDetails() }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .padding(.top, 4)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
@@ -374,6 +388,7 @@ struct WordDetailPopover: View {
                         SpeechService.speakChinese(chineseWord)
                     } label: {
                         Label("中文", systemImage: "speaker.wave.2")
+                            .fitSingleLine()
                     }
                     .buttonStyle(.bordered)
                     .disabled(isLoadingTranslation || chineseWord.isEmpty)
@@ -384,6 +399,7 @@ struct WordDetailPopover: View {
                             SpeechService.speakEnglish(englishDefinition)
                         } label: {
                             Label("EN", systemImage: "speaker.wave.2")
+                                .fitSingleLine()
                         }
                         .buttonStyle(.bordered)
                         .disabled(isLoadingTranslation || englishDefinition.isEmpty)
@@ -393,6 +409,7 @@ struct WordDetailPopover: View {
                         SpeechService.speakEnglish(englishDefinition)
                     } label: {
                         Label("EN", systemImage: "speaker.wave.2")
+                            .fitSingleLine()
                     }
                     .buttonStyle(.bordered)
                     .disabled(isLoadingTranslation || englishDefinition.isEmpty)
@@ -402,6 +419,7 @@ struct WordDetailPopover: View {
                             SpeechService.speakChinese(chineseWord)
                         } label: {
                             Label("中文", systemImage: "speaker.wave.2")
+                                .fitSingleLine()
                         }
                         .buttonStyle(.bordered)
                         .disabled(isLoadingTranslation || chineseWord.isEmpty)
@@ -417,30 +435,38 @@ struct WordDetailPopover: View {
                     }
                 } label: {
                     Label(showCopiedFeedback ? "Copied!" : "Copy", systemImage: showCopiedFeedback ? "checkmark" : "doc.on.doc")
+                        .fitSingleLine()
                 }
                 .buttonStyle(.bordered)
                 .tint(showCopiedFeedback ? .green : nil)
                 .disabled(isLoadingTranslation || headlineWord.isEmpty)
                 
                 Button {
-                    // Pass the word-specific translation when saving
-                    let definition = englishDefinition.isEmpty ? contextTranslation : englishDefinition
-                    onSave(definition)
+                    // Pass only the word-specific translation when saving.
+                    // The sentence-level context is never a substitute — it
+                    // used to be, and every word of a sentence ended up in the
+                    // vocabulary list "defined" by the same full-sentence
+                    // translation.
+                    onSave(wordDefinition)
                 } label: {
                     Label(isSaved ? "Saved" : "Save", systemImage: isSaved ? "bookmark.fill" : "bookmark")
+                        .fitSingleLine()
                 }
                 .buttonStyle(.bordered)
                 .tint(isSaved ? .green : nil)
-                .disabled(isLoadingTranslation || isSaved)
+                .disabled(isLoadingTranslation || isSaved || wordDefinition.isEmpty)
             }
             
             // Copy-everything button (pinyin included only when the user is
             // learning Chinese — it is a learner aid, not native furniture)
             Button {
-                let definition = englishDefinition.isEmpty ? contextTranslation : englishDefinition
-                let fullText = learningChinese
-                    ? "\(chineseWord) (\(pinyinText))\n\(definition)"
-                    : "\(englishDefinition)\n\(chineseWord)"
+                // Only word-level parts belong on the clipboard; when the
+                // gloss lookup failed, copy the word and reading alone rather
+                // than pasting the sentence translation in its place.
+                let lines = learningChinese
+                    ? ["\(chineseWord) (\(pinyinText))", wordDefinition]
+                    : [englishDefinition, chineseWord]
+                let fullText = lines.filter { !$0.isEmpty }.joined(separator: "\n")
                 ClipboardService.copy(fullText)
                 showCopiedFeedback = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -495,16 +521,20 @@ struct WordDetailPopover: View {
             }
         } catch {
             await MainActor.run {
-                // If translation fails, use what we have
+                // If translation fails, show the word itself plus the sentence
+                // context (rendered separately, clearly labeled). The context
+                // must NOT stand in for the missing gloss: copying that into
+                // `englishDefinition`/`chineseWord` had Save storing the whole
+                // sentence's translation as the definition of every word in it.
                 translationError = "Could not translate word"
                 if segmentIsChinese {
                     chineseWord = segment.text
                     pinyinText = segment.pinyin
-                    englishDefinition = contextTranslation
+                    englishDefinition = ""
                 } else {
                     englishDefinition = segment.text
-                    chineseWord = contextTranslation.isEmpty ? segment.text : contextTranslation
-                    pinyinText = PinyinConverter.convert(chineseWord)
+                    chineseWord = ""
+                    pinyinText = ""
                 }
                 isLoadingTranslation = false
             }

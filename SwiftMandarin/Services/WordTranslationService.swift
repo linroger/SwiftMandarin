@@ -94,50 +94,65 @@ final class WordTranslationService {
         }
 
         if #available(iOS 26.0, macOS 26.0, *) {
-            // Create translation session using installed languages
-            let session = TranslationSession(
-                installedSource: sourceIsChinese ? Locale.Language(identifier: "zh-Hans") : Locale.Language(identifier: "en"),
-                target: sourceIsChinese ? Locale.Language(identifier: "en") : Locale.Language(identifier: "zh-Hans")
-            )
+            do {
+                // Create translation session using installed languages
+                let session = TranslationSession(
+                    installedSource: sourceIsChinese ? Locale.Language(identifier: "zh-Hans") : Locale.Language(identifier: "en"),
+                    target: sourceIsChinese ? Locale.Language(identifier: "en") : Locale.Language(identifier: "zh-Hans")
+                )
 
-            // Create batch requests with client identifiers for matching
-            var requests: [TranslationSession.Request] = []
-            for (index, word) in wordsToTranslate.enumerated() {
-                requests.append(TranslationSession.Request(
-                    sourceText: word,
-                    clientIdentifier: "\(index)"
-                ))
-            }
-
-            // Perform batch translation
-            let responses = try await session.translations(from: requests)
-
-            // Process responses and update cache
-            for response in responses {
-                if let clientId = response.clientIdentifier,
-                   let index = Int(clientId),
-                   index < wordsToTranslate.count {
-                    let originalWord = wordsToTranslate[index]
-                    let translation = response.targetText
-
-                    results[originalWord] = translation
-                    translationCache["\(cachePrefix)\(originalWord)"] = translation
+                // Create batch requests with client identifiers for matching
+                var requests: [TranslationSession.Request] = []
+                for (index, word) in wordsToTranslate.enumerated() {
+                    requests.append(TranslationSession.Request(
+                        sourceText: word,
+                        clientIdentifier: "\(index)"
+                    ))
                 }
+
+                // Perform batch translation
+                let responses = try await session.translations(from: requests)
+
+                // Process responses and update cache
+                for response in responses {
+                    if let clientId = response.clientIdentifier,
+                       let index = Int(clientId),
+                       index < wordsToTranslate.count {
+                        let originalWord = wordsToTranslate[index]
+                        let translation = response.targetText
+
+                        results[originalWord] = translation
+                        translationCache["\(cachePrefix)\(originalWord)"] = translation
+                    }
+                }
+            } catch {
+                // Same missing-language-pack condition as the single-word
+                // path: fall back to the AI provider rather than failing the
+                // whole batch, when one is configured.
+                guard AIModelSettings.shared.isAnyProviderAvailable else { throw error }
+                try await mergeAITranslations(of: wordsToTranslate, sourceIsChinese: sourceIsChinese, into: &results)
             }
         } else {
-            // Pre-iOS 26: translate sequentially through the configured AI
-            // provider (each result is cached, so repeat lookups are free).
-            for word in wordsToTranslate {
-                let translation = try await AIWordExplanationService.shared
-                    .translateWithProvider(word, sourceIsChinese: sourceIsChinese)
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !translation.isEmpty else { continue }
-                results[word] = translation
-                translationCache["\(cachePrefix)\(word)"] = translation
-            }
+            try await mergeAITranslations(of: wordsToTranslate, sourceIsChinese: sourceIsChinese, into: &results)
         }
 
         return results
+    }
+
+    /// Translate sequentially through the configured AI provider (each result
+    /// is cached, so repeat lookups are free), merging into `results`.
+    private func mergeAITranslations(
+        of words: [String],
+        sourceIsChinese: Bool,
+        into results: inout [String: String]
+    ) async throws {
+        let cachePrefix = sourceIsChinese ? "zh-en:" : "en-zh:"
+        for word in words {
+            let translation = try await aiTranslate(word, sourceIsChinese: sourceIsChinese)
+            guard !translation.isEmpty else { continue }
+            results[word] = translation
+            translationCache["\(cachePrefix)\(word)"] = translation
+        }
     }
 
     /// Clear the translation cache
@@ -158,16 +173,31 @@ final class WordTranslationService {
     /// otherwise the user's configured AI provider.
     private func systemOrAITranslate(_ text: String, sourceIsChinese: Bool) async throws -> String {
         if #available(iOS 26.0, macOS 26.0, *) {
-            let session = TranslationSession(
-                installedSource: Locale.Language(identifier: sourceIsChinese ? "zh-Hans" : "en"),
-                target: Locale.Language(identifier: sourceIsChinese ? "en" : "zh-Hans")
-            )
-            let response = try await session.translate(text)
-            return response.targetText
+            do {
+                let session = TranslationSession(
+                    installedSource: Locale.Language(identifier: sourceIsChinese ? "zh-Hans" : "en"),
+                    target: Locale.Language(identifier: sourceIsChinese ? "en" : "zh-Hans")
+                )
+                let response = try await session.translate(text)
+                return response.targetText
+            } catch {
+                // The installed-languages session throws whenever the language
+                // pack isn't downloaded. That's a device-setup condition, not a
+                // reason to fail the lookup — route through the configured AI
+                // provider like pre-iOS 26 does. Only rethrow when no provider
+                // exists to fall back to.
+                guard AIModelSettings.shared.isAnyProviderAvailable else { throw error }
+                return try await aiTranslate(text, sourceIsChinese: sourceIsChinese)
+            }
         } else {
-            return try await AIWordExplanationService.shared
-                .translateWithProvider(text, sourceIsChinese: sourceIsChinese)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return try await aiTranslate(text, sourceIsChinese: sourceIsChinese)
         }
+    }
+
+    /// Word translation via the user's configured AI provider.
+    private func aiTranslate(_ text: String, sourceIsChinese: Bool) async throws -> String {
+        try await AIWordExplanationService.shared
+            .translateWithProvider(text, sourceIsChinese: sourceIsChinese)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

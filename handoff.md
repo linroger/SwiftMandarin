@@ -1,12 +1,17 @@
 # Handoff.md — SwiftMandarin: Bilingual + Multi-Provider AI Overhaul
 
-**Last Updated (UTC):** 2026-08-06
-**Status:** In Progress (iter 30 — automatic AI analysis of newly saved words; see Iteration 30)
+**Last Updated (UTC):** 2026-08-10
+**Status:** In Progress (iter 33 — macOS cards were drawn in the page color; see Iteration 33)
+**Prior Status:** In Progress (iter 32 — per-day mastery in the activity heatmap and a 30-day Words Learned range; see Iteration 32)
+**Prior Status:** In Progress (iter 31 — record-and-transcribe actually works; see Iteration 31)
+**Prior Status:** In Progress (iter 30 — automatic AI analysis of newly saved words; see Iteration 30)
 **Prior Status:** In Progress (iter 29 — Chinese-speaker-learning-English as a true mirror; see Iteration 29)
 **Prior Status:** In Progress (iter 28 — translation study notes, transcription repair, AI transcription; see Iteration 28)
 **Prior Status:** In Progress (iter 27 — structured AI translation output; see Iteration 27)
 **Prior Status:** In Progress (iter 16 — step-change overhaul on branch `jul-07-2026-step-change-overhaul`: RECOMMENDATIONS.md + Home dashboard + FSRS + Reader + AI conversation + UI overhaul)
-**Current Focus (latest):** An opt-in **Auto-Translate New Words** toggle in the Batch AI Analysis menu: every word saved to the vocabulary list is translated and analyzed in the background by the selected LLM provider, through a bounded, resumable queue that shares its cache with the reviewed batch run. See Iteration 30.
+**Current Focus (latest):** macOS cards are visible again. `windowBackgroundColor` and `controlBackgroundColor` resolve to the **same** value in both appearances, so every card was filled with exactly the page color; each surface now picks a different system color per appearance, with the card always the lighter one. See Iteration 33.
+**Prior Focus:** The Statistics screen now counts **words and phrases mastered each day** in the activity heatmap — un-mastering refunds the day the word was *earned* on, not today — and the Words Learned chart offers a **30-day** range beside 7 and 14. See Iteration 32.
+**Prior Focus:** An opt-in **Auto-Translate New Words** toggle in the Batch AI Analysis menu: every word saved to the vocabulary list is translated and analyzed in the background by the selected LLM provider, through a bounded, resumable queue that shares its cache with the reviewed batch run. See Iteration 30.
 **Prior Focus:** Photo-tab workbook expansion — direct camera capture, a review-question **database** (bank), AI **review-question generation**, **grading history** with the original scanned photos, **analytics** integration (graded questions in the contribution heatmap), and a decluttered **More** tab. Plus a 43-agent codebase audit written to `EXECPLAN2.md` (132 findings, 23 confirmed). See Updates iter 11.
 **Prior Focus:** Interface-language-driven tailoring: when the UI is 中文 the user is treated as a native Mandarin speaker learning English (AI explanations written in Mandarin; saved words show ENGLISH as the big headline with Mandarin small; English TTS emphasis) and vice versa for English UI. Full audit + plan: docs/language-direction-audit.md (11-agent parallel map + completeness critic, 2026-06-13).
 **Prior Focus:** Full-app audit + overhaul: 18 verified bug fixes, integration wins (unified history/stats, pinyin position, provider test connection), zero-warning builds, bilingual READMEs — see Updates iter 8 (2026-06-10).
@@ -1304,3 +1309,159 @@ So a learner whose selected provider was Zhipu, MiniMax, DeepSeek, Claude, or Do
 - **No device run.** The analyzer path is asserted through the SDK's declared API and a clean build on both platforms; it has not been exercised against a real recording, and the model download in particular has not been watched end to end.
 - **Provider ASR support is still documentation-derived.** OpenAI is certain; Qwen and Quotio were asserted from documentation in Iteration 28 and remain unverified. The change makes this honest rather than resolved: an unsupported provider now reports its own HTTP error instead of being silently swapped out.
 - **The two engines' language lists can disagree.** `SpeechTranscriber.supportedLocale(equivalentTo:)` decides for the analyzer; the legacy recognizer decides for itself. A locale one supports and the other does not will simply fall through, which is correct but untested.
+
+---
+
+## Iteration 32 — Mastery per day in the heatmap, 30-day Words Learned range (2026-08-10)
+
+### 1) Request & Context
+
+> "for the activity heatmap, i also want it count the number of words/phrases mastered each day. also for the words learned, i currently only see 7 days, 14 days, but i also want a counter for 30 days."
+
+Two independent asks on the Statistics screen. The second is a small additive change; the first is not, because "mastered each day" is a *count of events over time* built on a flag that has always been a plain boolean with no history.
+
+### 2) The hard part: which day loses the count when a word is un-mastered
+
+`SavedTerm.isMastered` records only the current state. Counting mastery per day means recording a transition, and a transition can be reversed — mastery is toggled from a swipe action, a context menu, and two detail-sheet toggles, so mis-taps are routine.
+
+Three designs were on the table:
+
+1. **Never refund.** Faithful to the "contribution graph records what you did" reading, but a mis-tap (master → immediately un-master) permanently inflates the day.
+2. **Refund today.** Fixes the mis-tap, but un-mastering a word earned last month silently erases one of *today's* milestones. Strictly worse than (1) for the more common case.
+3. **Refund the day it was earned on.** Requires storing when mastery happened.
+
+(3) was chosen. `SavedTerm` gained `dateMastered`, set on the not-mastered → mastered transition and cleared on the way back; `LearningActivityStore.undoWordMastered(on:)` debits that date's record. A mis-tap nets to zero on its own day, an old word debits its own day, and today is never touched by either. Terms mastered before this shipped carry `nil` — they were never counted, so their undo is correctly a no-op, which is why the field is optional rather than backfilled to `dateAdded` (that would invent milestones on days the user did nothing).
+
+Deleting a mastered word deliberately leaves the day alone, matching how `wordsLearned` already keeps the day a word was saved.
+
+### 3) Weighting, and why it changes the heatmap
+
+`activityScore` is what shades a cell and what `calculateStreak` tests for a non-zero day. Mastery was weighted **2** — between saving a word (3) and a single review (1) — because it is a deliberate milestone the user awards themselves. The consequence is intended: a day spent only marking words mastered now shades its cell and holds a streak. Existing history is unaffected, since every stored day decodes `wordsMastered` as 0.
+
+### 4) Guardrails added while wiring it up
+
+- **One funnel.** `toggleMastered` and `setMastered` now both route through a private `applyMastered`, which short-circuits when the flag already equals what the caller asked for. The detail toggles can issue a redundant `setMastered(term, isMastered: true)`; without the guard that awards the same word a second milestone.
+- **`update(_:)` no longer drops the anchor.** Both call sites rebuild a `SavedTerm` field by field to change a definition, and neither copied `dateMastered`. `update` now carries mastery over from the stored element the way it always has for `sortOrder`, so an edit cannot strand a mastered word with no refundable day — or move the flag without the matching heatmap entry.
+- **A refund cannot invent activity.** It never takes a day below zero and never creates a record for a day that has none.
+
+### 5) 30-day range
+
+New `.month` case (30 days). Labelling all 30 daily ticks smears them together, so the range carries `axisLabelStride` (every 3rd day) and `usesWeekdayAxisLabels` (weekday initials for the 7-day range only — they repeat over anything longer — day-of-month for the other two). The previous `barChartTimeRange == .twoWeeks` ternary was replaced by these, so the axis rule now lives with the range rather than being restated at the chart.
+
+A third pill no longer fits beside the "Words Learned" title at iPhone width, so at compact width the toggle drops onto its own row below the title.
+
+The selected-day breakdown went from four metrics to five, which no longer fit one iPhone-width line; shrinking them further (the prior fix) would have made the counts unreadable, so the date moved to its own line and the metrics wrap in a `FlowLayout`. Each metric now also carries an accessibility label — they are icon-only on screen, and "checkmark.seal" vs "checkmark.circle" is a fine distinction even visually. The five names reuse existing catalog keys, so only "30 Days" was new.
+
+### 6) Requirements → Acceptance Checks
+
+| Requirement | Check | Evidence |
+|---|---|---|
+| R32.1 Mastering a word credits today | `recordWordMastered()` increments today's record | `test-stats-heatmap.sh` (18 checks) |
+| R32.2 Un-mastering refunds the earned-on day, not today | `undoWordMastered(on:)` keyed on `dateMastered` | runner; mutation test T1 |
+| R32.3 Mastery shades the cell and holds a streak | Weight 2 in `activityScore` | runner; mutation test T2 |
+| R32.4 Existing heatmaps survive the new field | Tolerant decode defaults to 0 | runner; mutation test T3 |
+| R32.5 A refund cannot go negative or invent a day | Zero floor + guard on a missing record | runner; mutation test T4 |
+| R32.6 A repeat `setMastered` cannot double-count | `applyMastered` transition guard | wiring check |
+| R32.7 An edit cannot strand the refund anchor | `update` preserves `isMastered`/`dateMastered` | wiring check |
+| R32.8 The count is visible | Day breakdown shows `activity.wordsMastered` | wiring check; screenshot |
+| R32.9 A 30-day range exists and is readable | `.month` case + `axisLabelStride` | wiring check; screenshot |
+| R32.10 Both surfaces read in 中文 | "30 Days" + the five metric labels translated | catalog check |
+
+### 7) Verification Summary
+
+- `zsh init.sh` green — 191/191 MiniMax, 27/27 audio-session, 173/173 AI prompt, 29/29 provider wiring, 28/28 learning-direction, 8/8 direction wiring, 556/556 auto-analysis queue, 9/9 auto-analysis wiring, 8/8 transcription wiring, plus the new **18/18 mastery arithmetic** and **8/8 heatmap wiring** checks.
+- macOS and generic iOS Simulator Debug builds: `** BUILD SUCCEEDED **`. Warning count unchanged at 220 — all pre-existing "Skipping duplicate build file" entries from the synchronized groups; none in the changed files.
+- Mutation testing (4/4 caught): redirecting the refund to `Date()`, dropping `wordsMastered * 2` from `activityScore`, making the `wordsMastered` decode intolerant, and removing the zero floor each fail the suite with a named check. All reverted and re-verified.
+- Observed in the running macOS app: Statistics renders `7 Days | 14 Days | 30 Days`; clicking 30 Days activates it; clicking a heatmap cell shows the date on its own line above five metrics with the mastery seal second.
+
+### 8) Remaining Work & Next Steps
+
+- **The store → heatmap write was not exercised through the real UI.** Doing so would have meant marking one of the user's own 7,213 saved words mastered. An isolated scratch-bundle run (separate bundle id, own empty container, one synthetic term) was set up instead and abandoned when the re-signed build raised a keychain prompt for the real app's secrets — denied, no credentials entered, and the scratch container, both defaults domains, and the temporary landing-tab patch were all removed. The link is covered by the compiler, by `applyMastered` being the sole mutation path, and by wiring checks pinning both call sites; it has not been *watched*.
+- **Mastery history starts now.** Words already mastered carry no date and contribute nothing to past days. This is deliberate — there is no honest date to attribute them to — but it means `LearningActivityStore.totalWordsMastered` trails `SavedTermsStore.masteredCount` on an existing library. The Overview tile still reads the latter, so the user-facing "Words Mastered" number is unchanged.
+- **Not extended to Shortcuts.** `GetLearningStatsIntent` still reports words/reviews/translations only; adding mastery there is a small, separate change.
+
+---
+
+## Iteration 33 — macOS cards were drawn in the page color (2026-08-10)
+
+### 1) Request & Context
+
+> "fix this macos ui. the background and the the rounded rectangle background are the same color. fix this on macos"
+
+Reported with a screenshot of Home in Dark appearance.
+
+### 2) Confirmation before diagnosis
+
+Sampling the reported screenshot rather than trusting the eye:
+
+```
+page background       rgb(30,30,30)
+Word of the Day card  rgb(30,30,30)
+quick-actions card    rgb(30,30,30)
+stat tile             rgb(30,30,30)
+Recent Saves chip     rgb(30,30,30)
+```
+
+Delta zero. The cards were not *nearly* invisible; they were painted in exactly the page color.
+
+### 3) Root cause
+
+`SMTheme` paired `NSColor.windowBackgroundColor` (page) with `NSColor.controlBackgroundColor` (card). That reads like the canonical macOS page/card pairing. It is not — AppKit resolves both to the same value:
+
+```
+                          Aqua      Dark Aqua
+windowBackgroundColor     #FFFFFF   #1E1E1E
+controlBackgroundColor    #FFFFFF   #1E1E1E   ← identical, both appearances
+underPageBackgroundColor  #F6F6F6   #282828
+```
+
+So every `smCardSurface` in the app filled its rounded rectangle with the page color, in **both** appearances, leaving only a 0.75pt hairline at 70% separator strength — plus a 6%-black shadow that is invisible against a `#1E1E1E` page — to suggest a card was there at all.
+
+The file's own comment already said the two colors were "nearly identical" and added the hairline *because* of it. So this was a known-in-outline problem that had been under-corrected rather than missed: the compensation assumed a small difference existed, and there was none.
+
+### 4) Fix
+
+Each surface now selects a **different system color per appearance**, always arranged so the card is the lighter of the pair:
+
+| | page | card | delta |
+|---|---|---|---|
+| Light | `underPageBackgroundColor` #F6F6F6 | `controlBackgroundColor` #FFFFFF | +9 |
+| Dark | `windowBackgroundColor` #1E1E1E | `underPageBackgroundColor` #282828 | +10 |
+
+Dark keeps the page on the window color deliberately, so the content still meets the toolbar and window frame without a seam, and the card rises above it. Light drops the page to the backdrop gray so a white card can rise above *that* — the same direction iOS already gets from its grouped colors. Both are ~10/255, the step macOS itself uses for grouped content.
+
+Two supporting changes, because a 10/255 step needs its edge: `cardStroke` is now full separator strength on macOS rather than faded to 70%, and `cardShadow` is appearance-aware (6% black in light, 45% in dark, where 6% renders as nothing).
+
+The dark test is `bestMatch(from: [.aqua, .darkAqua]) == .darkAqua`, **not** `name == .darkAqua` — the latter classifies `.accessibilityHighContrastDarkAqua` as light and would hand it a white card on a black page.
+
+### 5) StatsView was bypassing the design system
+
+Statistics did not use `SMTheme` at all: `Color(.windowBackgroundColor)` for the page and `.background(.background, in: RoundedRectangle(...))` for all five panels. SwiftUI's `.background` ShapeStyle also resolves to the window background on macOS, so those cards were flat *and* had no border. Now `SMTheme.pageBackground` + `.smCardSurface()`, so future palette work reaches it too.
+
+### 6) Requirements → Acceptance Checks
+
+| Requirement | Check | Evidence |
+|---|---|---|
+| R33.1 Card and page are distinguishable | ≥6/255 separation, all four appearances | `test-macos-surfaces.sh` (8 checks); mutation test |
+| R33.2 The card is raised, not recessed | Separation is signed; negative fails | runner |
+| R33.3 High-contrast dark is treated as dark | `bestMatch`, not `name ==` | wiring check |
+| R33.4 No card is filled with the window background | Zero `.background(.background, in: Rounded` sites | wiring check |
+| R33.5 Statistics uses the shared surfaces | `SMTheme.pageBackground` + 5 `smCardSurface` | wiring check |
+| R33.6 The pairing in code matches the one asserted | Source pinned to the same system colors | wiring check |
+
+### 7) Verification Summary
+
+- `zsh init.sh` green — all prior suites plus the new **8/8** surface checks and **6/6** wiring checks.
+- macOS and generic iOS Simulator Debug builds: `** BUILD SUCCEEDED **`, warning count unchanged at 220.
+- Observed in the running app, both appearances, with pixel sampling: Home went from delta 0 to delta +10; Statistics, previously flat, now shows every panel; Light appearance verified by toggling the system setting and restoring it.
+- Mutation test: restoring the old pairing fails with `page #FFFFFF and card #FFFFFF differ by 0.0/255`.
+- **A defect in the check itself was caught and fixed before it shipped.** The failure message read the captured `NSColor`s after leaving the appearance block; being dynamic colors, they re-resolved against the machine's current appearance, so the first mutation run printed `NSAppearanceNameAqua: page #1E1E1E` — an Aqua label with Dark Aqua values. Descriptions are now rendered inside the block, and the corrected run prints the true `#FFFFFF`.
+
+### 8) Remaining Work & Next Steps
+
+- **Not verified on a physical iOS device.** The iOS branches of `SMTheme` are untouched. `StatsView` does change on iOS — from the `systemBackground`-backed ShapeStyle to the same `secondarySystemGroupedBackground` card surface the other eleven screens already use — which is a consistency fix rather than a new pattern, but it has only been built, not run there.
+- **The remaining `.regularMaterial` cards were left alone.** Reader, Conversation, Vocabulary's overlay, and the audio banner use a material rather than a fill; materials are self-separating and were not part of the report.
+- **The check asserts the trap still exists.** If a future macOS separates `windowBackgroundColor` from `controlBackgroundColor`, `test-macos-surfaces.sh` fails on purpose and asks whether `SMTheme` can drop its per-appearance branch — a workaround that outlives its cause is worse than the cause.
+
+## Updates (append-only)
+- 2026-08-22: Screenshot-triage session (four iPhone screenshots in ~/Downloads/swm). Fixed: (1) per-word lookups failing with "Could not translate word" on iOS 26+ — `WordTranslationService`'s installed-languages `TranslationSession` throws when the language pack isn't downloaded and had no fallback; both single and batch paths now fall back to the configured AI provider; (2) `WordDetailPopover` storing the full-sentence translation as each saved word's definition after a failed lookup (the "Obey orders and obey orders." rows in Vocabulary) — the sentence context is display-only now, Save requires a word-level gloss, a Try Again button re-runs the lookup, and saving an English headword now stores its Chinese gloss instead of the English word itself; (3) Translate-screen section headers and Speak voices following the direction toggle instead of the auto-detected content (ENGLISH header over Chinese text; Mandarin read with an en-US voice); (4) the popover's "Chinese" button wrapping to "Chi-nese" — action-row labels use `.fitSingleLine()`. Evidence: iOS Simulator and macOS Debug builds both BUILD SUCCEEDED with no new warnings (scratchpad logs build-ios2.log / build-macos2.log). Full narrative in agent-progress.txt, 2026-08-22 entry. Known residue: already-saved terms with sentence definitions are persisted data — prevented for new saves, existing rows need re-saving or AI re-analysis; sentence translation quality is model output.

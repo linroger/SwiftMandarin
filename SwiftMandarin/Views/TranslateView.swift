@@ -126,6 +126,16 @@ struct TranslateView: View {
         !activeChineseText.isEmpty && !activeEnglishText.isEmpty
     }
 
+    /// The direction the screen is actually showing. Translation auto-detects
+    /// the input language (`detectedTranslationDirection`), so when the typed
+    /// text doesn't match the toggle — Chinese typed while set to EN→中 — the
+    /// section headers and speak-button voices must follow the content;
+    /// otherwise an "ENGLISH" header sits over Chinese text and Speak reads
+    /// Mandarin with an English voice.
+    private var displayedDirection: TranslationDirection {
+        sharedState.sourceText.isEmpty ? sharedState.direction : detectedTranslationDirection
+    }
+
     private var isActiveTermSaved: Bool {
         canSaveActiveTerm && savedTermsStore.contains(chinese: activeChineseText)
     }
@@ -283,14 +293,14 @@ struct TranslateView: View {
     private var sourceInputSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(sharedState.direction.sourceLanguageName)
+                Text(displayedDirection.sourceLanguageName)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
-                
+
                 Spacer()
-                
+
                 if !sharedState.sourceText.isEmpty {
                     Button {
                         clearAll()
@@ -360,7 +370,7 @@ struct TranslateView: View {
             HStack(spacing: 12) {
                 if !sharedState.sourceText.isEmpty {
                     Button {
-                        SpeechService.speak(sharedState.sourceText, languageCode: sharedState.direction.sourceSpeechCode)
+                        SpeechService.speak(sharedState.sourceText, languageCode: displayedDirection.sourceSpeechCode)
                     } label: {
                         Label("Speak", systemImage: "speaker.wave.2")
                     }
@@ -511,7 +521,7 @@ struct TranslateView: View {
     private var translationOutputSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(sharedState.direction.targetLanguageName)
+                Text(displayedDirection.targetLanguageName)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
@@ -639,7 +649,7 @@ struct TranslateView: View {
             if !sharedState.translatedText.isEmpty {
                 HStack(spacing: 16) {
                     Button {
-                        SpeechService.speak(sharedState.translatedText, languageCode: sharedState.direction.targetSpeechCode)
+                        SpeechService.speak(sharedState.translatedText, languageCode: displayedDirection.targetSpeechCode)
                     } label: {
                         Label("Speak", systemImage: "speaker.wave.2")
                     }
