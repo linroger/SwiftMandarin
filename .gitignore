@@ -12,3 +12,6 @@ SwiftMandarin/.claude/
 
 # Stray capture that predates this repo and is unrelated to the app.
 Zeta_*.JPEG
+
+# Xcode per-user window state.
+SwiftMandarin.xcodeproj/project.xcworkspace/xcuserdata/

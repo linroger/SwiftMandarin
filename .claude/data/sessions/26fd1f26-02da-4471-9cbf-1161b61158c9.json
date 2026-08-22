@@ -1,0 +1,7 @@
+{
+  "session_id": "26fd1f26-02da-4471-9cbf-1161b61158c9",
+  "prompts": [
+    "read through the codebase, especially the parts related to the AI features and translations, and fix this issue, perhaps by having the AI return a structured output which the app can parse.",
+    "ok, for the AI translation, perhaps have the AI provide an explanation of the translation to help users understand it, perhaps including what the major important characters or phrases mean, as part of the structured output. write a prompt to pass to the AI translation that works for both long and short inputs, and doesnt inlclude easy characters. also, the audio transcription doesnt work. also add a feature for ai transcripion and translation"
+  ]
+}

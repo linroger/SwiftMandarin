@@ -1,0 +1,11 @@
+[
+  {
+    "session_id": "c8695f83-5fad-466f-9cce-bec78fe6a1e6",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/c8695f83-5fad-466f-9cce-bec78fe6a1e6.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "2b79d0ff-6a0c-4237-bf9c-f3d9df5f3f5d",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input",
+    "notification_type": "idle_prompt"
+  }
+]

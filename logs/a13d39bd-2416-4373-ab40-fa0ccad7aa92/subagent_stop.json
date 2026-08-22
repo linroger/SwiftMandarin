@@ -1,0 +1,626 @@
+[
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a51f7f6afc23d61a5",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_0fa7bd2f-377/agent-a51f7f6afc23d61a5.jsonl",
+    "background_tasks": [
+      {
+        "id": "wut9oym9c",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for every place the English-speaker-learning-Mandarin assumption is hard-coded, so the reverse (Chinese speaker learning English) mode can be completed",
+        "name": "audit-reverse-learner-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ab271bc4154d26540",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_0fa7bd2f-377/agent-ab271bc4154d26540.jsonl",
+    "background_tasks": [
+      {
+        "id": "wut9oym9c",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for every place the English-speaker-learning-Mandarin assumption is hard-coded, so the reverse (Chinese speaker learning English) mode can be completed",
+        "name": "audit-reverse-learner-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a437cfe7417a9128b",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_0fa7bd2f-377/agent-a437cfe7417a9128b.jsonl",
+    "background_tasks": [
+      {
+        "id": "wut9oym9c",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for every place the English-speaker-learning-Mandarin assumption is hard-coded, so the reverse (Chinese speaker learning English) mode can be completed",
+        "name": "audit-reverse-learner-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "aa2ac8d8d93c605d3",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_0fa7bd2f-377/agent-aa2ac8d8d93c605d3.jsonl",
+    "background_tasks": [
+      {
+        "id": "wut9oym9c",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for every place the English-speaker-learning-Mandarin assumption is hard-coded, so the reverse (Chinese speaker learning English) mode can be completed",
+        "name": "audit-reverse-learner-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "af2eea06f731e0833",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_0fa7bd2f-377/agent-af2eea06f731e0833.jsonl",
+    "background_tasks": [
+      {
+        "id": "wut9oym9c",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for every place the English-speaker-learning-Mandarin assumption is hard-coded, so the reverse (Chinese speaker learning English) mode can be completed",
+        "name": "audit-reverse-learner-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a9199aa619661814d",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_0fa7bd2f-377/agent-a9199aa619661814d.jsonl",
+    "background_tasks": [
+      {
+        "id": "wut9oym9c",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for every place the English-speaker-learning-Mandarin assumption is hard-coded, so the reverse (Chinese speaker learning English) mode can be completed",
+        "name": "audit-reverse-learner-mode"
+      },
+      {
+        "id": "b8c0nkz43",
+        "type": "shell",
+        "status": "running",
+        "description": "Attempt whole-module typecheck",
+        "command": "xcrun swiftc -typecheck -swift-version 6 -target arm64-apple-macos15.0 $(find SwiftMandarin -name \"*.swift\") 2>&1 | head -40"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a0b2e30845066f38a",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_0fa7bd2f-377/agent-a0b2e30845066f38a.jsonl",
+    "background_tasks": [
+      {
+        "id": "wut9oym9c",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for every place the English-speaker-learning-Mandarin assumption is hard-coded, so the reverse (Chinese speaker learning English) mode can be completed",
+        "name": "audit-reverse-learner-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a39516744bd6c4fca",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_0fa7bd2f-377/agent-a39516744bd6c4fca.jsonl",
+    "background_tasks": [
+      {
+        "id": "wut9oym9c",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for every place the English-speaker-learning-Mandarin assumption is hard-coded, so the reverse (Chinese speaker learning English) mode can be completed",
+        "name": "audit-reverse-learner-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a43c247d426445df0",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_0fa7bd2f-377/agent-a43c247d426445df0.jsonl",
+    "background_tasks": [
+      {
+        "id": "wut9oym9c",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for every place the English-speaker-learning-Mandarin assumption is hard-coded, so the reverse (Chinese speaker learning English) mode can be completed",
+        "name": "audit-reverse-learner-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a55b2615380ad16b0",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_0fa7bd2f-377/agent-a55b2615380ad16b0.jsonl",
+    "last_assistant_message": "# SwiftMandarin \u2014 Reverse-Mode (\"\u4e2d\u6587\u6bcd\u8bed\u8005\u5b66\u82f1\u8bed\") Implementation Plan\n\n## 0. Ground truth established before planning\n\nThree facts change the shape of this plan versus what the nine audits assumed:\n\n**(A) The abstraction already exists and is dead code.** `/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Models/LearningContext.swift` (163 lines) already defines exactly the `LearningContext` type the audits asked for \u2014 `learningIsChinese`, `nativeIsChinese`, `mirrored`, `primary(chinese:english:)`, `secondary(chinese:english:)`, `learningSpeechCode`, `nativeSpeechCode`, `speechCode(isChinese:)`, `showsPinyinAffordances`, `interactiveReaderIsChinese`, `learningLanguagePromptName`, `nativeLanguagePromptName`, `.current`, `speakLearning/speakNative/speakPair`. A repo-wide grep for `LearningContext` outside its own file returns **zero hits**. Its header comment references `scripts/learning-direction-checks/`, which **does not exist** (`ls scripts/` \u2192 ai-prompt-checks, audio-session-checks, minimax-audio-checks, vocabulary-paging-checks only).\n\u2192 **Do not design a new abstraction. Adopt, extend, and wire up this one.** That converts \"invent a helper layer\" into \"migrate 87 `learningIsChinese` call sites onto an already-written, already-`Sendable` value type.\"\n\n**(B) The build uses `fileSystemSynchronizedGroups`** (`SwiftMandarin.xcodeproj/project.pbxproj:137-139`). Any new `.swift` file dropped under `SwiftMandarin/` compiles automatically \u2014 no pbxproj edit needed. `knownRegions = (en, Base, \"zh-Hans\")` (`:166-170`).\n\n**(C) There is no offline English phonetics source anywhere.** No bundled dictionary resource exists (`find SwiftMandarin -type f ! -name \"*.swift\"` \u2192 only xcstrings, entitlements, asset catalogs, icons). Apple ships no text\u2192IPA API (`AVSpeechSynthesisIPANotationAttribute` is an *input* to TTS, not an output). `EnglishTextAnalyzer` exposes only `analyzeWords`, `analyzeSentences`, `isEnglish`, `detectLanguage`, `uniqueWords` \u2014 surface form, lemma, POS. **Therefore IPA must arrive from the AI model** through the existing `pinyin`/`reading` response fields, with a deterministic offline *syllable + stress* heuristic as the fallback. This is the single largest new-code item in the plan and it must be scoped honestly.\n\n**(D) Catalog measured, not estimated.** 1210 entries; 1141 have zh-Hans (all `translated`); 69 have none. Classified by required action: 44 hard-coded bilingual literals needing a source-level split, 5 Chinese-authored keys, 10 English-only keys, 10 format/blank no-ops. Separately, **63 keys do not exist in the catalog at all** and must be created as part of the `Text(String)` \u2192 `Text(LocalizedStringKey)` conversions. Exact lists in \u00a77.\n\n---\n\n## 1. The minimal set of new abstractions\n\nFive additions total. Everything else is a migration onto them.\n\n### 1.1 `LearningContext` \u2014 extend the existing file (no new file)\n`SwiftMandarin/Models/LearningContext.swift`\n\nAdd to the pure `nonisolated struct` (keeps it Foundation-only and testable):\n\n```swift\n// Reading / phonetic affordance\nenum ReadingKind: String, Sendable { case pinyin, ipa, none }\nvar learningReadingKind: ReadingKind { learningIsChinese ? .pinyin : .ipa }\nfunc readingKind(isChinese: Bool) -> ReadingKind { isChinese ? .pinyin : .ipa }\n\n// Direction defaults\nvar defaultDirection: TranslationDirection { learningIsChinese ? .englishToChinese : .chineseToEnglish }\nvar recognitionLanguagePriority: [String] {\n    learningIsChinese ? [\"zh-Hans\",\"zh-Hant\",\"en-US\",\"en-GB\"] : [\"en-US\",\"en-GB\",\"zh-Hans\",\"zh-Hant\"]\n}\n\n// Bridge to the prompt layer so there is exactly one direction source\n@MainActor func explanationDirection(forWord word: String) -> ExplanationDirection {\n    ExplanationDirection(wordIsChinese: word.containsCJK, explainInChinese: nativeIsChinese)\n}\n```\n\n`TranslationDirection` lives in `SwiftMandarin/Models/TranslationDirection.swift` and is Foundation-only, so referencing it keeps `LearningContext` compilable by the standalone runner.\n\n### 1.2 `EnglishPhonetics` \u2014 new file\n`SwiftMandarin/Services/EnglishPhonetics.swift`\n\nThe structural peer of `PinyinConverter` (which has 55 call sites across 20 files). Deterministic, Foundation-only, no network:\n\n```swift\nenum EnglishPhonetics {\n    static func syllables(_ word: String) -> [String]      // vowel-group heuristic + common suffix rules\n    static func syllableCount(_ word: String) -> Int\n    static func stressIndex(_ word: String) -> Int?        // suffix-driven: -tion/-ity/-ic \u2192 penult/antepenult; 2-syll noun\u21921, verb\u21922\n    static func stressMarked(_ word: String) -> String     // \"seren\u00b7DIP\u00b7i\u00b7ty\"\n    static func normalizeIPA(_ raw: String) -> String      // trim, ensure /\u2026/ slashes, strip duplicated stress marks\n    static func colored(ipa: String) -> AttributedString   // stressed syllable emphasized \u2014 mirror of coloredPinyin\n}\n```\n\n**Contract:** `stressMarked` is always available offline; true IPA is *only* what the model returned, run through `normalizeIPA`. Never fabricate IPA locally.\n\n### 1.3 `PartOfSpeechLabels` \u2014 new file\n`SwiftMandarin/Models/PartOfSpeechLabels.swift`\n\nOne localized-display map shared by `PartOfSpeechCategory` (`LearningActivity.swift:92-103`), `PartOfSpeech` (`ChineseTextAnalyzer.swift:153-158`), and `EnglishPartOfSpeech` (`EnglishTextAnalyzer.swift:15-28`).\n**Critical constraint:** raw values are persisted keys (`DailyActivity.wordsByPartOfSpeech`, `LearningActivity.swift:30`) **and** Swift Charts scale keys (`StatsView.swift:409-421 posColorScale`, `:425-438 colorForPartOfSpeech`). Raw values must not change; only a `localizedLabel` is added.\n\n### 1.4 `LearnerContent` \u2014 new file\n`SwiftMandarin/Models/LearnerContent.swift`\n\nDirection-selected seed data, so no view branches on decks inline:\n```swift\nenum LearnerContent {\n    @MainActor static var starterDeck: [LearningCard]     // LearningDeck.cards | LearningDeck.englishCards\n    @MainActor static var phraseCategories: [PhraseCategory]\n}\n```\n\n### 1.5 `scripts/learning-direction-checks/` \u2014 new test harness\n`scripts/test-learning-direction.sh` + `scripts/learning-direction-checks/LearningDirectionChecksRunner.swift`, cloned from the shape of `scripts/test-ai-prompt-contracts.sh` (opt-in `-D` flag, `swiftc` standalone, `-swift-version 6 -strict-concurrency=complete -warnings-as-errors`). Asserts the **mirror property**: for every accessor, `ctx.accessor(a,b) == ctx.mirrored.accessor(b,a)`. This is the regression gate that keeps the two directions symmetric.\n\n---\n\n## 2. Breakage register \u2014 where a naive edit destroys the English-speaker mode\n\nRead this before touching anything. Each item is a trap that the obvious edit springs.\n\n| # | Naive edit | What breaks | Correct approach |\n|---|---|---|---|\n| **B1** | Rewrite `AIExplanationPromptBuilder.swift:61` / `:186` / `:281` to request IPA | `scripts/test-ai-prompt-contracts.sh` **fails immediately** \u2014 `AIExplanationPromptChecksRunner.swift:100` asserts `expectContains(englishTeacher, \"pinyin fields must be empty\")` and `:231` asserts `expectContains(englishInstructions, \"an empty string \u2014 the term is English\")` | Invert those two assertions **in the same commit**; add positive assertions for IPA + stress + word-family. Never leave the runner red. |\n| **B2** | Rename the JSON/`@Generable` field `pinyin` \u2192 `phonetics` | Every cached explanation in `WordExplanationCacheStore` is `Codable`-decoded against `ExampleSentenceResult.pinyin` (`AIWordExplanationService.swift:232`), `RelatedWordResult.pinyin` (`:249`), `CollocationResult.pinyin` (`:266`). A rename silently drops all persisted user data. | **Keep the wire key and the stored property name `pinyin`.** Redefine it in doc comments as \"the pronunciation slot\" and change only the *description strings*. Optionally add `phonetics` as a decode alias. |\n| **B3** | Edit a `@Guide(description:)` to drop the Chinese clause | `@Guide` strings are compile-time literals shared by **both** directions on the Apple Intelligence path. Removing \"Hanyu pinyin with accurate tone marks\" degrades forward-mode output. | Rewrite each guide to be **bi-conditional**: `\"Hanyu pinyin with tone marks when the text is Chinese; IPA in slashes with primary stress (\u02c8) when the text is English\"`. Four sites: `AIWordExplanationService.swift:121, :134, :150, :183`. |\n| **B4** | Add learner mode / interface language to `MiniMaxSpeechCacheIdentity` | `MiniMaxAudioModels.swift:149-167` hashes text+locale+boost+region+model+voice+params. Adding mode invalidates every **paid** MP3 the user has generated. | **Do not touch the cache identity.** A mode switch must reuse clips. Order-of-generation changes in `BatchAudioPlan` are safe because dedup uses a `seen` set and `targets.filter { !cached.contains($0.id) }` \u2014 both order-independent (verified `BatchAudioPlan.swift:160-170`). |\n| **B5** | Change `PartOfSpeechCategory` raw values to Chinese | Breaks the persisted `DailyActivity.wordsByPartOfSpeech` dictionary keys **and** silently drops every Swift Charts color (`StatsView.swift:409-421` keys the `foregroundStyle` scale on `rawValue`; `:425-438` switches on it). Charts render all-gray. | Keep raw values as opaque storage/scale IDs; add `localizedLabel` and use it *only* at `Text(...)` sites (`StatsView.swift:654, :675`, `VocabularyView.swift:587, :1336, :1787`). |\n| **B6** | Make `AppPreferences.defaultDirection` a pure computed property and delete the UserDefaults key | There is a **visible, user-facing** \"Default Direction\" `Picker` bound two-way to `@AppStorage(\"defaultDirection\")` at `MoreView.swift:270-274` and `MacOSSettingsView.swift:223-228`. A computed property breaks the binding and removes a shipped control. | Keep the key. **Seed it inside `AppPreferences.init()`** (the `didSet` at `:169-191` never fires there \u2014 `:356` is a direct assignment). Add a separate `directionExplicitlyChosen` flag so `learnerMode.didSet` (`:174`) stops clobbering a deliberate user choice on every language toggle. |\n| **B7** | Gate `RubyTextView`'s pinyin on `learningIsChinese` only | `RubyTextView` is also used to render the **target** Chinese in forward mode (`TranslateView.swift:867`, `LiveSpeechTranslationView.swift:583`, `PhotoTranslateView.swift:811`). Gating too broadly kills forward-mode pinyin. | Gate on `showPinyin && LearningContext.current.showsPinyinAffordances`. Since `showsPinyinAffordances == learningIsChinese`, forward mode is unchanged by construction (`true && showPinyin`). Verify with the mirror test, not by eye. |\n| **B8** | Reorder `AIAudioSettingsView` voice slots by mutating `VoiceSlot` enum order | `selectedVoiceSlot` (`AIAudioSettingsView.swift:11-16`) drives sheet routing; reordering cases changes nothing functionally but reordering the *enum* risks `allCases`-dependent code. | Reorder only the **view body** rows (`:137-155`, `:164-180`, `:239-261`); leave `case mandarin` / `case english` declaration order alone. |\n| **B9** | Add `.lowercased()` to `SavedTermsStore.normalizedKey` | Safe \u2014 verified the key is computed at call time in `add`/`remove(chinese:)`/`contains(chinese:)` (`SavedTerm.swift:156, 167, 196, 226`) and **never persisted**. CJK is caseless so forward mode is bit-identical. | Ship it. Matches `WordExplanationCacheStore.swift:268-272`. |\n| **B10** | Hoist `WelcomeView`'s `@State private var step` fix by removing `.localizedSurface()` | `.id(localization.language)` (`LocalizationManager.swift:174`) is what forces the *whole* onboarding sheet to re-resolve strings. Removing it leaves stale English text after the mode tap. | Keep `.id()`; move `step` to `@SceneStorage` or a parent-owned `@Binding` in `HomeView.swift:79-80`. |\n| **B11** | Localize `LearnerMode.displayName` everywhere | `WelcomeView.swift:102, :131` uses `Text(verbatim:)` **deliberately** \u2014 the first-run picker must be readable before any language preference exists (comment at `WelcomeView.swift:86-90`). | Add a *separate* `localizedDisplayName` used only at `MoreView.swift:119, :240` and `MacOSSettingsView.swift:84`. Leave `displayName` and the WelcomeView call sites untouched. |\n| **B12** | Change `TranslationDirection.placeholder` keys for consistency | `\"\u8f93\u5165\u4e2d\u6587...\"` is a Chinese *source* key that already carries `en: \"Enter Chinese text...\"`. It is correct; \"fixing\" it orphans a translated entry. | Leave `TranslationDirection.swift:40-45` alone. |\n| **B13** | Reverse `EnglishRubyTextView`/`EnglishWordChip` typography | `EnglishRubyTextView.swift:12-30` already puts English large / Chinese small unconditionally \u2014 which is exactly what reverse mode needs. It is direction-*blind*, not wrong. | Leave the chip's font hierarchy alone. Only fix its Chinese-literal chrome (`:94, :120, :157, :162, :172`) and its save path (`:301`). |\n| **B14** | Convert `Text(store.state.statusMessage)` to `LocalizedStringKey` at the view | `statusMessage` is a `String` computed on the model (`ScreenshotTranslationStore.swift:65-80`). Wrapping at the view can't help \u2014 the value is already interpolated. | Fix at the **source**: return `String(localized:)` per case in the model. Same pattern for `AIModelSettings.statusMessage:670-688`, `AIProvider.description:61-75`, `ImportResult.summary`. |\n\n---\n\n## 3. Mandarin-only feature disposition\n\nLegend: **(a)** build an English-learner counterpart \u00b7 **(b)** hide in reverse mode \u00b7 **(c)** leave as-is.\n\n| Feature | Location | Disposition | Rationale / target behavior |\n|---|---|---|---|\n| Pinyin ruby annotation | `RubyTextView.swift:120-232` | **(a)** | Reverse mode routes English through `EnglishRubyTextView` + IPA/stress line. Chinese runs render plain (native furniture). |\n| Tone colors + legend | `MoreView.swift:330-333`, `MacOSSettingsView.swift:288`, `PinyinConverter.swift:223-229` | **(b)** | No tonal analogue. Replace section with IPA visibility + stress marking toggles. |\n| Pinyin Position picker | `MoreView.swift:323-327`, `MacOSSettingsView.swift:281-285` | **(a)** | Same control, retitled \"Phonetics Position\", drives IPA placement. |\n| `SortOrder.pinyin` | `VocabularyView.swift:42-54, :86-93, :230-234, :264-268` | **(b)** + coerce | Hide the case; if it is the persisted selection when the mode flips, coerce to `.alphabetical` (otherwise every comparison is `.orderedSame` and the list degenerates to UUID order). |\n| Tone Drills card | `PracticeHubView.swift:79-91` | **(a)** | New `PracticeMode.stressDrill` + `PracticeStore.stressDrillPool()` + `stressConfusion` matrix keyed on stressed-syllable index. Today the slot is merely hidden, leaving reverse mode with 2 drills vs 3. |\n| `TonePairDrillView` | whole file, gated `:62-70` | **(c)** for the file, **(a)** for the slot | Keep as the Mandarin-only branch (its empty state is already translated: \u58f0\u8c03\u8bad\u7ec3\u9762\u5411\u4e2d\u6587\u5b66\u4e60\u8005). Build `StressDrillView` beside it. |\n| `PracticeStore.toneConfusion` / `recordToneAnswer` / `mostConfusedTonePair` / `toneDrillCandidates` | `PracticeStore.swift:148, :195-222, :265-283` | **(c)** + peer | Leave intact (forward mode depends on it); add the stress peer alongside. |\n| `PinyinConverter` (55 call sites) | `Services/PinyinConverter.swift` | **(c)** | Already guards correctly: `:31` returns `\"\"` for non-CJK. Do not touch; add `EnglishPhonetics` as its peer and a direction-aware facade. |\n| `PinyinConverter.Tone.displayName` | `:68` | **(b)** | Unlocalized English tone names; unreachable in reverse mode once tone UI is gated. Localize if any survives. |\n| Chinese Font picker (PingFang/STSong/Kaiti) | `MacOSSettingsView.swift:304-309` | **(b)** | Also **dead**: `chineseFont` has zero consumers repo-wide. Hide in reverse mode; separately either wire it up or delete. |\n| `vocabularyChineseFontSize` (default 20) | `VocabularyView.swift:39`, `MoreView.swift:309`, `MacOSSettingsView.swift:268` | **(a)** | Direction-specific key. 20 pt is CJK-calibrated. |\n| `vocabularyDetailChineseFontSize` (default 96, range 56\u2026144) | `VocabularyView.swift:1276, :1644, :644` | **(a)** | 96 pt on \"serendipity\" in a 280 pt macOS inspector immediately hits `.minimumScaleFactor(0.35)`. Reverse default ~48, range 28\u202696. |\n| HSK levels | \u2014 | **(c)** | **None exist anywhere.** `StoryLevel` is beginner/intermediate/advanced, not HSK. No work required; CEFR would be net-new scope. |\n| Character strokes / radicals | \u2014 | **(c)** | No stroke or radical feature exists. Prompts explicitly forbid invented radical stories (`AIExplanationPromptBuilder.swift:44-48`). |\n| Character-count metric | `ReaderView.swift:222-226` | **(c)** | Already content-driven (\"%lld\u4e2a\u5b57\" vs \"%lld\u4e2a\u8bcd\"). |\n| `LearningDeck.cards` (15 tourist-Mandarin cards) | `LearningCard.swift:300-316` | **(a)** | Feeds Learn, Home, Study, quiz fallback (`PracticeStore.swift:289`), quiz distractors (`QuizView.swift:302`). Needs an English starter deck. |\n| `PhraseCategory.allCategories` (7 Mandarin categories) | `PhrasesView.swift:271-345` | **(a)** | Reverse mode currently drills glosses like \"One (1)\", \"Bill please\". |\n| `GrammarKnowledgeBase` (473 lines, Chinese explanations of English grammar) | `GrammarPoint.swift:116-473` | **(a)** \u2014 already built, unreferenced | Zero call sites repo-wide. This *is* the reverse-mode grammar asset. Surface it, or delete it. |\n| `WordIdentificationService` | whole file, `:174-190` | **(a)** | 100% Chinese-segmentation. Needs an English branch or must be replaced by `EnglishTextAnalyzer.analyzeWords` in reverse mode. |\n| `ShortcutHelpers.saveChinesePhrasesToVocabulary` | `ShortcutHelpers.swift:138-215` | **(a)** | The \u22652-CJK-character filter (`:151`, `:163`) drops **everything** when the learning text is English. |\n| `PhotoScanLanguage.recognitionLanguages` `.auto` order | `AppPreferences.swift:116-122` | **(a)** | Vision treats the array as a priority list. Reverse mode must lead with `en-US`. |\n| Workbook feature | `WorkbookGradingView/QuestionBankView/GradingHistoryView` | **(c)** for direction, **fix** for i18n | Already direction-correct (`WorkbookGradingView.swift:710-793` is the best save path in the app). Its defect is 44 permanently-bilingual literals. |\n| `ReaderStore` coverage / segmentation | `ReaderStore.swift:137-166, :190-203` | **(c)** | Explicitly written for a Mandarin native reading English. Correct. |\n| `SRSEngine`, `ClipboardService`, `AudioCaptureService`, `AudioSessionCoordinator`, `GeneratedSpeechStore`, `VocabularyPaging`, `AppConfig`, `CompatModifiers`, `SingleLineFit`, `ProviderIcon`, `DesignSystem` | \u2014 | **(c)** | Verified direction-neutral. Exclude from scope. |\n\n---\n\n## 4. Phase-ordered implementation\n\n### PHASE 0 \u2014 Foundation (must land first; everything else depends on it)\n\n#### `SwiftMandarin/Models/LearningContext.swift` *(extend existing)*\n- [ ] Add `ReadingKind` enum, `learningReadingKind`, `readingKind(isChinese:)` per \u00a71.1.\n- [ ] Add `defaultDirection` and `recognitionLanguagePriority`.\n- [ ] Add `@MainActor func explanationDirection(forWord:)` bridging to `ExplanationDirection` (`AIWordExplanationService.swift:23-46`).\n- [ ] Add `nonisolated static func resolved(learnerMode:interfaceLanguage:)` so `.bilingual` gets a defined answer (see next file) instead of collapsing silently.\n- [ ] Keep the type `nonisolated`/`Sendable`/Foundation-only \u2014 the standalone runner depends on it.\n\n#### `scripts/learning-direction-checks/LearningDirectionChecksRunner.swift` + `scripts/test-learning-direction.sh` *(new)*\n- [ ] Clone the invocation shape of `scripts/test-ai-prompt-contracts.sh` (opt-in `-D LEARNING_DIRECTION_CHECKS`, `-swift-version 6 -strict-concurrency=complete -warnings-as-errors -parse-as-library`).\n- [ ] Compile `LearningContext.swift` + `TranslationDirection.swift` + the runner.\n- [ ] Assert the **mirror property** for every accessor: `primary/secondary`, `learningSpeechCode/nativeSpeechCode`, `learningReadingKind`, `defaultDirection`, `recognitionLanguagePriority`, `learningLanguagePromptName/nativeLanguagePromptName`.\n- [ ] Add `rg`-based wiring counts (the file's existing idiom): assert **zero** direct `LocalizationManager.shared.learningIsChinese` reads remain in `Views/` once migration completes.\n\n#### `SwiftMandarin/Models/AppPreferences.swift`\n- [ ] **`:350-356` `private init()`** \u2014 after `self.learnerMode = savedMode.flatMap(...) ?? derivedDefault`, explicitly seed the direction key when absent:\n  `if UserDefaults.standard.string(forKey: \"defaultDirection\") == nil { UserDefaults.standard.set(learnerMode.defaultDirection.rawValue, forKey: \"defaultDirection\") }`. This is the root cause of a first-launch \u4e2d\u6587 user landing on EN\u2192\u4e2d (`didSet` at `:169-191` does not run during `init`).\n- [ ] **`:66-71` `defaultDirection`** \u2014 `.bilingual` must resolve against the native language, not hard-code `.englishToChinese`:\n  `case .bilingual: return LocalizationManager.shared.nativeIsChinese ? .chineseToEnglish : .englishToChinese`.\n- [ ] **`:174`** \u2014 guard the overwrite with a new `directionExplicitlyChosen` flag so toggling App Language stops silently resetting the user's visible \"Default Direction\" picker (see **B6**).\n- [ ] **`:75-82` `learningLanguageIsChinese`** \u2014 **delete** (zero call sites, and it contradicts `LocalizationManager.learningIsChinese` for `.bilingual`). One direction predicate only.\n- [ ] **`:38-44` `shortLabel`** \u2014 delete (zero call sites).\n- [ ] **`:54-63` `detail`** \u2014 return `String(localized:)` for all three cases; add zh-Hans values (`\u00a77`). Interpolated into a *translated* key at `MoreView.swift:247` / `MacOSSettingsView.swift:91`, producing half-English footers today.\n- [ ] **`:30-36`** \u2014 add `localizedDisplayName` (see **B11**); leave `displayName` intact for WelcomeView.\n- [ ] **`:116-122` `PhotoScanLanguage.recognitionLanguages`** \u2014 `.auto`/`.bilingual` return `LearningContext.current.recognitionLanguagePriority`. Forward mode is unchanged (still zh-first).\n- [ ] **`:93-100` `PhotoScanLanguage.displayName`** \u2014 `String(localized:)`; drop the hard-coded bilingual `\"\u81ea\u52a8 \u00b7 Auto\"` / `\"\u53cc\u8bed \u00b7 Both\"`.\n\n#### `SwiftMandarin/Models/TranslationState.swift`\n- [ ] **`:20`** \u2014 `var direction: TranslationDirection = .englishToChinese` \u2192 initialize in `init()` from `AppPreferences.shared.learnerMode.defaultDirection`. The shared singleton currently boots English-first before any view runs.\n\n#### `SwiftMandarin/Models/SavedTerm.swift`\n- [ ] **`:16`** \u2014 do **not** rename `pinyin`. Redefine it in doc comments as the generic **reading** slot (pinyin when the headword is Chinese; IPA when English). `WorkbookGradingView.swift:763-765` already writes `\"\"` for non-CJK, so the semantics are half-established.\n- [ ] **`:103-106`** \u2014 add `showsReading` alongside `showsPinyin`:\n  `var showsReading: Bool { !pinyin.isEmpty && (learningIsChinese ? !chineseSide.isEmpty : !englishSide.isEmpty) }`, plus `var readingKind: LearningContext.ReadingKind`. Keep `showsPinyin` unchanged so forward-mode call sites are bit-identical.\n- [ ] **`:88-91` `headlineText` fallback** \u2014 `primary.isEmpty ? chinese : primary` promotes the *native* language into the 96 pt headline for one-sided entries. Add `var headlineIsLearningLanguage: Bool` so views can render an \"add the English side\" affordance instead of a giant Chinese word.\n- [ ] **`:151-154` `normalizedKey`** \u2014 add `.lowercased()`, matching `WordExplanationCacheStore.swift:268-272`. Safe (**B9**); fixes \"Hello\"/\"hello\" duplicating in reverse mode.\n\n#### `SwiftMandarin/Services/EnglishPhonetics.swift` *(new)* \u2014 per \u00a71.2\n#### `SwiftMandarin/Models/PartOfSpeechLabels.swift` *(new)* \u2014 per \u00a71.3, honoring **B5**\n\n---\n\n### PHASE 1 \u2014 Services & AI prompts\n\n#### `SwiftMandarin/Services/AIExplanationPromptBuilder.swift`\n- [ ] **`:61`** `pronunciationContract` else-branch \u2014 replace `\"All pinyin fields must be empty strings because the headword is English.\"` with a *request*: every pronunciation field holds IPA in slashes for the accompanying English text with primary stress marked (\u02c8); empty only when the item is Chinese.\n- [ ] **`:55-60`** `wordBuildingContract` else-branch \u2014 expand from 5 prohibitive lines to parity with the 16-line Chinese branch (`:33-49`): one compact line per prefix/root/suffix with productive meaning, a word-family line (commit \u2192 commitment/committed/committee), syllable count + primary stress, an orthography trap, then a \"Together:\"-equivalent bridge.\n- [ ] **`:112-113`, `:118-120`** \u2014 split the shared POS/grammar contract on `wordIsChinese`. English branch: countable/uncountable, transitive/intransitive, regular/irregular, gradable; articles, countability, tense/aspect, irregular inflection, phrasal-verb particle placement, preposition collocation, gerund-vs-infinitive. Never \"separable\", \"verb-object\", \"classifier\".\n- [ ] **`:186-188`** `pinyinDescription` else-branch \u2192 IPA request. One edit fixes all four JSON slots (`:209-212`).\n- [ ] **`:195-197`** `nuancesDescription` else-branch \u2192 concrete deliverable, not \"only when useful\".\n- [ ] **`:278-284`** `AITranslationContext.readingDescription` else-branch \u2192 IPA + stress. Single fix covers Apple/Ollama/cloud translation notes and `OllamaService.swift:330-333`.\n- [ ] **`:342-350`** `skipRule` English branch \u2192 name real A1 stop-words (the, a, is, of, and, to, in, do, have, will, can) to match the concreteness of the Chinese branch.\n- [ ] **Leave untouched:** `:50-54` (Chinese pronunciation), `:87-97` (LANGUAGE CONTRACT \u2014 already correct), `:222-235` (`containsExactHeadword` \u2014 already handles Latin word boundaries), `:297-331` (translator prompt), `:352-356` (`preferRule`).\n\n#### `scripts/ai-prompt-checks/AIExplanationPromptChecksRunner.swift` \u2014 **same commit as above (B1)**\n- [ ] **`:100`** \u2014 invert: assert the English teacher prompt **requests** IPA with stress; assert it does *not* contain \"pinyin fields must be empty\".\n- [ ] **`:231`** \u2014 invert for `englishInstructions`.\n- [ ] Add positive checks: English branch contains a root/affix instruction, a word-family instruction, and a stress instruction; Chinese branch still contains \"accurate tone marks\" and \"accounting for every Han character\" (forward-mode guard).\n\n#### `SwiftMandarin/Services/AIWordExplanationService.swift`\n- [ ] **`:121`, `:134`, `:150`, `:183`** \u2014 four `@Guide` descriptions. Make bi-conditional per **B3**. These are the *only* lever on the Apple Intelligence path (guides are compile-time literals).\n- [ ] **`:90`** \u2014 `nuances` `@Guide`: expand the \"For English\" clause to match the Chinese clause's density.\n- [ ] **`:638-640`** `pinyinDesc` else-branch \u2192 IPA. Injected into all four Ollama schema slots (`:671, :684, :698, :712`).\n- [ ] **`:641-660`** `nuancesDesc` non-Chinese branch \u2192 expand (mirrors the builder fix).\n- [ ] **`:944-946`** `readingNote` \u2014 drop \"(may be an empty string)\"; require IPA for English passages.\n- [ ] **`:1052-1054`** `gradeWorkbook` readingNote \u2014 when `learningIsChinese == false` the terms *are* English by construction (`:1073-1075`); say \"IPA with primary stress\", not a hedge.\n- [ ] **`:1161-1163`** `generateReviewQuestions` readingNote \u2014 same.\n- [ ] **`:1552-1606`** `OllamaWordExplanationResponse` legacy `chinese`/`english` CodingKey aliases \u2014 **gate on `direction.wordIsChinese`**. In reverse mode a model falling back to `{\"chinese\":\u2026,\"english\":\u2026}` puts the Chinese gloss in `sentence` and the English example in `translation` \u2014 a silent field swap.\n- [ ] **`:1334`, `:1339-1344`** `validateExplanation` \u2014 `String(localized:)`; English branch names the English-learner focus.\n- [ ] **`:1357-1368`** `AIExplanationError.errorDescription` \u2014 all four cases `String(localized:)`.\n- [ ] **`:592`, `:734`, `:783`, `:786`, `:818`, `:828`, `:990`** \u2014 `String(localized:)` (`:1229` already shows the pattern).\n- [ ] **`:281-282`, `:525`** \u2014 doc comments say \"for Mandarin vocabulary learning\" / \"The Chinese word\"; correct to bidirectional.\n- [ ] **Leave untouched:** `:28-46` `ExplanationDirection` (correct seam), `:949-959` `extractVocabulary` nativeDesc, `:857-862` OCR cleanup, `:1046-1075` grading prompt (the reference implementation).\n\n#### `SwiftMandarin/Services/WordIdentificationService.swift`\n- [ ] **`:174-190`** `systemPrompt` \u2014 parameterize on direction. English branch: segment into lexical units / phrasal verbs / idioms, IPA + stress in the pronunciation slot, English POS inventory **without** classifier/particle, and `meaning` written in \u7b80\u4f53\u4e2d\u6587 (drive from `nativeIsChinese`, exactly as `extractVocabulary` does at `:949`).\n- [ ] **`:22-30`** `IdentifiedWord` \u2014 doc says `meaning` is \"always an English gloss\"; must become native-language. `pinyin` holds IPA for English words.\n- [ ] **`:71`, `:80`, `:94`** \u2014 rename `chineseText` \u2192 `text`; user prompt names the actual source language.\n- [ ] **Alternative (lower risk, ship first):** in reverse mode skip this service entirely and feed `EnglishTextAnalyzer.shared.analyzeWords` into the word grid \u2014 the pattern already used at `ReaderSessionView.swift:200` and `PhotoTranslateView.swift:1848`.\n\n#### `SwiftMandarin/Services/ConversationService.swift`\n- [ ] **`:217-219`** `pinyinRule` else-branch \u2014 request IPA/stress for the English reply instead of \"omit this field or use null\".\n- [ ] **`:303-306`** `parseReply` \u2014 stop force-nilling the reading for English replies; the Chinese branch even back-fills via `PinyinConverter.convert` (`:301`). Reverse mode gets zero pronunciation support today.\n- [ ] **Leave untouched:** `:214-238` `systemPrompt` (a correct full mirror).\n\n#### `SwiftMandarin/Models/ScreenshotTranslationStore.swift`\n- [ ] **`:65-80`** `statusMessage` \u2014 `String(localized:)` per case (**B14**). Five of six strings are not catalog keys at all.\n- [ ] **`:104`, `:154-157`** `targetLanguage` \u2014 re-derive on language change (or compute on read from `nativeIsChinese` with an explicit-override flag). The singleton derives once in `init` and never updates, so a user who switches to \u4e2d\u6587 keeps translating screenshots *into English*.\n- [ ] **`:174`** \u2014 `String(localized:)` for `\"No images to process\"`.\n\n#### Error-string localization (mechanical, no direction logic)\n- [ ] `CloudAIService.swift:36-54` `CloudAIError.errorDescription` \u2192 `String(localized:)`\n- [ ] `OllamaService.swift:391-404` `OllamaServiceError.errorDescription` \u2192 `String(localized:)`\n- [ ] `AIModelSettings.swift:670-688` `statusMessage` \u2192 `String(localized:)` (**\"Apple Intelligence is ready\" already has zh-Hans `Apple Intelligence \u5df2\u5c31\u7eea` that is unreachable today** \u2014 proof this is a live leak)\n- [ ] `AIModelSettings.swift:61-75` `AIProvider.description` \u2192 `String(localized:)`\n- [ ] `SpeechRecognitionService.swift:25-40` all six cases; `:486`\n- [ ] `AudioSessionCoordinator.swift:52` `.deactivationReturnedFalse`\n- [ ] `PhotoTextRecognitionService.swift:139-146` \u2014 four hard-coded **Chinese** strings that leak \u4e2d\u6587 into the *English* mode today\n- [ ] `TranslateTextIntent.swift:74-80` `TranslationIntentError`; `ShortcutHelpers.swift:15-20` `ShortcutTranslationError`\n- [ ] `VocabularyImportExportService.swift:49-66` `ImportResult.summary` \u2014 rebuild from catalog keys with **xcstrings plural variations**, not hand-rolled `\"s\"`/`\"is\"`/`\"es\"` suffixes (no Chinese analogue)\n- [ ] `VocabularyImportExportService.swift:255-256, :492-493` \u2014 NSSavePanel/NSOpenPanel `title`/`message` bypass the catalog entirely\n- [ ] `VocabularyImportExportService.swift:477, :503` \u2014 `\"Could not parse file\"`\n- [ ] `AIResponseParsing.swift:404` \u2014 doc comment only: \"pronunciation: pinyin when Chinese, IPA when English\". **The parser itself needs no change** \u2014 `:540` already accepts `reading`/`pinyin`/`pronunciation` and will carry an IPA string unmodified.\n\n#### Intents\n- [ ] `ShortcutHelpers.swift:138-215` `saveChinesePhrasesToVocabulary` \u2192 rename `savePhrasesToVocabulary`; in reverse mode segment the **English** side via `EnglishTextAnalyzer.analyzeWords`, filter by lemma/length/stop-word instead of `\u22652 CJK chars` (`:151`, `:163`), store the English headword with empty/IPA reading and the Mandarin gloss in `definition`.\n- [ ] `ShortcutHelpers.swift:188`, `:211` \u2014 `sourceIsChinese: true` and `translateToEnglish` are hard literals; pass `LearningContext.current.learningIsChinese` and route to `translateToChinese` in reverse mode.\n- [ ] `ShortcutHelpers.swift:27-35` `resolveDirection` \u2014 use `detectLanguageRobust` (the CJK-weighted detector every other site uses) and break ties toward the learning language.\n- [ ] `TranslateTextIntent.swift:10`, `:51-57` and `TranslateClipboardIntent.swift:10`, `:57-63` \u2014 description and implementation both promise \"save Chinese phrases\".\n- [ ] `SaveVocabularyTermIntent.swift:11-29` \u2014 parameter titles (\"Chinese Text\"/\"English Definition\"/\"Pinyin\") must mirror. `:51` already degrades safely (`PinyinConverter` returns `\"\"` for non-CJK).\n- [ ] `SwiftMandarinShortcutsProvider.swift:13-17, :51, :70, :78` \u2014 Chinese invocation phrases; \"Mandarin streak\", \"Random Chinese phrase\".\n- [ ] **Document the hard limit:** App Intents `LocalizedStringResource`/`@Parameter` titles/`AppShortcut` phrases resolve in the **Shortcuts/Siri process against the device locale**, not through `Bundle.setLanguageOverride` (`LocalizationManager.swift:222-229`). Requirement #4 is *unreachable* for Shortcuts UI via the current mechanism \u2014 declare both phrase sets and accept system-locale selection.\n- [ ] **Leave untouched:** `ShortcutEntities.swift:27-40` (reference implementation of learning-side-as-title), `GetRandomPhraseIntent.swift:39-51` (reference implementation of learning-language TTS).\n\n---\n\n### PHASE 2 \u2014 Audio & speech\n\n#### `SwiftMandarin/Models/BatchAudioPlan.swift`\n- [ ] **`:146-158`** `.bothLanguages` branch \u2014 enqueue the **learning** language first. It ignores the `learningIsChinese` parameter its sibling `.learningLanguage` branch (`:130-145`) honors. Since batch audio is a paid, fail-closed, 1-req/sec, 2-worker queue (`:176-205`, consumed in order by `BatchExplanationController.swift:583-597`), enqueue order decides which clips an interrupted run actually produces. Safe per **B4**.\n- [ ] **`:19-21`** `BatchAudioScope.displayName` `.bothLanguages` \u2014 \"Mandarin and English\" (zh-Hans `\u666e\u901a\u8bdd\u4e0e\u82f1\u6587` preserves the same bias). Use a neutral \"Both Languages\"/`\u53cc\u8bed`, or a learning-first pair.\n- [ ] **`:40`, `:53-54`** \u2014 add `learningLanguageClipCount`/`nativeLanguageClipCount` derived from `languageBoost` so downstream UI can order by role. Counts are already numerically correct; this is framing.\n- [ ] **Leave untouched:** `:130-145` (correct mirror, covered by `scripts/minimax-audio-checks/\u2026:1324-1333`).\n\n#### `SwiftMandarin/Services/SpeechService.swift`\n- [ ] Add `speakLearningLanguage(_:)` / `speakNativeLanguage(_:)` delegating to `LearningContext.current.learningSpeechCode` / `nativeSpeechCode`. The file has **zero** direction references today; ~50 call sites each re-derive it and disagree.\n- [ ] **Leave `speakAuto`/`speakAutoSlow` (`:66-72`) and `routeSpeech` (`:241`) unchanged** \u2014 content detection is correct and is why most read-aloud already works in reverse mode. Two residual risks to document: `containsCJK` is true on *any* ideograph (mixed strings get a Mandarin voice), and `speakAuto` inherits whatever language the AI returned.\n\n#### `SwiftMandarin/Views/Components/LiveSpeechTranslationView.swift`\n- [ ] **`:552`** \u2014 `let speakCode = translationDirection == .englishToChinese ? \"zh-CN\" : \"en-US\"` uses the *declared* direction while the text came from `actualDirection` recomputed from content at `:735`. Replace with `SpeechService.speakAuto(translatedText)`.\n- [ ] **`:535`** \u2014 target-language badge: derive from the same content-detected direction.\n- [ ] **`:466-473`, `:581-588`** \u2014 route the **learning** language through the interactive renderer. In reverse mode `EnglishRubyTextView` + `EnglishWordDetailSheet`; Chinese renders plain (no ruby, no `SavedTerm(chinese:pinyin:)` popover at `:214`/`:250`).\n- [ ] **`:298`, `:307`** \u2014 `Text(language.displayName)` is the verbatim initializer. Reuse `MultimodalAudioInputView.localizedTitle(for:)` (`:787-793`); all three keys already have zh-Hans.\n- [ ] **`:40`** \u2014 `= .english` seed (harmless; `:205` overrides via the correct `defaultSpeechLanguage` at `:52-59`).\n- [ ] **`:695`, `:786`, `:810`** \u2014 `String(localized:)`.\n\n#### `SwiftMandarin/Services/SpeechRecognitionService.swift`\n- [ ] **`:243`, `:403`, `:95`** \u2014 remove the `= .english` default parameter (or make it learner-aware). No current caller relies on it (`ConversationView.swift:412-414` and `LiveSpeechTranslationView.swift:691` pass explicitly), so this is a latent trap, not a live bug.\n- [ ] **`:49-55`** `displayName` \u2192 localized (see also `AudioTranscriptionService.swift:45-49`, which interpolates it into an otherwise-localized error).\n\n#### `SwiftMandarin/Views/AIAudioSettingsView.swift`\n- [ ] **`:137-155`**, **`:164-180`**, **`:239-261`** \u2014 order voice slots and previews learning-language-first (**B8**: view body only). Both must remain available in both modes.\n- [ ] **`:95`** \u2014 reverse the count order to lead with the learning language.\n\n#### `SwiftMandarin/Views/Components/BatchAIAnalysisView.swift`\n- [ ] **`:426-427`**, **`:436-441`** \u2014 order clip-count and voice rows learning-first, matching the plan's new enqueue order. `:125-140` already conditions correctly and is the local precedent.\n\n- [ ] **Leave untouched:** `MiniMaxAudioModels.swift:102-120` (`miniMaxSpeechConfiguration` \u2014 the correct single choke point), `MiniMaxAudioClient.swift:148-167` (symmetric validation), `MiniMaxSpeechCacheIdentity` (**B4**), `AudioCaptureService.swift`, `AudioSessionCoordinator.swift`, `GeneratedSpeechStore.swift`, `RubyTextView.swift:361-398` / `EnglishRubyTextView.swift:213-251` (dual-narration ordering \u2014 already correct mirrors), `PhrasesView.swift:109-118/163-169`, `LearnView.swift:589-601`, `ConversationView.swift:411-414`, `MultimodalAudioInputView.swift:95-102`.\n\n---\n\n### PHASE 3 \u2014 Views\n\n#### `SwiftMandarin/Views/VocabularyView.swift`\n- [ ] **`:39`** \u2014 split `vocabularyChineseFontSize` into direction-specific storage (`vocabularyEnglishFontSize`, default ~17). Update the toolbar clamps (`:186-205` macOS 14\u202648 \u00b12, `:281-293` iOS) to follow the active language.\n- [ ] **`:1276`, `:1644`** \u2014 split `vocabularyDetailChineseFontSize`; reverse default ~48. **`:644-645`** stepper range 56\u2026144 \u2192 28\u202696 in reverse mode. Forward mode keeps 96/56\u2026144 exactly.\n- [ ] **`:598-605`** \u2014 the pinyin row is correctly hidden by `showsPinyin` but leaves a vertical hole. Render IPA/stress of `englishSide` at the same `renderedChineseFontSize * 0.5` scale, via `EnglishPhonetics.colored(ipa:)`. Same at **`:1330-1333`** (`* 0.45`) and **`:1781-1784`**.\n- [ ] **`:587`, `:1336`, `:1787`** \u2014 POS capsule uses the verbatim `Text(String)` initializer. Route through `PartOfSpeechLabels` (**B5**).\n- [ ] **`:42-54`, `:86-93`, `:230-234`, `:264-268`** \u2014 hide `SortOrder.pinyin` in reverse mode and coerce a stale persisted selection to `.alphabetical`.\n- [ ] **`:61-65`** \u2014 swap the dead `term.pinyin` search clause for the reading field; add diacritic folding (`localizedStandardContains`) so \"cafe\" finds \"caf\u00e9\".\n- [ ] **`:619-623`**, **`:1499-1505`, `:1941-1946`, `:2350-2354`, `:2359-2363`** \u2014 stop forwarding `pinyin: term.pinyin` alongside an English `word: term.headlineText`. Pass `\"\"` (or the English reading). It currently pollutes the persisted cache record (`AIWordExplanationView.swift:617`).\n- [ ] **`:369-373`** \u2014 `Text(importResult?.summary ?? \"Import completed\")`: fix at the source (`ImportResult.summary`) and add the fallback key.\n- [ ] **`:2064-2066`** \u2014 `%lld word%@ ready to export` interpolates the English plural \"s\" as an **argument**, rendering `5 \u4e2a\u5355\u8bcds \u53ef\u4f9b\u5bfc\u51fa`. Replace with an xcstrings plural variation.\n- [ ] **Leave untouched:** `SavedTerm.headlineText/glossText/showsPinyin` selection logic, `:78-84` alphabetical sort (already sorts `headlineText`), `:461-510` (no Section headers exist \u2014 nothing to flip), `:503`/`:1420`/`:1866` `speakAuto(headlineText)`, `:1547-1563`/`:1992-1994` `fetchTranslation`, `:1592-1608` `updateTermDefinition`, `:2034`/`:2150`/`:2168` (correct `String(localized:)` pattern), `VocabularyPaging.swift` (100% neutral).\n\n#### `SwiftMandarin/Views/TranslateView.swift`\n- [ ] **`:34`** \u2014 `@AppStorage(\"defaultDirection\")` fallback \u2192 `AppPreferences.shared.learnerMode.defaultDirection.rawValue`.\n- [ ] **`:1277-1283`** `applyDefaultDirectionIfNeeded` \u2014 fall back to the learner mode when the key is absent.\n- [ ] **`:838-873`** `interactiveTranslationView` \u2014 the structural fix. The Chinese side is *unconditionally* the annotated, tappable, ruby-annotated block. In reverse mode English must be the annotated/tappable/primary block (`EnglishRubyTextView` + IPA) and Chinese the plain secondary gloss.\n- [ ] **`:823`, `:841`, `:882`** \u2014 headers: attach \"(TAP WORDS FOR DETAILS)\" to the **learning** language.\n- [ ] **`:828`, `:887`** \u2014 typography: `.title3` English above `.title2` ruby-annotated Chinese means the learning language is *smaller* than the native gloss in reverse mode. Select primary/secondary style by role, not position.\n- [ ] **`:785-788`** `showEnglishFirst` \u2014 keep, but have it (or a companion `learningSideIsEnglish`) drive annotation, tap target, and font too, not just order.\n- [ ] **`:215`, `:1059`, `:1153-1194`** `startWordIdentification` \u2014 pass the learning-language side.\n- [ ] **`:914-919`, `:954-958`, `:1255-1262`** \u2014 saves: store the learning-language headword; skip `PinyinConverter.convert` when `!learningIsChinese`.\n- [ ] **`:359`, `:638`** \u2014 Speak buttons use the **stale toggle** `sharedState.direction`, while every translation path re-derives direction from content (`:980-984`, `:1036-1037`, `:1219-1220`) without writing back. Use `speakAuto`.\n- [ ] **`:859`** \u2014 \"Getting Chinese translation...\" must name whichever side is being fetched.\n- [ ] **`:398`** \u2014 character count is the CJK metric; show a word count for English source.\n- [ ] **`:108-110`** `translationContext` \u2014 dead code encoding the English-learner assumption; delete.\n- [ ] **`:1231-1235`, `:1062`** \u2014 `String(localized:)`.\n\n#### `SwiftMandarin/Views/Components/RubyTextView.swift`\n- [ ] **`:121-122`, `:159-161`** \u2014 gate ruby on `showPinyin && LearningContext.current.showsPinyinAffordances` (**B7**: forward mode provably unchanged).\n- [ ] **`:230-235`** \u2014 when Chinese is the native language, drop the character text to secondary weight.\n- [ ] **`:303`** \u2014 `PartOfSpeech.displayName` (`ChineseTextAnalyzer.swift:215-217` = `rawValue.capitalized`) \u2192 `PartOfSpeechLabels`.\n- [ ] **`:488`** \u2014 `String(localized:)`.\n- [ ] **Leave untouched:** `:361-398` `WordDetailPopover` narration (correct mirror).\n\n#### `SwiftMandarin/Views/Components/AIWordExplanationView.swift`\n- [ ] **`:432`, `:453`** \u2014 `collapsibleSection(title: String)` renders via the **non-localizing** `Text(_: StringProtocol)`. Change the parameter to `LocalizedStringKey` (the sibling `BatchAIAnalysisView.swift:229-232` already does exactly this). This makes all nine headers (`:277, :300, :312, :324, :345, :360, :375, :390, :405`) localizable; **eight of the nine keys do not exist in the catalog at all.** This is the largest single block of untranslatable English in the app.\n- [ ] **`:484`, `:522`, `:551`** \u2014 the reading slot is correctly content-gated but stays empty in reverse mode. Render `EnglishPhonetics.colored(ipa:)` once the prompts populate it.\n- [ ] **`:605`, `:617`** \u2014 `pinyin:` forwarded unconditionally; pass `word.containsCJK ? pinyin : \"\"`.\n- [ ] **Leave untouched:** `:79-83` `directionToken`/`currentKey`, `:133`, `:573-590` (correct cache-direction mirror).\n\n#### `SwiftMandarin/Views/Components/EnglishRubyTextView.swift`\n- [ ] **`:94`, `:120`, `:157`, `:162`, `:172`** \u2014 hard-coded Chinese literals (`\u6b63\u5728\u7ffb\u8bd1...`, `\u8bcd\u5f62\u53d8\u5316`, `\u539f\u5f62`, `\u5f53\u524d\u5f62\u5f0f`). All four **already have en translations** in the catalog; they just need to be routed as `LocalizedStringKey`.\n- [ ] **`:133`, `:143`, `:194`** \u2014 shows `englishName` *and* Chinese `rawValue` side by side in every mode. Pick one by `nativeIsChinese`.\n- [ ] **`:63-65`, `:263`, `:295-310`** `saveToVocabulary`/`isSaved` \u2014 keyed entirely on the Chinese gloss; a reverse-mode learner **cannot bookmark an English word at all** if `WordTranslationService` errors (`:295-297` swallows into `\"\"`). Store the English lemma as headword, Chinese in `definition`, dedupe on the English side.\n- [ ] **Leave untouched:** `:12-30` `EnglishWordChip` typography (**B13**), `:77-129` headline layout, `:213-251` narration order.\n\n#### `SwiftMandarin/Views/StatsView.swift` \u2014 pure i18n, no direction logic in the file\n- [ ] **`:838`/`:850`** `QuickStatCell.label`, **`:865`/`:877`** `CompactStatCard.label`, **`:814`/`:826`** `HeroStatItem.label` \u2192 `LocalizedStringKey` (`DesignSystem.StatTile:126` is the in-repo precedent). Affects `:135-153`, `:181-193`, `:745-778`.\n- [ ] **`:25-28`** `BarChartTimeRange` + **`:37-40`** `VocabularyMasterySegment` \u2014 add `titleKey`; render that at `:335`, `:532`, `:553`. Keep `rawValue` as the chart-scale identity (**B5**).\n- [ ] **`:654`, `:675`, `:370-374`** \u2014 POS labels \u2192 `PartOfSpeechLabels`. Suppress the empty `.classifier`/`.particle` buckets from `:419-420`/`:435-436` in reverse mode.\n- [ ] **`:692-694`** `emptyChartPlaceholder(message:)` \u2192 `LocalizedStringKey`; three new keys.\n- [ ] **`:927`** \u2014 hard-coded `[\"\", \"M\", \"\", \"W\", \"\", \"F\", \"\"]` (both ternary branches identical). Use `Calendar.current.veryShortWeekdaySymbols`.\n- [ ] **`:1026-1027`** \u2014 `DateFormatter` with no `locale`, so it follows the **device** locale, not the in-app toggle. Set `monthFormatter.locale = LocalizationManager.shared.locale` (or use `Text(date, format:)` as `:479`/`:1090` already do).\n- [ ] **`:1112-1120`** `MasteryLevel.displayName` \u2192 localized.\n\n#### `SwiftMandarin/Views/PhotoTranslateView.swift`\n- [ ] **`:899`** \u2014 `translateDetailedWithProvider(source, sourceIsChinese: true)` is a hard literal even though the view detects language at `:1696`. Pass `detectedLanguage.isChinese`.\n- [ ] **`:17-25`** `DetectedLanguage.displayName` returns raw `\"\u82f1\u6587\"/\"\u4e2d\u6587\"/\"\u672a\u77e5\"`, rendered verbatim at `:503` \u2014 Chinese chrome in the English UI today.\n- [ ] **`:448`** \u2014 string concatenation `\"\u8bc6\u522b\u8bed\u8a00: \" + \u2026` bypasses the catalog.\n- [ ] **`:1808`** \u2014 `SentenceType.rawValue` prints Chinese verbatim in every language (`EnglishTextAnalyzer.swift:160-168` `englishName` exists and is unused).\n- [ ] **`:1433`, `:1503`, `:1618`, `:1689`, `:1719`** \u2014 five hard-coded Chinese `errorMessage` assignments rendered at `:960`; none is a catalog key.\n- [ ] **`:770`, `:779`, `:790`** \u2014 hard-coded Chinese chrome around the English read-aloud button. The `speakEnglish` call itself is content-correct.\n- [ ] **`:806-818`** \u2014 pinyin ruby over scanned Chinese is noise when Chinese is native; collapse to plain selectable text.\n- [ ] **`:217-220`** \u2014 grammar-point toggle only appears for English scans and the explanations are authored in Mandarin: correct-by-accident for reverse mode, wrong for forward mode.\n\n#### Settings & onboarding\n`SwiftMandarin/Views/MoreView.swift`\n- [ ] **`:321-333`** \u2014 hide the pinyin block behind `learningIsChinese`; substitute IPA visibility / position / stress-marking. **`:176-180`, `:396`** \u2014 retitle the \"Display & Pinyin\" row/screen in reverse mode.\n- [ ] **`:309`, `:339-352`** \u2014 bind the size slider to the direction-specific key.\n- [ ] **`:119`, `:240`** \u2014 `localizedDisplayName` (**B11**). **`:111`/`:117`, `:226`/`:238`** \u2014 two coupled pickers with no explanation; reword the footer to state that interface language *is* the native language, and drop the duplicate mode picker.\n- [ ] **`:426`, `:450`** \u2014 `Text(provider.description)` / `Text(settings.statusMessage)`; fixed at the model.\n- [ ] **`:637`, `:649-652`, `:698`, `:702`** \u2014 `FeatureRow(title: String, description: String)` \u2192 `LocalizedStringKey`; \"Bidirectional English-Chinese translation with pinyin\" must not promise pinyin in reverse mode. The About copy and the zh app name `\u4e2d\u6587\u5feb\u8bd1` tell a Chinese native that their English-learning app is a Chinese-learning app.\n- [ ] **Leave untouched:** `:314-318` `speechSample` (the one already-correct direction branch in the file).\n\n`SwiftMandarin/Views/MacOSSettingsView.swift`\n- [ ] **`:278-292`** hide the Pinyin Display section; **`:304-309`** hide (and separately wire-up-or-delete) the dead `chineseFont` picker; **`:268`, `:295-302`** direction-specific size key; **`:84`** `localizedDisplayName`; **`:162`** status message; **`:537`** import-summary alert; **`:366-404`** note the five dead preference keys (`showStreak`, `autoAdvance`, `showHints`, `reviewReminders`, `reminderTime`) have zero consumers.\n\n`SwiftMandarin/Views/WelcomeView.swift`\n- [ ] **`:15`** \u2014 hoist `step` out of the identity change (**B10**). **`:126`** \u2014 `.bilingual` must set a native language. **Leave `:102`/`:131` `Text(verbatim:)` alone.**\n\n`SwiftMandarin/Views/Components/AIProviderConfigView.swift`\n- [ ] **`:56`**, **`:159`**, **`:223`**, **`:253`** \u2014 four verbatim-`String` leaks.\n\n#### Learning / practice views\n- [ ] `PracticeHubView.swift:79-91` \u2014 replace the hidden Tone Drills slot with the stress drill instead of leaving reverse mode with two cards.\n- [ ] `StudyHubView.swift:115` \u2014 subtitle promises \"tone drills\" (zh-Hans `\u9009\u62e9\u9898\u3001\u542c\u5199\u548c\u58f0\u8c03\u8bad\u7ec3`) that reverse mode cannot reach; branch it.\n- [ ] `LearnView.swift:583-589` \u2014 English card front is a bare word; add the IPA/stress line. **`:615-628`** \u2014 every `exampleSentence` in the deck is Chinese and `LearningCard(from:)` sets it `nil`, so reverse mode sees a native-language sentence dressed as study material.\n- [ ] `DictationView.swift:156-165` \u2014 revealed English answer has no phonetic line. **`:265`** \u2014 `\uff3f` (U+FF3F fullwidth) breaks monospaced alignment against ASCII; use `_` when `!learningIsChinese`.\n- [ ] `ReaderSessionView.swift:194-202` \u2014 content-driven branch is right, but `RubyTextView` still applies pinyin ruby to a native reader's own language (fixed by the RubyTextView gate). **`:114`** \u2014 `EnglishWordDetailSheet` is the reverse-mode study surface; its Chinese literals are fixed above.\n- [ ] `ConversationView.swift:522-523` \u2014 `.font(learningIsChinese ? .title3 : .body)` typographically demotes the English partner line to the same weight as the user's own bubble.\n- [ ] `PhrasesView.swift:212-222` \u2014 `Text(note)` verbatim; usage notes must be in the learner's **native** language. **`:293`** \u2014 the `\"Questions\"` category key resolves to `\u9898\u76ee` (exam questions) because the Workbook feature reuses it; needs a disambiguated key (`\u95ee\u53e5`).\n- [ ] `MenuBarTranslateView.swift:52-69`, `:256-262` \u2014 saveability heuristic and headword slot are keyed on the Chinese side; apply to the learning side. **Leave `:40-48` alone** (correct reference implementation).\n- [ ] `TranslatedScreenshotOverlayView.swift:205, :208, :218-229, :237` \u2014 verbatim `String` progress/error text.\n\n---\n\n### PHASE 4 \u2014 Seed content\n\n- [ ] `LearningCard.swift:300-316` \u2014 add `LearningDeck.englishCards` (beginner English headwords, Chinese glosses, **English** example sentences). `:12-31` \u2014 generalize `pinyin` \u2192 `reading` and add a second example-sentence slot. Route selection through `LearnerContent.starterDeck` (`LearnView.swift:63-72`, `HomeView.swift:100-102`, `StudyHubView.swift:85`, `PracticeStore.swift:287-292`, `QuizView.swift:302`).\n- [ ] `PracticeStore.swift:256-292` \u2014 pick the padding deck by direction and dedupe on `promptText` (the learning side), not always on `chinese`.\n- [ ] `PracticeStore.swift:21-27` \u2014 add `PracticeMode.stressDrill` + pool + confusion matrix.\n- [ ] `PracticeStore.swift:117`, `:127-128` \u2014 skip eager `PinyinConverter.convert` when `!learningIsChinese`.\n- [ ] `PhrasesView.swift:271-345` \u2014 add an English phrasebook where the **English** side is the authored idiomatic unit; give `PhraseCategory` a localizable display name separate from the identity string `GetRandomPhraseIntent.swift:68-79` matches on.\n- [ ] `GrammarPoint.swift:116-473` \u2014 **decide**: surface `GrammarKnowledgeBase.shared` in a reverse-mode Study surface (it is a complete, ready-made asset \u2014 13 points, 6 categories, Chinese explanations of English grammar, currently referenced by nothing), or delete it. Do not leave 473 lines of live dead code.\n\n---\n\n### PHASE 5 \u2014 Localizable.xcstrings\n\nThree distinct workstreams. **Nothing here is optional for requirement #4.**\n\n#### 5A \u2014 Split 44 hard-coded bilingual literals (source edits + catalog)\nThese have neither `en` nor `zh-Hans`, so they render the raw `\u4e2d\u6587 \u00b7 English` string in **both** modes. Files: `WorkbookQuestionBankView.swift`, `WorkbookGradingHistoryView.swift`, `WorkbookGradingView.swift`, `PhotoTranslateView.swift`. Each must become a single-language source key with `en` + `zh-Hans`. The precedent already exists in the same files (`\u7167\u7247 \u00b7 Photos`, `\u6587\u4ef6 \u00b7 Files`, `\u79fb\u9664 \u00b7 Remove` are correctly split).\n\n```\n%lld \u9053\u65b0\u9898 \u00b7 %lld new questions          %lld \u9898 \u00b7 %lld questions\ne.g. Unit 3 / \u52a8\u8bcd\u65f6\u6001                     \u4f5c\u4e1a \u00b7 Workbook\n\u4fdd\u5b58 \u00b7 Save                                \u5168\u90e8 \u00b7 All\n\u5168\u90e8\u4fdd\u5b58 \u00b7 Save all                        \u5168\u90e8\u52a0\u5165\u9898\u5e93 \u00b7 Add all to Review Bank\n\u5206\u7c7b\u6807\u7b7e\uff08\u53ef\u9009\uff09\u00b7 Subject tag (optional)    \u52a0\u5165\u9898\u5e93 \u00b7 Add to Bank\n\u539f\u59cb\u7167\u7247 \u00b7 Original photos                 \u53d6\u6d88 \u00b7 Cancel\n\u590d\u4e60\u9898\u5e93 \u00b7 Review Bank                     \u5b8c\u6210 \u00b7 Done\n\u5df2\u4fdd\u5b58 \u00b7 Saved                             \u5df2\u4fdd\u5b58\u5230\u6279\u6539\u5386\u53f2 \u00b7 Saved to grading history\n\u5df2\u5168\u90e8\u52a0\u5165 \u00b7 Added all                     \u5df2\u52a0\u5165\u9898\u5e93 \u00b7 Added to Bank\n\u5df2\u5728\u9898\u5e93 \u00b7 In Bank                         \u6279\u6539\u5386\u53f2 \u00b7 Grading History\n\u62cd\u7167 \u00b7 Camera                              \u663e\u793a\u7b54\u6848 \u00b7 Show answer\n\u6682\u65e0\u6279\u6539\u8bb0\u5f55 \u00b7 No graded workbooks yet     \u672a\u914d\u7f6e AI \u00b7 No AI provider configured\n\u6b64\u7b5b\u9009\u4e0b\u6ca1\u6709\u9898\u76ee \u00b7 No questions in this filter\n\u6e05\u7a7a \u00b7 Clear all                           \u6e05\u7a7a\u6279\u6539\u5386\u53f2 \u00b7 Clear grading history?\n\u6e05\u7a7a\u9898\u5e93 \u00b7 Clear the review bank?          \u751f\u6210 \u00b7 Generate\n\u751f\u6210 \u00b7 Generated                           \u751f\u6210\u7ec3\u4e60 \u00b7 Generate\n\u751f\u6210\u7ec3\u4e60 \u00b7 Generate Practice               \u7531 %@ \u751f\u6210 \u00b7 Powered by %@\n\u7b5b\u9009 \u00b7 Filter                              \u81ea\u5b9a\u4e49\u63d0\u793a\uff08\u53ef\u9009\uff09\u00b7 Custom instructions (optional)\n\u91cd\u65b0\u751f\u6210 \u00b7 Regenerate                      \u9690\u85cf\u7b54\u6848 \u00b7 Hide\n\u9898\u5e93 \u00b7 Review Bank                         \u9898\u5e93\u4e3a\u7a7a \u00b7 Review Bank is empty\n\u9898\u76ee\u6570\u91cf \u00b7 Questions: %lld\n\u5728\u300c\u8bbe\u7f6e \u2192 AI\u300d\u4e2d\u914d\u7f6e\u4e00\u4e2a AI \u63d0\u4f9b\u65b9\u5373\u53ef\u751f\u6210\u7ec3\u4e60\u9898\u3002\\nConfigure an AI provider in Settings \u2192 AI to generate questions.\n\u5c06\u6839\u636e\u9898\u5e93\u4e2d\u7684 %lld \u9053\u9898\u751f\u6210\u65b0\u9898\uff08\u4fa7\u91cd\u9519\u9898\uff09\u3002\\nNew questions are modeled on your %lld saved questions, focusing on ones you missed.\n\u6279\u6539\u4f5c\u4e1a\u540e\u4f1a\u81ea\u52a8\u4fdd\u5b58\u5230\u8fd9\u91cc\uff0c\u5305\u542b\u6279\u6539\u7ed3\u679c\u548c\u539f\u59cb\u7167\u7247\u3002\\nGraded workbooks are saved here automatically, with results and the original photos.\n\u6279\u6539\u4f5c\u4e1a\u540e\uff0c\u70b9\u300c\u52a0\u5165\u9898\u5e93\u300d\u628a\u9898\u76ee\u4fdd\u5b58\u5230\u8fd9\u91cc\uff0c\u4ee5\u4fbf\u65e5\u540e\u590d\u4e60\u548c\u751f\u6210\u65b0\u7ec3\u4e60\u3002\\nGrade a workbook, then tap \"Add to Bank\" on a question to save it here for review and to generate fresh practice.\n```\n\n#### 5B \u2014 Add `zh-Hans` to 10 existing English-only keys\n```\n%lld%% known                    \u2192  %lld%% \u5df2\u638c\u63e1\n~%lld%% known                   \u2192  ~%lld%% \u5df2\u638c\u63e1\nRead aloud                      \u2192  \u6717\u8bfb   (or repoint the 3 call sites at the already-translated \"Read Aloud\" \u2192 \u6717\u8bfb:\n                                    WorkbookQuestionBankView.swift:190, :452; WorkbookGradingHistoryView.swift:273)\nCouldn't parse generated questions. Try again or pick a different model.\nGraded successfully, but %lld scan(s) couldn't be saved to history.\nNo API key/model for %@. Configure one in Settings \u2192 AI.\nThe model returned no questions. Try again or adjust the instructions.\nThe model's response couldn't be read as questions. Try again or pick a different model.\ne.g. focus on past tense; keep them short.\nTranslate ${images} to ${targetLanguage}   \u2192  \u5c06 ${images} \u7ffb\u8bd1\u6210 ${targetLanguage}\n                                              (also delete the escaped stale duplicate\n                                               \"Translate \\${images} to \\${targetLanguage}\")\n```\n\n#### 5C \u2014 Add `en` to 4 Chinese-authored keys\n```\n\u4f60\u7684\u7b54\u6848 \u00b7 %@      \u6b63\u786e\u7b54\u6848 \u00b7 %@      \u6b63\u5728\u751f\u6210\u7ec3\u4e60\u9898\u2026      \u751f\u6210\u4e2d\u2026\n```\n(`\u8f93\u5165\u4e2d\u6587...` already has `en: \"Enter Chinese text...\"` \u2014 leave it, see **B12**.)\n\n#### 5D \u2014 Create 63 keys that do not exist (from `String` \u2192 `LocalizedStringKey` conversions)\nAI explanation card (8) \u00b7 Stats (5) \u00b7 Import/export (6) \u00b7 AI settings (5) \u00b7 Screenshot overlay (10) \u00b7 Speech recognition (7) \u00b7 AI/Ollama errors (4) \u00b7 OCR Chinese literals needing `en` (7) \u00b7 Translate/word errors (5) \u00b7 misc (6):\n```\nNuances & Context / Grammar Usage / When to Use / Examples / Synonyms / Antonyms /\nCommon Phrases / Learning Tip\nBest / Words Mastered / Save words to see breakdown by type / Save words to track mastery /\nSave words to see breakdown\nNothing to import / Import completed / Could not parse file / Import Vocabulary /\nSelect a vocabulary file to import / Choose where to save your vocabulary export\nApple Intelligence is not available / Connected to %@ / Add your %@ API key /\nReady \u2014 select a model / Connected \u2014 select a model\nReady / Stitching screenshots... / Recognizing text... / Complete / Error: %@ /\nAn unknown error occurred / No images to process /\nCombining screenshots and removing overlapping regions... /\nExtracting text from the combined image... / Translating to %@...\nSpeech recognition is not authorized. Please enable it in Settings. /\nSpeech recognition is not available on this device. / Audio error: %@ / Recognition error: %@ /\nThe selected language is not supported for speech recognition. /\nThe speech recognition model needs to be downloaded. / Could not initialize audio engine\nOllama server is not connected. Please check that Ollama is running. /\nNo Ollama model selected. Please select a model in Settings. /\nAI unavailable: %@ / Failed to generate explanation: %@\n\u65e0\u6cd5\u5904\u7406\u56fe\u7247 / \u672a\u627e\u5230\u6587\u5b57 / \u8bc6\u522b\u5931\u8d25: %@ / \u5f53\u524d\u5e73\u53f0\u4e0d\u652f\u6301\u6b64\u529f\u80fd /\n\u7ffb\u8bd1\u5931\u8d25: %@ / \u9010\u8bcd\u4fdd\u5b58\u5931\u8d25: %@ / AI \u8bcd\u6c47\u63d0\u53d6\u5931\u8d25: %@      \u2190 need `en`, currently leak \u4e2d\u6587 into English mode\nCould not translate word / Translation failed: %@ / AI Translation failed: %@ /\nLanguage pack not available. Please download it in Settings \u2192 General \u2192 Language & Region \u2192 Preferred Languages. /\nPlease enable Speech Recognition and Microphone access in Settings to use this feature.\nBoth Languages / Bidirectional English-Chinese translation with pinyin /\nPlease provide text to translate. / No images provided. / Could not load the provided images. /\nUnable to translate. Please try again.\n```\nPlus: three `LearnerMode.detail` strings, `PhotoScanLanguage.displayName` \u00d74, `PinyinConverter.Tone.displayName` \u00d75 (if any tone UI survives), and the `ImportResult.summary` fragments **as plural variations** (never hand-rolled `\"s\"`/`\"is\"`/`\"es\"`).\n\n#### 5E \u2014 Housekeeping\n- [ ] Prune the 7 stale `tab.*` keys (dead \u2014 `ContentView.swift:75-89` resolves plain literals) and `Read the full English sentence aloud`, `Preview Mandarin`, `Preview English` (stale) \u2014 84 stale entries currently mask real gaps.\n- [ ] Promote the 17 `en` entries in state `\"new\"` to `translated`.\n- [ ] Target: **0 user-visible keys missing zh-Hans**; the 10 format/blank keys (`\"\"`, `\" \"`, `.%@`, `%@ \u00b7 %@`, `%@ (%@)`, `%lld/%lld`, `\u2192 %@`, `\u2713 %@`, `\u2717 %@`, `\ud83d\udcd6 %@%@`) need no action.\n\n---\n\n### PHASE 6 \u2014 Verification\n\n- [ ] `scripts/test-learning-direction.sh` \u2014 mirror property + a wiring assertion that no `Views/*.swift` reads `LocalizationManager.shared.learningIsChinese` directly.\n- [ ] `scripts/test-ai-prompt-contracts.sh` \u2014 **must be green**; assertions at `:100` and `:231` inverted in the same commit as the prompt edits (**B1**).\n- [ ] `scripts/test-minimax-audio-contracts.sh` \u2014 covers `BatchAudioPlanner` at `MiniMaxAudioContractChecksRunner.swift:1324-1333`; extend for `.bothLanguages` ordering.\n- [ ] `scripts/test-vocabulary-paging.sh`, `scripts/test-audio-session-transitions.sh` \u2014 regression only.\n- [ ] New xcstrings coverage gate (CI-able): fail if any non-format key lacks `zh-Hans`, or if any source `Text(...)`/`Label(...)` literal is missing from the catalog.\n- [ ] **Manual acceptance, both directions, back to back** \u2014 the only real proof of the mirror:\n  1. Fresh install with a zh device locale \u2192 Translate opens **\u4e2d\u2192EN** (today: EN\u2192\u4e2d).\n  2. Switch mode in Settings mid-session \u2192 whole UI \u4e2d\u6587, no English leaks on Stats, AI card, Workbook, screenshot overlay, import alerts.\n  3. Explain an English word \u2192 explanation in \u7b80\u4f53\u4e2d\u6587 **with IPA + stress**, not a blank pronunciation column.\n  4. Vocabulary row and detail \u2192 English large, \u4e2d\u6587 small, IPA where pinyin sits, no pinyin sort option.\n  5. Read aloud everywhere \u2192 English voice for the learning side.\n  6. Batch audio `.bothLanguages` \u2192 English clips enqueued first; previously paid clips still cache-hit.\n  7. **Flip back to English mode and re-run 1\u20136** \u2192 byte-identical to pre-change behavior.\n\n---\n\n## 5. Suggested landing order (each row independently shippable and green)\n\n| PR | Scope | Gate |\n|---|---|---|\n| 1 | `LearningContext` extension + `scripts/learning-direction-checks/` | new mirror test |\n| 2 | `AppPreferences` init/defaults/`.bilingual` + `TranslationState.direction` | manual step 1 |\n| 3 | `EnglishPhonetics` + `SavedTerm.showsReading` + `PartOfSpeechLabels` | mirror test |\n| 4 | Prompt reversal **+ inverted prompt-check assertions** | `test-ai-prompt-contracts.sh` |\n| 5 | Service error localization (mechanical, no direction logic) | build |\n| 6 | Audio: batch ordering, live-speech voice, recognition defaults | `test-minimax-audio-contracts.sh` |\n| 7 | Vocabulary typography + reading slot + sort gating | manual step 4 |\n| 8 | TranslateView interactive pane + RubyTextView gating | manual steps 3, 5, 7 |\n| 9 | Settings/onboarding gating | manual step 2 |\n| 10 | Stats/PhotoTranslate/AI-card `String`\u2192`LocalizedStringKey` | catalog gate |\n| 11 | Catalog 5A\u20135E | catalog gate |\n| 12 | Seed decks, phrasebook, stress drill, `GrammarKnowledgeBase` decision | manual full pass |\n\n**Non-negotiable invariant for every PR:** re-run the English-speaker acceptance pass. The forward mode is the product's shipped baseline \u2014 every change must be provably a no-op for it, and the mirror test plus the `learningIsChinese`-only gating pattern (**B7**) is what makes that provable rather than hopeful.",
+    "background_tasks": [
+      {
+        "id": "wut9oym9c",
+        "type": "workflow",
+        "status": "running",
+        "description": "Audit SwiftMandarin for every place the English-speaker-learning-Mandarin assumption is hard-coded, so the reverse (Chinese speaker learning English) mode can be completed",
+        "name": "audit-reverse-learner-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a14e923d6abe75089",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_2fada24c-0cc/agent-a14e923d6abe75089.jsonl",
+    "background_tasks": [
+      {
+        "id": "wcmv5f9v1",
+        "type": "workflow",
+        "status": "running",
+        "description": "Route hard-coded user-facing strings through the string catalog so the interface fully switches to \u4e2d\u6587 in Chinese-speaker mode, without changing what English mode renders",
+        "name": "localize-for-reverse-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a1a3c4ad36c3c84bc",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_2fada24c-0cc/agent-a1a3c4ad36c3c84bc.jsonl",
+    "background_tasks": [
+      {
+        "id": "wcmv5f9v1",
+        "type": "workflow",
+        "status": "running",
+        "description": "Route hard-coded user-facing strings through the string catalog so the interface fully switches to \u4e2d\u6587 in Chinese-speaker mode, without changing what English mode renders",
+        "name": "localize-for-reverse-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a65546e64ee2472c6",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_2fada24c-0cc/agent-a65546e64ee2472c6.jsonl",
+    "background_tasks": [
+      {
+        "id": "wcmv5f9v1",
+        "type": "workflow",
+        "status": "running",
+        "description": "Route hard-coded user-facing strings through the string catalog so the interface fully switches to \u4e2d\u6587 in Chinese-speaker mode, without changing what English mode renders",
+        "name": "localize-for-reverse-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a5487bcd8be6a0a91",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_2fada24c-0cc/agent-a5487bcd8be6a0a91.jsonl",
+    "background_tasks": [
+      {
+        "id": "wcmv5f9v1",
+        "type": "workflow",
+        "status": "running",
+        "description": "Route hard-coded user-facing strings through the string catalog so the interface fully switches to \u4e2d\u6587 in Chinese-speaker mode, without changing what English mode renders",
+        "name": "localize-for-reverse-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a6b253112c7c01710",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_2fada24c-0cc/agent-a6b253112c7c01710.jsonl",
+    "background_tasks": [
+      {
+        "id": "wcmv5f9v1",
+        "type": "workflow",
+        "status": "running",
+        "description": "Route hard-coded user-facing strings through the string catalog so the interface fully switches to \u4e2d\u6587 in Chinese-speaker mode, without changing what English mode renders",
+        "name": "localize-for-reverse-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a289d3435d41a1d8f",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_2fada24c-0cc/agent-a289d3435d41a1d8f.jsonl",
+    "background_tasks": [
+      {
+        "id": "wcmv5f9v1",
+        "type": "workflow",
+        "status": "running",
+        "description": "Route hard-coded user-facing strings through the string catalog so the interface fully switches to \u4e2d\u6587 in Chinese-speaker mode, without changing what English mode renders",
+        "name": "localize-for-reverse-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a96ead664531867a7",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_2fada24c-0cc/agent-a96ead664531867a7.jsonl",
+    "background_tasks": [
+      {
+        "id": "wcmv5f9v1",
+        "type": "workflow",
+        "status": "running",
+        "description": "Route hard-coded user-facing strings through the string catalog so the interface fully switches to \u4e2d\u6587 in Chinese-speaker mode, without changing what English mode renders",
+        "name": "localize-for-reverse-mode"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a262be488fa50a2db",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/agent-a262be488fa50a2db.jsonl",
+    "background_tasks": [
+      {
+        "id": "wt9oh3je3",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially verify the Chinese-speaker-learning-English implementation: compile risk in views, English-mode regressions, remaining reverse-mode gaps, and string-catalog integrity",
+        "name": "verify-reverse-mode"
+      },
+      {
+        "id": "b161wgyvv",
+        "type": "shell",
+        "status": "running",
+        "description": "Search for other copies of the string catalog",
+        "command": "find / -name 'Localizable.xcstrings*' -not -path '/System/*' 2>/dev/null | head -20; echo '--- logs ---'; ls -la logs | head -25; echo '--- dist ---'; find dist -type f | head -20"
+      },
+      {
+        "id": "b4gvtwszx",
+        "type": "shell",
+        "status": "running",
+        "description": "Wait for verification completion",
+        "command": "sleep 420; cat /Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/journal.jsonl | python3 -c \"\nimport sys,json\nn=0\nfor line in sys.stdin:\n    d=json.loads(line)\n    if d.get('type')=='result':\n        n+=1\n        r=d.get('result')\n        if isinstance(r,str):\n            try: r=json.loads(r)\n            except Exception: pass\n        if isinstance(r,dict):\n            fs=r.get('findings') or []\n            print('DONE', r.get('lens'), '| findings:', len(fs), '| blockers:', sum(1 for f in fs if f.get('severity')=='blocker'))\nprint('results:', n)\n\""
+      },
+      {
+        "id": "bsvwy5v87",
+        "type": "shell",
+        "status": "running",
+        "description": "Poll until all verification lenses complete",
+        "command": "cat > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.sh <<'EOF'\n#!/bin/zsh\nJ=/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/journal.jsonl\nfor i in {1..120}; do\n  n=$(grep -c '\"type\":\"result\"' \"$J\" 2>/dev/null || echo 0)\n  if [ \"$n\" -ge 4 ]; then echo \"all 4 lenses done\"; break; fi\n  sleep 15\ndone\npython3 - \"$J\" <<'PY'\nimport sys, json\nfor line in open(sys.argv[1]):\n    d = json.loads(line)\n    if d.get('type') != 'result': continue\n    r = d.get('result')\n    if isinstance(r, str):\n        try: r = json.loads(r)\n        except Exception: continue\n    if not isinstance(r, dict): continue\n    fs = r.get('findings') or []\n    print('=' * 70)\n    print('LENS:', r.get('lens'), '| harnesses:', r.get('ranHarnesses'), '| findings:', len(fs))\n    print('VERDICT:', (r.get('verdict') or '')[:900])\n    for f in fs:\n\u2026 [+560 chars]"
+      },
+      {
+        "id": "b9g5e3ns9",
+        "type": "shell",
+        "status": "running",
+        "description": "Poll and print verification findings",
+        "command": "python3 - <<'PY' > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.py\nPY\ncat > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.py <<'PY'\nimport json, sys, time, pathlib\nJ = pathlib.Path('/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/journal.jsonl')\n\ndef results():\n    out = []\n    for line in J.read_text().splitlines():\n        try: d = json.loads(line)\n        except Exception: continue\n        if d.get('type') != 'result': continue\n        r = d.get('result')\n        if isinstance(r, str):\n            try: r = json.loads(r)\n            except Exception: continue\n        if isinstance(r, dict): out.append(r)\n    return out\n\nfor _ in range(160):\n    rs = results()\n    if len(rs) >= 4: break\n    time.sleep(15)\n\nrs = results()\n\u2026 [+695 chars]"
+      },
+      {
+        "id": "bkev9l1m3",
+        "type": "shell",
+        "status": "running",
+        "description": "Run full macOS typecheck script",
+        "command": "cd /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad && zsh fullcheck.sh 2>&1 | tail -30"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "ae9ff96008c72fc31",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/agent-ae9ff96008c72fc31.jsonl",
+    "background_tasks": [
+      {
+        "id": "wt9oh3je3",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially verify the Chinese-speaker-learning-English implementation: compile risk in views, English-mode regressions, remaining reverse-mode gaps, and string-catalog integrity",
+        "name": "verify-reverse-mode"
+      },
+      {
+        "id": "b161wgyvv",
+        "type": "shell",
+        "status": "running",
+        "description": "Search for other copies of the string catalog",
+        "command": "find / -name 'Localizable.xcstrings*' -not -path '/System/*' 2>/dev/null | head -20; echo '--- logs ---'; ls -la logs | head -25; echo '--- dist ---'; find dist -type f | head -20"
+      },
+      {
+        "id": "bsvwy5v87",
+        "type": "shell",
+        "status": "running",
+        "description": "Poll until all verification lenses complete",
+        "command": "cat > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.sh <<'EOF'\n#!/bin/zsh\nJ=/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/journal.jsonl\nfor i in {1..120}; do\n  n=$(grep -c '\"type\":\"result\"' \"$J\" 2>/dev/null || echo 0)\n  if [ \"$n\" -ge 4 ]; then echo \"all 4 lenses done\"; break; fi\n  sleep 15\ndone\npython3 - \"$J\" <<'PY'\nimport sys, json\nfor line in open(sys.argv[1]):\n    d = json.loads(line)\n    if d.get('type') != 'result': continue\n    r = d.get('result')\n    if isinstance(r, str):\n        try: r = json.loads(r)\n        except Exception: continue\n    if not isinstance(r, dict): continue\n    fs = r.get('findings') or []\n    print('=' * 70)\n    print('LENS:', r.get('lens'), '| harnesses:', r.get('ranHarnesses'), '| findings:', len(fs))\n    print('VERDICT:', (r.get('verdict') or '')[:900])\n    for f in fs:\n\u2026 [+560 chars]"
+      },
+      {
+        "id": "b9g5e3ns9",
+        "type": "shell",
+        "status": "running",
+        "description": "Poll and print verification findings",
+        "command": "python3 - <<'PY' > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.py\nPY\ncat > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.py <<'PY'\nimport json, sys, time, pathlib\nJ = pathlib.Path('/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/journal.jsonl')\n\ndef results():\n    out = []\n    for line in J.read_text().splitlines():\n        try: d = json.loads(line)\n        except Exception: continue\n        if d.get('type') != 'result': continue\n        r = d.get('result')\n        if isinstance(r, str):\n            try: r = json.loads(r)\n            except Exception: continue\n        if isinstance(r, dict): out.append(r)\n    return out\n\nfor _ in range(160):\n    rs = results()\n    if len(rs) >= 4: break\n    time.sleep(15)\n\nrs = results()\n\u2026 [+695 chars]"
+      },
+      {
+        "id": "bklh2g27c",
+        "type": "shell",
+        "status": "running",
+        "description": "Typecheck with approachable-concurrency features",
+        "command": "SC=/private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad\ncd $SC/shimsrc\nxcrun swiftc -typecheck -continue-building-after-errors -swift-version 5 -target arm64-apple-macos26.2 \\\n  -default-isolation MainActor \\\n  -enable-upcoming-feature MemberImportVisibility \\\n  -enable-upcoming-feature NonisolatedNonsendingByDefault \\\n  -enable-upcoming-feature InferSendableFromCaptures \\\n  -enable-upcoming-feature GlobalActorIsolatedTypesUsability \\\n  -enable-upcoming-feature DisableOutwardActorInference \\\n  -enable-upcoming-feature InferIsolatedConformances \\\n  -I $SC/OllamaReal $(find . -name \"*.swift\") 2>&1 | grep -E \"error:|warning: unknown|unrecognized\" | grep -v \"^ \" | sed 's|^\\./||' | sort -u | grep -v \"could not be found for macro\" | head -40"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "abf8f9148643e2d44",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/agent-abf8f9148643e2d44.jsonl",
+    "background_tasks": [
+      {
+        "id": "wt9oh3je3",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially verify the Chinese-speaker-learning-English implementation: compile risk in views, English-mode regressions, remaining reverse-mode gaps, and string-catalog integrity",
+        "name": "verify-reverse-mode"
+      },
+      {
+        "id": "bsvwy5v87",
+        "type": "shell",
+        "status": "running",
+        "description": "Poll until all verification lenses complete",
+        "command": "cat > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.sh <<'EOF'\n#!/bin/zsh\nJ=/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/journal.jsonl\nfor i in {1..120}; do\n  n=$(grep -c '\"type\":\"result\"' \"$J\" 2>/dev/null || echo 0)\n  if [ \"$n\" -ge 4 ]; then echo \"all 4 lenses done\"; break; fi\n  sleep 15\ndone\npython3 - \"$J\" <<'PY'\nimport sys, json\nfor line in open(sys.argv[1]):\n    d = json.loads(line)\n    if d.get('type') != 'result': continue\n    r = d.get('result')\n    if isinstance(r, str):\n        try: r = json.loads(r)\n        except Exception: continue\n    if not isinstance(r, dict): continue\n    fs = r.get('findings') or []\n    print('=' * 70)\n    print('LENS:', r.get('lens'), '| harnesses:', r.get('ranHarnesses'), '| findings:', len(fs))\n    print('VERDICT:', (r.get('verdict') or '')[:900])\n    for f in fs:\n\u2026 [+560 chars]"
+      },
+      {
+        "id": "b9g5e3ns9",
+        "type": "shell",
+        "status": "running",
+        "description": "Poll and print verification findings",
+        "command": "python3 - <<'PY' > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.py\nPY\ncat > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.py <<'PY'\nimport json, sys, time, pathlib\nJ = pathlib.Path('/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/journal.jsonl')\n\ndef results():\n    out = []\n    for line in J.read_text().splitlines():\n        try: d = json.loads(line)\n        except Exception: continue\n        if d.get('type') != 'result': continue\n        r = d.get('result')\n        if isinstance(r, str):\n            try: r = json.loads(r)\n            except Exception: continue\n        if isinstance(r, dict): out.append(r)\n    return out\n\nfor _ in range(160):\n    rs = results()\n    if len(rs) >= 4: break\n    time.sleep(15)\n\nrs = results()\n\u2026 [+695 chars]"
+      }
+    ],
+    "session_crons": []
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "0e5a371d-776d-4c57-8a51-f4a290b52c6c",
+    "permission_mode": "bypassPermissions",
+    "agent_id": "a8b78ca39085362b6",
+    "agent_type": "workflow-subagent",
+    "effort": {
+      "level": "xhigh"
+    },
+    "hook_event_name": "SubagentStop",
+    "stop_hook_active": false,
+    "agent_transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/agent-a8b78ca39085362b6.jsonl",
+    "background_tasks": [
+      {
+        "id": "wt9oh3je3",
+        "type": "workflow",
+        "status": "running",
+        "description": "Adversarially verify the Chinese-speaker-learning-English implementation: compile risk in views, English-mode regressions, remaining reverse-mode gaps, and string-catalog integrity",
+        "name": "verify-reverse-mode"
+      },
+      {
+        "id": "bsvwy5v87",
+        "type": "shell",
+        "status": "running",
+        "description": "Poll until all verification lenses complete",
+        "command": "cat > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.sh <<'EOF'\n#!/bin/zsh\nJ=/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/journal.jsonl\nfor i in {1..120}; do\n  n=$(grep -c '\"type\":\"result\"' \"$J\" 2>/dev/null || echo 0)\n  if [ \"$n\" -ge 4 ]; then echo \"all 4 lenses done\"; break; fi\n  sleep 15\ndone\npython3 - \"$J\" <<'PY'\nimport sys, json\nfor line in open(sys.argv[1]):\n    d = json.loads(line)\n    if d.get('type') != 'result': continue\n    r = d.get('result')\n    if isinstance(r, str):\n        try: r = json.loads(r)\n        except Exception: continue\n    if not isinstance(r, dict): continue\n    fs = r.get('findings') or []\n    print('=' * 70)\n    print('LENS:', r.get('lens'), '| harnesses:', r.get('ranHarnesses'), '| findings:', len(fs))\n    print('VERDICT:', (r.get('verdict') or '')[:900])\n    for f in fs:\n\u2026 [+560 chars]"
+      },
+      {
+        "id": "b9g5e3ns9",
+        "type": "shell",
+        "status": "running",
+        "description": "Poll and print verification findings",
+        "command": "python3 - <<'PY' > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.py\nPY\ncat > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/scratchpad/waitverify.py <<'PY'\nimport json, sys, time, pathlib\nJ = pathlib.Path('/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92/subagents/workflows/wf_c60d0924-1d4/journal.jsonl')\n\ndef results():\n    out = []\n    for line in J.read_text().splitlines():\n        try: d = json.loads(line)\n        except Exception: continue\n        if d.get('type') != 'result': continue\n        r = d.get('result')\n        if isinstance(r, str):\n            try: r = json.loads(r)\n            except Exception: continue\n        if isinstance(r, dict): out.append(r)\n    return out\n\nfor _ in range(160):\n    rs = results()\n    if len(rs) >= 4: break\n    time.sleep(15)\n\nrs = results()\n\u2026 [+695 chars]"
+      }
+    ],
+    "session_crons": []
+  }
+]

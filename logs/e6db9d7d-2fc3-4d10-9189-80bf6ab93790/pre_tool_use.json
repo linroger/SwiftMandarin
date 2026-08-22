@@ -1,0 +1,661 @@
+[
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -n \"@MainActor\\|@Observable\\|final class AIModelSettings\\|nonisolated\" /Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Models/AIModelSettings.swift | head; echo ---; sed -n 685,700p /Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Models/AIModelSettings.swift; echo ---; grep -n \"@MainActor\\|final class AIWordExplanationService\\|@Observable\" /Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Services/AIWordExplanationService.swift | head",
+      "description": "Check actor isolation of AI settings and explanation service"
+    },
+    "tool_use_id": "toolu_01PNBzMaQyYoVpNYdDcGDGKn"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Services/WordTranslationService.swift",
+      "old_string": "    private func systemOrAITranslate(_ text: String, sourceIsChinese: Bool) async throws -> String {\n        if #available(iOS 26.0, macOS 26.0, *) {\n            let session = TranslationSession(\n                installedSource: Locale.Language(identifier: sourceIsChinese ? \"zh-Hans\" : \"en\"),\n                target: Locale.Language(identifier: sourceIsChinese ? \"en\" : \"zh-Hans\")\n            )\n            let response = try await session.translate(text)\n            return response.targetText\n        } else {\n            return try await AIWordExplanationService.shared\n                .translateWithProvider(text, sourceIsChinese: sourceIsChinese)\n                .trimmingCharacters(in: .whitespacesAndNewlines)\n        }\n    }",
+      "new_string": "    private func systemOrAITranslate(_ text: String, sourceIsChinese: Bool) async throws -> String {\n        if #available(iOS 26.0, macOS 26.0, *) {\n            do {\n                let session = TranslationSession(\n                    installedSource: Locale.Language(identifier: sourceIsChinese ? \"zh-Hans\" : \"en\"),\n                    target: Locale.Language(identifier: sourceIsChinese ? \"en\" : \"zh-Hans\")\n                )\n                let response = try await session.translate(text)\n                return response.targetText\n            } catch {\n                // The installed-languages session throws whenever the language\n                // pack isn't downloaded. That's a device-setup condition, not a\n                // reason to fail the lookup \u2014 route through the configured AI\n                // provider like pre-iOS 26 does. Only rethrow when no provider\n                // exists to fall back to.\n                guard await AIModelSettings.shared.isAnyProviderAvailable else { throw error }\n                return try await aiTranslate(text, sourceIsChinese: sourceIsChinese)\n            }\n        } else {\n            return try await aiTranslate(text, sourceIsChinese: sourceIsChinese)\n        }\n    }\n\n    /// Word translation via the user's configured AI provider.\n    private func aiTranslate(_ text: String, sourceIsChinese: Bool) async throws -> String {\n        try await AIWordExplanationService.shared\n            .translateWithProvider(text, sourceIsChinese: sourceIsChinese)\n            .trimmingCharacters(in: .whitespacesAndNewlines)\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01HL651k2TpdWbuZRQEofoRd"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Services/WordTranslationService.swift",
+      "old_string": "        if #available(iOS 26.0, macOS 26.0, *) {\n            // Create translation session using installed languages\n            let session = TranslationSession(\n                installedSource: sourceIsChinese ? Locale.Language(identifier: \"zh-Hans\") : Locale.Language(identifier: \"en\"),\n                target: sourceIsChinese ? Locale.Language(identifier: \"en\") : Locale.Language(identifier: \"zh-Hans\")\n            )\n\n            // Create batch requests with client identifiers for matching\n            var requests: [TranslationSession.Request] = []\n            for (index, word) in wordsToTranslate.enumerated() {\n                requests.append(TranslationSession.Request(\n                    sourceText: word,\n                    clientIdentifier: \"\\(index)\"\n                ))\n            }\n\n            // Perform batch translation\n            let responses = try await session.translations(from: requests)\n\n            // Process responses and update cache\n            for response in responses {\n                if let clientId = response.clientIdentifier,\n                   let index = Int(clientId),\n                   index < wordsToTranslate.count {\n                    let originalWord = wordsToTranslate[index]\n                    let translation = response.targetText\n\n                    results[originalWord] = translation\n                    translationCache[\"\\(cachePrefix)\\(originalWord)\"] = translation\n                }\n            }\n        } else {\n            // Pre-iOS 26: translate sequentially through the configured AI\n            // provider (each result is cached, so repeat lookups are free).\n            for word in wordsToTranslate {\n                let translation = try await AIWordExplanationService.shared\n                    .translateWithProvider(word, sourceIsChinese: sourceIsChinese)\n                    .trimmingCharacters(in: .whitespacesAndNewlines)\n                guard !translation.isEmpty else { continue }\n                results[word] = translation\n                translationCache[\"\\(cachePrefix)\\(word)\"] = translation\n            }\n        }\n\n        return results",
+      "new_string": "        if #available(iOS 26.0, macOS 26.0, *) {\n            do {\n                // Create translation session using installed languages\n                let session = TranslationSession(\n                    installedSource: sourceIsChinese ? Locale.Language(identifier: \"zh-Hans\") : Locale.Language(identifier: \"en\"),\n                    target: sourceIsChinese ? Locale.Language(identifier: \"en\") : Locale.Language(identifier: \"zh-Hans\")\n                )\n\n                // Create batch requests with client identifiers for matching\n                var requests: [TranslationSession.Request] = []\n                for (index, word) in wordsToTranslate.enumerated() {\n                    requests.append(TranslationSession.Request(\n                        sourceText: word,\n                        clientIdentifier: \"\\(index)\"\n                    ))\n                }\n\n                // Perform batch translation\n                let responses = try await session.translations(from: requests)\n\n                // Process responses and update cache\n                for response in responses {\n                    if let clientId = response.clientIdentifier,\n                       let index = Int(clientId),\n                       index < wordsToTranslate.count {\n                        let originalWord = wordsToTranslate[index]\n                        let translation = response.targetText\n\n                        results[originalWord] = translation\n                        translationCache[\"\\(cachePrefix)\\(originalWord)\"] = translation\n                    }\n                }\n            } catch {\n                // Same missing-language-pack condition as the single-word\n                // path: fall back to the AI provider rather than failing the\n                // whole batch, when one is configured.\n                guard await AIModelSettings.shared.isAnyProviderAvailable else { throw error }\n                try await mergeAITranslations(of: wordsToTranslate, sourceIsChinese: sourceIsChinese, into: &results)\n            }\n        } else {\n            try await mergeAITranslations(of: wordsToTranslate, sourceIsChinese: sourceIsChinese, into: &results)\n        }\n\n        return results\n    }\n\n    /// Translate sequentially through the configured AI provider (each result\n    /// is cached, so repeat lookups are free), merging into `results`.\n    private func mergeAITranslations(\n        of words: [String],\n        sourceIsChinese: Bool,\n        into results: inout [String: String]\n    ) async throws {\n        let cachePrefix = sourceIsChinese ? \"zh-en:\" : \"en-zh:\"\n        for word in words {\n            let translation = try await aiTranslate(word, sourceIsChinese: sourceIsChinese)\n            guard !translation.isEmpty else { continue }\n            results[word] = translation\n            translationCache[\"\\(cachePrefix)\\(word)\"] = translation\n        }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01SaTTkwYZq4i7WBEQUsvJdG"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Views/Components/RubyTextView.swift",
+      "old_string": "    /// The learning-language text \u2014 what gets the headline, primary\n    /// narration, and the plain Copy button.\n    private var headlineWord: String { learningChinese ? chineseWord : englishDefinition }",
+      "new_string": "    /// The learning-language text \u2014 what gets the headline, primary\n    /// narration, and the plain Copy button.\n    private var headlineWord: String { learningChinese ? chineseWord : englishDefinition }\n\n    /// The word-level gloss \u2014 the side opposite the tapped word. Empty when\n    /// the lookup failed, so Save can refuse rather than storing the whole\n    /// sentence's translation as this one word's definition.\n    private var wordDefinition: String {\n        segmentIsChinese ? englishDefinition : chineseWord\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01UVnfkKC1pcx6MFTUvKkBsP"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Views/Components/RubyTextView.swift",
+      "old_string": "                } else if let error = translationError {\n                    VStack(alignment: .leading, spacing: 4) {\n                        Text(error)\n                            .font(.caption)\n                            .foregroundStyle(.red)\n\n                        // Fallback to context if available\n                        if !contextTranslation.isEmpty {\n                            Text(\"Context: \\(contextTranslation)\")\n                                .font(.caption)\n                                .foregroundStyle(.secondary)\n                        }\n                    }\n                    .frame(maxWidth: .infinity, alignment: .leading)",
+      "new_string": "                } else if let error = translationError {\n                    VStack(alignment: .leading, spacing: 4) {\n                        Text(error)\n                            .font(.caption)\n                            .foregroundStyle(.red)\n\n                        // Fallback to context if available\n                        if !contextTranslation.isEmpty {\n                            Text(\"Context: \\(contextTranslation)\")\n                                .font(.caption)\n                                .foregroundStyle(.secondary)\n                        }\n\n                        Button(\"Try Again\") {\n                            Task { await fetchWordDetails() }\n                        }\n                        .buttonStyle(.bordered)\n                        .controlSize(.small)\n                        .padding(.top, 4)\n                    }\n                    .frame(maxWidth: .infinity, alignment: .leading)",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01SQxHEFVSqFLkGfZk3PYDJp"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Views/Components/RubyTextView.swift",
+      "old_string": "                Button {\n                    // Pass the word-specific translation when saving\n                    let definition = englishDefinition.isEmpty ? contextTranslation : englishDefinition\n                    onSave(definition)\n                } label: {\n                    Label(isSaved ? \"Saved\" : \"Save\", systemImage: isSaved ? \"bookmark.fill\" : \"bookmark\")\n                }\n                .buttonStyle(.bordered)\n                .tint(isSaved ? .green : nil)\n                .disabled(isLoadingTranslation || isSaved)",
+      "new_string": "                Button {\n                    // Pass only the word-specific translation when saving.\n                    // The sentence-level context is never a substitute \u2014 it\n                    // used to be, and every word of a sentence ended up in the\n                    // vocabulary list \"defined\" by the same full-sentence\n                    // translation.\n                    onSave(wordDefinition)\n                } label: {\n                    Label(isSaved ? \"Saved\" : \"Save\", systemImage: isSaved ? \"bookmark.fill\" : \"bookmark\")\n                        .fitSingleLine()\n                }\n                .buttonStyle(.bordered)\n                .tint(isSaved ? .green : nil)\n                .disabled(isLoadingTranslation || isSaved || wordDefinition.isEmpty)",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01FGwudPfT9erhsAuEzVEF7G"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Views/Components/RubyTextView.swift",
+      "old_string": "            Button {\n                let definition = englishDefinition.isEmpty ? contextTranslation : englishDefinition\n                let fullText = learningChinese\n                    ? \"\\(chineseWord) (\\(pinyinText))\\n\\(definition)\"\n                    : \"\\(englishDefinition)\\n\\(chineseWord)\"\n                ClipboardService.copy(fullText)",
+      "new_string": "            Button {\n                // Only word-level parts belong on the clipboard; when the\n                // gloss lookup failed, copy the word and reading alone rather\n                // than pasting the sentence translation in its place.\n                let lines = learningChinese\n                    ? [\"\\(chineseWord) (\\(pinyinText))\", wordDefinition]\n                    : [englishDefinition, chineseWord]\n                let fullText = lines.filter { !$0.isEmpty }.joined(separator: \"\\n\")\n                ClipboardService.copy(fullText)",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01HGCr3Szmrr3TELR2UUnEpX"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Views/Components/RubyTextView.swift",
+      "old_string": "        } catch {\n            await MainActor.run {\n                // If translation fails, use what we have\n                translationError = \"Could not translate word\"\n                if segmentIsChinese {\n                    chineseWord = segment.text\n                    pinyinText = segment.pinyin\n                    englishDefinition = contextTranslation\n                } else {\n                    englishDefinition = segment.text\n                    chineseWord = contextTranslation.isEmpty ? segment.text : contextTranslation\n                    pinyinText = PinyinConverter.convert(chineseWord)\n                }\n                isLoadingTranslation = false\n            }\n            print(\"Word translation error for '\\(segment.text)': \\(error)\")\n        }",
+      "new_string": "        } catch {\n            await MainActor.run {\n                // If translation fails, show the word itself plus the sentence\n                // context (rendered separately, clearly labeled). The context\n                // must NOT stand in for the missing gloss: copying that into\n                // `englishDefinition`/`chineseWord` had Save storing the whole\n                // sentence's translation as the definition of every word in it.\n                translationError = \"Could not translate word\"\n                if segmentIsChinese {\n                    chineseWord = segment.text\n                    pinyinText = segment.pinyin\n                    englishDefinition = \"\"\n                } else {\n                    englishDefinition = segment.text\n                    chineseWord = \"\"\n                    pinyinText = \"\"\n                }\n                isLoadingTranslation = false\n            }\n            print(\"Word translation error for '\\(segment.text)': \\(error)\")\n        }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_0199si1KeJ6d6V4XNgUH9FXt"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "python3 - <<'EOF'\nimport re\np = \"SwiftMandarin/Views/Components/RubyTextView.swift\"\ns = open(p).read()\n# Add .fitSingleLine() to the four speak/copy labels in the action row\ns = s.replace('''Label(\"\u4e2d\u6587\", systemImage: \"speaker.wave.2\")\n                    }''', '''Label(\"\u4e2d\u6587\", systemImage: \"speaker.wave.2\")\n                            .fitSingleLine()\n                    }''')\ns = s.replace('''Label(\"EN\", systemImage: \"speaker.wave.2\")\n                        }''', '''Label(\"EN\", systemImage: \"speaker.wave.2\")\n                                .fitSingleLine()\n                        }''')\ns = s.replace('''Label(\"EN\", systemImage: \"speaker.wave.2\")\n                    }''', '''Label(\"EN\", systemImage: \"speaker.wave.2\")\n                            .fitSingleLine()\n                    }''')\ns = s.replace('''Label(\"\u4e2d\u6587\", systemImage: \"speaker.wave.2\")\n                        }''', '''Label(\"\u4e2d\u6587\", systemImage: \"speaker.wave.2\")\n                                .fitSingleLine()\n                        }''')\ns = s.replace('''Label(showCopiedFeedback ? \"Copied!\" : \"Copy\", systemImage: showCopiedFeedback ? \"checkmark\" : \"doc.on.doc\")\n                }''', '''Label(showCopiedFeedback ? \"Copied!\" : \"Copy\", systemImage: showCopiedFeedback ? \"checkmark\" : \"doc.on.doc\")\n                        .fitSingleLine()\n                }''')\nopen(p, \"w\").write(s)\nprint(s.count(\".fitSingleLine()\"), \"fitSingleLine occurrences now in file\")\nEOF",
+      "description": "Add fitSingleLine to popover action labels"
+    },
+    "tool_use_id": "toolu_018i852ZvZHaYrSiU6BNoJ5F"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "sed -n 385,445p /Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Views/Components/RubyTextView.swift",
+      "description": "View the action button row after edits"
+    },
+    "tool_use_id": "toolu_01JDyWDFncWPBi4xyEG1mC4D"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Views/TranslateView.swift",
+      "old_string": "    private var canSaveActiveTerm: Bool {\n        !activeChineseText.isEmpty && !activeEnglishText.isEmpty\n    }",
+      "new_string": "    private var canSaveActiveTerm: Bool {\n        !activeChineseText.isEmpty && !activeEnglishText.isEmpty\n    }\n\n    /// The direction the screen is actually showing. Translation auto-detects\n    /// the input language (`detectedTranslationDirection`), so when the typed\n    /// text doesn't match the toggle \u2014 Chinese typed while set to EN\u2192\u4e2d \u2014 the\n    /// section headers and speak-button voices must follow the content;\n    /// otherwise an \"ENGLISH\" header sits over Chinese text and Speak reads\n    /// Mandarin with an English voice.\n    private var displayedDirection: TranslationDirection {\n        sharedState.sourceText.isEmpty ? sharedState.direction : detectedTranslationDirection\n    }",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01V4gdbozb2P8Tr47xUmzXNf"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Views/TranslateView.swift",
+      "old_string": "        VStack(alignment: .leading, spacing: 8) {\n            HStack {\n                Text(sharedState.direction.sourceLanguageName)\n                    .font(.caption)\n                    .fontWeight(.semibold)\n                    .foregroundStyle(.secondary)\n                    .textCase(.uppercase)\n                \n                Spacer()\n                \n                if !sharedState.sourceText.isEmpty {\n                    Button {\n                        clearAll()",
+      "new_string": "        VStack(alignment: .leading, spacing: 8) {\n            HStack {\n                Text(displayedDirection.sourceLanguageName)\n                    .font(.caption)\n                    .fontWeight(.semibold)\n                    .foregroundStyle(.secondary)\n                    .textCase(.uppercase)\n\n                Spacer()\n\n                if !sharedState.sourceText.isEmpty {\n                    Button {\n                        clearAll()",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01QiZdughokaubi2nz5jxUDZ"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Views/TranslateView.swift",
+      "old_string": "                    Button {\n                        SpeechService.speak(sharedState.sourceText, languageCode: sharedState.direction.sourceSpeechCode)\n                    } label: {",
+      "new_string": "                    Button {\n                        SpeechService.speak(sharedState.sourceText, languageCode: displayedDirection.sourceSpeechCode)\n                    } label: {",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_016ZwdDymDJ6ZmGNEQrPaqfW"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Views/TranslateView.swift",
+      "old_string": "        VStack(alignment: .leading, spacing: 8) {\n            HStack {\n                Text(sharedState.direction.targetLanguageName)",
+      "new_string": "        VStack(alignment: .leading, spacing: 8) {\n            HStack {\n                Text(displayedDirection.targetLanguageName)",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_016GynGE6EBotVJ7qEzuk8VQ"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Views/TranslateView.swift",
+      "old_string": "                    Button {\n                        SpeechService.speak(sharedState.translatedText, languageCode: sharedState.direction.targetSpeechCode)\n                    } label: {",
+      "new_string": "                    Button {\n                        SpeechService.speak(sharedState.translatedText, languageCode: displayedDirection.targetSpeechCode)\n                    } label: {",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01SN3bjBP8Rv4qAnZM3FmoHS"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -n \"xcodebuild\\|swiftc\\|typecheck\\|type-check\" /Users/rogerlin/Downloads/SwiftMandarin-main/init.sh | head -20; echo ---; ls /Users/rogerlin/Downloads/SwiftMandarin-main/scripts | head -30; xcodebuild -list -project /Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin.xcodeproj 2>/dev/null | head -20",
+      "description": "Inspect build scripts and Xcode schemes"
+    },
+    "tool_use_id": "toolu_01DoW9EY16jfdMHkXRseouVi"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "xcodebuild -list 2>&1 | head -25",
+      "timeout": 10000,
+      "description": "List Xcode schemes"
+    },
+    "tool_use_id": "toolu_01VsqKFbeb35MtLzgvwxqGgv"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -rn \"xcodebuild\" /Users/rogerlin/Downloads/SwiftMandarin-main/agent-progress.txt | tail -5; grep -rn \"xcodebuild\" /Users/rogerlin/Downloads/SwiftMandarin-main/handoff.md | tail -5",
+      "description": "Find build commands used previously"
+    },
+    "tool_use_id": "toolu_01ACBs3Y6hhjJ3H4zqLgQrS1"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -list 2>&1 | head -20",
+      "timeout": 10000,
+      "description": "List schemes with Xcode-beta"
+    },
+    "tool_use_id": "toolu_01XtsZgdB47S7zST6HnGSH4o"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration Debug -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790/scratchpad/build-ios.log 2>&1; tail -5 /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790/scratchpad/build-ios.log",
+      "description": "Build iOS Simulator Debug in background",
+      "run_in_background": true
+    },
+    "tool_use_id": "toolu_01KZipRRxkN9aBRXmmoZnSGw"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -n \"definition\\|update(\" /Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Models/AutoAnalysisCoordinator.swift | head -20; echo ---; grep -n \"func noteTermAdded\" -A 15 /Users/rogerlin/Downloads/SwiftMandarin-main/SwiftMandarin/Models/AutoAnalysisCoordinator.swift",
+      "description": "Check if auto-analysis updates saved definitions"
+    },
+    "tool_use_id": "toolu_01HE8BZrAVXDpaHG2LeoYJhf"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "L=/private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790/scratchpad/build-ios.log; grep -c \"BUILD SUCCEEDED\" $L; grep -n \"warning:\\|error:\" $L | grep -v \"AppIntentsSSUTraining\\|appintentsmetadataprocessor\" | head -20",
+      "description": "Check build result and warnings"
+    },
+    "tool_use_id": "toolu_01HRSLWuGCw8SQa5fggVWyDH"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "python3 -c \"\np='SwiftMandarin/Services/WordTranslationService.swift'\ns=open(p).read()\nold='guard await AIModelSettings.shared.isAnyProviderAvailable else { throw error }'\nassert s.count(old)==2\ns=s.replace(old,'guard AIModelSettings.shared.isAnyProviderAvailable else { throw error }')\nopen(p,'w').write(s)\nprint('done')\"",
+      "description": "Drop unnecessary awaits flagged by the compiler"
+    },
+    "tool_use_id": "toolu_01LUZCW6uEWN6jN2kJ7FT7pb"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration Debug -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790/scratchpad/build-ios2.log 2>&1",
+      "description": "Rebuild iOS Simulator Debug",
+      "run_in_background": true
+    },
+    "tool_use_id": "toolu_01JFBfN3rNweeoL2a6xaUrvW"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration Debug -destination 'platform=macOS' build CODE_SIGNING_ALLOWED=NO > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790/scratchpad/build-macos.log 2>&1",
+      "description": "Build macOS Debug",
+      "run_in_background": true
+    },
+    "tool_use_id": "toolu_019Bb6r6gS6mXDDtNXDVUqKb"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "tail -30 /Users/rogerlin/Downloads/SwiftMandarin-main/agent-progress.txt; echo ====; grep -n \"^## 10) Updates\" /Users/rogerlin/Downloads/SwiftMandarin-main/handoff.md | tail -2; tail -8 /Users/rogerlin/Downloads/SwiftMandarin-main/handoff.md",
+      "description": "Check doc tails for append format"
+    },
+    "tool_use_id": "toolu_01FMPGCpAbcqTsUaQdWRQmuK"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "grep -n \"error:\" /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790/scratchpad/build-macos.log | head; grep -n \"warning:\" /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790/scratchpad/build-ios2.log | grep -v \"duplicate build file\" | head",
+      "description": "Inspect macOS build errors and iOS warnings"
+    },
+    "tool_use_id": "toolu_01N7E6VXs8jG58gvEAuffMoG"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration Debug -destination 'platform=macOS' build CODE_SIGNING_ALLOWED=NO > /private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790/scratchpad/build-macos2.log 2>&1",
+      "description": "Rebuild macOS Debug alone",
+      "run_in_background": true
+    },
+    "tool_use_id": "toolu_01NhsSmDCTDgRArBqMS46tSX"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cat >> /Users/rogerlin/Downloads/SwiftMandarin-main/agent-progress.txt <<'EOF'\n\n### 2026-08-22 \u2014 iPhone screenshot triage: word lookups failed and poisoned the vocabulary list\n\n- Report: four iPhone screenshots (~/Downloads/swm). Visible defects: (1) Word Details showed \"Could not translate word\" in red for \u670d\u4ece and \u547d\u4ee4; (2) the Vocabulary list had \u6307\u6325/\u547d\u4ee4/\u670d\u4ece all \"defined\" by the identical full-sentence translation \"Obey orders and obey orders.\"; (3) the Translate screen's input header read ENGLISH over Chinese text (\u670d\u4ece\u547d\u4ee4\u542c\u6307\u6325) and the output header read CHINESE over an English-led card, because the toggle said EN\u2192\u4e2d while auto-detect translated \u4e2d\u2192EN; (4) the Word Details \"Chinese\" speak button wrapped to \"Chi-nese\".\n- Root causes and fixes:\n  1. `WordTranslationService.systemOrAITranslate` (and the batch path) used `TranslationSession(installedSource:target:)` on iOS 26+ with NO fallback \u2014 that initializer throws whenever the language pack isn't downloaded, so every per-word lookup on such a device failed even with a working AI provider configured. Both paths now catch the system-session error and route through `AIWordExplanationService.translateWithProvider` when `AIModelSettings.shared.isAnyProviderAvailable`, mirroring the pre-iOS-26 branch (shared `aiTranslate`/`mergeAITranslations` helpers).\n  2. `WordDetailPopover`'s catch block assigned the sentence-level `contextTranslation` into `englishDefinition`, and Save fell back to `contextTranslation` too \u2014 so every word saved after a failed lookup stored the whole sentence's translation as its definition (the screenshot's identical-definitions rows). The error path now leaves the gloss empty (context is still shown, labeled, in the error text), Save passes only the word-level gloss and is disabled when there is none, and a \"Try Again\" button re-runs the lookup. Copy-with-Pinyin similarly no longer pastes the sentence in place of a missing gloss. Also fixed latently wrong saves of English headwords, which stored the English word itself as its own definition instead of the Chinese gloss (`wordDefinition` = the side opposite the headword).\n  3. `TranslateView` section headers/speak voices used the toggle's `sharedState.direction` even though translation itself auto-detects (`detectedTranslationDirection`). New `displayedDirection` (toggle when empty, detected once text exists) now drives both headers and both Speak buttons \u2014 the voice bug meant Mandarin text was narrated with an en-US voice whenever the toggle mismatched.\n  4. The popover action row's labels (\"\u4e2d\u6587\" \u2192 localized \"Chinese\", EN, Copy, Save) now use the existing `.fitSingleLine()` helper instead of wrapping mid-word.\n- Files: `Services/WordTranslationService.swift`, `Views/Components/RubyTextView.swift`, `Views/TranslateView.swift`. No new strings beyond reused catalog keys (\"Try Again\").\n- Tests: generic iOS Simulator Debug and macOS Debug builds via Xcode-beta; iOS clean (only the pre-existing \"duplicate build file\" warnings), macOS log checked the same way.\n- Not done / data note: vocabulary entries already saved with sentence definitions on the device are stored data; the code fix prevents new ones but existing rows need re-saving (delete + tap the word again) or an AI re-analysis pass. The sentence-level translation quality itself (\"Obey orders and obey orders.\" for \u670d\u4ece\u547d\u4ee4\u542c\u6307\u6325) is model output, not app logic.\nEOF\necho appended",
+      "description": "Append session entry to agent-progress.txt"
+    },
+    "tool_use_id": "toolu_01AE1NHCxxkqwXQZwL3n14sa"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "L=/private/tmp/claude-501/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790/scratchpad/build-macos2.log; grep -c \"BUILD SUCCEEDED\" $L; grep \"warning:\\|error:\" $L | grep -v \"duplicate build file\" | sort -u | head",
+      "description": "Verify macOS build clean"
+    },
+    "tool_use_id": "toolu_01VCsDm1mMGQ2Bcvs8nUPdVp"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "3bddb25c-026f-47b5-8f52-51827debcd6f",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "cat >> /Users/rogerlin/Downloads/SwiftMandarin-main/handoff.md <<'EOF'\n\n## Updates (append-only)\n- 2026-08-22: Screenshot-triage session (four iPhone screenshots in ~/Downloads/swm). Fixed: (1) per-word lookups failing with \"Could not translate word\" on iOS 26+ \u2014 `WordTranslationService`'s installed-languages `TranslationSession` throws when the language pack isn't downloaded and had no fallback; both single and batch paths now fall back to the configured AI provider; (2) `WordDetailPopover` storing the full-sentence translation as each saved word's definition after a failed lookup (the \"Obey orders and obey orders.\" rows in Vocabulary) \u2014 the sentence context is display-only now, Save requires a word-level gloss, a Try Again button re-runs the lookup, and saving an English headword now stores its Chinese gloss instead of the English word itself; (3) Translate-screen section headers and Speak voices following the direction toggle instead of the auto-detected content (ENGLISH header over Chinese text; Mandarin read with an en-US voice); (4) the popover's \"Chinese\" button wrapping to \"Chi-nese\" \u2014 action-row labels use `.fitSingleLine()`. Evidence: iOS Simulator and macOS Debug builds both BUILD SUCCEEDED with no new warnings (scratchpad logs build-ios2.log / build-macos2.log). Full narrative in agent-progress.txt, 2026-08-22 entry. Known residue: already-saved terms with sentence definitions are persisted data \u2014 prevented for new saves, existing rows need re-saving or AI re-analysis; sentence translation quality is model output.\nEOF\ngit add SwiftMandarin/Services/WordTranslationService.swift SwiftMandarin/Views/Components/RubyTextView.swift SwiftMandarin/Views/TranslateView.swift agent-progress.txt handoff.md && git commit -m \"Fix word-lookup failures and sentence-as-definition saves seen in iPhone screenshots\n\nWord Details showed 'Could not translate word' because the iOS 26\ninstalled-languages TranslationSession throws without its language pack\nand WordTranslationService had no fallback; both the single-word and\nbatch paths now route through the configured AI provider when the\nsystem session fails. The popover's error path no longer substitutes\nthe whole-sentence translation for the missing word gloss, which is\nhow every word of \u670d\u4ece\u547d\u4ee4\u542c\u6307\u6325 ended up in Vocabulary defined by the\nsame sentence; Save now requires a word-level gloss and a Try Again\nbutton re-runs the lookup. Translate-screen section headers and Speak\nvoices follow the auto-detected language instead of the toggle, and\nthe popover action labels no longer wrap ('Chi-nese').\n\nClaude-Session: https://claude.ai/code/session_018AaD1ek9Rc74K33DE4p7NU\" && git log --oneline -1",
+      "description": "Append handoff entry and commit the fix"
+    },
+    "tool_use_id": "toolu_01G5TmUGT4cS6JBRqmpAgkz5"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "d858058d-3190-4ee8-bbd2-0a04dc3119aa",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git status --short; echo ---; git log --oneline -3; git remote -v",
+      "description": "Check working tree, recent commits, and remote"
+    },
+    "tool_use_id": "toolu_012F5aqvgK9YFFcM7Qatvgtb"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "d858058d-3190-4ee8-bbd2-0a04dc3119aa",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git ls-files | grep -E \"^\\.claude/data/sessions|^logs/\" | head -8; echo ---; cat .gitignore 2>/dev/null | head -20",
+      "description": "Check whether session logs are normally tracked"
+    },
+    "tool_use_id": "toolu_01XEQyfk2tipGuCcaHSCUv8g"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "d858058d-3190-4ee8-bbd2-0a04dc3119aa",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git ls-files | grep -c xcuserdata; git show --stat 9ddb85e --oneline | tail -20",
+      "description": "Check xcuserdata tracking and prior commit composition"
+    },
+    "tool_use_id": "toolu_018rUPz3HAqLw3tqzK9FnRF2"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "d858058d-3190-4ee8-bbd2-0a04dc3119aa",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git ls-files | grep xcuserdata; ls -R SwiftMandarin.xcodeproj/project.xcworkspace/xcuserdata/ 2>/dev/null | head",
+      "description": "Identify tracked vs new xcuserdata files"
+    },
+    "tool_use_id": "toolu_019BqMerbMGQYXN7T6YDysY6"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "d858058d-3190-4ee8-bbd2-0a04dc3119aa",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git add SwiftMandarin.xcodeproj/project.pbxproj SwiftMandarin/Localizable.xcstrings SwiftMandarin/Models/LearningActivity.swift SwiftMandarin/Models/SavedTerm.swift SwiftMandarin/Views/Components/DesignSystem.swift SwiftMandarin/Views/StatsView.swift feature_list.json init.sh scripts/macos-surface-checks scripts/stats-heatmap-checks scripts/test-macos-surfaces.sh scripts/test-stats-heatmap.sh && git commit -m \"Add per-day mastery to the heatmap and fix flat macOS card surfaces\n\nTwo features documented in the 2026-08-10 agent-progress entries that\nwere never committed. The activity heatmap now counts words mastered\nper day (weighted 2 in activityScore), with un-mastering refunding the\nday the word was earned on via SavedTerm.dateMastered, and the Words\nLearned chart gained a 30-day range. On macOS, page and card surfaces\nboth resolved to the same system color (rgb 30,30,30 in dark), so every\ncard was invisible; SMTheme now picks distinct colors per appearance\nwith the card always lighter, and StatsView routes through the design\nsystem instead of bypassing it. Both come with check runners\n(stats-heatmap, macos-surfaces) wired into init.sh.\n\nClaude-Session: https://claude.ai/code/session_018AaD1ek9Rc74K33DE4p7NU\"",
+      "description": "Commit the two prior-session features"
+    },
+    "tool_use_id": "toolu_019x1292Ga9BFu76NcwGUWrR"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "prompt_id": "d858058d-3190-4ee8-bbd2-0a04dc3119aa",
+    "permission_mode": "bypassPermissions",
+    "effort": {
+      "level": "high"
+    },
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "printf '\\n# Xcode per-user window state.\\nSwiftMandarin.xcodeproj/project.xcworkspace/xcuserdata/\\n' >> .gitignore && git add .gitignore logs .claude/data/sessions && git commit -m \"Record session logs and ignore Xcode workspace user state\n\nClaude-Session: https://claude.ai/code/session_018AaD1ek9Rc74K33DE4p7NU\" && git status --short",
+      "description": "Commit logs and gitignore housekeeping"
+    },
+    "tool_use_id": "toolu_012sQQ79R62DRbrmSN4VcBLx"
+  }
+]

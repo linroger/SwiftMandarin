@@ -1,0 +1,8 @@
+{
+  "session_id": "ae56111d-7374-4136-bc40-16625f9b5feb",
+  "prompts": [
+    "add a feature to the batch ai translation menu that lets users toggle on an auto-translate feature, so that whenever a new word or phrase is added to the vocab list, it get automatically processed by the selected llm provider, and translated and analyzed.",
+    "for the multimodal tab feature, for the audio portion of record and transcribe audio, it doesnt work. why isnt it set to the same audio model as the selected audio model. also, the default apple speech recognition model  doesnt work. fix these",
+    "commit push and merge to main"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+  "prompts": [
+    "/Users/rogerlin/Downloads/swm check the images in this folder. they contain screenshots of the app. check each screenshot for errors, and identify the errors across the screenshots and fix them in the app.",
+    "commit push to main"
+  ]
+}

@@ -132,5 +132,265 @@
     "hook_event_name": "SessionStart",
     "source": "startup",
     "model": "claude-fable-5"
+  },
+  {
+    "session_id": "680b3c82-91d6-4aa6-b5a2-29fe11cd1c07",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/680b3c82-91d6-4aa6-b5a2-29fe11cd1c07.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "26fd1f26-02da-4471-9cbf-1161b61158c9",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/26fd1f26-02da-4471-9cbf-1161b61158c9.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "071ee678-062e-40d0-8eda-dad4f408f56d",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/071ee678-062e-40d0-8eda-dad4f408f56d.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "26fd1f26-02da-4471-9cbf-1161b61158c9",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/26fd1f26-02da-4471-9cbf-1161b61158c9.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "AI structured output parsing"
+  },
+  {
+    "session_id": "a19b92e0-a39e-47aa-858f-5a87bdcd8883",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a19b92e0-a39e-47aa-858f-5a87bdcd8883.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "26fd1f26-02da-4471-9cbf-1161b61158c9",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/26fd1f26-02da-4471-9cbf-1161b61158c9.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "AI structured output parsing"
+  },
+  {
+    "session_id": "26fd1f26-02da-4471-9cbf-1161b61158c9",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/26fd1f26-02da-4471-9cbf-1161b61158c9.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "AI structured output parsing"
+  },
+  {
+    "session_id": "73b6fac1-a742-4a0a-9167-0beec22309ac",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/73b6fac1-a742-4a0a-9167-0beec22309ac.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "391ca481-a36d-4ff4-b1ff-6c6b5e618568",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/391ca481-a36d-4ff4-b1ff-6c6b5e618568.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "claude-opus-5[1m]"
+  },
+  {
+    "session_id": "5a777379-b7e7-4457-8106-0d652b35a8d6",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/5a777379-b7e7-4457-8106-0d652b35a8d6.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "5b0feaa5-f1dd-43a0-96c8-6ed0e70c72b2",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/5b0feaa5-f1dd-43a0-96c8-6ed0e70c72b2.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "ea7d03c3-e52d-49a9-b3ec-a1eba7d2e810",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/ea7d03c3-e52d-49a9-b3ec-a1eba7d2e810.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "Chinese speaker learning English mode"
+  },
+  {
+    "session_id": "4054927c-6150-43eb-886e-7acf71223941",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/4054927c-6150-43eb-886e-7acf71223941.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "Chinese speaker learning English mode"
+  },
+  {
+    "session_id": "d8fb9c74-4243-45e4-a5b8-6fffb61b503d",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/d8fb9c74-4243-45e4-a5b8-6fffb61b503d.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "Chinese speaker learning English mode"
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "Chinese speaker learning English mode"
+  },
+  {
+    "session_id": "a13d39bd-2416-4373-ab40-fa0ccad7aa92",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/a13d39bd-2416-4373-ab40-fa0ccad7aa92.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "Chinese speaker learning English mode"
+  },
+  {
+    "session_id": "3a06a302-579f-4bcb-8d31-2dbcab2258ec",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/3a06a302-579f-4bcb-8d31-2dbcab2258ec.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "ae56111d-7374-4136-bc40-16625f9b5feb",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/ae56111d-7374-4136-bc40-16625f9b5feb.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "8fee2e49-a65d-44cf-be13-e2e7190d3d01",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/8fee2e49-a65d-44cf-be13-e2e7190d3d01.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "787c71e8-3669-4325-9dd3-403d182700e0",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/787c71e8-3669-4325-9dd3-403d182700e0.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "d25ba7fc-fbb0-4551-94cb-34fdf8c5e64d",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/d25ba7fc-fbb0-4551-94cb-34fdf8c5e64d.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "05fdd243-68fa-4e06-a53a-ad7357d693da",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/05fdd243-68fa-4e06-a53a-ad7357d693da.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "ae56111d-7374-4136-bc40-16625f9b5feb",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/ae56111d-7374-4136-bc40-16625f9b5feb.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "Auto-translate batch AI menu feature"
+  },
+  {
+    "session_id": "2a9e8472-6373-4098-96a4-9bd47f96ceaa",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/2a9e8472-6373-4098-96a4-9bd47f96ceaa.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "ae56111d-7374-4136-bc40-16625f9b5feb",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/ae56111d-7374-4136-bc40-16625f9b5feb.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "Auto-translate batch AI menu feature"
+  },
+  {
+    "session_id": "ae56111d-7374-4136-bc40-16625f9b5feb",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/ae56111d-7374-4136-bc40-16625f9b5feb.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "Auto-translate batch AI menu feature"
+  },
+  {
+    "session_id": "e5548b01-b4c6-4544-a148-8c4b2ac28757",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e5548b01-b4c6-4544-a148-8c4b2ac28757.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "116eb335-ba54-48e2-a8c3-217332a6dd5a",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/116eb335-ba54-48e2-a8c3-217332a6dd5a.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "ae56111d-7374-4136-bc40-16625f9b5feb",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/ae56111d-7374-4136-bc40-16625f9b5feb.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "session_title": "Auto-translate batch AI menu feature"
+  },
+  {
+    "session_id": "c8695f83-5fad-466f-9cce-bec78fe6a1e6",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/c8695f83-5fad-466f-9cce-bec78fe6a1e6.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "claude-opus-5[1m]"
+  },
+  {
+    "session_id": "e6db9d7d-2fc3-4d10-9189-80bf6ab93790",
+    "transcript_path": "/Users/rogerlin/.claude/projects/-Users-rogerlin-Downloads-SwiftMandarin-main/e6db9d7d-2fc3-4d10-9189-80bf6ab93790.jsonl",
+    "cwd": "/Users/rogerlin/Downloads/SwiftMandarin-main",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "model": "claude-fable-5"
   }
 ]
