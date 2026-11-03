@@ -153,3 +153,11 @@ SwiftMandarin is a cross-platform SwiftUI learning and translation app for macOS
 - Reviews: 29-agent review of the diff (24 confirmed, all fixed and re-reviewed); 22-agent review of AI Chat (17 confirmed, all fixed, each parser fix pinned by a regression check).
 - Verified: macOS and iOS Simulator builds with 0 warnings; `zsh init.sh` green; AI Chat exercised live with Apple Intelligence and Ollama gpt-oss; 8 iPhone + 4 iPad screenshots captured with seeded data.
 - Not verified: Apple's Translation framework (unsupported in the Simulator); physical devices.
+
+### 2026-11-03 — AI Chat reply UI polish (Liquid Glass, chunk spacing and tiles)
+
+- Request: the AI reply bubble "doesn't look quite right"; use Liquid Glass and fix the spacing, padding and background colour of the segmented-word tiles.
+- Changes: the reply is now one glass card (header with the AI Chat badge, chunk flow, tinted translation panel, glass Speak/Copy capsules in a GlassGroupCompat); the typing indicator uses the same glass shape. Chunk tiles use a solid card fill (white at 9% in dark mode so they read as raised, not recessed), a hairline stroke, a soft shadow, 10x7 padding and a pressed tint. Punctuation attaches to the neighbouring chunk instead of becoming its own tile. FlowLayout gained `lineSpacing` and `stretchesRows`, so every tile in a row shares one height and rows have an even 8 pt gap.
+- Bug found while polishing: rows overlapped because a gloss with `frame(maxWidth:)` measured as one line under an unspecified proposal but rendered on two. The gloss now gets an exact measured width, so measurement and render agree.
+- Files: `Views/ChatbotView.swift`, `Views/TranslateView.swift` (FlowLayout), `Screenshots/iOS Screenshots/iPhone-09-AIChat.png`.
+- Verified: iPhone 17 Pro Max simulator in light and dark mode; macOS build 0 warnings; `zsh init.sh` green (AI Chat 51/51 + 8/8, hygiene 11/11, smoke).

@@ -1577,3 +1577,4 @@ Critical path: fix the harness first (nothing else is verifiable without it) →
 
 - 2026-11-02: Iteration 34 opened; harness, project file, persistence and vocabulary work.
 - 2026-11-03: Shortcuts/prompt/parser rework, global search, glass pass, two adversarial reviews with fixes, AI Chat, screenshots, READMEs; status Complete.
+- 2026-11-03: AI Chat reply UI polish: glass reply card, equal-height chunk tiles with even spacing, solid tile fill in both appearances, attached punctuation, refreshed iPhone-09 screenshot; macOS build 0 warnings and init.sh green.
