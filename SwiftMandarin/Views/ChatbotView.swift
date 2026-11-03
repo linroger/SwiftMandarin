@@ -298,7 +298,28 @@ struct ChatbotView: View {
     }
 
     private func assistantCard(_ message: ChatbotMessage) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 22, height: 22)
+                    .background(SMTheme.heroGradient, in: Circle())
+                    .accessibilityHidden(true)
+                Text("AI Chat")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+                if !message.chunksFromModel {
+                    Label("Chunked on device", systemImage: "iphone")
+                        .labelStyle(.titleAndIcon)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .help(Text("The provider's chunks didn't match its reply, so the reply was split on this device. Meanings aren't available for these chunks."))
+                        .accessibilityHint(Text("The provider's chunks didn't match its reply, so the reply was split on this device. Meanings aren't available for these chunks."))
+                }
+            }
+
             ChatbotChunkFlow(
                 chunks: message.chunks ?? [ChatbotChunk(text: message.text)],
                 chinese: message.replyIsChinese,
@@ -309,44 +330,51 @@ struct ChatbotView: View {
             }
 
             if showTranslations, let translation = message.translation, !translation.isEmpty {
-                Divider()
-                Text(translation)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .textSelection(.enabled)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Image(systemName: "character.bubble")
+                        .font(.footnote)
+                        .foregroundStyle(Color.accentColor)
+                        .accessibilityHidden(true)
+                    Text(translation)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color.accentColor.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
 
-            HStack(spacing: 8) {
-                Button {
-                    if message.replyIsChinese {
-                        SpeechService.speakChinese(message.text)
-                    } else {
-                        SpeechService.speakEnglish(message.text)
+            GlassGroupCompat(spacing: 8) {
+                HStack(spacing: 8) {
+                    Button {
+                        if message.replyIsChinese {
+                            SpeechService.speakChinese(message.text)
+                        } else {
+                            SpeechService.speakEnglish(message.text)
+                        }
+                    } label: {
+                        Label("Speak", systemImage: "speaker.wave.2")
                     }
-                } label: {
-                    Label("Speak", systemImage: "speaker.wave.2")
+                    Button {
+                        ClipboardService.copy(message.text)
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
                 }
-                Button {
-                    ClipboardService.copy(message.text)
-                } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                }
-                Spacer(minLength: 0)
-                if !message.chunksFromModel {
-                    Text("Chunked on device")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .help(Text("The provider's chunks didn't match its reply, so the reply was split on this device. Meanings aren't available for these chunks."))
-                        .accessibilityHint(Text("The provider's chunks didn't match its reply, so the reply was split on this device. Meanings aren't available for these chunks."))
-                }
+                .font(.footnote.weight(.medium))
+                .labelStyle(.titleAndIcon)
+                .controlSize(.small)
+                .buttonBorderShape(.capsule)
+                .glassButtonStyleCompat()
             }
-            .font(.footnote.weight(.medium))
-            .buttonStyle(.borderless)
-            .labelStyle(.titleAndIcon)
         }
-        .padding(SMTheme.cardPadding)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .smCardSurface(cornerRadius: 18)
+        // The reply floats as Liquid Glass over the page, like the composer;
+        // the chips inside are solid tiles, so no glass sits on glass.
+        .glassEffectCompat(cornerRadius: 24)
     }
 
     // MARK: - Composer
@@ -490,32 +518,105 @@ struct ChatbotChunkFlow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, paragraph in
-                paragraphFlow(paragraph)
-            }
-        }
-    }
-
-    private func paragraphFlow(_ paragraph: [ChatbotChunk]) -> some View {
-        FlowLayout(spacing: chinese ? 6 : 8) {
-            ForEach(Array(paragraph.enumerated()), id: \.offset) { _, chunk in
-                if chunk.isPunctuation {
-                    Text(chunk.text)
-                        .font(chinese ? .title3 : .body)
-                        .padding(.top, showReadings ? 16 : 0)
-                } else {
-                    ChatbotChunkChip(
-                        chunk: chunk,
-                        chinese: chinese,
-                        showReading: showReadings,
-                        showMeaning: showMeanings
-                    ) {
-                        onTap(chunk)
+                FlowLayout(spacing: 6, lineSpacing: 8, stretchesRows: true) {
+                    ForEach(Array(ChunkCluster.clusters(paragraph).enumerated()), id: \.offset) { _, cluster in
+                        ChunkClusterView(
+                            cluster: cluster,
+                            chinese: chinese,
+                            showReading: showReadings,
+                            showMeaning: showMeanings,
+                            onTap: onTap
+                        )
                     }
                 }
             }
         }
+    }
+}
+
+/// A word chunk with the punctuation that belongs to it. Punctuation is not a
+/// chip of its own: a comma or full stop hugs the word before it and an
+/// opening quote or bracket the word after it, the way it reads in text,
+/// instead of floating in the flow with a gap on either side.
+struct ChunkCluster {
+    var leading = ""
+    var chunk: ChatbotChunk?
+    var trailing = ""
+
+    private static let openers: Set<Character> = ["“", "‘", "「", "『", "（", "(", "《", "【", "〈", "[", "{"]
+
+    static func clusters(_ chunks: [ChatbotChunk]) -> [ChunkCluster] {
+        var clusters: [ChunkCluster] = []
+        var pendingLeading = ""
+        // A straight quote has no direction of its own: the first opens, the
+        // next closes.
+        var straightQuoteOpen = false
+        for chunk in chunks {
+            guard chunk.isPunctuation else {
+                clusters.append(ChunkCluster(leading: pendingLeading, chunk: chunk))
+                pendingLeading = ""
+                continue
+            }
+            for character in chunk.text where !character.isWhitespace {
+                let opens: Bool
+                if character == "\"" {
+                    opens = !straightQuoteOpen
+                    straightQuoteOpen.toggle()
+                } else {
+                    opens = openers.contains(character)
+                }
+                if opens || clusters.isEmpty || !pendingLeading.isEmpty {
+                    pendingLeading.append(character)
+                } else {
+                    clusters[clusters.count - 1].trailing.append(character)
+                }
+            }
+        }
+        if !pendingLeading.isEmpty {
+            clusters.append(ChunkCluster(leading: pendingLeading))
+        }
+        return clusters
+    }
+}
+
+private struct ChunkClusterView: View {
+    let cluster: ChunkCluster
+    let chinese: Bool
+    let showReading: Bool
+    let showMeaning: Bool
+    let onTap: (ChatbotChunk) -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 1) {
+            if !cluster.leading.isEmpty {
+                punctuation(cluster.leading)
+            }
+            if let chunk = cluster.chunk {
+                ChatbotChunkChip(chunk: chunk, chinese: chinese, showReading: showReading, showMeaning: showMeaning) {
+                    onTap(chunk)
+                }
+            }
+            if !cluster.trailing.isEmpty {
+                punctuation(cluster.trailing)
+            }
+        }
+    }
+
+    /// Punctuation set on the chip's main text line: the same reading slot
+    /// above it and the same top padding, so it sits on the word's baseline.
+    private func punctuation(_ text: String) -> some View {
+        VStack(spacing: ChatbotChunkChip.lineGap) {
+            if showReading {
+                Text(verbatim: " ").font(ChatbotChunkChip.readingFont)
+            }
+            Text(verbatim: text)
+                .font(ChatbotChunkChip.wordFont(chinese: chinese))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.top, ChatbotChunkChip.verticalPadding)
+        .accessibilityHidden(true)
     }
 }
 
@@ -528,55 +629,109 @@ struct ChatbotChunkChip: View {
 
     @AppStorage("toneColors") private var toneColors: Bool = true
 
+    static let readingFont: Font = .caption.weight(.medium)
+    static let meaningFont: Font = .caption2
+    static let verticalPadding: CGFloat = 7
+    static let lineGap: CGFloat = 2
+
+    static func wordFont(chinese: Bool) -> Font {
+        chinese ? .title3.weight(.medium) : .body.weight(.medium)
+    }
+
     /// The gloss wraps within roughly the chunk's own width, so a short word
     /// does not grow a wide chip and a long phrase's gloss is not cut short.
     private var glossWidth: CGFloat {
-        let perCharacter: CGFloat = chinese ? 24 : 11
-        return min(max(110, CGFloat(chunk.text.count) * perCharacter), 260)
+        let perCharacter: CGFloat = chinese ? 20 : 9
+        return min(max(84, CGFloat(chunk.text.count) * perCharacter), 220)
+    }
+
+    /// The gloss's width: its own one-line width, capped at `glossWidth`.
+    /// Given as an exact width rather than a maximum because the flow layout
+    /// measures chips with no width proposal — under that, a capped gloss
+    /// reports its one-line height but renders wrapped onto two lines, and the
+    /// rows overlapped.
+    private var glossFrameWidth: CGFloat {
+        #if os(iOS)
+        let font = UIFont.preferredFont(forTextStyle: .caption2)
+        #else
+        let font = NSFont.preferredFont(forTextStyle: .caption2)
+        #endif
+        let natural = ceil((chunk.meaning as NSString).size(withAttributes: [.font: font]).width) + 2
+        return min(natural, glossWidth)
     }
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
-                if showReading && !chunk.reading.isEmpty {
+            VStack(spacing: Self.lineGap) {
+                // Every chip keeps the reading slot, so the words of a row
+                // share one line; the flow stretches the tiles of a row to
+                // one height, so a one-line gloss leaves no empty band.
+                if showReading {
                     reading
-                        .font(.caption)
+                        .font(Self.readingFont)
                         .lineLimit(1)
                 }
                 Text(chunk.text)
-                    .font(chinese ? .title2.weight(.medium) : .title3.weight(.medium))
+                    .font(Self.wordFont(chinese: chinese))
                     .foregroundStyle(.primary)
                 if showMeaning && !chunk.meaning.isEmpty {
                     Text(chunk.meaning)
-                        .font(.caption2)
+                        .font(Self.meaningFont)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                         .multilineTextAlignment(.center)
-                        .frame(maxWidth: glossWidth)
+                        .frame(width: glossFrameWidth)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(Color.accentColor.opacity(0.18), lineWidth: 0.75)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .padding(.horizontal, 10)
+            .padding(.vertical, Self.verticalPadding)
+            .frame(minWidth: 40, maxHeight: .infinity, alignment: .top)
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChunkChipButtonStyle())
         .accessibilityElement(children: .combine)
         .accessibilityHint(Text("Shows details for this chunk"))
     }
 
     @ViewBuilder
     private var reading: some View {
-        if chinese && toneColors {
+        if chunk.reading.isEmpty {
+            Text(verbatim: " ")
+        } else if chinese && toneColors {
             Text(PinyinConverter.coloredPinyin(fromPinyin: chunk.reading))
         } else {
             Text(chunk.reading)
                 .foregroundStyle(.secondary)
         }
+    }
+}
+
+/// A solid, softly raised tile that reads clearly on the glass reply bubble,
+/// and gives way under the finger.
+private struct ChunkChipButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// Always lighter than the glass bubble: the white card fill in light
+    /// mode, a soft white lift in dark mode (the dark card fill is darker than
+    /// dark glass and made the tiles look recessed).
+    private var tileFill: Color {
+        colorScheme == .dark ? Color.white.opacity(0.09) : SMTheme.cardFill
+    }
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(configuration.isPressed ? Color.accentColor.opacity(0.18) : tileFill)
+                    .shadow(color: SMTheme.cardShadow, radius: 2, x: 0, y: 1)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(SMTheme.cardStroke.opacity(0.7), lineWidth: 0.5)
+            }
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.96 : 1)
+            .animation(reduceMotion ? nil : .spring(duration: 0.2), value: configuration.isPressed)
     }
 }
 
@@ -602,7 +757,7 @@ private struct TypingIndicatorRow: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .smCardSurface(cornerRadius: 18)
+            .glassEffectCompat(cornerRadius: 20)
             Spacer()
         }
         .onAppear { animating = true }

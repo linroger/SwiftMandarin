@@ -1547,6 +1547,12 @@ nonisolated private struct TranslationDraft: Codable, Sendable {
 
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
+    /// Space between rows; `nil` keeps it equal to `spacing`.
+    var lineSpacing: CGFloat? = nil
+    /// Offer every item its row's full height, so items that can grow (a chip
+    /// with `maxHeight: .infinity`) line up as even tiles. Items that take
+    /// their ideal size are unaffected.
+    var stretchesRows: Bool = false
 
     /// The subviews' ideal sizes, measured once per subview set.
     ///
@@ -1576,11 +1582,19 @@ struct FlowLayout: Layout {
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) {
         refreshIfStale(&cache, subviews: subviews)
         let frames = arrange(proposal: proposal, sizes: cache.sizes).frames
+        // Row height = the tallest item sharing that row's y.
+        var rowHeights: [CGFloat: CGFloat] = [:]
+        if stretchesRows {
+            for frame in frames {
+                rowHeights[frame.minY] = max(rowHeights[frame.minY] ?? 0, frame.height)
+            }
+        }
 
         for (index, frame) in frames.enumerated() {
+            let height = stretchesRows ? (rowHeights[frame.minY] ?? frame.height) : frame.height
             subviews[index].place(
                 at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
-                proposal: ProposedViewSize(frame.size)
+                proposal: ProposedViewSize(width: frame.width, height: height)
             )
         }
     }
@@ -1609,7 +1623,7 @@ struct FlowLayout: Layout {
         for size in sizes {
             if currentX + size.width > maxWidth && currentX > 0 {
                 currentX = 0
-                currentY += lineHeight + spacing
+                currentY += lineHeight + (lineSpacing ?? spacing)
                 lineHeight = 0
             }
 
