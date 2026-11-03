@@ -13,14 +13,21 @@ struct RubySegment: Identifiable {
     let id = UUID()
     let text: String
     let pinyin: String
+    /// The pinyin with per-syllable tone colors. Built once here, when the
+    /// segment is created, rather than in `RubyWordView.body` — a passage of
+    /// a hundred words used to re-run the syllable/tone pass for every word
+    /// on every render of the parent view.
+    let coloredPinyin: AttributedString
     let partOfSpeech: PartOfSpeech
-    
+
     /// Translated meaning (fetched asynchronously)
     var translation: String?
-    
+
     init(from analyzedWord: AnalyzedWord) {
         self.text = analyzedWord.text
-        self.pinyin = PinyinConverter.convert(analyzedWord.text)
+        let pinyin = PinyinConverter.convert(analyzedWord.text)
+        self.pinyin = pinyin
+        self.coloredPinyin = PinyinConverter.coloredPinyin(fromPinyin: pinyin)
         self.partOfSpeech = analyzedWord.partOfSpeech
         self.translation = nil
     }
@@ -32,7 +39,9 @@ struct RubySegment: Identifiable {
     init(aiWord: IdentifiedWord) {
         self.text = aiWord.word
         let trimmedPinyin = aiWord.pinyin.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.pinyin = trimmedPinyin.isEmpty ? PinyinConverter.convert(aiWord.word) : trimmedPinyin
+        let pinyin = trimmedPinyin.isEmpty ? PinyinConverter.convert(aiWord.word) : trimmedPinyin
+        self.pinyin = pinyin
+        self.coloredPinyin = PinyinConverter.coloredPinyin(fromPinyin: pinyin)
         self.partOfSpeech = PartOfSpeech(aiLabel: aiWord.partOfSpeech)
         let trimmedMeaning = aiWord.meaning.trimmingCharacters(in: .whitespacesAndNewlines)
         self.translation = trimmedMeaning.isEmpty ? nil : trimmedMeaning
@@ -50,6 +59,21 @@ struct RubySegment: Identifiable {
     }
 }
 
+/// Fonts for the character line and the pinyin line of a ruby word.
+///
+/// Without an explicit size the standard text styles are used, so every
+/// existing caller renders exactly as before. The Reader passes its
+/// user-adjustable body size through, and the pinyin line scales with it.
+enum RubyTextMetrics {
+    static func characterFont(for fontSize: CGFloat?) -> Font {
+        fontSize.map { Font.system(size: $0) } ?? .title2
+    }
+
+    static func rubyFont(for fontSize: CGFloat?) -> Font {
+        fontSize.map { Font.system(size: max(10, ($0 * 0.55).rounded())) } ?? .caption
+    }
+}
+
 /// Interactive ruby text view that displays Chinese characters with pinyin above
 /// Tapping on a word/character shows a popup with details
 struct RubyTextView: View {
@@ -59,14 +83,21 @@ struct RubyTextView: View {
     /// verbatim (proper word boundaries, pinyin, meaning); when nil/empty the
     /// view falls back to local NLTokenizer segmentation.
     let aiSegments: [RubySegment]?
+    /// Point size for the characters; `nil` keeps the standard `.title2` style.
+    let fontSize: CGFloat?
     let onWordTap: ((RubySegment) -> Void)?
 
+    /// Segments as computed from the text (or supplied by the AI).
     @State private var segments: [RubySegment] = []
+    /// The displayable subset of `segments`, filtered once per segmentation
+    /// instead of on every render.
+    @State private var displaySegments: [RubySegment] = []
 
-    init(chineseText: String, englishMeaning: String = "", aiSegments: [RubySegment]? = nil, onWordTap: ((RubySegment) -> Void)? = nil) {
+    init(chineseText: String, englishMeaning: String = "", aiSegments: [RubySegment]? = nil, fontSize: CGFloat? = nil, onWordTap: ((RubySegment) -> Void)? = nil) {
         self.chineseText = chineseText
         self.englishMeaning = englishMeaning
         self.aiSegments = aiSegments
+        self.fontSize = fontSize
         self.onWordTap = onWordTap
     }
 
@@ -78,12 +109,12 @@ struct RubyTextView: View {
 
     var body: some View {
         FlowLayout(spacing: 4) {
-            ForEach(segments.filter { $0.isValidForDisplay }) { segment in
+            ForEach(displaySegments) { segment in
                 if segment.isPunctuation {
                     // Display punctuation inline without ruby annotation
-                    PunctuationView(text: segment.text)
+                    PunctuationView(text: segment.text, fontSize: fontSize)
                 } else {
-                    RubyWordView(segment: segment) {
+                    RubyWordView(segment: segment, fontSize: fontSize) {
                         onWordTap?(segment)
                     }
                 }
@@ -109,6 +140,7 @@ struct RubyTextView: View {
             let analyzed = ChineseTextAnalyzer.shared.segmentWithPartsOfSpeech(chineseText)
             segments = analyzed.map { RubySegment(from: $0) }
         }
+        displaySegments = segments.filter { $0.isValidForDisplay }
     }
 }
 
@@ -117,6 +149,9 @@ struct RubyTextView: View {
 /// matching wherever the pinyin row sits in regular RubyWordViews.
 struct PunctuationView: View {
     let text: String
+    /// Point size matching the surrounding `RubyWordView`s; `nil` for the
+    /// standard style.
+    var fontSize: CGFloat? = nil
 
     @AppStorage("showPinyin") private var showPinyin: Bool = true
     @AppStorage("pinyinPosition") private var pinyinPosition: String = "above"
@@ -129,7 +164,7 @@ struct PunctuationView: View {
 
             // Punctuation aligned with Chinese characters
             Text(text)
-                .font(.title2)
+                .font(RubyTextMetrics.characterFont(for: fontSize))
                 .fontWeight(.medium)
                 .foregroundStyle(.primary)
 
@@ -143,7 +178,7 @@ struct PunctuationView: View {
     /// Empty space matching the pinyin line height in RubyWordView.
     private var ghostPinyinLine: some View {
         Text(" ")
-            .font(.caption)
+            .font(RubyTextMetrics.rubyFont(for: fontSize))
             .opacity(0)
     }
 }
@@ -152,6 +187,8 @@ struct PunctuationView: View {
 /// the user's Appearance settings (show/hide, above/below/inline, tone colors).
 struct RubyWordView: View {
     let segment: RubySegment
+    /// Point size for the characters; `nil` keeps the standard `.title2` style.
+    var fontSize: CGFloat? = nil
     let action: () -> Void
 
     @State private var isHovered: Bool = false
@@ -223,24 +260,25 @@ struct RubyWordView: View {
     /// word like 学习 shows xué in orange and xí in orange/green per syllable,
     /// instead of the whole word taking the first detected tone's color
     /// (which gave learners wrong tone feedback on every polysyllabic word).
+    /// The colored string is precomputed on the segment (see `RubySegment`).
     @ViewBuilder
     private var pinyinText: some View {
         Group {
             if toneColors {
-                Text(PinyinConverter.coloredPinyin(fromPinyin: segment.pinyin))
+                Text(segment.coloredPinyin)
             } else {
                 Text(segment.pinyin)
                     .foregroundStyle(Color.secondary)
             }
         }
-        .font(.caption)
+        .font(RubyTextMetrics.rubyFont(for: fontSize))
         .lineLimit(1)
         .minimumScaleFactor(0.7)
     }
 
     private var characterText: some View {
         Text(segment.text)
-            .font(.title2)
+            .font(RubyTextMetrics.characterFont(for: fontSize))
             .fontWeight(.medium)
             .foregroundStyle(.primary)
     }
@@ -387,7 +425,7 @@ struct WordDetailPopover: View {
                     Button {
                         SpeechService.speakChinese(chineseWord)
                     } label: {
-                        Label("中文", systemImage: "speaker.wave.2")
+                        Label("Chinese", systemImage: "speaker.wave.2")
                             .fitSingleLine()
                     }
                     .buttonStyle(.bordered)
@@ -418,7 +456,7 @@ struct WordDetailPopover: View {
                         Button {
                             SpeechService.speakChinese(chineseWord)
                         } label: {
-                            Label("中文", systemImage: "speaker.wave.2")
+                            Label("Chinese", systemImage: "speaker.wave.2")
                                 .fitSingleLine()
                         }
                         .buttonStyle(.bordered)
@@ -526,7 +564,7 @@ struct WordDetailPopover: View {
                 // must NOT stand in for the missing gloss: copying that into
                 // `englishDefinition`/`chineseWord` had Save storing the whole
                 // sentence's translation as the definition of every word in it.
-                translationError = "Could not translate word"
+                translationError = String(localized: "Could not translate word", bundle: .appLanguage)
                 if segmentIsChinese {
                     chineseWord = segment.text
                     pinyinText = segment.pinyin

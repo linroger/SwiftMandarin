@@ -642,8 +642,28 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
         return completedRecordingURL
     }
 
-    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        guard player === self.player else { return }
+    // AVAudioPlayer delivers its delegate callbacks on its own queue. The
+    // methods are `nonisolated` and carry only Sendable values across the
+    // hop, so the state mutation below always happens on the main actor —
+    // today a silent data race in Swift 5 mode, a deterministic
+    // `dispatch_assert_queue` crash the day the target moves to Swift 6.
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        let playerID = ObjectIdentifier(player)
+        Task { @MainActor in
+            self.playbackDidFinish(playerID: playerID, successfully: flag)
+        }
+    }
+
+    nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        let playerID = ObjectIdentifier(player)
+        let message = error?.localizedDescription
+        Task { @MainActor in
+            self.playbackDidFail(playerID: playerID, message: message)
+        }
+    }
+
+    private func playbackDidFinish(playerID: ObjectIdentifier, successfully flag: Bool) {
+        guard let player, ObjectIdentifier(player) == playerID else { return }
         let sessionOwner = playbackSessionOwner
         playbackSessionOwner = nil
         self.player = nil
@@ -657,14 +677,14 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
         releaseSessionOwnershipIfIdle()
     }
 
-    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
-        guard player === self.player else { return }
+    private func playbackDidFail(playerID: ObjectIdentifier, message: String?) {
+        guard let player, ObjectIdentifier(player) == playerID else { return }
         let sessionOwner = playbackSessionOwner
         playbackSessionOwner = nil
         self.player = nil
         playingURL = nil
         playbackErrorMessage = AudioCaptureError.previewFailed(
-            error?.localizedDescription ?? String(localized: "The player could not decode this file.", bundle: .appLanguage)
+            message ?? String(localized: "The player could not decode this file.", bundle: .appLanguage)
         ).localizedDescription
         if let sessionOwner {
             AudioSessionCoordinator.shared.release(sessionOwner)

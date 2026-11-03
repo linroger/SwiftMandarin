@@ -18,7 +18,7 @@ import UIKit
 // MARK: - Practice mode
 
 /// The three drills offered by the Practice hub.
-enum PracticeMode: String, Codable, CaseIterable, Identifiable, Hashable {
+nonisolated enum PracticeMode: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case quiz
     case dictation
     case toneDrill
@@ -30,7 +30,7 @@ enum PracticeMode: String, Codable, CaseIterable, Identifiable, Hashable {
 
 /// One finished practice round: how many answers were right out of how many
 /// questions, in which drill, and when.
-struct PracticeSessionResult: Identifiable, Codable, Equatable {
+nonisolated struct PracticeSessionResult: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     let mode: PracticeMode
     let score: Int
@@ -243,20 +243,52 @@ final class PracticeStore {
     /// Minimum saved terms before the quiz/dictation pool stands on its own.
     static let minimumVocabularyForSoloPool = 4
 
-    /// Quizzable items from the user's saved vocabulary (entries with both
-    /// language sides present).
+    /// Quizzable items from the words the user is still learning: saved
+    /// entries with both language sides present that are not marked mastered.
+    /// Mastery is the learner's own verdict that a word no longer needs
+    /// drilling, so the drills stop asking about it; the spaced-repetition
+    /// review queue keeps checking it on its own schedule.
     static func vocabularyItems() -> [PracticeItem] {
-        SavedTermsStore.shared.terms.compactMap(PracticeItem.init(term:))
+        SavedTermsStore.shared.terms
+            .filter { !$0.isMastered }
+            .compactMap(PracticeItem.init(term:))
     }
 
-    /// The quiz/dictation pool: the user's vocabulary, supplemented by the
-    /// built-in starter deck while the vocabulary has fewer than
-    /// `minimumVocabularyForSoloPool` quizzable entries (a 4-option quiz
-    /// needs at least 4 distinct answers to sample from).
+    /// Items from words the user has already marked mastered. These only top
+    /// up a pool when too few words are still in progress — and before the
+    /// starter deck does, because the learner's own words, even finished
+    /// ones, beat a fixed built-in set.
+    static func masteredVocabularyItems() -> [PracticeItem] {
+        SavedTermsStore.shared.terms
+            .filter(\.isMastered)
+            .compactMap(PracticeItem.init(term:))
+    }
+
+    /// Whether the drills currently fall back on mastered words to make a
+    /// workable round (fewer than `minimumVocabularyForSoloPool` in progress).
+    static var poolIncludesMasteredWords: Bool {
+        vocabularyItems().count < minimumVocabularyForSoloPool
+            && !masteredVocabularyItems().isEmpty
+    }
+
+    /// Whether the drills currently fall back on the built-in starter deck
+    /// (fewer than `minimumVocabularyForSoloPool` quizzable saved words of
+    /// any status).
+    static var poolIncludesStarterDeck: Bool {
+        vocabularyItems().count + masteredVocabularyItems().count < minimumVocabularyForSoloPool
+    }
+
+    /// The quiz/dictation pool: the words still being learned, topped up —
+    /// only while fewer than `minimumVocabularyForSoloPool` are in progress,
+    /// since a 4-option quiz needs at least 4 distinct answers to sample from
+    /// — first with the learner's mastered words and then with the built-in
+    /// starter deck.
     static func practicePool() -> [PracticeItem] {
-        let vocab = vocabularyItems()
-        guard vocab.count < minimumVocabularyForSoloPool else { return vocab }
-        return vocab + builtinItems(excluding: vocab)
+        var pool = vocabularyItems()
+        guard pool.count < minimumVocabularyForSoloPool else { return pool }
+        pool += masteredVocabularyItems()
+        guard pool.count < minimumVocabularyForSoloPool else { return pool }
+        return pool + builtinItems(excluding: pool)
     }
 
     /// A tone-drill candidate is a two-character Chinese entry whose pinyin has
@@ -271,15 +303,18 @@ final class PracticeStore {
         }
     }
 
-    /// Tone-drill candidates, drawn from the user's own saved vocabulary. The
-    /// starter deck is only mixed in when the vocabulary yields too few
-    /// two-character words to make a varied round — so a learner with a real
-    /// word list drills their own words, not a fixed built-in set.
+    /// Tone-drill candidates, drawn from the words the user is still
+    /// learning. Mastered words and then the starter deck are only mixed in
+    /// when those yield too few two-character words to make a varied round —
+    /// so a learner with a real word list drills their own words, not a fixed
+    /// built-in set.
     static func toneDrillPool() -> [PracticeItem] {
-        let vocabCandidates = toneDrillCandidates(from: vocabularyItems())
-        guard vocabCandidates.count < minimumVocabularyForSoloPool else { return vocabCandidates }
-        let vocab = vocabularyItems()
-        return toneDrillCandidates(from: vocab + builtinItems(excluding: vocab))
+        let inProgress = toneDrillCandidates(from: vocabularyItems())
+        guard inProgress.count < minimumVocabularyForSoloPool else { return inProgress }
+        let ownWords = vocabularyItems() + masteredVocabularyItems()
+        let ownCandidates = toneDrillCandidates(from: ownWords)
+        guard ownCandidates.count < minimumVocabularyForSoloPool else { return ownCandidates }
+        return toneDrillCandidates(from: ownWords + builtinItems(excluding: ownWords))
     }
 
     /// Starter-deck items minus any whose Chinese side duplicates a saved

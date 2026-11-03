@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import Observation
 
-struct TranslationHistoryEntry: Identifiable, Codable, Hashable {
+nonisolated struct TranslationHistoryEntry: Identifiable, Codable, Hashable, Sendable {
     let id: UUID
     let source: String
     let target: String

@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import Observation
 
-struct SavedTerm: Identifiable, Codable, Equatable, Hashable {
+nonisolated struct SavedTerm: Identifiable, Codable, Equatable, Hashable, Sendable {
     let id: UUID
     let chinese: String
     let pinyin: String
@@ -226,6 +226,42 @@ final class SavedTermsStore {
         // words automatically" cover all of them. It is inert unless the user
         // has opted in.
         AutoAnalysisCoordinator.shared.noteTermAdded(newTerm)
+    }
+
+    /// Add many terms at once — the import path. Returns how many were added
+    /// and how many were skipped as duplicates (of the existing list or of an
+    /// earlier row in the same batch).
+    ///
+    /// One pass, one assignment. Adding N rows through `add` normalized every
+    /// existing headword N times for the duplicate check and persisted the
+    /// whole list N times; importing 2,000 words into 2,000 was tens of
+    /// millions of string folds on the main thread. Here the existing keys are
+    /// folded once into a set, the accepted rows are appended with a single
+    /// assignment so `didSet` persists once, and the per-term bookkeeping
+    /// (activity, auto-analysis) runs afterwards.
+    @discardableResult
+    func addAll(_ newTerms: [SavedTerm]) -> (added: Int, skipped: Int) {
+        var seenKeys = Set(terms.map { Self.normalizedKey($0.chinese) })
+        var accepted: [SavedTerm] = []
+        accepted.reserveCapacity(newTerms.count)
+        var nextSortOrder = terms.count
+
+        for term in newTerms {
+            let key = Self.normalizedKey(term.chinese)
+            guard !key.isEmpty, seenKeys.insert(key).inserted else { continue }
+            var newTerm = term
+            newTerm.sortOrder = nextSortOrder
+            nextSortOrder += 1
+            accepted.append(newTerm)
+        }
+
+        guard !accepted.isEmpty else { return (0, newTerms.count) }
+        terms.append(contentsOf: accepted)
+        for term in accepted {
+            LearningActivityStore.shared.recordWordLearned(partOfSpeech: term.partOfSpeech)
+            AutoAnalysisCoordinator.shared.noteTermAdded(term)
+        }
+        return (accepted.count, newTerms.count - accepted.count)
     }
 
     func add(chinese: String, pinyin: String, definition: String, partOfSpeech: String = "") {

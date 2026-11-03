@@ -47,6 +47,22 @@ struct HomeView: View {
             .navigationTitle("Home")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                // Global search from the screen people land on. macOS has a
+                // Search sidebar item, and iPad at full width has the search
+                // tab (see iOSContentView), so the button is only shown where
+                // neither exists.
+                if !hasSearchTab {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            GlobalSearchView(selectedTab: $selectedTab)
+                        } label: {
+                            Image(systemName: "magnifyingglass")
+                        }
+                        .accessibilityLabel(Text("Search"))
+                    }
+                }
+            }
             #endif
             .navigationDestination(item: $continueReadingTarget) { text in
                 ReaderSessionView(text: text)
@@ -108,6 +124,30 @@ struct HomeView: View {
     /// be demoralizing rather than motivating.
     private var dueCount: Int {
         progressStore.pendingReviewCount(from: allCards)
+    }
+
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    /// Mirrors the gate on the iOS 26 search tab in iOSContentView.
+    private var hasSearchTab: Bool {
+        guard #available(iOS 26.0, *) else { return false }
+        return UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular
+    }
+    #endif
+
+    /// The due count read once per render: it walks every card's schedule.
+    @ViewBuilder
+    private var dueBadge: some View {
+        let due = dueCount
+        if due > 0 {
+            Text("\(due)")
+                .font(.caption.weight(.bold))
+                .monospacedDigit()
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .background(Color.accentColor.opacity(0.16), in: Capsule())
+        }
     }
 
     /// Deterministic per-day index into a pool of `count` items. Hashes
@@ -215,14 +255,7 @@ struct HomeView: View {
                         HStack(spacing: 6) {
                             Text("Review now")
                                 .fontWeight(.semibold)
-                            if dueCount > 0 {
-                                Text("\(dueCount)")
-                                    .font(.caption.weight(.bold))
-                                    .monospacedDigit()
-                                    .padding(.horizontal, 7)
-                                    .padding(.vertical, 2)
-                                    .background(Color.accentColor.opacity(0.16), in: Capsule())
-                            }
+                            dueBadge
                         }
                         .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, 18)
@@ -307,12 +340,34 @@ struct HomeView: View {
         let pinyin: String?
     }
 
-    /// Deterministic daily pick: the user's own vocabulary once it is big
-    /// enough to feel personal (≥ 10 terms), otherwise the starter deck.
+    /// Today's draw score for one word: FNV-1a over the day key plus the
+    /// word's id, so every word gets its own score that holds all day. The
+    /// highest score wins (rendezvous hashing), which depends only on *which*
+    /// words are in the pool, not how many — `hash % count` picked a
+    /// different word of the day whenever any other word was mastered.
+    private func dailyScore(_ key: String) -> UInt64 {
+        var hash: UInt64 = 0xcbf29ce484222325
+        for byte in (activityStore.dayChangeToken + "|" + key).utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 0x100000001b3
+        }
+        return hash
+    }
+
+    /// Deterministic daily pick from the words the learner is still working
+    /// on: unmastered saved vocabulary first, the whole vocabulary once every
+    /// saved word is mastered, and the starter deck only before anything has
+    /// been saved. Mastery is the learner's own verdict that a word is done,
+    /// so the daily word stops featuring it while there is anything left to
+    /// learn. Words saved today join tomorrow's draw, so saving a word cannot
+    /// replace the one already shown unless nothing older is left to learn.
     private var dailyWord: DailyWord? {
         let terms = savedTermsStore.terms
-        if terms.count >= 10 {
-            let term = terms[dailyIndex(count: terms.count)]
+        let inProgress = terms.filter { !$0.isMastered }
+        let startOfToday = Calendar.current.startOfDay(for: Date())
+        let settled = inProgress.filter { $0.dateAdded < startOfToday }
+        let candidates = !settled.isEmpty ? settled : (!inProgress.isEmpty ? inProgress : terms)
+        if let term = candidates.max(by: { dailyScore($0.id.uuidString) < dailyScore($1.id.uuidString) }) {
             return DailyWord(
                 headline: term.headlineText,
                 gloss: term.glossText,

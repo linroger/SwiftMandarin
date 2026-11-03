@@ -18,29 +18,30 @@ import SwiftUI
 
 struct ConversationView: View {
     @State private var store = ConversationStore.shared
-    @State private var path: [UUID] = []
+    @State private var openConversationID: UUID?
 
     var body: some View {
-        NavigationStack(path: $path) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    if store.conversations.isEmpty {
-                        heroIntro
-                        scenarioGrid
-                    } else {
-                        SMSectionHeader(titleKey: "New conversation")
-                        scenarioGrid
-                        SMSectionHeader(titleKey: "Continue")
-                        recentConversations
-                    }
+        // No own NavigationStack: this screen is pushed by the Study hub (iOS)
+        // or hosted in the sidebar's detail stack (macOS). Nesting a second
+        // stack inside either doubled the navigation bar.
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if store.conversations.isEmpty {
+                    heroIntro
+                    scenarioGrid
+                } else {
+                    SMSectionHeader(titleKey: "New conversation")
+                    scenarioGrid
+                    SMSectionHeader(titleKey: "Continue")
+                    recentConversations
                 }
-                .padding()
             }
-            .background(SMTheme.pageBackground)
-            .navigationTitle("Conversation")
-            .navigationDestination(for: UUID.self) { id in
-                ConversationChatView(conversationID: id)
-            }
+            .padding()
+        }
+        .background(SMTheme.pageBackground)
+        .navigationTitle("Conversation")
+        .navigationDestination(item: $openConversationID) { id in
+            ConversationChatView(conversationID: id)
         }
     }
 
@@ -90,7 +91,7 @@ struct ConversationView: View {
 
     private func start(_ scenario: ConversationScenario) {
         let conversation = store.startConversation(scenario: scenario)
-        path.append(conversation.id)
+        openConversationID = conversation.id
     }
 
     // MARK: Recent conversations
@@ -99,7 +100,7 @@ struct ConversationView: View {
         LazyVStack(spacing: 10) {
             ForEach(store.conversations) { conversation in
                 Button {
-                    path.append(conversation.id)
+                    openConversationID = conversation.id
                 } label: {
                     SMCard {
                         HStack(spacing: 12) {
@@ -212,53 +213,58 @@ private struct ConversationChatView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            messagesScroll
-            if let errorMessage {
-                errorBanner(errorMessage)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-            inputBar
-        }
-        .background(SMTheme.pageBackground)
-        .navigationTitle(conversation.map { L($0.scenario.titleKey) } ?? L("Conversation"))
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
-        .toolbar {
-            if localization.learningIsChinese {
-                ToolbarItem(placement: .automatic) {
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) { showPinyin.toggle() }
-                    } label: {
-                        Text(verbatim: "拼音")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(showPinyin ? Color.accentColor : Color.secondary)
+        messagesScroll
+            // The composer is a safe-area inset, not a stacked row: messages
+            // scroll underneath the glass bar and the keyboard lifts both
+            // together, instead of the bar cutting the list off above it.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    if let errorMessage {
+                        errorBanner(errorMessage)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    .accessibilityLabel(Text("Show pinyin"))
+                    inputBar
                 }
             }
-        }
-        .task { greetIfNeeded() }
-        .onChange(of: speech.completeTranscript) { _, transcript in
-            guard micSessionActive, !transcript.isEmpty else { return }
-            draft = micBaseline.isEmpty ? transcript : micBaseline + " " + transcript
-        }
-        .onChange(of: speech.isRecording) { _, recording in
-            if recording && micSessionActive {
-                withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) {
-                    micPulsing = true
+            .background(SMTheme.pageBackground)
+            .navigationTitle(conversation.map { L($0.scenario.titleKey) } ?? L("Conversation"))
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                if localization.learningIsChinese {
+                    ToolbarItem(placement: .automatic) {
+                        Button {
+                            withAnimation(.spring(duration: 0.3)) { showPinyin.toggle() }
+                        } label: {
+                            Text(verbatim: "拼音")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(showPinyin ? Color.accentColor : Color.secondary)
+                        }
+                        .accessibilityLabel(Text("Show pinyin"))
+                    }
                 }
-            } else {
-                withAnimation(.easeOut(duration: 0.2)) { micPulsing = false }
             }
-        }
-        .onDisappear {
-            if micSessionActive {
-                Task { await speech.stopRecording() }
+            .task { greetIfNeeded() }
+            .onChange(of: speech.completeTranscript) { _, transcript in
+                guard micSessionActive, !transcript.isEmpty else { return }
+                draft = micBaseline.isEmpty ? transcript : micBaseline + " " + transcript
             }
-            micSessionActive = false
-        }
+            .onChange(of: speech.isRecording) { _, recording in
+                if recording && micSessionActive {
+                    withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) {
+                        micPulsing = true
+                    }
+                } else {
+                    withAnimation(.easeOut(duration: 0.2)) { micPulsing = false }
+                }
+            }
+            .onDisappear {
+                if micSessionActive {
+                    Task { await speech.stopRecording() }
+                }
+                micSessionActive = false
+            }
     }
 
     // MARK: Messages
@@ -357,6 +363,15 @@ private struct ConversationChatView: View {
                 .background(SMTheme.cardFill, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .submitLabel(.send)
                 .onSubmit(send)
+                #if os(iOS)
+                // A vertical field takes Return as a line break on iOS, so the
+                // keyboard's Send key would never fire `onSubmit`.
+                .onChange(of: draft) { _, newValue in
+                    guard newValue.hasSuffix("\n") else { return }
+                    draft = String(newValue.dropLast())
+                    if !trimmedDraft.isEmpty && !isAwaitingReply { send() }
+                }
+                #endif
             micButton
             sendButton
         }

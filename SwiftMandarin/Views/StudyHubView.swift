@@ -22,6 +22,8 @@ enum StudyRoute: String, Hashable {
     case phrases
     case history
     case stats
+    case search
+    case chat
 }
 
 struct StudyHubView: View {
@@ -29,7 +31,10 @@ struct StudyHubView: View {
     @Environment(AppRouteStore.self) private var routeStore
     @Environment(SavedTermsStore.self) private var savedTermsStore
     @Environment(LearningProgressStore.self) private var progressStore
-    @State private var path: [StudyRoute] = []
+    /// A `NavigationPath` rather than `[StudyRoute]`: the screens pushed here
+    /// push pages of their own (a Reader session, a drill, a chat) through
+    /// item destinations, which a typed path cannot hold.
+    @State private var path = NavigationPath()
     @State private var localization = LocalizationManager.shared
 
     var body: some View {
@@ -54,6 +59,8 @@ struct StudyHubView: View {
                 case .phrases: PhrasesView()
                 case .history: HistoryTabView(selectedTab: $selectedTab)
                 case .stats: StatsView()
+                case .search: GlobalSearchView(selectedTab: $selectedTab)
+                case .chat: ChatbotView()
                 }
             }
         }
@@ -64,10 +71,13 @@ struct StudyHubView: View {
         .onChange(of: routeStore.pendingAction?.id, initial: true) { _, _ in
             switch routeStore.pendingAction?.kind {
             case .startReview:
-                if path.last != .learn { path.append(.learn) }
+                // Jump straight to Learn. Replacing the path (rather than
+                // appending) keeps an already-visible Learn screen in place and
+                // drops anything else that was open.
+                path = NavigationPath([StudyRoute.learn])
             case .openStudyRoute(let raw):
-                if let route = StudyRoute(rawValue: raw), path.last != route {
-                    path.append(route)
+                if let route = StudyRoute(rawValue: raw) {
+                    path = NavigationPath([route])
                 }
                 // This hub is the terminal consumer of a study-route deep link
                 // (unlike startReview, which LearnView clears), so clear it here.
@@ -91,15 +101,17 @@ struct StudyHubView: View {
     }
 
     private var reviewHero: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // Read once: the count walks every card's schedule.
+        let due = dueCount
+        return VStack(alignment: .leading, spacing: 12) {
             HeroActionRow(
                 icon: AppTab.learn.icon,
                 tint: .accentColor,
                 titleKey: "Review",
-                subtitleKey: dueCount > 0 ? "Cards are waiting for you" : "All caught up — great work",
-                badge: dueCount > 0 ? "\(dueCount)" : nil
+                subtitleKey: due > 0 ? "Cards are waiting for you" : "All caught up — great work",
+                badge: due > 0 ? "\(due)" : nil
             ) {
-                path.append(.learn)
+                path.append(StudyRoute.learn)
             }
         }
     }
@@ -117,16 +129,30 @@ struct StudyHubView: View {
             : "Quizzes and dictation"
     }
 
+    private var chatSubtitle: LocalizedStringKey {
+        localization.learningIsChinese
+            ? "Ask in English or 中文 — replies in Chinese, chunked with pinyin"
+            : "Ask in English or 中文 — replies in English, chunked with IPA"
+    }
+
     private var practiceSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SMSectionHeader(titleKey: "Practice & Immersion")
+            HeroActionRow(
+                icon: "sparkles",
+                tint: .indigo,
+                titleKey: "AI Chat",
+                subtitleKey: chatSubtitle
+            ) {
+                path.append(StudyRoute.chat)
+            }
             HeroActionRow(
                 icon: AppTab.practice.icon,
                 tint: .purple,
                 titleKey: "Practice",
                 subtitleKey: practiceSubtitle
             ) {
-                path.append(.practice)
+                path.append(StudyRoute.practice)
             }
             HeroActionRow(
                 icon: AppTab.conversation.icon,
@@ -134,7 +160,7 @@ struct StudyHubView: View {
                 titleKey: "Conversation",
                 subtitleKey: "Roleplay real dialogues with an AI partner"
             ) {
-                path.append(.conversation)
+                path.append(StudyRoute.conversation)
             }
             HeroActionRow(
                 icon: AppTab.reader.icon,
@@ -142,7 +168,7 @@ struct StudyHubView: View {
                 titleKey: "Reader",
                 subtitleKey: "Read stories and articles at your level"
             ) {
-                path.append(.reader)
+                path.append(StudyRoute.reader)
             }
         }
     }
@@ -154,6 +180,11 @@ struct StudyHubView: View {
             SMSectionHeader(titleKey: "Library")
             SMCard(padding: 6) {
                 VStack(spacing: 0) {
+                    // Global search sits first in the Library: on iPhone it is
+                    // not a tab (see iOSContentView), so this and the Home
+                    // toolbar button are how it is reached.
+                    libraryRow(.search, route: .search)
+                    Divider().padding(.leading, 46)
                     libraryRow(.vocabulary, route: .vocabulary)
                     Divider().padding(.leading, 46)
                     libraryRow(.phrases, route: .phrases)

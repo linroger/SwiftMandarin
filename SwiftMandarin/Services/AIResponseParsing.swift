@@ -218,13 +218,102 @@ enum AIStructuredResponse {
     }
 
     private static func parsedObject(containingAnyOf keys: [String], in text: String) -> [String: Any]? {
-        for candidate in jsonObjectCandidates(in: text) {
-            guard let data = candidate.data(using: .utf8),
-                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  string(anyOf: keys, in: object) != nil else { continue }
+        if let object = parsedTopLevelObject(containingAnyOf: keys, in: text) {
             return object
         }
+        // Second attempt with structural punctuation normalized: a model
+        // writing in Chinese sometimes closes a key with a full-width colon
+        // or wraps keys in curly quotes, which is machine output that merely
+        // fails to parse — not prose.
+        let normalized = normalizingStructuralPunctuation(text)
+        guard normalized != text else { return nil }
+        return parsedTopLevelObject(containingAnyOf: keys, in: normalized)
+    }
+
+    private static func parsedTopLevelObject(containingAnyOf keys: [String], in text: String) -> [String: Any]? {
+        for candidate in jsonObjectCandidates(in: text) {
+            guard let data = candidate.data(using: .utf8),
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
+            if string(anyOf: keys, in: object) != nil { return object }
+            // A json_object-mode model sometimes wraps the envelope one level
+            // down, as {"response": {...}} or {"result": {...}}. The scanner
+            // resumes after a parsed object, so the wrapper's interior is only
+            // reachable from here. Direct dictionary values only — never array
+            // elements, so a key term is not taken for the envelope — visited
+            // in sorted key order so the choice never depends on hash order.
+            for key in object.keys.sorted() {
+                if let nested = object[key] as? [String: Any], string(anyOf: keys, in: nested) != nil {
+                    return nested
+                }
+            }
+        }
         return nil
+    }
+
+    /// The first balanced object in `text` that parses as a JSON object, for
+    /// callers that decode a specific shape themselves. Tolerates prose and
+    /// fences around the object and text after it (a stray `}` in a trailing
+    /// sentence used to swallow everything up to it).
+    static func firstParseableObject(in text: String) -> Data? {
+        for source in [text, normalizingStructuralPunctuation(text)] {
+            for candidate in jsonObjectCandidates(in: source) {
+                guard let data = candidate.data(using: .utf8),
+                      (try? JSONSerialization.jsonObject(with: data)) is [String: Any] else { continue }
+                return data
+            }
+        }
+        return nil
+    }
+
+    /// Replace full-width colons and commas, and curly quotation marks, where
+    /// they stand in a *structural* position — directly before or after a
+    /// key, value, or bracket — and leave them alone inside the text itself,
+    /// where Chinese punctuation is legitimate. Conservative by design: the
+    /// substitution only fires next to another structural character.
+    static func normalizingStructuralPunctuation(_ text: String) -> String {
+        let characters = Array(text)
+        guard characters.contains(where: { "：，“”".contains($0) }) else { return text }
+        var out: [Character] = []
+        out.reserveCapacity(characters.count)
+        func previousSignificant() -> Character? {
+            out.last(where: { !$0.isWhitespace })
+        }
+        func nextSignificant(after index: Int) -> Character? {
+            var j = index + 1
+            while j < characters.count, characters[j].isWhitespace { j += 1 }
+            return j < characters.count ? characters[j] : nil
+        }
+        for (index, character) in characters.enumerated() {
+            switch character {
+            case "：" where previousSignificant() == "\"":
+                out.append(":")
+            case "，" where previousSignificant() == "\"" || previousSignificant() == "}" || previousSignificant() == "]":
+                if let next = nextSignificant(after: index), next == "\"" || next == "“" || next == "{" || next == "[" {
+                    out.append(",")
+                } else {
+                    out.append(character)
+                }
+            case "“":
+                // Only after an ASCII structural character — one the model
+                // wrote, or one this pass just produced. A full-width colon
+                // that stayed full-width is text (他说：“你好”), and the quote
+                // after it belongs to that text.
+                if let previous = previousSignificant(), ":{,[".contains(previous) {
+                    out.append("\"")
+                } else {
+                    out.append(character)
+                }
+            case "”":
+                if let next = nextSignificant(after: index), ",，}]:：".contains(next) {
+                    out.append("\"")
+                } else {
+                    out.append(character)
+                }
+            default:
+                out.append(character)
+            }
+        }
+        return String(out)
     }
 
     /// Whether the text is a bare JSON object or array rather than prose.
@@ -234,12 +323,24 @@ enum AIStructuredResponse {
     /// is machine output, and showing it to a learner is worse than an error.
     static func looksLikeMachineData(_ text: String, envelopeKeys: [String]) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        // An object that opens a quoted key and never closes is an envelope
+        // cut off at the token cap (`{"transla`, `{"translation":"`). Nothing
+        // in it was salvageable, and prose never opens that way, whereas a
+        // translation may legitimately start with a placeholder like `{name}`.
+        if trimmed.hasPrefix("{"), !trimmed.hasSuffix("}") {
+            let afterBrace = trimmed.dropFirst().drop(while: \.isWhitespace)
+            if afterBrace.isEmpty || afterBrace.first == "\"" || afterBrace.first == "“" {
+                return true
+            }
+        }
         guard (trimmed.hasPrefix("{") && trimmed.hasSuffix("}"))
                 || (trimmed.hasPrefix("[") && trimmed.hasSuffix("]")) else { return false }
         guard let data = trimmed.data(using: .utf8),
               let object = try? JSONSerialization.jsonObject(with: data) else {
             // Unparseable but envelope-shaped: still machine output, not prose.
-            return envelopeKeys.contains { trimmed.contains("\"\($0)\"") }
+            // Curly-quoted keys count too — that is how a model writing in
+            // Chinese breaks the object, and it must never reach the screen.
+            return envelopeKeys.contains { trimmed.contains("\"\($0)\"") || trimmed.contains("“\($0)”") }
         }
         return object is [String: Any] || object is [Any]
     }
@@ -261,12 +362,41 @@ enum AIStructuredResponse {
                 start += 1
                 continue
             }
+            let objectShaped = opensObject(in: characters, at: start)
             if let end = balancedObjectEnd(in: characters, from: start) {
                 candidates.append(String(characters[start...end]))
+                // Resume after an object, not inside it. Scanning its interior
+                // offered every nested object as a candidate, so when the
+                // envelope itself failed to parse (an unescaped quote in a
+                // note), a key term's `{"term": …, "translation": …}` could be
+                // picked up as the envelope — and a single gloss was then
+                // shown, spoken, and saved as the whole translation. A brace in
+                // prose (`Result { {…} }`) is not an object, though, and the
+                // envelope may sit inside it, so its interior is still scanned.
+                start = objectShaped ? end + 1 : start + 1
+            } else if objectShaped {
+                // An object that never closes (a truncated response, or an odd
+                // number of unescaped quotes in a value) contains every later
+                // `{`, so none of them can be the envelope. Stop, and let
+                // salvagedField read the real top-level field instead of a key
+                // term — and let shape decoders fall back to their repair path.
+                break
+            } else {
+                start += 1
             }
-            start += 1
         }
         return candidates
+    }
+
+    /// Whether the `{` at `start` opens a JSON object rather than a brace in
+    /// prose: the next significant character is a key's opening quotation
+    /// mark (ASCII, or the curly one a model writing Chinese types) or the
+    /// closing brace of an empty object.
+    private static func opensObject(in characters: [Character], at start: Int) -> Bool {
+        var next = start + 1
+        while next < characters.count, characters[next].isWhitespace { next += 1 }
+        guard next < characters.count else { return false }
+        return "\"“}".contains(characters[next])
     }
 
     /// Index of the `}` closing the object that opens at `start`, or `nil` when
@@ -371,6 +501,44 @@ enum AIStructuredResponse {
         guard let data = "[\"\(repaired)\"]".data(using: .utf8),
               let array = try? JSONSerialization.jsonObject(with: data) as? [String] else { return nil }
         return array.first
+    }
+}
+
+// MARK: - Token-Cap Truncation
+
+/// What a provider call does with a completion the provider reports it cut
+/// off at the output-token cap.
+///
+/// Rejecting every such completion discarded answers the parsers above can
+/// still use: a translation envelope cut off inside its key terms already
+/// carries the complete translation, and `salvagedField` exists for exactly
+/// that response. So truncation is reported only when nothing usable came
+/// back, or when the caller decodes a strict shape that a fragment can never
+/// satisfy and asks to fail on it.
+enum AITruncatedCompletion {
+
+    enum Disposition: Equatable {
+        /// Hand the completion to the caller's parser.
+        case deliver(String)
+        /// Tell the learner the token cap cut the answer off.
+        case reportTruncation
+        /// Report an empty response.
+        case reportEmpty
+    }
+
+    /// - Parameters:
+    ///   - content: The completion text, or `nil` when the response had none.
+    ///   - truncated: Whether the provider reported stopping at the token cap.
+    ///   - failOnTruncation: Whether the caller can use nothing but a complete
+    ///     answer.
+    static func disposition(content: String?, truncated: Bool, failOnTruncation: Bool) -> Disposition {
+        // A thinking model that spent its whole budget reasoning leaves only
+        // the chain of thought; that is no answer, and the cap is the cause.
+        guard let content, !AIResponseSanitizer.strippingReasoning(content).isEmpty else {
+            return truncated ? .reportTruncation : .reportEmpty
+        }
+        if truncated && failOnTruncation { return .reportTruncation }
+        return .deliver(content)
     }
 }
 

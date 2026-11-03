@@ -8,7 +8,7 @@ binary_path="${TMPDIR:-/tmp}/swiftmandarin-learning-direction-checks"
 # The opt-in flag leaves the external runner inert if Xcode ever sees it as an
 # app source. It also compiles out `LearningContext.current`, the one accessor
 # that reaches into app state, so the mirror logic can be checked on its own.
-DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-beta.app/Contents/Developer}" \
+DEVELOPER_DIR="${DEVELOPER_DIR:-$(xcode-select -p)}" \
     xcrun swiftc \
     "$repo_root/SwiftMandarin/Models/LearningContext.swift" \
     "$repo_root/scripts/learning-direction-checks/LearningDirectionChecksRunner.swift" \

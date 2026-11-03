@@ -22,9 +22,9 @@ struct WorkbookQuestionBankView: View {
         var id: String { rawValue }
         var label: LocalizedStringKey {
             switch self {
-            case .all: return "全部 · All"
-            case .fromWorkbook: return "作业 · Workbook"
-            case .generated: return "生成 · Generated"
+            case .all: return "All"
+            case .fromWorkbook: return "Workbook"
+            case .generated: return "Generated"
             }
         }
     }
@@ -46,19 +46,19 @@ struct WorkbookQuestionBankView: View {
                     list
                 }
             }
-            .navigationTitle("题库 · Review Bank")
+            .navigationTitle("Review Bank")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") { dismiss() }
+                    Button("Done") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showGenerator = true
                     } label: {
-                        Label("生成 · Generate", systemImage: "sparkles")
+                        Label("Generate", systemImage: "sparkles")
                     }
                     .disabled(bank.questions.isEmpty)
                 }
@@ -70,6 +70,7 @@ struct WorkbookQuestionBankView: View {
                         } label: {
                             Image(systemName: "trash")
                         }
+                        .accessibilityLabel(Text("Clear All"))
                     }
                 }
                 #endif
@@ -78,10 +79,10 @@ struct WorkbookQuestionBankView: View {
                 ReviewQuestionGeneratorView()
                     .localizedSurface()
             }
-            .confirmationDialog("清空题库 · Clear the review bank?",
+            .confirmationDialog("Clear the review bank?",
                                 isPresented: $showClearConfirm, titleVisibility: .visible) {
-                Button("清空 · Clear all", role: .destructive) { bank.clear() }
-                Button("取消 · Cancel", role: .cancel) { }
+                Button("Clear all", role: .destructive) { bank.clear() }
+                Button("Cancel", role: .cancel) { }
             }
         }
     }
@@ -89,7 +90,7 @@ struct WorkbookQuestionBankView: View {
     private var list: some View {
         List {
             Section {
-                Picker("筛选 · Filter", selection: $filter) {
+                Picker("Filter", selection: $filter) {
                     ForEach(BankFilter.allCases) { f in
                         Text(f.label).tag(f)
                     }
@@ -100,7 +101,7 @@ struct WorkbookQuestionBankView: View {
 
             Section {
                 if filtered.isEmpty {
-                    Text("此筛选下没有题目 · No questions in this filter")
+                    Text("No questions in this filter")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
@@ -116,7 +117,7 @@ struct WorkbookQuestionBankView: View {
                     }
                 }
             } header: {
-                Text("\(filtered.count) 题 · \(filtered.count) questions")
+                Text("\(filtered.count) questions")
             }
         }
         #if os(iOS)
@@ -126,11 +127,11 @@ struct WorkbookQuestionBankView: View {
 
     private var emptyState: some View {
         ContentUnavailableView {
-            Label("题库为空 · Review Bank is empty", systemImage: "tray")
+            Label("Review Bank is empty", systemImage: "tray")
         } description: {
-            Text("批改作业后，点「加入题库」把题目保存到这里，以便日后复习和生成新练习。\nGrade a workbook, then tap “Add to Bank” on a question to save it here for review and to generate fresh practice.")
+            Text("Grade a workbook, then tap “Add to Bank” on a question to save it here for review and to generate fresh practice.")
         } actions: {
-            Button("完成 · Done") { dismiss() }
+            Button("Done") { dismiss() }
                 .buttonStyle(.borderedProminent)
         }
     }
@@ -148,6 +149,7 @@ private struct BankQuestionRow: View {
                 Image(systemName: badgeSymbol)
                     .foregroundStyle(badgeColor)
                     .font(.subheadline)
+                    .accessibilityLabel(Text(badgeLabel))
 
                 VStack(alignment: .leading, spacing: 4) {
                     if !question.question.isEmpty {
@@ -203,6 +205,12 @@ private struct BankQuestionRow: View {
         if question.isGenerated { return .purple }
         return question.wasCorrect ? .green : .red
     }
+
+    /// What the badge means, for VoiceOver (the symbol alone is silent).
+    private var badgeLabel: LocalizedStringKey {
+        if question.isGenerated { return "Generated" }
+        return question.wasCorrect ? "Correct" : "Incorrect"
+    }
 }
 
 // MARK: - Review Question Generator
@@ -241,13 +249,13 @@ struct ReviewQuestionGeneratorView: View {
                 }
                 .padding()
             }
-            .navigationTitle("生成练习 · Generate Practice")
+            .navigationTitle("Generate Practice")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") { dismiss() }
+                    Button("Done") { dismiss() }
                 }
             }
         }
@@ -256,7 +264,7 @@ struct ReviewQuestionGeneratorView: View {
     @ViewBuilder
     private var providerBanner: some View {
         if aiSettings.isAnyProviderAvailable {
-            Label("由 \(aiSettings.effectiveProvider.displayName) 生成 · Powered by \(aiSettings.effectiveProvider.displayName)",
+            Label("Powered by \(aiSettings.effectiveProvider.displayName)",
                   systemImage: "checkmark.seal")
                 .font(.caption)
                 .foregroundStyle(.green)
@@ -264,10 +272,10 @@ struct ReviewQuestionGeneratorView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             VStack(alignment: .leading, spacing: 6) {
-                Label("未配置 AI · No AI provider configured", systemImage: "exclamationmark.triangle")
+                Label("No AI provider configured", systemImage: "exclamationmark.triangle")
                     .font(.subheadline)
                     .foregroundStyle(.orange)
-                Text("在「设置 → AI」中配置一个 AI 提供方即可生成练习题。\nConfigure an AI provider in Settings → AI to generate questions.")
+                Text("Configure an AI provider in Settings → AI to generate questions.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -277,23 +285,29 @@ struct ReviewQuestionGeneratorView: View {
         }
     }
 
+    /// The generate button's title, hoisted so each branch is a plain key.
+    private var generateButtonTitle: LocalizedStringKey {
+        if isGenerating { return "Generating…" }
+        return generated.isEmpty ? "Generate" : "Regenerate"
+    }
+
     private var optionsCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Stepper(value: $count, in: 1...20) {
-                Text("题目数量 · Questions: \(count)")
+                Text("Questions: \(count)")
                     .font(.subheadline)
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("分类标签（可选）· Subject tag (optional)")
+                Text("Subject tag (optional)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField("e.g. Unit 3 / 动词时态", text: $subject)
+                TextField("e.g. Unit 3 / verb tenses", text: $subject)
                     .textFieldStyle(.roundedBorder)
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("自定义提示（可选）· Custom instructions (optional)")
+                Text("Custom instructions (optional)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 TextField("e.g. focus on past tense; keep them short.",
@@ -302,7 +316,7 @@ struct ReviewQuestionGeneratorView: View {
                     .textFieldStyle(.roundedBorder)
             }
 
-            Text("将根据题库中的 \(bank.questions.count) 道题生成新题（侧重错题）。\nNew questions are modeled on your \(bank.questions.count) saved questions, focusing on ones you missed.")
+            Text("New questions are modeled on your \(bank.questions.count) saved questions, focusing on ones you missed.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -314,8 +328,7 @@ struct ReviewQuestionGeneratorView: View {
         Button {
             Task { await generate() }
         } label: {
-            Label(isGenerating ? "生成中…" : (generated.isEmpty ? "生成练习 · Generate" : "重新生成 · Regenerate"),
-                  systemImage: "sparkles")
+            Label(generateButtonTitle, systemImage: "sparkles")
                 .fitSingleLine()
                 .frame(maxWidth: .infinity)
         }
@@ -327,7 +340,7 @@ struct ReviewQuestionGeneratorView: View {
     private var progress: some View {
         VStack(spacing: 12) {
             ProgressView().controlSize(.large)
-            Text("正在生成练习题…")
+            Text("Generating practice questions…")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -347,13 +360,13 @@ struct ReviewQuestionGeneratorView: View {
     private var resultsSection: some View {
         VStack(spacing: 14) {
             HStack {
-                Text("\(generated.count) 道新题 · \(generated.count) new questions")
+                Text("\(generated.count) new questions")
                     .font(.headline)
                 Spacer()
                 Button {
                     saveAll()
                 } label: {
-                    Label("全部保存 · Save all", systemImage: "tray.and.arrow.down.fill")
+                    Label("Save all", systemImage: "tray.and.arrow.down.fill")
                         .font(.subheadline)
                         .fitSingleLine()
                 }
@@ -463,7 +476,7 @@ private struct GeneratedQuestionCard: View {
                 Button {
                     onToggleReveal()
                 } label: {
-                    Label(isRevealed ? "隐藏答案 · Hide" : "显示答案 · Show answer",
+                    Label(isRevealed ? "Hide answer" : "Show answer",
                           systemImage: isRevealed ? "eye.slash" : "eye")
                         .font(.caption)
                         .fitSingleLine()
@@ -476,7 +489,7 @@ private struct GeneratedQuestionCard: View {
                 Button {
                     onSave()
                 } label: {
-                    Label(isSaved ? "已保存 · Saved" : "保存 · Save",
+                    Label(isSaved ? "Saved" : "Save",
                           systemImage: isSaved ? "tray.full.fill" : "tray.and.arrow.down")
                         .font(.caption)
                         .fitSingleLine()

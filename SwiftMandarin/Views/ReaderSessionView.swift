@@ -189,17 +189,22 @@ struct ReaderSessionView: View {
     }
 
     /// The current paragraph, rendered with the tappable word component for
-    /// the material's language.
+    /// the material's language. Both components take the Reader's text size,
+    /// so the interactive paragraph matches the plain neighbors around it.
     @ViewBuilder
     private func interactiveParagraph(index: Int) -> some View {
         if contentIsChinese {
-            RubyTextView(chineseText: paragraphs[index]) { segment in
+            RubyTextView(
+                chineseText: paragraphs[index],
+                fontSize: CGFloat(fontSize)
+            ) { segment in
                 selectedSegment = segment
             }
         } else {
             EnglishRubyTextView(
                 words: englishWordsCache[index] ?? [],
-                showTranslations: false
+                showTranslations: false,
+                fontSize: CGFloat(fontSize)
             ) { word in
                 selectedEnglishWord = word
             }
@@ -338,6 +343,7 @@ struct ReaderSessionView: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
+                    .accessibilityHidden(true)
                 Text(message)
                     .font(.footnote)
                     .frame(maxWidth: .infinity, alignment: .leading)

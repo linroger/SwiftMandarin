@@ -65,7 +65,11 @@ enum PersistentCodableStore {
         if let data = defaults.data(forKey: key) {
             do {
                 let value = try decode(data)
-                defaults.set(data, forKey: backupKey)
+                // Snapshot the known-good payload, but only when it changed: every
+                // launch used to rewrite a full copy of every store.
+                if defaults.data(forKey: backupKey) != data {
+                    defaults.set(data, forKey: backupKey)
+                }
                 return value
             } catch {
                 log.error("Decode failed for \(key, privacy: .public): \(error.localizedDescription, privacy: .public) — trying backup")
@@ -86,16 +90,115 @@ enum PersistentCodableStore {
         return nil
     }
 
-    // MARK: - Save
+    // MARK: - Save (coalesced, off the main thread)
 
-    /// Encode and store `value` under `key`, logging encode failures
-    /// (which would otherwise silently skip the write).
-    static func save<T: Codable>(_ value: T, key: String) {
-        do {
-            let data = try JSONEncoder().encode(value)
-            UserDefaults.standard.set(data, forKey: key)
-        } catch {
-            log.error("Encode failed for \(key, privacy: .public): \(error.localizedDescription, privacy: .public)")
+    /// One queued write: encodes the snapshot it captured. Kept as a closure so
+    /// the encode itself can run on a background thread later, while the
+    /// snapshot is taken at the moment `save` was called.
+    private typealias PendingWrite = @Sendable () -> Result<Data, Error>
+
+    /// Writes waiting to be flushed, newest value per key. Every store hands
+    /// `save` its *entire* contents, so the latest snapshot for a key makes
+    /// every earlier one redundant — a burst of mutations costs one encode.
+    ///
+    /// Explicitly main-actor rather than relying on the target's default
+    /// isolation: the contract runners compile this file standalone without
+    /// that default, where unannotated static state is a strict-concurrency
+    /// error.
+    @MainActor private static var pendingWrites: [String: PendingWrite] = [:]
+    @MainActor private static var flushTask: Task<Void, Never>?
+
+    /// How long a burst may keep extending before it is written. Long enough
+    /// to fold an import's thousands of `add` calls (each of which used to
+    /// re-encode the whole vocabulary synchronously — O(n²) on the main thread,
+    /// and the shape of "the app hangs" during a big import) into one write;
+    /// short enough that nothing of consequence is lost to a crash.
+    nonisolated private static let coalescingDelay: Duration = .milliseconds(250)
+
+    /// Persist `value` under `key`. The encode and the `UserDefaults` write
+    /// happen off the main thread shortly afterwards; mutations arriving in
+    /// the meantime replace the pending snapshot rather than queueing behind
+    /// it. Anything still pending is written synchronously when the app
+    /// resigns active or terminates (`flushPendingWritesNow`), so the deferral
+    /// never costs data across a normal quit.
+    @MainActor
+    static func save<T: Codable & Sendable>(_ value: T, key: String) {
+        pendingWrites[key] = {
+            Result { try JSONEncoder().encode(value) }
+        }
+        scheduleFlush()
+    }
+
+    @MainActor
+    private static func scheduleFlush() {
+        guard flushTask == nil else { return }
+        flushTask = Task {
+            // Cancelled only by `flushPendingWritesNow`, which has already
+            // drained the batch and may have let a newer `save` schedule its
+            // own task; clearing `flushTask` here would orphan that one.
+            do { try await Task.sleep(for: coalescingDelay) } catch { return }
+            flushTask = nil
+            await flushPendingWrites()
+        }
+    }
+
+    /// Every batch is encoded and written on this one serial queue, in the
+    /// order batches leave `pendingWrites`. Two independent background writes
+    /// could finish out of order — an older snapshot of a store landing after
+    /// a newer one and silently reverting the user's last edit — and a quit
+    /// had no way to wait for a write that was still encoding.
+    nonisolated private static let writeQueue = DispatchQueue(
+        label: "com.rogerlin.SwiftMandarin.PersistentCodableStore.write",
+        qos: .utility
+    )
+
+    /// Encode and write everything pending, off the main thread, and wait for
+    /// it to land.
+    @MainActor
+    static func flushPendingWrites() async {
+        let batch = pendingWrites
+        pendingWrites = [:]
+        guard !batch.isEmpty else { return }
+        // The enqueue happens synchronously, on the main actor, in the same
+        // step that empties `pendingWrites` — so queue order is snapshot order.
+        // Hopping to another task first would let a later synchronous flush
+        // reach the queue ahead of this older batch.
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            writeQueue.async {
+                write(batch)
+                continuation.resume()
+            }
+        }
+    }
+
+    /// Write everything pending right now, on the calling thread. For the
+    /// moments the process may not get another turn — going to the background,
+    /// terminating — where a deferred write would be a lost write. One encode
+    /// per dirty store, so it is cheap enough for those moments and never runs
+    /// in steady state.
+    @MainActor
+    static func flushPendingWritesNow() {
+        flushTask?.cancel()
+        flushTask = nil
+        let batch = pendingWrites
+        pendingWrites = [:]
+        // Runs even for an empty batch: `sync` on the serial queue first waits
+        // out any batch a scheduled flush already handed over, so a write
+        // still encoding at quit is not dropped, and nothing older can land
+        // after this newer snapshot.
+        writeQueue.sync { write(batch) }
+    }
+
+    nonisolated private static func write(_ batch: [String: PendingWrite]) {
+        for (key, encode) in batch {
+            switch encode() {
+            case let .success(data):
+                UserDefaults.standard.set(data, forKey: key)
+            case let .failure(error):
+                // Logged rather than swallowed: an encode failure here means a
+                // store's in-memory state will not survive relaunch.
+                log.error("Encode failed for \(key, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 

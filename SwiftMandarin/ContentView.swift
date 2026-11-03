@@ -9,20 +9,20 @@ import SwiftUI
 import AppIntents
 
 /// Main navigation container using TabView with sidebarAdaptable style
-/// - iOS: Bottom tab bar (5 tabs)
+/// - iOS: Bottom tab bar (5 tabs) plus, on iOS 26, the system search tab
 /// - iPadOS: Floating tab bar that morphs to sidebar
 /// - macOS: NavigationSplitView with sidebar
 struct ContentView: View {
     @Environment(AppRouteStore.self) private var routeStore
     @Environment(\.scenePhase) private var scenePhase
-    
+
     private var selectedTabBinding: Binding<AppTab> {
         Binding(
             get: { routeStore.selectedTab },
             set: { routeStore.selectedTab = $0 }
         )
     }
-    
+
     var body: some View {
         contentView
             .overlay(alignment: .top) {
@@ -46,7 +46,7 @@ struct ContentView: View {
                 }
             }
     }
-    
+
     @ViewBuilder
     private var contentView: some View {
         #if os(macOS)
@@ -61,8 +61,10 @@ struct ContentView: View {
 
 enum AppTab: String, CaseIterable, Identifiable {
     case home
+    case search
     case translate
     case photo
+    case chat
     case reader
     case study
     case practice
@@ -82,8 +84,10 @@ enum AppTab: String, CaseIterable, Identifiable {
     var titleKey: LocalizedStringKey {
         switch self {
         case .home: return "Home"
+        case .search: return "Search"
         case .translate: return "Translate"
         case .photo: return "Multimodal"
+        case .chat: return "AI Chat"
         case .reader: return "Reader"
         case .study: return "Study"
         case .practice: return "Practice"
@@ -100,8 +104,10 @@ enum AppTab: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .home: return "house.fill"
+        case .search: return "magnifyingglass"
         case .translate: return "character.bubble"
         case .photo: return "sparkles.rectangle.stack"
+        case .chat: return "sparkles"
         case .reader: return "book.pages"
         case .study: return "graduationcap.fill"
         case .practice: return "checklist"
@@ -120,6 +126,19 @@ enum AppTab: String, CaseIterable, Identifiable {
 
 struct iOSContentView: View {
     @Binding var selectedTab: AppTab
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    /// iPad at regular width only. A Plus or Pro Max iPhone in landscape is
+    /// also regular width, so the size class alone gave it a sixth tab — and
+    /// rotating back to portrait removed the tab and threw away the search.
+    /// (This view also compiles for macOS, which has no `UIDevice`.)
+    private var showsSearchTab: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular
+        #else
+        false
+        #endif
+    }
 
     var body: some View {
         if #available(iOS 18.0, *) {
@@ -156,8 +175,35 @@ struct iOSContentView: View {
             Tab(AppTab.more.titleKey, systemImage: AppTab.more.icon, value: .more) {
                 MoreView()
             }
+
+            // The search tab only where the bar has room for it: iPad's regular
+            // width (top tab bar / sidebar). On iPhone it is a sixth item, and
+            // iOS folds Study and More into its own overflow list to make room —
+            // so there Search is a Home toolbar button and a Study Library row.
+            // The explicit title comes from the app's catalog; the default
+            // label is localized by SwiftUI's own bundle, so it ignored the
+            // in-app language.
+            if #available(iOS 26.0, *) {
+                if showsSearchTab {
+                    Tab(AppTab.search.titleKey, systemImage: AppTab.search.icon, value: AppTab.search, role: .search) {
+                        NavigationStack {
+                            GlobalSearchView(selectedTab: $selectedTab, isSearchTab: true)
+                        }
+                    }
+                }
+            }
         }
         .tabViewStyle(.sidebarAdaptable)
+        // Leaving regular width (iPad Split View, Slide Over) removes the
+        // search tab; never leave the selection pointing at a missing tab.
+        .onChange(of: horizontalSizeClass) { _, _ in
+            if !showsSearchTab, selectedTab == .search {
+                selectedTab = .home
+            }
+        }
+        // Reading surfaces get the full height: the bar shrinks to a pill
+        // while the content scrolls down and returns on scroll up.
+        .tabBarMinimizeOnScrollCompat()
     }
 
     /// iOS 17: classic tab bar (extra tabs collect under the system
@@ -197,7 +243,7 @@ struct MacOSContentView: View {
 
     /// Sidebar sections. `more` (iOS settings hub) and `study` (iOS hub for
     /// what the sidebar already lists directly) are intentionally absent.
-    private static let toolTabs: [AppTab] = [.translate, .photo]
+    private static let toolTabs: [AppTab] = [.translate, .photo, .chat]
     private static let studyTabs: [AppTab] = [.learn, .practice, .conversation, .reader]
     private static let libraryTabs: [AppTab] = [.vocabulary, .phrases, .history, .stats]
 
@@ -206,6 +252,8 @@ struct MacOSContentView: View {
             List(selection: $selectedTab) {
                 Label(AppTab.home.titleKey, systemImage: AppTab.home.icon)
                     .tag(AppTab.home)
+                Label(AppTab.search.titleKey, systemImage: AppTab.search.icon)
+                    .tag(AppTab.search)
 
                 Section("Translate") {
                     ForEach(Self.toolTabs) { tab in
@@ -244,25 +292,29 @@ struct MacOSContentView: View {
         switch selectedTab {
         case .home:
             HomeView(selectedTab: $selectedTab)
+        case .search:
+            hosted { GlobalSearchView(selectedTab: $selectedTab) }
         case .translate:
             TranslateView()
+        case .chat:
+            hosted { ChatbotView() }
         case .photo:
             PhotoTranslateView()
         case .reader:
-            ReaderView()
+            hosted { ReaderView() }
         case .study:
             // Not in the sidebar; routing fallback lands on Home.
             HomeView(selectedTab: $selectedTab)
         case .practice:
-            PracticeHubView()
+            hosted { PracticeHubView() }
         case .conversation:
-            ConversationView()
+            hosted { ConversationView() }
         case .history:
             HistoryTabView(selectedTab: $selectedTab)
         case .vocabulary:
             VocabularyView()
         case .learn:
-            LearnView()
+            hosted { LearnView() }
         case .phrases:
             PhrasesView()
         case .stats:
@@ -270,6 +322,16 @@ struct MacOSContentView: View {
         case .more:
             // This shouldn't be reachable on macOS, but provide fallback
             Text("Use ⌘, or the gear button to open Settings")
+        }
+    }
+
+    /// Screens that push their own pages (a Reader session, a drill, a chat)
+    /// need a stack to push onto. On iOS the Study hub's stack hosts them;
+    /// here the detail column does, so they no longer carry a stack of their
+    /// own — nested inside the hub's, it doubled the navigation bar.
+    private func hosted<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        NavigationStack {
+            content()
         }
     }
 }

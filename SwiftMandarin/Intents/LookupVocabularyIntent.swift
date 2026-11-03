@@ -7,8 +7,8 @@ import Foundation
 import AppIntents
 
 struct LookupVocabularyIntent: AppIntent {
-    static var title: LocalizedStringResource = "Lookup Vocabulary"
-    static var description = IntentDescription("Search your saved vocabulary and return matching terms.")
+    static var title: LocalizedStringResource = "Look Up Vocabulary"
+    static var description = IntentDescription("Search your saved vocabulary by headword, meaning, or pinyin — with or without tone marks — and return the matching terms.")
 
     @Parameter(title: "Query")
     var query: String
@@ -26,23 +26,28 @@ struct LookupVocabularyIntent: AppIntent {
         }
     }
 
+    @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<[SavedTermEntity]> {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            return .result(value: [])
+            return .result(value: [], dialog: IntentDialog(stringLiteral: String(localized: "Nothing to search for.", bundle: .appLanguage)))
         }
 
-        let results = await MainActor.run { () -> [SavedTermEntity] in
-            let matched = SavedTermsStore.shared.terms.filter { term in
-                term.chinese.localizedCaseInsensitiveContains(trimmed) ||
-                term.pinyin.localizedCaseInsensitiveContains(trimmed) ||
-                term.definition.localizedCaseInsensitiveContains(trimmed)
-            }
+        let matched = SavedTermsStore.shared.terms.filter { SavedTermEntityQuery.matches($0, query: trimmed) }
+        let filtered = includeMastered ? matched : matched.filter { !$0.isMastered }
+        let results = filtered.prefix(max(1, limit)).map(SavedTermEntity.init)
 
-            let filtered = includeMastered ? matched : matched.filter { !$0.isMastered }
-            return filtered.prefix(max(1, limit)).map(SavedTermEntity.init)
+        // Siri speaks the dialog; the first match is the useful part. The
+        // count is every match, not the `limit` returned — "10 matches" for
+        // 37 understated a broad pinyin query.
+        let dialog: String
+        if let first = results.first {
+            dialog = filtered.count == 1
+                ? "\(first.headline) — \(first.gloss)"
+                : String(format: String(localized: "%lld matches. First: %@ — %@", bundle: .appLanguage), Int64(filtered.count), first.headline, first.gloss)
+        } else {
+            dialog = String(format: String(localized: "No saved words match “%@”.", bundle: .appLanguage), trimmed)
         }
-
-        return .result(value: results)
+        return .result(value: Array(results), dialog: IntentDialog(stringLiteral: dialog))
     }
 }

@@ -9,7 +9,7 @@ binary_path="${TMPDIR:-/tmp}/swiftmandarin-macos-surface-checks"
 # app source (it does — see the synchronized `scripts` group). The runner needs
 # no app sources at all: it asserts the *system* colors `SMTheme` is built on,
 # which is where the bug lived.
-DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-beta.app/Contents/Developer}" \
+DEVELOPER_DIR="${DEVELOPER_DIR:-$(xcode-select -p)}" \
     xcrun swiftc \
     "$repo_root/scripts/macos-surface-checks/MacOSSurfaceChecksRunner.swift" \
     -D MACOS_SURFACE_CHECKS \
@@ -73,10 +73,18 @@ stats_page=$(count_matches 'background\(SMTheme\.pageBackground\)' "$stats_view"
     exit 1
 }
 
+# Five panels plus the four hero/stat tiles: Liquid Glass is for controls, so
+# the tiles that were glass (content sampling the page behind them) moved to
+# the card surface, and only the time-range picker keeps a glass capsule.
 stats_cards=$(count_matches 'smCardSurface\(' "$stats_view")
-[[ "$stats_cards" == "5" ]] || {
-    print -u2 "Statistics no longer uses the shared card surface for all 5 panels; found $stats_cards"
+[[ "$stats_cards" == "9" ]] || {
+    print -u2 "Statistics no longer uses the shared card surface for its 5 panels and 4 tiles; found $stats_cards of 9"
+    exit 1
+}
+stats_glass_content=$(count_matches 'glassEffectCompat\(cornerRadius' "$stats_view")
+[[ "$stats_glass_content" == "0" ]] || {
+    print -u2 "Statistics draws $stats_glass_content content tile(s) in Liquid Glass again; glass is for controls"
     exit 1
 }
 
-print "macOS surface wiring checks passed (6/6)"
+print "macOS surface wiring checks passed (7/7)"

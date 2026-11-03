@@ -76,29 +76,38 @@ struct CachedWordExplanation: Codable, Equatable, Sendable {
 /// version capped this at 400 entries on an MRU basis, which silently evicted
 /// older analyses and made the batch-progress count stick at 400.)
 ///
-/// Two design points keep it fast at thousands of entries: the `lookupIndex`
-/// membership set is maintained incrementally (never rebuilt per mutation), and
-/// disk writes are coalesced and performed off the main thread.
+/// Two design points keep it fast at thousands of entries: every lookup goes
+/// through indexes that are maintained incrementally alongside `entries`
+/// (never rebuilt per mutation, never scanned), and disk writes are coalesced
+/// and performed off the main thread.
+///
+/// Loading is the one synchronous step: `init` decodes the JSON file on the
+/// main actor the first time `shared` is touched. `PersistentCodableStore`
+/// offers no asynchronous load, so the decode stays where it is.
 @Observable
 @MainActor
 final class WordExplanationCacheStore {
     static let shared = WordExplanationCacheStore()
 
-    /// All cached explanations. Order is insignificant — lookups go through
-    /// `lookupIndex` (membership) or a linear scan (single-word reads, rare).
+    /// All cached explanations. Order is insignificant — every read resolves
+    /// through `positions` or `directionsByWord`, and a removal moves the last
+    /// entry into the freed slot rather than shifting the array.
     private(set) var entries: [CachedWordExplanation] = []
 
-    /// O(1) membership set of `"<directionToken>\u{1}<normalizedWord>"`.
-    /// Maintained incrementally alongside `entries`: rebuilding it on every
-    /// mutation would make a batch over N words O(N²) and saturate the main
-    /// thread. Observed (not ignored) so the live "remaining" count updates as
-    /// analyses are stored.
-    private var lookupIndex: Set<String> = []
+    /// Position in `entries` of the entry for each
+    /// `"<directionToken>\u{1}<normalizedWord>"` key, so a single-word read is
+    /// one dictionary lookup instead of a scan over every entry. Maintained
+    /// incrementally: rebuilding it on every mutation would make a batch over
+    /// N words O(N²) and saturate the main thread. Observed (not ignored) so
+    /// the live "remaining" count updates as analyses are stored.
+    private var positions: [String: Int] = [:]
 
-    /// O(1) membership set of normalized headwords across ALL directions, so
-    /// "does this word have any analysis?" (used by the export count) is O(1)
-    /// instead of an O(entries) scan per term.
-    private var normalizedWordIndex: Set<String> = []
+    /// The direction tokens that hold an entry for each normalized headword,
+    /// across ALL directions. "Does this word have any analysis?" (the export
+    /// count) and "every analysis for this word" (the export itself, once per
+    /// term) both resolve from it without touching `entries` — the export of a
+    /// large vocabulary used to scan the whole cache once per term.
+    private var directionsByWord: [String: Set<String>] = [:]
 
     /// Legacy UserDefaults key, read once at launch to migrate into the file.
     private let legacyDefaultsKey = "wordExplanationCache"
@@ -127,47 +136,84 @@ final class WordExplanationCacheStore {
     var isEmpty: Bool { entries.isEmpty }
 
     private static func lookupKey(directionToken: String, word: String) -> String {
-        "\(directionToken)\u{1}\(normalizedKey(word))"
+        lookupKey(directionToken: directionToken, normalizedWord: normalizedKey(word))
     }
 
-    private func rebuildLookupIndex() {
-        lookupIndex = Set(entries.map { Self.lookupKey(directionToken: $0.directionToken, word: $0.word) })
-        normalizedWordIndex = Set(entries.map { Self.normalizedKey($0.word) })
+    private static func lookupKey(directionToken: String, normalizedWord: String) -> String {
+        "\(directionToken)\u{1}\(normalizedWord)"
+    }
+
+    /// Rebuild both indexes from `entries` after a load. Two entries under one
+    /// key would break the position index's invariant (one slot per key), so
+    /// the later one wins and the earlier is dropped — a defensive measure;
+    /// this store never writes duplicates.
+    private func rebuildIndexes() {
+        var unique: [CachedWordExplanation] = []
+        unique.reserveCapacity(entries.count)
+        positions = [:]
+        positions.reserveCapacity(entries.count)
+        directionsByWord = [:]
+        for entry in entries {
+            let word = Self.normalizedKey(entry.word)
+            let key = Self.lookupKey(directionToken: entry.directionToken, normalizedWord: word)
+            if let position = positions[key] {
+                unique[position] = entry
+            } else {
+                positions[key] = unique.count
+                unique.append(entry)
+                directionsByWord[word, default: []].insert(entry.directionToken)
+            }
+        }
+        if unique.count != entries.count {
+            entries = unique
+        }
     }
 
     /// Return a cached explanation for `word` in the given direction, if one
     /// exists. Matching ignores invisible characters and surrounding
-    /// whitespace, and is case-insensitive (English headwords).
+    /// whitespace, and is case-insensitive (English headwords). O(1).
     func explanation(forWord word: String, directionToken: String) -> CachedWordExplanation? {
-        let key = Self.normalizedKey(word)
-        return entries.first {
-            $0.directionToken == directionToken && Self.normalizedKey($0.word) == key
+        guard let position = positions[Self.lookupKey(directionToken: directionToken, word: word)] else {
+            return nil
         }
+        return entries[position]
     }
 
     /// Whether an explanation is cached for `word` in the given direction.
-    /// O(1) via `lookupIndex` — this is the batch hot path.
+    /// O(1) via `positions` — this is the batch hot path.
     func hasExplanation(forWord word: String, directionToken: String) -> Bool {
-        lookupIndex.contains(Self.lookupKey(directionToken: directionToken, word: word))
+        positions[Self.lookupKey(directionToken: directionToken, word: word)] != nil
     }
 
     /// Every cached explanation whose headword matches any of `words` (across
     /// all directions). Used by export to bundle a term's AI analysis: a term's
     /// explanation may be stored under either learning-direction headword, so
     /// callers pass all candidate forms (see `SavedTerm.aiCacheCandidateWords`).
+    /// O(matches) via `directionsByWord`; the result keeps storage order, as
+    /// the former scan did.
     func explanations(forWords words: [String]) -> [CachedWordExplanation] {
-        let keys = Set(words.map(Self.normalizedKey)).subtracting([""])
-        guard !keys.isEmpty else { return [] }
-        return entries.filter { keys.contains(Self.normalizedKey($0.word)) }
+        var seen = Set<String>()
+        var found: [Int] = []
+        for word in words {
+            let key = Self.normalizedKey(word)
+            guard !key.isEmpty, seen.insert(key).inserted,
+                  let directions = directionsByWord[key] else { continue }
+            for direction in directions {
+                if let position = positions[Self.lookupKey(directionToken: direction, normalizedWord: key)] {
+                    found.append(position)
+                }
+            }
+        }
+        return found.sorted().map { entries[$0] }
     }
 
-    /// Whether any of `words` has a cached explanation in any direction. O(1) per
-    /// word via `normalizedWordIndex` — used by the export count, which would
+    /// Whether any of `words` has a cached explanation in any direction. O(1)
+    /// per word via `directionsByWord` — used by the export count, which would
     /// otherwise scan all entries once per term.
     func hasAnyExplanation(forWords words: [String]) -> Bool {
         for word in words {
             let key = Self.normalizedKey(word)
-            if !key.isEmpty && normalizedWordIndex.contains(key) { return true }
+            if !key.isEmpty && directionsByWord[key] != nil { return true }
         }
         return false
     }
@@ -210,53 +256,66 @@ final class WordExplanationCacheStore {
     }
 
     /// Insert `entry`, or replace the existing entry with the same
-    /// (word, direction) key in place, keeping `lookupIndex` in lockstep. Does
-    /// not persist — callers invoke `scheduleSave()` once after a batch of
-    /// upserts.
+    /// (word, direction) key in place, keeping both indexes in lockstep. O(1).
+    /// Does not persist — callers invoke `scheduleSave()` once after a batch
+    /// of upserts.
     private func upsert(_ entry: CachedWordExplanation) {
-        let lk = Self.lookupKey(directionToken: entry.directionToken, word: entry.word)
-        if lookupIndex.contains(lk) {
-            let key = Self.normalizedKey(entry.word)
-            if let idx = entries.firstIndex(where: {
-                $0.directionToken == entry.directionToken && Self.normalizedKey($0.word) == key
-            }) {
-                entries[idx] = entry
-                return
-            }
+        let word = Self.normalizedKey(entry.word)
+        let key = Self.lookupKey(directionToken: entry.directionToken, normalizedWord: word)
+        if let position = positions[key] {
+            entries[position] = entry
+            return
         }
+        positions[key] = entries.count
         entries.append(entry)
-        lookupIndex.insert(lk)
-        normalizedWordIndex.insert(Self.normalizedKey(entry.word))
+        directionsByWord[word, default: []].insert(entry.directionToken)
     }
 
     /// Remove the cached explanation for a specific word+direction (e.g. when
     /// its saved term is deleted).
     func remove(word: String, directionToken: String) {
-        let key = Self.normalizedKey(word)
-        let updated = entries.filter {
-            !($0.directionToken == directionToken && Self.normalizedKey($0.word) == key)
+        guard removeEntry(normalizedWord: Self.normalizedKey(word), directionToken: directionToken) else {
+            return
         }
-        guard updated.count != entries.count else { return }
-        entries = updated
-        rebuildLookupIndex()
         scheduleSave()
     }
 
     /// Remove every cached explanation for `word`, regardless of direction.
     func removeAll(forWord word: String) {
         let key = Self.normalizedKey(word)
-        let updated = entries.filter { Self.normalizedKey($0.word) != key }
-        guard updated.count != entries.count else { return }
-        entries = updated
-        rebuildLookupIndex()
+        guard let directions = directionsByWord[key] else { return }
+        for direction in directions {
+            removeEntry(normalizedWord: key, directionToken: direction)
+        }
         scheduleSave()
+    }
+
+    /// Remove one entry in O(1): the last entry moves into the freed slot
+    /// (order is insignificant) and both indexes follow. Returns `false` when
+    /// there was nothing under that key. Does not persist.
+    @discardableResult
+    private func removeEntry(normalizedWord: String, directionToken: String) -> Bool {
+        let key = Self.lookupKey(directionToken: directionToken, normalizedWord: normalizedWord)
+        guard let position = positions.removeValue(forKey: key) else { return false }
+        let lastPosition = entries.count - 1
+        if position != lastPosition {
+            let moved = entries[lastPosition]
+            entries[position] = moved
+            positions[Self.lookupKey(directionToken: moved.directionToken, word: moved.word)] = position
+        }
+        entries.removeLast()
+        if var directions = directionsByWord[normalizedWord] {
+            directions.remove(directionToken)
+            directionsByWord[normalizedWord] = directions.isEmpty ? nil : directions
+        }
+        return true
     }
 
     func clear() {
         guard !entries.isEmpty else { return }
         entries = []
-        lookupIndex = []
-        normalizedWordIndex = []
+        positions = [:]
+        directionsByWord = [:]
         scheduleSave()
     }
 
@@ -323,7 +382,7 @@ final class WordExplanationCacheStore {
         // Preferred: the file-backed store.
         if let loaded = PersistentCodableStore.loadArrayFromFile([CachedWordExplanation].self, fileName: fileName) {
             entries = loaded
-            rebuildLookupIndex()
+            rebuildIndexes()
             return
         }
         // One-time migration from the old UserDefaults-backed cache (≤ the old
@@ -332,7 +391,7 @@ final class WordExplanationCacheStore {
         // the migration retries next launch rather than losing the data.
         if let legacy = PersistentCodableStore.load([CachedWordExplanation].self, key: legacyDefaultsKey) {
             entries = legacy
-            rebuildLookupIndex()
+            rebuildIndexes()
             if Self.writeToDisk(legacy, fileName: fileName) {   // small; fine during init
                 UserDefaults.standard.removeObject(forKey: legacyDefaultsKey)
                 UserDefaults.standard.removeObject(forKey: legacyDefaultsKey + ".backup")

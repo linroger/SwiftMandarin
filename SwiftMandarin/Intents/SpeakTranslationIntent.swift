@@ -6,7 +6,10 @@
 import Foundation
 import AppIntents
 
-struct SpeakTranslationIntent: AppIntent {
+/// `AudioPlaybackIntent` tells the system this intent produces audio, so a
+/// run from Siri or the Lock Screen is allowed to play it in the background
+/// instead of starting and immediately losing the audio session.
+struct SpeakTranslationIntent: AudioPlaybackIntent {
     static var title: LocalizedStringResource = "Speak Translation"
     static var description = IntentDescription("Translate and speak text in the target language, or speak the original text.")
 
@@ -16,7 +19,11 @@ struct SpeakTranslationIntent: AppIntent {
     @Parameter(title: "Direction", default: .auto)
     var direction: ShortcutTranslationDirection
 
-    @Parameter(title: "Use Apple Intelligence", default: false)
+    @Parameter(
+        title: "Use AI Provider",
+        description: "Translate with the AI provider selected in SwiftMandarin's AI settings instead of Apple's on-device translation. The text is sent to that provider.",
+        default: false
+    )
     var useAI: Bool
 
     @Parameter(title: "Speak", default: .translated)

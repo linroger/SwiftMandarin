@@ -102,6 +102,9 @@ private func runChecks() throws {
         ["2024-05-08": DailyActivity(dateKey: "2024-05-08", wordsMastered: 2)],
         key: activitiesKey
     )
+    // Writes are deferred and coalesced in the app; a seeded "previous session"
+    // has to be on disk before the store is created and reads it back.
+    PersistentCodableStore.flushPendingWritesNow()
 
     let store = LearningActivityStore.shared
     try expect(store.activity(for: earnedOn).wordsMastered, 2, "A stored day loads its mastery count")

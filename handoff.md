@@ -1,7 +1,8 @@
 # Handoff.md — SwiftMandarin: Bilingual + Multi-Provider AI Overhaul
 
-**Last Updated (UTC):** 2026-08-10
-**Status:** In Progress (iter 33 — macOS cards were drawn in the page color; see Iteration 33)
+**Last Updated (UTC):** 2026-11-02
+**Status:** Complete (iter 34 — whole-app review, hang/crash fixes, Shortcuts and AI-prompt rework, global search, Liquid Glass pass, new AI Chat feature, new screenshots; see Iteration 34)
+**Prior Status:** In Progress (iter 33 — macOS cards were drawn in the page color; see Iteration 33)
 **Prior Status:** In Progress (iter 32 — per-day mastery in the activity heatmap and a 30-day Words Learned range; see Iteration 32)
 **Prior Status:** In Progress (iter 31 — record-and-transcribe actually works; see Iteration 31)
 **Prior Status:** In Progress (iter 30 — automatic AI analysis of newly saved words; see Iteration 30)
@@ -1465,3 +1466,114 @@ Statistics did not use `SMTheme` at all: `Color(.windowBackgroundColor)` for the
 
 ## Updates (append-only)
 - 2026-08-22: Screenshot-triage session (four iPhone screenshots in ~/Downloads/swm). Fixed: (1) per-word lookups failing with "Could not translate word" on iOS 26+ — `WordTranslationService`'s installed-languages `TranslationSession` throws when the language pack isn't downloaded and had no fallback; both single and batch paths now fall back to the configured AI provider; (2) `WordDetailPopover` storing the full-sentence translation as each saved word's definition after a failed lookup (the "Obey orders and obey orders." rows in Vocabulary) — the sentence context is display-only now, Save requires a word-level gloss, a Try Again button re-runs the lookup, and saving an English headword now stores its Chinese gloss instead of the English word itself; (3) Translate-screen section headers and Speak voices following the direction toggle instead of the auto-detected content (ENGLISH header over Chinese text; Mandarin read with an en-US voice); (4) the popover's "Chinese" button wrapping to "Chi-nese" — action-row labels use `.fitSingleLine()`. Evidence: iOS Simulator and macOS Debug builds both BUILD SUCCEEDED with no new warnings (scratchpad logs build-ios2.log / build-macos2.log). Full narrative in agent-progress.txt, 2026-08-22 entry. Known residue: already-saved terms with sentence definitions are persisted data — prevented for new saves, existing rows need re-saving or AI re-analysis; sentence translation quality is model output.
+
+---
+
+## Iteration 34 — Whole-app review: working audio-to-text, no hangs, Liquid Glass, new screenshots (2026-11-02)
+
+### 1) Request & Context
+
+> "please review this app, its workflow, and all of its different components, and come up with improvements and optimizations to improve the overall user experience and efficiency of the app, and make it look better. be meticulous and detailed in your review, and fix features that arent working like the audio to text feature. make sure the app's UI is improved using liquid glass, and to incoporate the latest updates to swiftui. i want to see new features and improvements that visibly improve the app and its features and functionality. look through every single component of the app for improvements and optimizations, even the shortcuts feature, the prompt for the ai translate feature, etc. sometimes, the app hangs and crash in normal use, so fix that please. also, while using the simulator, please capture new screenshots of the app in use, and also update the readme in both english and mandarin and include the new screnshots."
+
+**Environment delta since Iteration 33.** The machine now runs **Xcode 27.2 (27B52)** at `/Applications/Xcode.app`; `/Applications/Xcode-beta.app` no longer exists. Simulator runtimes: iOS 27.0 and 27.2; an iPhone 17 Pro Max is booted. Every contract script defaulted `DEVELOPER_DIR` to the deleted beta path, so `zsh init.sh` failed on this machine before any code was touched; with `DEVELOPER_DIR` overridden the whole suite is green (baseline captured). macOS Debug and iOS Simulator Debug both build clean at baseline apart from the long-documented duplicate-build-file project noise.
+
+**Working tree at start.** Three kinds of uncommitted change were found and triaged before anything else:
+1. *Provider refresh WIP (kept).* `AIModelSettings.swift`, `CloudAIService.swift`, `AIWordExplanationService.swift`, one catalog key — DeepSeek's retired model ids replaced, GLM moved to the coding-plan endpoint with a `reasoning_effort: low` override for glm-5.x (the default "max" effort burned the token budget on thinking and truncated the JSON), Kimi/Qwen/Doubao/MiniMax lineups refreshed, Doubao's non-existent `GET /models` route dropped, truncation (`finish_reason: length` / `stop_reason: max_tokens`) detected and reported instead of parsed as garbage, explanation budget 4096→8192. Coherent, well-commented, builds. It ships in this iteration with its new string translated.
+2. *Half-applied icon reshuffle (reverted).* The staged `AppIcon.appiconset/Contents.json` referenced four PNGs that had been deleted from disk; the renames only moved byte-identical files (all four 1024 px icons share md5 `1bdd79…`, the two 512 px ones share `ac275b…`). Restored the directory to HEAD — a complete, valid catalog — losing nothing.
+3. *Deletions (kept).* `dist/SwiftMandarin-4.2.0-macOS.dmg` and one 2026-06-07 macOS screenshot were deleted in the working tree. The README already sends users to GitHub Releases for the DMG, so the in-repo binary is not needed; the orphaned `.sha256` goes with it and the README step is generalized. The deleted screenshot is superseded by this iteration's new set.
+
+### 2) Requirements → Acceptance Checks (traceable)
+
+| Requirement | Acceptance check (scenario) | Expected | Evidence |
+|---|---|---|---|
+| R34.1 Dev harness works on this machine | `zsh init.sh` with no `DEVELOPER_DIR` override | all suites pass | init log |
+| R34.2 Builds are clean on both platforms | macOS Debug + iOS Simulator Debug via Xcode 27.2 | `BUILD SUCCEEDED`, zero compiler warnings | build logs |
+| R34.3 Audio-to-text works | Feed a real spoken clip (macOS `say` → AAC m4a, the app's recording format) through the exact `SpeechAnalyzer` sequence `AudioTranscriptionService` uses, for en-US and zh-CN; then exercise the Multimodal pane in the simulator | transcript text printed; pane shows a transcript or a precise, actionable error | harness output; simulator screenshot |
+| R34.4 No main-thread persistence hang | Import/add many terms; every store mutation | encode+write happens off the main actor, coalesced per burst; nothing lost on background/quit | code + timing harness before/after |
+| R34.5 Vocabulary list stays responsive | Type in search with thousands of terms | filter+sort computed once per change, not several times per body | code + check |
+| R34.6 Verified crash risks fixed | Each audit finding confirmed in code | guard added, listed with file:line | this section §5 |
+| R34.7 Liquid Glass / iOS 26 adoption | iOS 26+ gets glass chrome (tab bar minimize, glass controls, grouped glass); iOS 17 unchanged | builds for both; screenshots | screenshots |
+| R34.8 Shortcuts + AI translate prompt improved | Audit findings fixed; prompt contracts updated | `test-ai-prompt-contracts.sh` green with new assertions | suite log |
+| R34.9 New screenshots from the simulator | iPhone + iPad captures of the live app | files under `Screenshots/`, referenced by both READMEs, no dangling references | `ls` + README grep |
+| R34.10 READMEs updated (EN + zh-Hans) | Feature text and screenshot sections | consistent across both | diff |
+| R34.11 Every new string translated | Compare Xcode's extracted `.stringsdata` (array-aware parser) with the catalog | 0 untranslated new keys | script output |
+| R34.12 Clean exit | branch → commit → push → merge to main → push | `origin/main` == local | git log |
+
+### 3) Plan & Decomposition
+
+Critical path: fix the harness first (nothing else is verifiable without it) → prove or disprove audio-to-text against real audio (the one feature named as broken) → remove the hang sources (persistence, vocabulary filtering) and crash risks from the three parallel audits → UI modernization behind the compat layer → new visible features → simulator screenshots → READMEs → checks, docs, commit. Risky/uncertain items (speech engine on this OS, project-file cleanup) go first so unknowns shrink early.
+
+### 4) To-Do & Progress Ledger
+
+- [x] Triage working tree; restore icon catalog — evidence: §1
+- [x] Baseline: `init.sh` green with override; both builds succeed — evidence: scratch logs
+- [x] Harness: every `scripts/test-*.sh` defaults `DEVELOPER_DIR` to `$(xcode-select -p)`; `zsh init.sh` green with no override (R34.1) — evidence: all suites printed passing, exit 0
+- [x] Project file: removed 223 duplicate `PBXBuildFile` source entries, 100 stray file references (session logs, `.remember` scratch, agent docs) and the matching root-group children; `plutil -lint` OK, `xcodebuild -list` OK, both platforms build, the 220 "Skipping duplicate build file" warnings are gone (0 in build #3). New `scripts/test-project-hygiene.sh` (7 guards) keeps it that way and is in `init.sh`.
+- [x] Persistence: `PersistentCodableStore.save` now coalesces per key for 250 ms and encodes+writes in a detached utility task; `flushPendingWritesNow()` runs on every non-active scene phase and on `willTerminateNotification` (installed in `SwiftMandarinApp.init`). To make the snapshots encodable off the main actor the persisted value types became `nonisolated … Sendable` (`SavedTerm`, `TranslationHistoryEntry`, `CardProgress`, `DailyActivity`, `WorkbookQuestion`, `GradedSession`, `PracticeSessionResult`, `TranslationDraft`, and the enums they embed: `TranslationDirection`, `MasteryLevel`, `PracticeMode`); `String.containsCJK/looksLikeIPA` live in a `nonisolated extension`; `TranslationDirection.persistedDefault` is explicitly `@MainActor` because it reads `AppLanguage.persisted`.
+- [x] Vocabulary filtering: `body` computes `filteredTerms` once as `visibleTerms` and passes it to the list, inspector and popover; the alphabetical sort decorates each term with its `headlineText` once instead of inside the comparator.
+- [x] Audio-to-text: the exact `SpeechAnalyzer` sequence transcribed real spoken clips in both languages (EN "The quick brown fox…", ZH "我今天很高兴学习中文…", ~0.5 s each). The engine now refuses an invalid microphone format instead of installing a tap that crashes, the analyzer path has a duration-scaled timeout, and `stop()` cannot wedge (3 s bounded wait, then forced teardown).
+- [x] Crash/hang audit (Services/Models): coalesced, ordered, off-main persistence flushed on background/termination; one-pass imports; screenshot stitching at source scale off the main thread; delegate isolation; offline fast-fail (`waitsForConnectivity = false`); indexed explanation cache; lazy export; Ollama `num_ctx`/`num_predict` from settings; a 5-minute Ollama request timeout (the 60 s default failed long local generations).
+- [x] SwiftUI/glass audit (Views): nested NavigationStacks removed (Learn, Practice, Conversation, Reader); tab bar minimizes on scroll; composers and Live Speech actions float as glass via safe-area insets; content tiles moved from glass to the card surface; NLTagger, pinyin conversion and FlowLayout measurement moved out of `body`; ~150 Chinese-only or assembled UI strings localized.
+- [x] Shortcuts + prompt audit: spoken directions resolve, results are spoken, saves are awaited (capped at 12 words) and flushed, on-device translation falls back to the configured provider and says so, entities are searchable with tone-insensitive pinyin, phrase ids are stable, Explain Word added, Chinese Siri phrases in `AppShortcuts.xcstrings`. Translation prompts take key terms from the learning-language side, quote the translation on screen, and display-only callers request the lean envelope.
+- [x] New features: Global Search (Home toolbar + Study Library on iPhone, search tab on iPad iOS 26, sidebar on macOS); Word of the Day and Practice draw from unmastered words; **AI Chat** (user request 2026-11-03, see §5a).
+- [x] Screenshots: 8 iPhone 17 Pro Max captures with seeded data, a live Ollama translation and a live AI conversation (`Screenshots/iOS Screenshots/iPhone-0*.png`); iPad captures (`Screenshots/iPadOS Screenshots/iPad-0*.png`).
+- [x] READMEs (EN, zh-Hans): new feature sections, screenshot sections rebuilt, dangling 23.28.11 reference and the 4.2.0 DMG name removed, platform matrix updated.
+- [x] Reviews: a 29-agent adversarial review of the whole diff (24 findings, all confirmed) and a 22-agent review of AI Chat (17 confirmed, 2 refuted) — every confirmed finding fixed, each fix independently re-reviewed; see §6.
+- [x] feature_list.json (7 entries), agent-progress.txt, this file.
+- [x] Commit, push, merge.
+
+### 5) Findings, Decisions, Assumptions
+
+- **Finding (hang, confirmed by reading):** `PersistentCodableStore.save` JSON-encodes a *whole* store synchronously on the main actor and is wired to `didSet` in `SavedTermsStore`, `TranslationHistoryStore`, `LearningProgressStore`, `LearningActivityStore`, `PracticeStore`, `WorkbookBank`. `VocabularyImportExportService.importVocabulary` calls `store.add` once per row, and each add also records an activity, so an import of N words performs ~2N full re-encodes of growing arrays on the main thread — quadratic, and exactly the "hangs in normal use" shape. `WordExplanationCacheStore` already solved this pattern for itself (coalesced, off-main); the fix generalizes it.
+- **Finding (hang, confirmed):** `VocabularyView.filteredTerms` filters *and sorts* on every access and is read in at least seven places per body evaluation; the alphabetical sort compares `headlineText`, a main-actor computed property that scans both sides of every term for CJK. With thousands of terms, each keystroke in search pays that cost many times over.
+- **Decision:** keep the uncommitted provider WIP (see §1) — it is complete and consistent with the providers the user actually uses.
+- **Decision:** revert the half-applied icon reshuffle rather than finish it — the renames moved identical bytes and the README links the original filename.
+- **Assumption A1:** the user wants the established end-of-session workflow (branch, commit, push, merge to main). Stated in the summary; trivially reversible with `git revert`.
+
+### 5a) AI Chat (added to the request on 2026-11-03)
+
+> "create a new chatbot feature, in which users can input either mandarin or english, and the chatbot will pass the input through the AI model through the selected AI provider, and deliver a response, break it up into semantic chunks, with pinyin and english translation, just like the original translation tab, but in a chat view. design the UI for this, and implement this feature."
+
+- **Contract** (`Services/ChatbotPrompt.swift`, pure Foundation): one request returns `{"reply", "chunks":[{"text","reading","meaning"}], "translation"}`. The reply is always in the language being learned; readings are pinyin for Chinese and IPA for English; meanings and the translation are in the learner's own language. Learner text is conversation, never instructions.
+- **Routing** (`Services/ChatbotService.swift`): Apple Intelligence via guided generation (`@Generable ChatbotGeneratedReply`), Ollama via a transcript prompt, cloud via `chatTurns` with earlier assistant turns re-encoded as JSON.
+- **Decision — lay chunks over the reply rather than trust them.** A Mac harness against the on-device model showed it routinely skips a word (是) or rewrites one, and an all-or-nothing check discarded every meaning. `layout(_:over:)` matches each chunk in order (punctuation and quote style ignored; Latin chunks only on word boundaries; a skipped-ahead chunk only where the next one lines up), keeps paragraph breaks, and returns the uncovered text as gaps that are chunked on the device with pinyin. The chips therefore always spell out the reply. Wrong-language translations and readings on non-Han chunks in Chinese replies are dropped.
+- **UI** (`Views/ChatbotView.swift`): welcome card naming the provider, four direction-aware suggestions, tone-colored ruby chips with optional meanings, full translation, speak/copy, chunk detail sheet (speak, copy, save to Vocabulary), History sheet, glass composer, per-chat request and error state in `ChatbotStore` (survives leaving the screen; one request per chat; a late reply never recreates a deleted chat). Entry points: Study hub, Translate toolbar, macOS sidebar, `openStudy("chat")`.
+- **Checks:** `scripts/test-chatbot.sh` — 51 contract checks (including one regression check per review finding) and 8 wiring checks, in `init.sh`.
+
+### 6) Issues, Mistakes, Recoveries
+
+- **Six-tab iPhone bar.** The iOS 26 search tab made a sixth item and iOS folded Study and More into its own overflow list (caught in the simulator). Fix: search tab only on iPad regular width; Home toolbar + Study Library entry on iPhone; guarded in `test-project-hygiene.sh`.
+- **Pushed search field invisible.** `.searchable` in a pushed view starts in a collapsed drawer; pinned with `.navigationBarDrawer(displayMode: .always)` outside the search tab.
+- **Workflow launched with placeholder args.** Stopped before any file changed (verified by mtime), relaunched reading the findings from a file.
+- **On-device chunks discarded.** See §5a; regression checks pin the skipped-word case.
+- **Ollama "The request timed out."** Default 60 s idle timeout vs. non-streaming local generation; client now uses a 300 s/900 s session.
+- **Seed data in UTC** produced "in 7 hours" timestamps in the first captures; reseeded in local time before the final set.
+
+### 7) Scenario-Focused Resolution Tests
+
+| Scenario | Before | After | Evidence |
+|---|---|---|---|
+| Audio clip → text | reported broken | EN + ZH transcripts printed by the real engine | harness log |
+| Import many words | O(n²) main-thread re-encodes | one pass, coalesced off-main writes | code + hygiene guards |
+| Siri "Translate to Chinese" | ran as Auto | resolves via enum synonyms | ShortcutEnums |
+| Study → Learn | doubled navigation bar | single bar | iPhone-04-Learn.png |
+| Search "jing" | — | 经验/环境/风景 with highlight | iPhone-02-Search.png |
+| AI Chat via Apple Intelligence | — | chunked Chinese reply with meanings + translation | simulator run |
+| AI Chat via Ollama gpt-oss | timed out at 60 s | answers (5-minute limit) | simulator run |
+
+### 8) Verification Summary
+
+- macOS Debug and iOS Simulator Debug: `BUILD SUCCEEDED`, 0 warnings in app sources.
+- `zsh init.sh`: MiniMax 191/191, audio-session 27/27, AI prompt 258/258 + wiring 33/33, learning direction 28/28 + 8/8, auto-analysis 556/556 + 9/9, transcription 8/8, stats 18/18 + 8/8, macOS surfaces 8/8 + 7/7, project hygiene 11/11, AI Chat 51/51 + 8/8, smoke checks.
+- Localization: every key extracted by the build has zh-Hans except format-only keys ("%@ · %@", "%lld/%lld" …) that need none.
+
+### 9) Remaining Work & Next Steps
+
+- Apple's Translation framework does not run in the Simulator, so on-device translation was exercised on Ollama/Apple Intelligence paths only; verify on a device.
+- The on-device Apple model's chat answers are short and occasionally inaccurate (it invented a chengyu in one run); cloud and Ollama models answer better. Consider a note in AI Chat when Apple Intelligence is the provider.
+- `GeneratedSpeechStore` index writes were left synchronous on purpose (its rollback semantics and contract checks depend on it).
+
+### 10) Updates
+
+- 2026-11-02: Iteration 34 opened; harness, project file, persistence and vocabulary work.
+- 2026-11-03: Shortcuts/prompt/parser rework, global search, glass pass, two adversarial reviews with fixes, AI Chat, screenshots, READMEs; status Complete.

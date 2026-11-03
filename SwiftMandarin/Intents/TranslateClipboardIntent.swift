@@ -7,12 +7,16 @@ import AppIntents
 
 struct TranslateClipboardIntent: AppIntent {
     static var title: LocalizedStringResource = "Translate Clipboard"
-    static var description = IntentDescription("Translate text from the clipboard. Optionally save Chinese phrases (2+ characters) to vocabulary with auto-detected part of speech.")
+    static var description = IntentDescription("Translate the text on the clipboard. Optionally save the words in the language you are learning to your vocabulary, with the part of speech detected automatically.")
 
     @Parameter(title: "Direction", default: .auto)
     var direction: ShortcutTranslationDirection
 
-    @Parameter(title: "Use Apple Intelligence", default: false)
+    @Parameter(
+        title: "Use AI Provider",
+        description: "Translate with the AI provider selected in SwiftMandarin's AI settings instead of Apple's on-device translation. The text is sent to that provider.",
+        default: false
+    )
     var useAI: Bool
 
     @Parameter(title: "Copy Result to Clipboard", default: true)
@@ -52,21 +56,28 @@ struct TranslateClipboardIntent: AppIntent {
             ClipboardService.copy(result.translation)
         }
 
-        // Save the studied language's phrases to vocabulary if enabled
+        var saveOutcome: ShortcutHelpers.VocabularySaveOutcome?
         if saveToVocabulary {
             let chinese = resolvedDirection == .englishToChinese ? result.translation : trimmed
             let english = resolvedDirection == .englishToChinese ? trimmed : result.translation
-
-            ShortcutHelpers.saveStudiedPhrasesToVocabulary(
+            saveOutcome = await ShortcutHelpers.saveStudiedPhrasesToVocabulary(
                 chineseText: chinese,
                 englishTranslation: english
             )
         }
 
-        let dialog = useAI && !result.usedAI
-            ? IntentDialog("Apple Intelligence wasn't available, so SwiftMandarin used standard translation.")
-            : IntentDialog("Translation complete.")
+        // The history entry and any saved words are on disk before Shortcuts
+        // reports success, even if the process is suspended right after.
+        ShortcutHelpers.persistIntentChanges()
 
-        return .result(value: result.translation, dialog: dialog)
+        return .result(
+            value: result.translation,
+            dialog: ShortcutHelpers.translationDialog(
+                translation: result.translation,
+                requestedAI: useAI,
+                usedAI: result.usedAI,
+                saveOutcome: saveOutcome
+            )
+        )
     }
 }

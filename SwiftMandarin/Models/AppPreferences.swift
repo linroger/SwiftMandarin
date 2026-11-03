@@ -103,10 +103,12 @@ enum PhotoScanLanguage: String, CaseIterable, Identifiable, Codable {
 
     var displayName: String {
         switch self {
-        case .auto: return "自动 · Auto"
-        case .chinese: return "中文"
-        case .english: return "English"
-        case .bilingual: return "双语 · Both"
+        // Through the catalog, so the scan-language menu follows the in-app
+        // language instead of showing both languages at once.
+        case .auto: return String(localized: "Auto", bundle: .appLanguage)
+        case .chinese: return String(localized: "Chinese", bundle: .appLanguage)
+        case .english: return String(localized: "English", bundle: .appLanguage)
+        case .bilingual: return String(localized: "Both", bundle: .appLanguage)
         }
     }
 

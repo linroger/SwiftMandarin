@@ -30,7 +30,9 @@ struct MoreView: View {
     @State private var localization = LocalizationManager.shared
     @State private var prefs = AppPreferences.shared
     @State private var aiSettings = AIModelSettings.shared
-    @State private var path: [MoreRoute] = []
+    /// `NavigationPath`, not `[MoreRoute]`: Reader, Practice, and Conversation
+    /// push pages of their own through item destinations once they are here.
+    @State private var path = NavigationPath()
 
     var body: some View {
         NavigationStack(path: $path) {

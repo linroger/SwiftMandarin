@@ -188,12 +188,15 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     ///
     /// Cloud providers default to their mainland-China (domestic) endpoints;
     /// users outside China can override with the international host in Settings
-    /// (e.g. Qwen → dashscope-intl…, MiniMax → api.minimax.io, GLM → api.z.ai).
+    /// (e.g. Qwen → dashscope-intl…, MiniMax → api.minimax.io,
+    /// GLM → api.z.ai/api/coding/paas/v4).
     var defaultBaseURL: String {
         switch self {
         case .openAI: return "https://api.openai.com/v1"
         case .anthropic: return "https://api.anthropic.com"
-        case .deepseek: return "https://api.deepseek.com/v1"
+        // Documented form is the bare domain (/chat/completions, /models);
+        // the /v1 alias still routes but is no longer in the docs.
+        case .deepseek: return "https://api.deepseek.com"
         case .doubao: return "https://ark.cn-beijing.volces.com/api/v3"
         // Mainland-China DashScope (百炼). International users override with
         // https://dashscope-intl.aliyuncs.com/compatible-mode/v1
@@ -202,7 +205,14 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         // format set the base to https://api.kimi.com/coding and API Format
         // to Anthropic (path becomes …/coding/v1/messages).
         case .kimi: return "https://api.kimi.com/coding/v1"
-        case .zhipu: return "https://open.bigmodel.cn/api/paas/v4"
+        // GLM Coding Plan (智谱Coding套餐) endpoint. Coding-plan keys ONLY work
+        // here — on the pay-as-you-go endpoint (…/api/paas/v4) they fail with
+        // HTTP 429 error 1113 "insufficient balance or no resource package".
+        // Pay-as-you-go keys: override the base URL to …/api/paas/v4.
+        // International coding plan: https://api.z.ai/api/coding/paas/v4.
+        // For the Anthropic format set the base to
+        // https://open.bigmodel.cn/api/anthropic (path …/api/anthropic/v1/messages).
+        case .zhipu: return "https://open.bigmodel.cn/api/coding/paas/v4"
         // MiniMax mainland-China host. International users override with
         // https://api.minimax.io/v1
         case .minimax: return "https://api.minimaxi.com/v1"
@@ -223,16 +233,17 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
 
     /// Model-list path appended to the base URL, or `nil` when the provider
     /// has no standard listing endpoint (defaults are used instead).
-    /// Every cloud provider here exposes an OpenAI-style `GET /models` (or the
-    /// Anthropic `/v1/models`), so model lists are pulled live rather than
-    /// relying on the curated `defaultModels` fallbacks.
+    /// Volcengine Ark has no `GET /models` data-plane route (every path on the
+    /// gateway answers 401), so Doubao relies on the curated `defaultModels`
+    /// fallback; the other cloud providers expose an OpenAI-style `GET /models`
+    /// (or the Anthropic `/v1/models`) and are pulled live.
     var modelsPath: String? {
         switch self {
         case .anthropic: return "/v1/models"
-        // Kimi's coding endpoint does expose `GET /coding/v1/models` (returns the
-        // single `kimi-for-coding` / "K2.7 Code" model), so live listing works.
-        case .openAI, .deepseek, .qwen, .doubao, .zhipu, .minimax, .quotio, .kimi: return "/models"
-        case .appleIntelligence, .ollama: return nil
+        // Kimi's coding endpoint does expose `GET /coding/v1/models` (returns
+        // the coding-plan lineup: k3, kimi-for-coding, …), so live listing works.
+        case .openAI, .deepseek, .qwen, .zhipu, .minimax, .quotio, .kimi: return "/models"
+        case .doubao, .appleIntelligence, .ollama: return nil
         }
     }
 
@@ -247,24 +258,31 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             // Newest first — the first entry doubles as the default selection.
             return ["claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5", "claude-sonnet-4-5", "claude-opus-4-1"]
         case .deepseek:
-            return ["deepseek-chat", "deepseek-reasoner"]
+            // deepseek-chat / deepseek-reasoner were retired 2026-07-24;
+            // deepseek-flash and deepseek-v4-pro are the current ids.
+            return ["deepseek-flash", "deepseek-v4-pro"]
         case .doubao:
             // Ark model IDs use dashes + a date suffix (NOT dots), and must be
             // activated in the Ark Console (or use an inference endpoint ID, ep-…).
-            return ["doubao-seed-1-6-250615", "doubao-1-5-pro-32k-250115", "doubao-1-5-vision-pro-32k-250115", "doubao-seed-1-6-flash-250828", "doubao-1-5-lite-32k-250115"]
+            // seed-2-1 is natively multimodal; 1-6-vision is the dedicated VL id.
+            return ["doubao-seed-2-1-pro-260628", "doubao-seed-2-1-turbo-260628", "doubao-seed-evolving", "doubao-seed-1-6-vision-250815", "doubao-seed-1-6-flash-250828"]
         case .qwen:
-            return ["qwen-plus", "qwen-max", "qwen-turbo", "qwen-vl-max", "qwen-vl-plus", "qwen-max-latest"]
+            return ["qwen3.8-max", "qwen-plus", "qwen-max", "qwen3.8-flash", "qwen3-vl-plus", "qwen-vl-max"]
         case .kimi:
-            // The coding endpoint (api.kimi.com/coding/v1) serves the K2.7 model
-            // under the id `kimi-for-coding`; `kimi-k2.7` also resolves to it.
-            // Both are thinking-only (temperature must be 1, omitted by the
-            // client). Moonshot Open Platform users can override the Base URL and
-            // type a kimi-latest / kimi-k2.x id instead.
-            return ["kimi-for-coding", "kimi-k2.7"]
+            // Coding-plan lineup served by api.kimi.com/coding/v1: k3 flagship,
+            // kimi-for-coding (K2.8 Preview), kimi-for-coding-highspeed (K2.7
+            // Code HighSpeed). All are thinking-only (temperature must be
+            // omitted, which the client already does). Moonshot Open Platform
+            // users can override the Base URL and type a kimi-k3 / kimi-k2.x
+            // id instead.
+            return ["kimi-for-coding", "k3", "kimi-for-coding-highspeed", "k3-256k"]
         case .zhipu:
-            return ["glm-4.6", "glm-4.5", "glm-4-plus", "glm-4.5v", "glm-4v-plus", "glm-4-flash"]
+            // Coding-plan lineup (from the live GET /models). glm-5.3-flash is
+            // the multimodal/vision model; glm-5.3-flashx requires a higher
+            // plan tier (Lite/Pro answer 429 "套餐暂未开放").
+            return ["glm-5.3", "glm-5.3-flash", "glm-5.2", "glm-5.1", "glm-5", "glm-4.6", "glm-4.5"]
         case .minimax:
-            return ["MiniMax-M2.5", "MiniMax-M2.7", "MiniMax-M3", "MiniMax-Text-01"]
+            return ["MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed", "MiniMax-M2.5"]
         case .quotio:
             // Starter hints only — Quotio exposes its live catalog via
             // GET /v1/models, so use "Refresh Models" to pull what the running
@@ -282,9 +300,9 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .openAI: return "gpt-4o"
         case .anthropic: return "claude-sonnet-4-6"
-        case .qwen: return "qwen-vl-max"
-        case .doubao: return "doubao-1-5-vision-pro-32k-250115"
-        case .zhipu: return "glm-4.5v"
+        case .qwen: return "qwen3-vl-plus"
+        case .doubao: return "doubao-seed-1-6-vision-250815"
+        case .zhipu: return "glm-5.3-flash"
         case .kimi: return "kimi-for-coding"
         case .deepseek, .minimax, .appleIntelligence, .ollama, .quotio: return nil
         }
@@ -573,7 +591,7 @@ final class AIModelSettings {
     /// Heuristic: does this model id look vision-capable (accepts images)?
     static func isLikelyVisionModel(_ id: String) -> Bool {
         let l = id.lowercased()
-        if ["vl", "vision", "omni", "qvq", "4v", "glm-4.5v", "pixtral", "llava", "internvl", "minicpm-v", "gemini"]
+        if ["vl", "vision", "omni", "qvq", "4v", "glm-4.5v", "5.3-flash", "pixtral", "llava", "internvl", "minicpm-v", "gemini"]
             .contains(where: { l.contains($0) }) { return true }
         // Providers whose flagship chat models are multimodal.
         if l.hasPrefix("claude-") || l.contains("gpt-4o") || l.contains("gpt-4.1") || l.hasPrefix("o4") || l.hasPrefix("o3") { return true }

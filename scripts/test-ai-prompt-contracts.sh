@@ -13,7 +13,7 @@ translation_files=(
 
 # The opt-in flag keeps this standalone runner inert if it is ever discovered
 # by an Xcode source group.
-DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-beta.app/Contents/Developer}" \
+DEVELOPER_DIR="${DEVELOPER_DIR:-$(xcode-select -p)}" \
     xcrun swiftc \
     "$repo_root/SwiftMandarin/Models/LanguageBundleOverride.swift" \
     "$repo_root/SwiftMandarin/Services/AIExplanationPromptBuilder.swift" \
@@ -76,6 +76,17 @@ ai_transcription_client=$(count_matches 'func transcribeAudio\(' "$repo_root/Swi
 # Study notes must actually reach a screen, on both translation surfaces.
 notes_surfaces=$(count_files 'TranslationNotesView\(' "$repo_root/SwiftMandarin/Views/TranslateView.swift" "$repo_root/SwiftMandarin/Views/PhotoTranslateView.swift")
 detailed_translation=$(count_matches 'translateDetailedWithProvider\(' "$repo_root/SwiftMandarin/Views/TranslateView.swift" "$repo_root/SwiftMandarin/Views/PhotoTranslateView.swift")
+# Display-only callers (Reader, screenshots, the menu bar, Shortcuts, per-word
+# saves) take the lean translation: `translateWithProvider` must pass the flag
+# through, and every provider path must accept it.
+lean_translation_entry=$(count_matches 'includeStudyNotes: false' "$service_file")
+lean_translation_paths=$(count_files 'includeStudyNotes: Bool' "${translation_files[@]}")
+# Thinking models spend their output budget on reasoning before the envelope;
+# the cloud client must widen the budget for them.
+thinking_budget=$(count_matches 'isThinkingModel\(provider:' "$repo_root/SwiftMandarin/Services/CloudAIService.swift")
+# Offline, URLSession's default waits up to five minutes for connectivity
+# before failing; the translate spinner must fail fast instead.
+offline_fast_fail=$(count_matches 'waitsForConnectivity = false' "$repo_root/SwiftMandarin/Services/CloudAIService.swift")
 
 [[ "$explanation_request_count" == "3" ]] || {
     print -u2 "Expected all 3 explanation providers to use the shared request; found $explanation_request_count"
@@ -154,4 +165,21 @@ detailed_translation=$(count_matches 'translateDetailedWithProvider\(' "$repo_ro
     exit 1
 }
 
-print "AI provider wiring checks passed (29/29)"
+[[ "$lean_translation_entry" -ge 1 ]] || {
+    print -u2 "Expected the display-only translation entry point to request the lean envelope; found $lean_translation_entry"
+    exit 1
+}
+[[ "$lean_translation_paths" == "3" ]] || {
+    print -u2 "Expected all 3 translation providers to accept the study-notes flag; found $lean_translation_paths"
+    exit 1
+}
+[[ "$thinking_budget" -ge 2 ]] || {
+    print -u2 "Expected the cloud client to define and apply the thinking-model output budget; found $thinking_budget"
+    exit 1
+}
+[[ "$offline_fast_fail" == "1" ]] || {
+    print -u2 "Expected the cloud session to fail fast when offline; found $offline_fast_fail"
+    exit 1
+}
+
+print "AI provider wiring checks passed (33/33)"

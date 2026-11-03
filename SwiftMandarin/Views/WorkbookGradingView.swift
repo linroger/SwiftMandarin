@@ -79,7 +79,7 @@ struct WorkbookGradingView: View {
                     providerBanner
                     howItWorksNote
                     uploadSection(
-                        title: "作业页面 · Workbook pages",
+                        title: "Workbook pages",
                         systemImage: "doc.text.image",
                         items: $workbookItems,
                         images: workbookImages,
@@ -91,7 +91,7 @@ struct WorkbookGradingView: View {
                         onClear: { workbookItems = []; workbookImages = [] }
                     )
                     uploadSection(
-                        title: "单独答案（可选）· Separate answers (optional)",
+                        title: "Separate answers (optional)",
                         systemImage: "pencil.and.scribble",
                         items: $answerItems,
                         images: answerImages,
@@ -111,13 +111,13 @@ struct WorkbookGradingView: View {
                 }
                 .padding()
             }
-            .navigationTitle("作业批改 · Grading")
+            .navigationTitle("Workbook Grading")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") { dismiss() }
+                    Button("Done") { dismiss() }
                 }
             }
             .onChange(of: workbookItems) { _, items in
@@ -234,10 +234,10 @@ struct WorkbookGradingView: View {
                     .font(.headline)
                 Spacer()
                 if !images.isEmpty {
-                    Text("\(images.count) 张")
+                    Text("\(images.count) images")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Button("清除", role: .destructive, action: onClear)
+                    Button("Clear", role: .destructive, action: onClear)
                         .font(.caption)
                         .buttonStyle(.borderless)
                 }
@@ -249,7 +249,8 @@ struct WorkbookGradingView: View {
                     Image(systemName: "square.and.arrow.down.on.square")
                         .font(.title2)
                         .foregroundStyle(.secondary)
-                    Text("拖放图片到此 · Drag & drop images here")
+                        .accessibilityHidden(true)
+                    Text("Drag & drop images here")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -273,7 +274,7 @@ struct WorkbookGradingView: View {
             if isLoading {
                 HStack {
                     ProgressView().controlSize(.small)
-                    Text("加载中…").foregroundStyle(.secondary)
+                    Text("Loading…").foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
             } else {
@@ -281,7 +282,7 @@ struct WorkbookGradingView: View {
                     // Directly from the camera (take a photo of the page now).
                     if let onCamera {
                         Button(action: onCamera) {
-                            Label("拍照 · Camera", systemImage: "camera.fill")
+                            Label("Camera", systemImage: "camera.fill")
                                 .fitSingleLine()
                                 .frame(maxWidth: .infinity)
                         }
@@ -291,7 +292,7 @@ struct WorkbookGradingView: View {
 
                     // From the Photos library.
                     PhotosPicker(selection: items, maxSelectionCount: 10, matching: .images) {
-                        Label("照片 · Photos", systemImage: "photo.on.rectangle")
+                        Label("Photos", systemImage: "photo.on.rectangle")
                             .fitSingleLine()
                             .frame(maxWidth: .infinity)
                     }
@@ -300,7 +301,7 @@ struct WorkbookGradingView: View {
 
                     // From files (Files app on iOS, Finder on macOS).
                     Button(action: onAddFiles) {
-                        Label("文件 · Files", systemImage: "folder")
+                        Label("Files", systemImage: "folder")
                             .fitSingleLine()
                             .frame(maxWidth: .infinity)
                     }
@@ -344,17 +345,18 @@ struct WorkbookGradingView: View {
                     .padding(2)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(Text("Remove image"))
         }
         .contextMenu {
             Button(role: .destructive) { onRemove() } label: {
-                Label("移除 · Remove", systemImage: "trash")
+                Label("Remove", systemImage: "trash")
             }
         }
     }
 
     private var customPromptSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("自定义提示（可选）· Custom instructions", systemImage: "text.bubble")
+            Label("Custom instructions (optional)", systemImage: "text.bubble")
                 .font(.subheadline)
             TextField(
                 "e.g. This is a Grade 3 English vocabulary workbook; be strict about spelling.",
@@ -372,11 +374,16 @@ struct WorkbookGradingView: View {
         )
     }
 
+    /// The grade button's title, hoisted so each branch is a plain key.
+    private var gradeButtonTitle: LocalizedStringKey {
+        isGrading ? "Grading…" : "Grade"
+    }
+
     private var gradeButton: some View {
         Button {
             Task { await grade() }
         } label: {
-            Label(isGrading ? "批改中…" : "开始批改 · Grade", systemImage: "checkmark.circle")
+            Label(gradeButtonTitle, systemImage: "checkmark.circle")
                 .fitSingleLine()
                 .frame(maxWidth: .infinity)
         }
@@ -388,7 +395,7 @@ struct WorkbookGradingView: View {
     private var gradingProgress: some View {
         VStack(spacing: 12) {
             ProgressView().controlSize(.large)
-            Text("正在批改作业…")
+            Text("Grading workbook…")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -410,10 +417,12 @@ struct WorkbookGradingView: View {
             // Score header
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(result.score.isEmpty ? "\(result.correctCount)/\(result.questions.count)" : result.score)
+                    // The model's own score string is not trusted: it has disagreed
+                    // with its own per-question verdicts. Count the verdicts.
+                    Text(verbatim: "\(result.correctCount)/\(result.questions.count)")
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                    Text("正确 \(result.correctCount) · 共 \(result.questions.count) 题")
+                    Text("\(result.correctCount) correct · \(result.questions.count) total")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -421,6 +430,7 @@ struct WorkbookGradingView: View {
                 Image(systemName: "graduationcap.fill")
                     .font(.largeTitle)
                     .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
@@ -433,7 +443,7 @@ struct WorkbookGradingView: View {
             }
 
             if didSaveSession {
-                Label("已保存到批改历史 · Saved to grading history", systemImage: "clock.badge.checkmark")
+                Label("Saved to grading history", systemImage: "clock.badge.checkmark")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -455,7 +465,7 @@ struct WorkbookGradingView: View {
                 Button {
                     addAllToBank()
                 } label: {
-                    Label(didAddAllToBank ? "已全部加入 · Added all" : "全部加入题库 · Add all to Review Bank",
+                    Label(didAddAllToBank ? "Added all" : "Add all to Review Bank",
                           systemImage: didAddAllToBank ? "tray.full.fill" : "tray.and.arrow.down.fill")
                         .fitSingleLine()
                         .frame(maxWidth: .infinity)
@@ -467,7 +477,7 @@ struct WorkbookGradingView: View {
                     Button {
                         saveAllWrongVocab()
                     } label: {
-                        Label("保存所有错题词汇到词汇本", systemImage: "bookmark")
+                        Label("Save All Wrong-Answer Vocabulary", systemImage: "bookmark")
                             .fitSingleLine()
                             .frame(maxWidth: .infinity)
                     }
@@ -802,15 +812,21 @@ private struct GradedQuestionCard: View {
     let onSaveVocab: () -> Void
     let onAddToBank: () -> Void
 
+    /// The verdict the colored icon conveys, spoken for VoiceOver users.
+    private var verdictLabel: LocalizedStringKey {
+        question.isCorrect ? "Correct" : "Incorrect"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top) {
                 Image(systemName: question.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .foregroundStyle(question.isCorrect ? .green : .red)
                     .font(.title3)
+                    .accessibilityLabel(Text(verdictLabel))
                 VStack(alignment: .leading, spacing: 2) {
                     if !question.questionNumber.isEmpty {
-                        Text("第 \(question.questionNumber) 题")
+                        Text("Question \(question.questionNumber)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -870,7 +886,7 @@ private struct GradedQuestionCard: View {
                     Button {
                         onSaveVocab()
                     } label: {
-                        Label(isSaved ? "已保存" : "保存", systemImage: isSaved ? "bookmark.fill" : "bookmark")
+                        Label(isSaved ? "Saved" : "Save", systemImage: isSaved ? "bookmark.fill" : "bookmark")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -884,7 +900,7 @@ private struct GradedQuestionCard: View {
                 Button {
                     onAddToBank()
                 } label: {
-                    Label(isInBank ? "已在题库 · In Bank" : "加入题库 · Add to Bank",
+                    Label(isInBank ? "In Bank" : "Add to Bank",
                           systemImage: isInBank ? "tray.full.fill" : "tray.and.arrow.down")
                         .font(.caption)
                         .fitSingleLine()

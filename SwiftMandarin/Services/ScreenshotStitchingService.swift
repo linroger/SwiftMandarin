@@ -122,37 +122,53 @@ final class ScreenshotStitchingService {
         
         // Use the width of the first image
         let width = images[0].size.width
-        
-        // Create the stitched image
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: width, height: totalHeight))
-        
-        let stitchedImage = renderer.image { context in
-            var yOffset: CGFloat = 0
-            
-            for (index, image) in images.enumerated() {
-                if index == 0 {
-                    // Draw first image fully
-                    image.draw(at: CGPoint(x: 0, y: yOffset))
-                    yOffset += image.size.height
-                } else {
-                    // Skip the overlapping portion at the top
-                    let overlap = CGFloat(overlapHeights[index - 1])
-                    let cropRect = CGRect(
-                        x: 0,
-                        y: overlap,
-                        width: image.size.width,
-                        height: image.size.height - overlap
-                    )
-                    
-                    if let cgImage = image.cgImage,
-                       let croppedCGImage = cgImage.cropping(to: cropRect) {
-                        let croppedImage = UIImage(cgImage: croppedCGImage, scale: image.scale, orientation: image.imageOrientation)
-                        croppedImage.draw(at: CGPoint(x: 0, y: yOffset))
-                        yOffset += croppedImage.size.height
+
+        // Render at the source images' own scale, not the screen's. These
+        // images come from `UIImage(data:)`, so they are scale 1 and `size`
+        // is already in pixels; the default renderer format multiplies that
+        // by the display scale (3× on current iPhones), which made the canvas
+        // nine times larger than the result — two full screenshots became a
+        // ~200 MB bitmap and five ran the process out of memory.
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = images[0].scale
+        format.opaque = true
+        let renderer = UIGraphicsImageRenderer(
+            size: CGSize(width: width, height: totalHeight),
+            format: format
+        )
+        let heights = overlapHeights
+
+        // Composite off the main actor: a bitmap this size takes long enough
+        // to draw that doing it on the main thread was a visible stall.
+        let stitchedImage = await Task.detached(priority: .userInitiated) {
+            renderer.image { _ in
+                var yOffset: CGFloat = 0
+
+                for (index, image) in images.enumerated() {
+                    if index == 0 {
+                        // Draw first image fully
+                        image.draw(at: CGPoint(x: 0, y: yOffset))
+                        yOffset += image.size.height
+                    } else {
+                        // Skip the overlapping portion at the top
+                        let overlap = CGFloat(heights[index - 1])
+                        let cropRect = CGRect(
+                            x: 0,
+                            y: overlap,
+                            width: image.size.width,
+                            height: image.size.height - overlap
+                        )
+
+                        if let cgImage = image.cgImage,
+                           let croppedCGImage = cgImage.cropping(to: cropRect) {
+                            let croppedImage = UIImage(cgImage: croppedCGImage, scale: image.scale, orientation: image.imageOrientation)
+                            croppedImage.draw(at: CGPoint(x: 0, y: yOffset))
+                            yOffset += croppedImage.size.height
+                        }
                     }
                 }
             }
-        }
+        }.value
         
         return StitchedImageResult(
             image: stitchedImage,

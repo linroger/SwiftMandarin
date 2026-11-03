@@ -16,10 +16,19 @@ enum ShortcutTranslationDirection: String, AppEnum {
     }
 
     static var caseDisplayRepresentations: [ShortcutTranslationDirection: DisplayRepresentation] {
+        // Synonyms are what let Siri resolve "Translate to Chinese with
+        // SwiftMandarin": the App Shortcut phrase carries this parameter, and
+        // without them the two spoken directions both ran as Auto.
         [
-            .auto: DisplayRepresentation(title: "Auto"),
-            .englishToChinese: DisplayRepresentation(title: "English → Chinese"),
-            .chineseToEnglish: DisplayRepresentation(title: "Chinese → English")
+            .auto: DisplayRepresentation(title: "Auto", synonyms: ["automatically", "auto-detect"]),
+            .englishToChinese: DisplayRepresentation(
+                title: "English → Chinese",
+                synonyms: ["to Chinese", "into Chinese", "English to Chinese", "to Mandarin"]
+            ),
+            .chineseToEnglish: DisplayRepresentation(
+                title: "Chinese → English",
+                synonyms: ["to English", "into English", "Chinese to English"]
+            )
         ]
     }
 }

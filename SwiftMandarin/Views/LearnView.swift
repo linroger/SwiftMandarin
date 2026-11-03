@@ -77,91 +77,92 @@ struct LearnView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if sessionCards.isEmpty {
-                    emptyState
-                } else if let card = currentCard {
-                    cardStudyView(card: card)
-                } else {
-                    completionView
-                }
+        // No own NavigationStack: this screen is pushed by the Study hub (iOS)
+        // or hosted in the sidebar's detail stack (macOS). Nesting a second
+        // stack inside either doubled the navigation bar.
+        Group {
+            if sessionCards.isEmpty {
+                emptyState
+            } else if let card = currentCard {
+                cardStudyView(card: card)
+            } else {
+                completionView
             }
-            .navigationTitle("Learn")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.large)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Section("Card Source") {
-                            Picker("Source", selection: $cardSource) {
-                                ForEach(CardSource.allCases, id: \.self) { source in
-                                    Label(L(source.rawValue), systemImage: source == .vocabulary ? "text.book.closed" : source == .builtin ? "rectangle.stack" : "square.stack.3d.up")
-                                        .tag(source)
-                                }
+        }
+        .navigationTitle("Learn")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.large)
+        #endif
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Section("Card Source") {
+                        Picker("Source", selection: $cardSource) {
+                            ForEach(CardSource.allCases, id: \.self) { source in
+                                Label(L(source.rawValue), systemImage: source == .vocabulary ? "text.book.closed" : source == .builtin ? "rectangle.stack" : "square.stack.3d.up")
+                                    .tag(source)
                             }
                         }
-
-                        Section("Study Mode") {
-                            Picker("Mode", selection: $studyMode) {
-                                ForEach(StudyMode.allCases, id: \.self) { mode in
-                                    Text(L(mode.rawValue)).tag(mode)
-                                }
-                            }
-                        }
-
-                        Divider()
-
-                        Button {
-                            showingStats = true
-                        } label: {
-                            Label("Statistics", systemImage: "chart.bar")
-                        }
-
-                        Button {
-                            learningStore.resetProgress()
-                            reloadSessionCards()
-                        } label: {
-                            Label("Reset Progress", systemImage: "arrow.counterclockwise")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
                     }
+
+                    Section("Study Mode") {
+                        Picker("Mode", selection: $studyMode) {
+                            ForEach(StudyMode.allCases, id: \.self) { mode in
+                                Text(L(mode.rawValue)).tag(mode)
+                            }
+                        }
+                    }
+
+                    Divider()
+
+                    Button {
+                        showingStats = true
+                    } label: {
+                        Label("Statistics", systemImage: "chart.bar")
+                    }
+
+                    Button {
+                        learningStore.resetProgress()
+                        reloadSessionCards()
+                    } label: {
+                        Label("Reset Progress", systemImage: "arrow.counterclockwise")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
             }
-            .sheet(isPresented: $showingStats) {
-                LearningStatsSheet()
-                    .localizedSurface()
-            }
-            .onChange(of: studyMode) { _, _ in
+        }
+        .sheet(isPresented: $showingStats) {
+            LearningStatsSheet()
+                .localizedSurface()
+        }
+        .onChange(of: studyMode) { _, _ in
+            reloadSessionCards()
+        }
+        .onChange(of: cardSource) { _, _ in
+            reloadSessionCards()
+        }
+        .task(id: routeStore.pendingAction?.id) {
+            if !applyPendingAction(), sessionCards.isEmpty {
                 reloadSessionCards()
             }
-            .onChange(of: cardSource) { _, _ in
-                reloadSessionCards()
-            }
-            .task(id: routeStore.pendingAction?.id) {
-                if !applyPendingAction(), sessionCards.isEmpty {
-                    reloadSessionCards()
-                }
-            }
-            // Keyboard navigation works on macOS and iOS/iPadOS with hardware keyboard
-            .onKeyPress(.leftArrow) {
-                goToPreviousCard()
-                return .handled
-            }
-            .onKeyPress(.rightArrow) {
-                goToNextCard()
-                return .handled
-            }
-            .onKeyPress(.space) {
-                flipCard()
-                return .handled
-            }
-            .onKeyPress(.return) {
-                flipCard()
-                return .handled
-            }
+        }
+        // Keyboard navigation works on macOS and iOS/iPadOS with hardware keyboard
+        .onKeyPress(.leftArrow) {
+            goToPreviousCard()
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            goToNextCard()
+            return .handled
+        }
+        .onKeyPress(.space) {
+            flipCard()
+            return .handled
+        }
+        .onKeyPress(.return) {
+            flipCard()
+            return .handled
         }
         .focusable()
     }
@@ -639,7 +640,9 @@ struct FlashcardView: View {
         content()
             .frame(maxWidth: .infinity, maxHeight: 400)
             .padding(24)
-            .glassEffectCompat(cornerRadius: 20)
+            // A card face is content, not a control: it takes the elevated
+            // card surface, and Liquid Glass stays on the controls over it.
+            .smCardSurface(cornerRadius: 20)
     }
 }
 
@@ -788,8 +791,10 @@ struct LearningStatsSheet: View {
 // MARK: - Preview
 
 #Preview {
-    LearnView()
-        .environment(LearningProgressStore.shared)
-        .environment(SavedTermsStore.shared)
-        .environment(AppRouteStore.shared)
+    NavigationStack {
+        LearnView()
+            .environment(LearningProgressStore.shared)
+            .environment(SavedTermsStore.shared)
+            .environment(AppRouteStore.shared)
+    }
 }

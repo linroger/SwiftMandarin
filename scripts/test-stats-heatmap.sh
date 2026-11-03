@@ -9,7 +9,7 @@ binary_path="${TMPDIR:-/tmp}/swiftmandarin-stats-heatmap-checks"
 # app source (it does — see the synchronized `scripts` group). `LearningActivity`
 # needs only the persistence helper and the language-bundle shim, so the day-by-day
 # mastery arithmetic can be checked without standing up the rest of the app.
-DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-beta.app/Contents/Developer}" \
+DEVELOPER_DIR="${DEVELOPER_DIR:-$(xcode-select -p)}" \
     xcrun swiftc \
     "$repo_root/SwiftMandarin/Models/LearningActivity.swift" \
     "$repo_root/SwiftMandarin/Models/PersistentCodableStore.swift" \

@@ -152,7 +152,13 @@ struct CameraScannerSheet: View {
     private var isScannerAvailable: Bool {
         CameraScannerView.isSupported && CameraScannerView.isAvailable
     }
-    
+
+    /// VoiceOver name for the icon-only pause/resume control, hoisted so the
+    /// catalog sees one key per branch.
+    private var scanToggleLabel: LocalizedStringKey {
+        isScanning ? "Pause scanning" : "Resume scanning"
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -168,18 +174,18 @@ struct CameraScannerSheet: View {
                         }
                     )
                     .ignoresSafeArea()
-                    
+
                     // Overlay controls
                     VStack {
                         Spacer()
-                        
+
                         // Recognized text preview
                         if !recognizedText.isEmpty {
                             VStack(spacing: 12) {
-                                Text("识别到的文字")
+                                Text("Recognized Text")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                
+
                                 ScrollView {
                                     Text(recognizedText)
                                         .font(.body)
@@ -193,20 +199,20 @@ struct CameraScannerSheet: View {
                             }
                             .padding()
                         }
-                        
+
                         // Capture button
                         HStack(spacing: 20) {
                             Button {
                                 dismiss()
                             } label: {
-                                Text("取消")
+                                Text("Cancel")
                                     .font(.headline)
                                     .foregroundStyle(.white)
                                     .frame(width: 80, height: 44)
                                     .background(.ultraThinMaterial)
                                     .clipShape(Capsule())
                             }
-                            
+
                             Button {
                                 capturedText = recognizedText
                                 dismiss()
@@ -218,7 +224,8 @@ struct CameraScannerSheet: View {
                             }
                             .disabled(recognizedText.isEmpty)
                             .opacity(recognizedText.isEmpty ? 0.5 : 1)
-                            
+                            .accessibilityLabel(Text("Use recognized text"))
+
                             Button {
                                 isScanning.toggle()
                             } label: {
@@ -229,27 +236,28 @@ struct CameraScannerSheet: View {
                                     .background(.ultraThinMaterial)
                                     .clipShape(Capsule())
                             }
+                            .accessibilityLabel(Text(scanToggleLabel))
                         }
                         .padding(.bottom, 40)
                     }
                 } else {
                     // Scanner not available
                     ContentUnavailableView {
-                        Label("相机不可用", systemImage: "camera.fill")
+                        Label("Camera Unavailable", systemImage: "camera.fill")
                     } description: {
                         if !CameraScannerView.isSupported {
-                            Text("您的设备不支持文字扫描功能")
+                            Text("Your device does not support text scanning")
                         } else {
-                            Text("请在设置中允许相机访问权限")
+                            Text("Please allow camera access in Settings")
                         }
                     }
                 }
             }
-            .navigationTitle("扫描文字")
+            .navigationTitle("Scan Text")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") {
+                    Button("Close") {
                         dismiss()
                     }
                 }
@@ -263,12 +271,12 @@ struct CameraScannerSheet: View {
 struct CameraScannerView: View {
     var body: some View {
         ContentUnavailableView {
-            Label("相机扫描", systemImage: "camera.fill")
+            Label("Camera Scan", systemImage: "camera.fill")
         } description: {
-            Text("相机扫描功能仅在 iOS 设备上可用")
+            Text("Camera scanning is only available on iOS devices")
         }
     }
-    
+
     static var isSupported: Bool { false }
     static var isAvailable: Bool { false }
 }
@@ -276,12 +284,12 @@ struct CameraScannerView: View {
 struct CameraScannerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var capturedText: String
-    
+
     var body: some View {
         CameraScannerView()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") {
+                    Button("Close") {
                         dismiss()
                     }
                 }

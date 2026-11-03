@@ -92,6 +92,36 @@ private protocol SpeechRecognitionEngine: AnyObject {
 
     func start(language: SpeechRecognitionLanguage) async throws
     func stop() async
+    /// Tear down without waiting on anything: the microphone tap and audio
+    /// engine stop synchronously, the recognizer is told to finish on its
+    /// own time, and every reference is dropped. The service calls this when
+    /// `stop()` overruns its bound.
+    func forceStop()
+}
+
+/// Resolves a bounded wait exactly once, from whichever of the engine's own
+/// `stop()` or the deadline finishes first. Main-actor isolated like the
+/// service, so no lock is needed; a second `finish` is a no-op.
+@MainActor
+private final class StopRace {
+    private var continuation: CheckedContinuation<Bool, Never>?
+    private var result: Bool?
+
+    /// Suspends until `finish(cleanly:)` is called; returns at once if it
+    /// already was.
+    func wait() async -> Bool {
+        if let result { return result }
+        return await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func finish(cleanly: Bool) {
+        guard result == nil else { return }
+        result = cleanly
+        continuation?.resume(returning: cleanly)
+        continuation = nil
+    }
 }
 
 /// Main speech recognition service
@@ -122,6 +152,13 @@ final class SpeechRecognitionService {
     private var audioSessionOwner: AudioSessionOwner?
 
     weak var delegate: SpeechRecognitionDelegate?
+
+    /// How long an engine's own `stop()` may take before it is torn down by
+    /// force. The modern engine waits for the analyzer to finalize the last
+    /// results, and an analyzer that never does left `stopRecording` suspended
+    /// with the Live Speech button stuck on "stopping". Final results arrive
+    /// within a second or so of the last audio; three is generous.
+    private static let engineStopTimeout: Duration = .seconds(3)
 
     private init() {}
 
@@ -226,18 +263,20 @@ final class SpeechRecognitionService {
 
         do {
             if let downloader = try await AssetInventory.assetInstallationRequest(supporting: [tempTranscriber]) {
-                // Store reference to progress for observation
                 let progress = downloader.progress
 
-                // Observe download progress using KVO
-                Task {
-                    while !progress.isFinished && !progress.isCancelled {
-                        await MainActor.run {
-                            self.downloadProgress = progress.fractionCompleted
-                        }
+                // Poll the download's progress for the UI. The handle is kept
+                // and cancelled on every exit: a download that throws can leave
+                // `progress` neither finished nor cancelled, and an unowned
+                // poller then runs forever at 10 Hz, re-rendering every view
+                // that reads `downloadProgress` — one more loop per retry.
+                let monitor = Task { [weak self] in
+                    while !Task.isCancelled, !progress.isFinished, !progress.isCancelled {
+                        self?.downloadProgress = progress.fractionCompleted
                         try? await Task.sleep(for: .milliseconds(100))
                     }
                 }
+                defer { monitor.cancel() }
 
                 try await downloader.downloadAndInstall()
             }
@@ -361,10 +400,35 @@ final class SpeechRecognitionService {
             // stopRecording may already have detached this candidate while
             // start() was suspended. Run candidate-local cleanup again so a
             // late-resuming engine cannot leave a hidden microphone tap alive.
-            await candidateEngine?.stop()
+            if let candidateEngine {
+                await stopEngine(candidateEngine)
+            }
             AudioSessionCoordinator.shared.release(sessionOwner)
             throw error
         }
+    }
+
+    /// Stop an engine, but never wait on it for longer than
+    /// `engineStopTimeout`. Past the bound the engine is torn down by force
+    /// and this returns, so the service's "stopping" state always ends. The
+    /// overrunning `stop()` is cancelled and left to finish — or not — on its
+    /// own; nothing here references the engine afterwards.
+    private func stopEngine(_ engine: SpeechRecognitionEngine) async {
+        let race = StopRace()
+        let stop = Task {
+            await engine.stop()
+            race.finish(cleanly: true)
+        }
+        let deadline = Task {
+            try? await Task.sleep(for: Self.engineStopTimeout)
+            guard !Task.isCancelled else { return }
+            race.finish(cleanly: false)
+        }
+        let stoppedCleanly = await race.wait()
+        deadline.cancel()
+        guard !stoppedCleanly else { return }
+        stop.cancel()
+        engine.forceStop()
     }
 
     /// Stop speech recognition. Idempotent — safe to call from error paths
@@ -390,7 +454,9 @@ final class SpeechRecognitionService {
         engine = nil
         audioSessionOwner = nil
 
-        await engineToStop?.stop()
+        if let engineToStop {
+            await stopEngine(engineToStop)
+        }
         if activeResultRequestID == resultRequestID {
             activeResultRequestID = nil
         }
@@ -504,13 +570,6 @@ private final class ModernSpeechEngine: SpeechRecognitionEngine {
             )
         }
 
-        let inputFormat = audioEngine.inputNode.outputFormat(forBus: 0)
-
-        // Create converter if formats don't match
-        if inputFormat != analyzerFormat {
-            audioConverter = AVAudioConverter(from: inputFormat, to: analyzerFormat)
-        }
-
         // Create input stream for the analyzer
         let (inputSequence, inputBuilder) = AsyncStream<AnalyzerInput>.makeStream()
         self.inputContinuation = inputBuilder
@@ -518,6 +577,25 @@ private final class ModernSpeechEngine: SpeechRecognitionEngine {
         // Start the analyzer
         try await analyzer.start(inputSequence: inputSequence)
         guard !stopRequested else { throw CancellationError() }
+
+        // Read the microphone format only now, after the suspension above, and
+        // refuse to tap when it is not a real format. `installTap` with a
+        // zero-rate or zero-channel format raises an Objective-C exception
+        // (`IsFormatSampleRateAndChannelCountValid`) that Swift cannot catch —
+        // a hard crash. That is exactly what a Mac with no input device
+        // reports, and what a route change (AirPods connecting) between
+        // reading the format and installing the tap produces on iPhone.
+        let inputFormat = audioEngine.inputNode.outputFormat(forBus: 0)
+        guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
+            throw SpeechRecognitionError.audioEngineError(
+                String(localized: "No microphone input is available. Connect or enable a microphone and try again.", bundle: .appLanguage)
+            )
+        }
+
+        // Create converter if formats don't match
+        if inputFormat != analyzerFormat {
+            audioConverter = AVAudioConverter(from: inputFormat, to: analyzerFormat)
+        }
 
         // Start recognition task to process results
         recognitionTask = Task { [weak self] in
@@ -654,6 +732,29 @@ private final class ModernSpeechEngine: SpeechRecognitionEngine {
         transcriber = nil
         audioConverter = nil
     }
+
+    func forceStop() {
+        stopRequested = true
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        audioEngine?.stop()
+        audioEngine = nil
+
+        inputContinuation?.finish()
+        inputContinuation = nil
+
+        recognitionTask?.cancel()
+        recognitionTask = nil
+
+        // Finishing is what `stop()` is still waiting on; cancelling instead
+        // discards whatever the analyzer has not delivered and lets it wind
+        // down without anyone waiting on it.
+        if let analyzer {
+            Task { await analyzer.cancelAndFinishNow() }
+        }
+        analyzer = nil
+        transcriber = nil
+        audioConverter = nil
+    }
 }
 
 // MARK: - Legacy Engine (SFSpeechRecognizer, iOS 17)
@@ -703,6 +804,13 @@ private final class LegacySpeechEngine: SpeechRecognitionEngine {
 
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
+        // Same guard as the modern engine: tapping with an empty format is an
+        // uncatchable Objective-C exception, not a Swift error.
+        guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
+            throw SpeechRecognitionError.audioEngineError(
+                String(localized: "No microphone input is available. Connect or enable a microphone and try again.", bundle: .appLanguage)
+            )
+        }
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { buffer, _ in
             request.append(buffer)
         }
@@ -768,6 +876,21 @@ private final class LegacySpeechEngine: SpeechRecognitionEngine {
         // transcription we have so the caller never loses the transcript.
         request?.endAudio()
         try? await Task.sleep(for: .milliseconds(300))
+        deliverFinalIfNeeded()
+
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        request = nil
+        recognizer = nil
+    }
+
+    func forceStop() {
+        isStopping = true
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        audioEngine?.stop()
+        audioEngine = nil
+
+        request?.endAudio()
         deliverFinalIfNeeded()
 
         recognitionTask?.cancel()

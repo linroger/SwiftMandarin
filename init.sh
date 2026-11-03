@@ -17,5 +17,7 @@ zsh scripts/test-auto-analysis.sh
 zsh scripts/test-audio-transcription.sh
 zsh scripts/test-stats-heatmap.sh
 zsh scripts/test-macos-surfaces.sh
+zsh scripts/test-project-hygiene.sh
+zsh scripts/test-chatbot.sh
 
 echo "SwiftMandarin smoke checks passed."

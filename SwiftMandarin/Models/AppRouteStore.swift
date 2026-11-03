@@ -53,6 +53,8 @@ final class AppRouteStore {
         case "reader": selectedTab = .reader
         case "practice": selectedTab = .practice
         case "conversation": selectedTab = .conversation
+        case "search": selectedTab = .search
+        case "chat": selectedTab = .chat
         default: selectedTab = .learn
         }
         #endif

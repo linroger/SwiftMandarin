@@ -97,13 +97,19 @@ struct VocabularyView: View {
                 return sortAscending ? lhs.dateAdded < rhs.dateAdded : lhs.dateAdded > rhs.dateAdded
             }
         case .alphabetical:
-            return terms.sorted { lhs, rhs in
-                let comparison = lhs.headlineText.localizedStandardCompare(rhs.headlineText)
+            // Resolve each headword once before sorting. `headlineText` is a
+            // main-actor computed property that scans both sides of a term for
+            // CJK, and a comparator-based sort evaluates its operands about
+            // 2·n·log₂(n) times — tens of thousands of scans per keystroke on a
+            // large list. Decorating first makes the sort pay n scans.
+            let keyed = terms.map { (term: $0, key: $0.headlineText) }
+            return keyed.sorted { lhs, rhs in
+                let comparison = lhs.key.localizedStandardCompare(rhs.key)
                 if comparison == .orderedSame {
-                    return lhs.id.uuidString < rhs.id.uuidString
+                    return lhs.term.id.uuidString < rhs.term.id.uuidString
                 }
                 return sortAscending ? comparison == .orderedAscending : comparison == .orderedDescending
-            }
+            }.map { $0.term }
         case .pinyin:
             return terms.sorted { lhs, rhs in
                 let comparison = lhs.pinyin.localizedStandardCompare(rhs.pinyin)
@@ -168,13 +174,19 @@ struct VocabularyView: View {
     // on iOS, and a nested `.searchable` there fails to lay out — which is why
     // the vocabulary screen appeared unopenable when reached from the Study tab.
     var body: some View {
-            Group {
+        // Filter and sort exactly once per update and hand the result down.
+        // `filteredTerms` used to be read at every site in this body — the
+        // empty check, the list, the inspector, the detail popover — so a
+        // single keystroke in search re-ran the whole filter-and-sort several
+        // times over, which is what made a large list stutter while typing.
+        let visibleTerms = filteredTerms
+        return Group {
                 if savedTermsStore.terms.isEmpty {
                     emptyState
-                } else if filteredTerms.isEmpty {
+                } else if visibleTerms.isEmpty {
                     noSearchResultsState
                 } else {
-                    vocabularyList
+                    vocabularyList(visibleTerms)
                 }
             }
             .navigationTitle("Vocabulary")
@@ -192,7 +204,7 @@ struct VocabularyView: View {
                         term: term,
                         selectedTerm: $selectedTerm,
                         savedTermsStore: savedTermsStore,
-                        orderedTerms: filteredTerms
+                        orderedTerms: visibleTerms
                     )
                     .id(term.id)
                     .inspectorColumnWidth(min: 280, ideal: 320, max: 400)
@@ -390,7 +402,7 @@ struct VocabularyView: View {
             .alert("Import Complete", isPresented: $showingImportResult) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text(importResult?.summary ?? "Import completed")
+                Text(importResult?.summary ?? String(localized: "Import completed", bundle: .appLanguage))
             }
             #if os(macOS)
             .focusable()
@@ -478,9 +490,9 @@ struct VocabularyView: View {
     // MARK: - Vocabulary List
     
     @ViewBuilder
-    private var vocabularyList: some View {
+    private func vocabularyList(_ terms: [SavedTerm]) -> some View {
         let list = List {
-            ForEach(filteredTerms) { term in
+            ForEach(terms) { term in
                 VocabularyRow(
                     term: term,
                     headwordFontSize: headwordFontSize,
@@ -546,7 +558,7 @@ struct VocabularyView: View {
                         term: term,
                         selectedTerm: $selectedTerm,
                         savedTermsStore: savedTermsStore,
-                        orderedTerms: filteredTerms
+                        orderedTerms: terms
                     )
                     .localizedSurface()
                     .id(term.id)
@@ -2089,22 +2101,87 @@ struct ExportSheet: View {
     @State private var exportSuccessMessage: String = String(localized: "Exported Successfully", bundle: .appLanguage)
 
     /// How many of the exported words have a saved AI analysis to bundle.
-    private var aiAnalysisCount: Int {
-        let cache = WordExplanationCacheStore.shared
-        return terms.filter { cache.hasAnyExplanation(forWords: $0.aiCacheCandidateWords) }.count
+    /// Counted once when the sheet appears rather than in `body`: it walks
+    /// every term, and `body` runs on every state change.
+    @State private var aiAnalysisCount: Int = 0
+
+    /// The export text for one format-and-AI choice. The sheet used to build
+    /// the export inside `body` — twice per evaluation, for the preview and
+    /// for the share item — so opening it on a large vocabulary stalled the
+    /// app for seconds before the first frame. Now it is generated once per
+    /// selection, after a short debounce, and tagged with the selection it
+    /// belongs to so a stale format's text is never shown under the new
+    /// format's badge.
+    private struct ExportSelection: Hashable {
+        let format: VocabularyExportFormat
+        let includeAIAnalysis: Bool
     }
 
-    private var exportPreview: String {
-        guard let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat, includeAIAnalysis: includeAIAnalysis),
-              let content = String(data: data, encoding: .utf8) else {
-            return ""
-        }
+    private struct GeneratedExport {
+        let selection: ExportSelection
+        let content: String
+    }
+
+    @State private var generatedExport: GeneratedExport?
+
+    private var selection: ExportSelection {
+        ExportSelection(format: exportFormat, includeAIAnalysis: includeAIAnalysis)
+    }
+
+    /// The export for the current selection, or nil while it is being prepared.
+    private var exportContent: String? {
+        guard let generatedExport, generatedExport.selection == selection else { return nil }
+        return generatedExport.content
+    }
+
+    /// A learner flipping between formats should not pay for each one, so the
+    /// export waits this long for the selection to settle before generating.
+    private static let generationDebounce: Duration = .milliseconds(250)
+
+    private static func exportText(
+        terms: [SavedTerm],
+        selection: ExportSelection
+    ) -> String? {
+        guard let data = VocabularyImportExportService.shared.generateExportData(
+            terms: terms,
+            format: selection.format,
+            includeAIAnalysis: selection.includeAIAnalysis
+        ) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    /// Generate the export for the current selection after the debounce.
+    /// Runs under `.task(id:)`, so changing the selection cancels a pending
+    /// generation before it starts. `VocabularyImportExportService` is
+    /// main-actor isolated, so the generation itself still runs there; what
+    /// changed is that it runs once per selection, on demand, instead of on
+    /// every evaluation of `body`.
+    private func generateExport() async {
+        let selection = selection
+        try? await Task.sleep(for: Self.generationDebounce)
+        guard !Task.isCancelled else { return }
+        guard let content = Self.exportText(terms: terms, selection: selection) else { return }
+        guard !Task.isCancelled else { return }
+        generatedExport = GeneratedExport(selection: selection, content: content)
+    }
+
+    /// The export for the current selection, generated now if the debounced
+    /// generation has not delivered it yet — the user asked for it, so the
+    /// wait would only move from here to the action.
+    private func currentExportContent() -> String? {
+        if let exportContent { return exportContent }
+        guard let content = Self.exportText(terms: terms, selection: selection) else { return nil }
+        generatedExport = GeneratedExport(selection: selection, content: content)
+        return content
+    }
+
+    private func preview(of content: String) -> String {
         if content.count > 400 {
             return String(content.prefix(400)) + "..."
         }
         return content
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Header with word count and icon
@@ -2171,14 +2248,25 @@ struct ExportSheet: View {
 
                 // Preview Section
                 Section {
-                    ScrollView {
-                        Text(exportPreview)
-                            .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .textSelection(.enabled)
+                    if let exportContent {
+                        ScrollView {
+                            Text(preview(of: exportContent))
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .textSelection(.enabled)
+                        }
+                        .frame(height: 120)
+                    } else {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Preparing export…")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 120)
                     }
-                    .frame(height: 120)
                 } header: {
                     HStack {
                         Text("Preview")
@@ -2216,8 +2304,7 @@ struct ExportSheet: View {
                         title: "Copy to Clipboard",
                         subtitle: "Paste anywhere you need"
                     ) {
-                        if let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat, includeAIAnalysis: includeAIAnalysis),
-                           let content = String(data: data, encoding: .utf8) {
+                        if let content = currentExportContent() {
                             ClipboardService.copy(content)
                         }
                         exportSuccessMessage = String(localized: "Copied to Clipboard", bundle: .appLanguage)
@@ -2226,34 +2313,17 @@ struct ExportSheet: View {
                             dismiss()
                         }
                     }
-                    
-                    if let data = VocabularyImportExportService.shared.generateExportData(terms: terms, format: exportFormat, includeAIAnalysis: includeAIAnalysis),
-                       let content = String(data: data, encoding: .utf8) {
-                        ShareLink(item: content) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.title2)
-                                    .foregroundStyle(.green)
-                                    .frame(width: 32)
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Share")
-                                        .font(.body)
-                                        .foregroundStyle(.primary)
-                                    Text("Send via Messages, Mail, AirDrop...")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                            }
-                            .contentShape(Rectangle())
+
+                    // The share item is the generated text, so the row waits
+                    // for it: `ShareLink` needs its item up front, and building
+                    // the export here would put the generation back in `body`.
+                    if let exportContent {
+                        ShareLink(item: exportContent) {
+                            shareRowLabel(isReady: true)
                         }
                         .buttonStyle(.plain)
+                    } else {
+                        shareRowLabel(isReady: false)
                     }
                 } header: {
                     Text("Export To")
@@ -2267,8 +2337,47 @@ struct ExportSheet: View {
                 exportSuccessOverlay
             }
         }
+        .task {
+            let cache = WordExplanationCacheStore.shared
+            aiAnalysisCount = terms.filter { cache.hasAnyExplanation(forWords: $0.aiCacheCandidateWords) }.count
+        }
+        .task(id: selection) {
+            await generateExport()
+        }
     }
-    
+
+    /// The Share row's face. While the export is still being prepared the
+    /// chevron gives way to a spinner and the row is not tappable.
+    private func shareRowLabel(isReady: Bool) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "square.and.arrow.up")
+                .font(.title2)
+                .foregroundStyle(.green)
+                .frame(width: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Share")
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                Text("Send via Messages, Mail, AirDrop...")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if isReady {
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            } else {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .contentShape(Rectangle())
+    }
+
     private var exportSuccessOverlay: some View {
         VStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
