@@ -175,6 +175,8 @@ struct TranslateView: View {
                     // Dismiss keyboard when tapping outside text editor
                     isInputFocused = false
                 }
+                // The tinted backdrop gives the glass cards something to refract.
+                .smPageBackground()
             }
             .task {
                 restoreDraftIfNeeded()
@@ -261,47 +263,57 @@ struct TranslateView: View {
     // MARK: - Direction Toggle
     
     private var directionToggle: some View {
-        HStack(spacing: 16) {
-            Text(sharedState.direction.sourceLanguageName)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-            
-            Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    preserveCurrentTranslationDuringSourceUpdate {
-                        additionalTranslation = ""
-                        translationConfiguration.clear()
-                        lastDetectedDirection = nil
-                        sharedState.translationError = nil
-                        aiTranslationError = nil
-                        // The swapped text invalidates any AI segmentation.
-                        wordIdentificationTask?.cancel()
-                        aiSegments = []
-                        isIdentifyingWords = false
+        // The two language pills and the swap button share one glass group,
+        // so the switcher reads as a single floating control.
+        GlassGroupCompat(spacing: 16) {
+            HStack(spacing: 16) {
+                Text(sharedState.direction.sourceLanguageName)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .glassEffectCapsuleCompat()
+                
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        preserveCurrentTranslationDuringSourceUpdate {
+                            additionalTranslation = ""
+                            translationConfiguration.clear()
+                            lastDetectedDirection = nil
+                            sharedState.translationError = nil
+                            aiTranslationError = nil
+                            // The swapped text invalidates any AI segmentation.
+                            wordIdentificationTask?.cancel()
+                            aiSegments = []
+                            isIdentifyingWords = false
 
-                        sharedState.direction = sharedState.direction.opposite
-                        // Swap texts if both exist
-                        if !sharedState.sourceText.isEmpty && !sharedState.translatedText.isEmpty {
-                            let temp = sharedState.sourceText
-                            sharedState.sourceText = sharedState.translatedText
-                            sharedState.translatedText = temp
+                            sharedState.direction = sharedState.direction.opposite
+                            // Swap texts if both exist
+                            if !sharedState.sourceText.isEmpty && !sharedState.translatedText.isEmpty {
+                                let temp = sharedState.sourceText
+                                sharedState.sourceText = sharedState.translatedText
+                                sharedState.translatedText = temp
+                            }
                         }
                     }
+                } label: {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.tint)
                 }
-            } label: {
-                Image(systemName: "arrow.left.arrow.right")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.tint)
+                .glassButtonStyleCompat()
+                .buttonBorderShape(.circle)
+                .accessibilityLabel(Text("Swap languages"))
+                
+                Text(sharedState.direction.targetLanguageName)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .glassEffectCapsuleCompat()
             }
-            .glassButtonStyleCompat()
-            .buttonBorderShape(.circle)
-            .accessibilityLabel(Text("Swap languages"))
-            
-            Text(sharedState.direction.targetLanguageName)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
@@ -338,10 +350,7 @@ struct TranslateView: View {
                 .scrollContentBackground(.hidden)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(.ultraThinMaterial)
-                )
+                .smCardSurface(cornerRadius: SMTheme.cornerRadius)
                 .padding(.horizontal)
                 .focused($isInputFocused)
                 .overlay(alignment: .topLeading) {
@@ -386,99 +395,103 @@ struct TranslateView: View {
                     }
                 }
             
-            // Source text actions
-            HStack(spacing: 12) {
-                if !sharedState.sourceText.isEmpty {
-                    Button {
-                        SpeechService.speak(sharedState.sourceText, languageCode: displayedDirection.sourceSpeechCode)
-                    } label: {
-                        Label("Speak", systemImage: "speaker.wave.2")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-                
-                Button {
-                    if let pastedText = ClipboardService.paste(), !pastedText.isEmpty {
-                        sharedState.sourceText = pastedText
-                        if translateOnPaste {
-                            isInputFocused = false
-                            triggerTranslation()
+            // Source text actions, grouped so the glass buttons blend.
+            GlassGroupCompat(spacing: 12) {
+                HStack(spacing: 12) {
+                    if !sharedState.sourceText.isEmpty {
+                        Button {
+                            SpeechService.speak(sharedState.sourceText, languageCode: displayedDirection.sourceSpeechCode)
+                        } label: {
+                            Label("Speak", systemImage: "speaker.wave.2")
                         }
+                        .glassButtonStyleCompat()
+                        .controlSize(.small)
                     }
-                } label: {
-                    Label("Paste", systemImage: "doc.on.clipboard")
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                
-                // Microphone button for live speech translation
-                Button {
-                    isInputFocused = false
-                    showLiveSpeechTranslation = true
-                } label: {
-                    Image(systemName: "mic.fill")
-                        .font(.body)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                .tint(.red)
-                .accessibilityLabel(Text("Live speech translation"))
-                .help("Speak and translate in real time")
-                
-                Spacer()
-                
-                if !sharedState.sourceText.isEmpty {
-                    Text("\(sharedState.sourceText.count)")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
                     
                     Button {
-                        withAnimation {
-                            clearAll()
+                        if let pastedText = ClipboardService.paste(), !pastedText.isEmpty {
+                            sharedState.sourceText = pastedText
+                            if translateOnPaste {
+                                isInputFocused = false
+                                triggerTranslation()
+                            }
                         }
                     } label: {
-                        Label("Clear", systemImage: "xmark.circle.fill")
+                        Label("Paste", systemImage: "doc.on.clipboard")
                     }
-                    .buttonStyle(.bordered)
+                    .glassButtonStyleCompat()
+                    .controlSize(.small)
+                    
+                    // Microphone button for live speech translation
+                    Button {
+                        isInputFocused = false
+                        showLiveSpeechTranslation = true
+                    } label: {
+                        Image(systemName: "mic.fill")
+                            .font(.body)
+                    }
+                    .glassProminentButtonStyleCompat()
                     .controlSize(.small)
                     .tint(.red)
+                    .accessibilityLabel(Text("Live speech translation"))
+                    .help("Speak and translate in real time")
+                    
+                    Spacer()
+                    
+                    if !sharedState.sourceText.isEmpty {
+                        Text("\(sharedState.sourceText.count)")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        
+                        Button {
+                            withAnimation {
+                                clearAll()
+                            }
+                        } label: {
+                            Label("Clear", systemImage: "xmark.circle.fill")
+                        }
+                        .glassButtonStyleCompat()
+                        .controlSize(.small)
+                        .tint(.red)
+                    }
                 }
             }
             .padding(.horizontal)
             
             // Prominent Translate buttons (shown when not auto-translating)
             if !sharedState.sourceText.isEmpty && !autoTranslate && sharedState.translatedText.isEmpty && !sharedState.isTranslating && !isAITranslating {
-                VStack(spacing: 8) {
-                    // Standard Translation API button
-                    Button {
-                        isInputFocused = false
-                        triggerTranslation()
-                    } label: {
-                        Label("Translate", systemImage: "arrow.right.circle.fill")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    
-                    // AI translation button (Apple Intelligence, Ollama, or cloud provider)
-                    if aiSettings.isAnyProviderAvailable {
+                GlassGroupCompat(spacing: 8) {
+                    VStack(spacing: 8) {
+                        // Standard Translation API button
                         Button {
                             isInputFocused = false
-                            startAITranslation()
+                            triggerTranslation()
                         } label: {
-                            Label {
-                                Text("Translate with \(aiSettings.effectiveProvider.displayName)")
-                                    .fitSingleLine()
-                            } icon: {
-                                ProviderIcon(provider: aiSettings.effectiveProvider, size: 18)
-                            }
-                            .font(.subheadline)
-                            .frame(maxWidth: .infinity)
+                            Label("Translate", systemImage: "arrow.right.circle.fill")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.regular)
+                        .glassProminentButtonStyleCompat()
+                        .controlSize(.large)
+                        
+                        // AI translation button (Apple Intelligence, Ollama, or cloud provider)
+                        if aiSettings.isAnyProviderAvailable {
+                            Button {
+                                isInputFocused = false
+                                startAITranslation()
+                            } label: {
+                                Label {
+                                    Text("Translate with \(aiSettings.effectiveProvider.displayName)")
+                                        .fitSingleLine()
+                                } icon: {
+                                    ProviderIcon(provider: aiSettings.effectiveProvider, size: 18)
+                                }
+                                .font(.subheadline)
+                                .frame(maxWidth: .infinity)
+                            }
+                            .glassButtonStyleCompat()
+                            .controlSize(.regular)
+                        }
                     }
                 }
                 .padding(.horizontal)
@@ -585,7 +598,7 @@ struct TranslateView: View {
                         sharedState.translationError = nil
                         triggerTranslation()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .glassProminentButtonStyleCompat()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if sharedState.isTranslating {
@@ -635,32 +648,34 @@ struct TranslateView: View {
                         .multilineTextAlignment(.center)
                     
                     if !autoTranslate {
-                        VStack(spacing: 10) {
-                            Button {
-                                isInputFocused = false
-                                triggerTranslation()
-                            } label: {
-                                Label("Translate Now", systemImage: "arrow.right.circle.fill")
-                                    .font(.headline)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.large)
-                            
-                            if aiSettings.isAnyProviderAvailable {
+                        GlassGroupCompat(spacing: 10) {
+                            VStack(spacing: 10) {
                                 Button {
                                     isInputFocused = false
-                                    startAITranslation()
+                                    triggerTranslation()
                                 } label: {
-                                    Label {
-                                        Text("Use \(aiSettings.effectiveProvider.displayName)")
-                                            .fitSingleLine()
-                                    } icon: {
-                                        ProviderIcon(provider: aiSettings.effectiveProvider, size: 18)
-                                    }
-                                    .font(.subheadline)
+                                    Label("Translate Now", systemImage: "arrow.right.circle.fill")
+                                        .font(.headline)
                                 }
-                                .buttonStyle(.bordered)
-                                .controlSize(.regular)
+                                .glassProminentButtonStyleCompat()
+                                .controlSize(.large)
+                                
+                                if aiSettings.isAnyProviderAvailable {
+                                    Button {
+                                        isInputFocused = false
+                                        startAITranslation()
+                                    } label: {
+                                        Label {
+                                            Text("Use \(aiSettings.effectiveProvider.displayName)")
+                                                .fitSingleLine()
+                                        } icon: {
+                                            ProviderIcon(provider: aiSettings.effectiveProvider, size: 18)
+                                        }
+                                        .font(.subheadline)
+                                    }
+                                    .glassButtonStyleCompat()
+                                    .controlSize(.regular)
+                                }
                             }
                         }
                     }
@@ -671,24 +686,26 @@ struct TranslateView: View {
             
             // Translation actions
             if !sharedState.translatedText.isEmpty {
-                HStack(spacing: 16) {
-                    Button {
-                        SpeechService.speak(sharedState.translatedText, languageCode: displayedDirection.targetSpeechCode)
-                    } label: {
-                        Label("Speak", systemImage: "speaker.wave.2")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+                GlassGroupCompat(spacing: 16) {
+                    HStack(spacing: 16) {
+                        Button {
+                            SpeechService.speak(sharedState.translatedText, languageCode: displayedDirection.targetSpeechCode)
+                        } label: {
+                            Label("Speak", systemImage: "speaker.wave.2")
+                        }
+                        .glassButtonStyleCompat()
+                        .controlSize(.small)
 
-                    Button {
-                        ClipboardService.copy(sharedState.translatedText)
-                    } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+                        Button {
+                            ClipboardService.copy(sharedState.translatedText)
+                        } label: {
+                            Label("Copy", systemImage: "doc.on.doc")
+                        }
+                        .glassButtonStyleCompat()
+                        .controlSize(.small)
 
-                    Spacer()
+                        Spacer()
+                    }
                 }
                 .padding(.horizontal)
             }
@@ -725,7 +742,7 @@ struct TranslateView: View {
                     }
                     .font(.subheadline)
                 }
-                .buttonStyle(.bordered)
+                .glassButtonStyleCompat()
                 .controlSize(.small)
                 .disabled(isFetchingNotes)
 
@@ -1005,10 +1022,9 @@ struct TranslateView: View {
             }
             .padding()
         }
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.ultraThinMaterial)
-        )
+        // The output card is glass; the word tiles inside it stay solid, so
+        // no glass is stacked on glass.
+        .smCardSurface(cornerRadius: SMTheme.cornerRadius)
         .padding(.horizontal)
         .task(id: sharedState.translatedText) {
             // Fetch additional translation when translated text changes and there's a mismatch
@@ -1576,12 +1592,14 @@ struct FlowLayout: Layout {
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) -> CGSize {
         refreshIfStale(&cache, subviews: subviews)
-        return arrange(proposal: proposal, sizes: cache.sizes).size
+        let sizes = fitted(cache.sizes, to: proposal.width, subviews: subviews)
+        return arrange(proposal: proposal, sizes: sizes).size
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) {
         refreshIfStale(&cache, subviews: subviews)
-        let frames = arrange(proposal: proposal, sizes: cache.sizes).frames
+        let sizes = fitted(cache.sizes, to: proposal.width, subviews: subviews)
+        let frames = arrange(proposal: proposal, sizes: sizes).frames
         // Row height = the tallest item sharing that row's y.
         var rowHeights: [CGFloat: CGFloat] = [:]
         if stretchesRows {
@@ -1601,6 +1619,20 @@ struct FlowLayout: Layout {
 
     private func measure(_ subviews: Subviews) -> [CGSize] {
         subviews.map { $0.sizeThatFits(.unspecified) }
+    }
+
+    /// The cached ideal sizes, except that an item wider than the whole row
+    /// is measured again at the row's width, so it wraps inside the container
+    /// (taking the height that wrapping needs) instead of running past its
+    /// edge and being clipped. Rare, so the extra measuring stays cheap.
+    private func fitted(_ sizes: [CGSize], to width: CGFloat?, subviews: Subviews) -> [CGSize] {
+        guard let width, width.isFinite, width > 0,
+              sizes.contains(where: { $0.width > width }) else { return sizes }
+        return sizes.enumerated().map { index, size in
+            guard size.width > width else { return size }
+            let wrapped = subviews[index].sizeThatFits(ProposedViewSize(width: width, height: nil))
+            return CGSize(width: min(wrapped.width, width), height: wrapped.height)
+        }
     }
 
     /// SwiftUI keeps the cache in step with the subview collection, but the

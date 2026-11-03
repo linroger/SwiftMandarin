@@ -38,6 +38,10 @@ struct WorkbookGradingHistoryView: View {
                     }
                     #if os(iOS)
                     .listStyle(.insetGrouped)
+                    // Rows stay system List rows (no per-row glass); the
+                    // page backdrop shows through around them.
+                    .scrollContentBackground(.hidden)
+                    .smPageBackground()
                     #endif
                 }
             }
@@ -77,8 +81,9 @@ struct WorkbookGradingHistoryView: View {
             Text("Graded workbooks are saved here automatically, with results and the original photos.")
         } actions: {
             Button("Done") { dismiss() }
-                .buttonStyle(.borderedProminent)
+                .glassProminentButtonStyleCompat()
         }
+        .smPageBackground()
     }
 }
 
@@ -168,6 +173,7 @@ struct GradedSessionDetailView: View {
             }
             .padding()
         }
+        .smPageBackground()
         .navigationTitle(session.displayScore)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -198,7 +204,7 @@ struct GradedSessionDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(RoundedRectangle(cornerRadius: 16).fill(.ultraThinMaterial))
+        .smCardSurface(cornerRadius: 16)
     }
 
     private var photosSection: some View {
@@ -232,7 +238,7 @@ struct GradedSessionDetailView: View {
                     .fitSingleLine()
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .glassButtonStyleCompat()
             .disabled(allInBank)
         }
     }
@@ -298,7 +304,8 @@ private struct SessionQuestionCard: View {
             }
         }
         .padding()
-        .background(RoundedRectangle(cornerRadius: 14).fill(.background).shadow(color: .black.opacity(0.05), radius: 6, y: 3))
+        // Solid, not glass: one card per question in the session.
+        .smSolidCardSurface(cornerRadius: 14)
         .overlay(RoundedRectangle(cornerRadius: 14).stroke((question.wasCorrect ? Color.green : Color.red).opacity(0.2), lineWidth: 1))
     }
 }
@@ -359,10 +366,16 @@ private struct PhotoViewer: View {
                     Button {
                         dismiss()
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title)
-                            .foregroundStyle(.white, .black.opacity(0.5))
+                        Image(systemName: "xmark")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 44, height: 44)
+                            .glassEffectCircleCompat(interactive: true)
                     }
+                    .buttonStyle(.plain)
+                    // Dark glass over the black photo viewer, so the
+                    // glyph stays light in either app appearance.
+                    .environment(\.colorScheme, .dark)
                     .padding()
                     .accessibilityLabel(Text("Close"))
                 }

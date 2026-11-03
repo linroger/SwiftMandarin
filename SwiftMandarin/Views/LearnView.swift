@@ -89,6 +89,7 @@ struct LearnView: View {
                 completionView
             }
         }
+        .smPageBackground()
         .navigationTitle("Learn")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
@@ -294,7 +295,7 @@ struct LearnView: View {
                 Button("Study All Cards") {
                     studyMode = .all
                 }
-                .buttonStyle(.borderedProminent)
+                .glassProminentButtonStyleCompat()
             }
         }
     }
@@ -379,9 +380,11 @@ struct LearnView: View {
     /// the scheduler feel trustworthy instead of arbitrary.
     private func reviewButtons(for card: LearningCard) -> some View {
         let previews = learningStore.previewIntervals(cardId: card.id)
-        return HStack(spacing: 10) {
-            ForEach(Self.gradeChoices, id: \.self) { quality in
-                gradeButton(for: card, quality: quality, predictedInterval: previews[quality])
+        return GlassGroupCompat(spacing: 10) {
+            HStack(spacing: 10) {
+                ForEach(Self.gradeChoices, id: \.self) { quality in
+                    gradeButton(for: card, quality: quality, predictedInterval: previews[quality])
+                }
             }
         }
     }
@@ -404,7 +407,10 @@ struct LearnView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-            .background(quality.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            // Interactive glass lightly tinted in the grade's color. The tint
+            // stays faint because the label itself is drawn in that color and
+            // must keep its contrast against the glass.
+            .glassEffectCompat(cornerRadius: 12, tint: quality.color.opacity(0.3), interactive: true)
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -459,7 +465,7 @@ struct LearnView: View {
                 Button("Start New Session") {
                     reloadSessionCards()
                 }
-                .buttonStyle(.borderedProminent)
+                .glassProminentButtonStyleCompat()
                 .padding(.top, 4)
             }
             .padding()
@@ -637,12 +643,16 @@ struct FlashcardView: View {
     }
 
     private func cardFace<Content: View>(isFront: Bool, @ViewBuilder content: () -> Content) -> some View {
-        content()
-            .frame(maxWidth: .infinity, maxHeight: 400)
-            .padding(24)
-            // A card face is content, not a control: it takes the elevated
-            // card surface, and Liquid Glass stays on the controls over it.
-            .smCardSurface(cornerRadius: 20)
+        // A card face takes the standard card surface (Liquid Glass on OS 26),
+        // in one glass group with the glass speaker button on it so the two
+        // blend instead of stacking glass on glass.
+        let face = content()
+        return GlassGroupCompat {
+            face
+                .frame(maxWidth: .infinity, maxHeight: 400)
+                .padding(24)
+                .smCardSurface(cornerRadius: 20)
+        }
     }
 }
 

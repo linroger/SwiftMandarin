@@ -55,14 +55,10 @@ struct TranslationNotesView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(SMTheme.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous)
-                    .fill(Color.purple.opacity(0.07))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous)
-                    .stroke(Color.purple.opacity(0.16), lineWidth: 1)
-            )
+            // A purple-tinted glass panel marks these as AI study notes. It
+            // sits on the page beside the translation card, never inside a
+            // glass card; the count badge and rows inside it stay solid.
+            .glassEffectCompat(cornerRadius: SMTheme.cornerRadius, tint: Color.purple.opacity(0.3))
             .accessibilityElement(children: .contain)
         }
     }

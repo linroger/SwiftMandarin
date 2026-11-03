@@ -47,7 +47,7 @@ struct StudyHubView: View {
                 }
                 .padding()
             }
-            .background(SMTheme.pageBackground)
+            .smPageBackground()
             .navigationTitle("Study")
             .navigationDestination(for: StudyRoute.self) { route in
                 switch route {

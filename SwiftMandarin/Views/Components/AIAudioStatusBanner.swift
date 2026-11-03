@@ -39,12 +39,12 @@ struct AIAudioStatusBanner: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .frame(maxWidth: 680)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.secondary.opacity(0.22), lineWidth: 1)
-            }
-            .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+            // Floating chrome over every screen, so it is Liquid Glass (material
+            // before OS 26), lightly tinted by severity like its icon.
+            .glassEffectCompat(
+                cornerRadius: 12,
+                tint: (runtime.noticeIsError ? Color.red : Color.orange).opacity(0.5)
+            )
             .accessibilityElement(children: .contain)
             .transition(.move(edge: .top).combined(with: .opacity))
             .zIndex(100)

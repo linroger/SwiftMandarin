@@ -137,7 +137,11 @@ enum ChatbotPromptBuilder {
 
     /// A single-prompt rendering of the recent conversation, for providers
     /// called without a multi-turn API (Apple Intelligence, Ollama).
-    static func transcriptPrompt(history: [(isUser: Bool, text: String)], limit: Int = 12) -> String {
+    static func transcriptPrompt(
+        history: [(isUser: Bool, text: String)],
+        context: ChatbotContext,
+        limit: Int = 12
+    ) -> String {
         let lines = history.suffix(limit)
             .map { "\($0.isUser ? "Learner" : "Assistant"): \($0.text)" }
             .joined(separator: "\n")
@@ -145,7 +149,81 @@ enum ChatbotPromptBuilder {
         Conversation so far (most recent last):
         \(lines)
 
-        You are the Assistant. Write your next reply to the learner's last message. Respond with the JSON object.
+        You are the Assistant. Write your next reply to the learner's last message. \(formatReminder(for: context))
+        """
+    }
+
+    /// The output contract restated at the end of every request.
+    ///
+    /// Without it, models drift after a few turns: they imitate the shape of
+    /// the conversation instead of the system prompt, drop the chunk list, or
+    /// leave meanings empty — the later replies of a chat then showed no
+    /// English under their words.
+    static func formatReminder(for context: ChatbotContext) -> String {
+        """
+        Respond with the JSON object only: "reply", then "chunks" covering every word of the \
+        reply — every chunk that is not punctuation has its "reading" and a non-empty \
+        \(context.nativeLanguageName) "meaning" — then "translation".
+        """
+    }
+
+    /// An earlier assistant turn, written back in exactly the shape the
+    /// instructions demand — chunk list included. Sent as prose, or as an
+    /// envelope without its chunks, the history taught the model by example
+    /// that a reply without chunks is acceptable, and later replies dropped
+    /// them (and with them every meaning).
+    static func assistantEnvelope(reply: String, chunks: [ChatbotChunk], translation: String) -> String {
+        let chunkList = chunks
+            .filter { !$0.isLineBreak }
+            .map { chunk in
+                "{\"text\":\(jsonString(chunk.text)),\"reading\":\(jsonString(chunk.reading)),\"meaning\":\(jsonString(chunk.meaning))}"
+            }
+            .joined(separator: ",")
+        return "{\"reply\":\(jsonString(reply)),\"chunks\":[\(chunkList)],\"translation\":\(jsonString(translation))}"
+    }
+
+    /// A JSON string literal, escaped as JSON requires.
+    static func jsonString(_ value: String) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: value, options: [.fragmentsAllowed, .withoutEscapingSlashes]),
+              let literal = String(data: data, encoding: .utf8) else {
+            return "\"\""
+        }
+        return literal
+    }
+
+    // MARK: Filling in missing meanings
+
+    /// Instructions for the follow-up request that glosses chunks the reply
+    /// left without a meaning.
+    static func glossSystemPrompt(for context: ChatbotContext) -> String {
+        """
+        You annotate words for someone learning \(context.learningIsChinese ? "Mandarin Chinese" : "English"). \
+        Their own language is \(context.nativeLanguageName).
+
+        You are given a sentence and a numbered list of chunks taken from it. For every chunk, \
+        in the same order, give its reading and a short \(context.nativeLanguageName) meaning for \
+        the sense it has in that sentence.
+
+        Return ONLY one valid JSON object with exactly this shape, nothing before or after it:
+        {"glosses": [{"text": "…", "reading": "…", "meaning": "…"}]}
+        - One entry per numbered chunk, in order; "text" repeats the chunk exactly.
+        - "reading": \(context.readingDescription).
+        - "meaning": a short \(context.nativeLanguageName) gloss for the sense used here, never empty.
+        - No markdown fence, commentary, or reasoning.
+        """
+    }
+
+    /// The chunks to gloss, with the reply and its translation as context.
+    static func glossUserPrompt(chunks: [ChatbotChunk], reply: String, translation: String) -> String {
+        let list = chunks.enumerated()
+            .map { "\($0.offset + 1). \($0.element.text)" }
+            .joined(separator: "\n")
+        let translationLine = translation.isEmpty ? "" : "\nTranslation: \(translation)"
+        return """
+        Sentence: \(reply)\(translationLine)
+
+        Chunks:
+        \(list)
         """
     }
 }
@@ -469,6 +547,87 @@ enum ChatbotResponseParser {
     /// has to match the reply.
     nonisolated private static func isWordCharacter(_ character: Character) -> Bool {
         character.isLetter || character.isNumber
+    }
+
+    // MARK: Glosses
+
+    /// The glosses in a gloss-fill response, as chunks; empty when there are
+    /// none to read.
+    static func glosses(in raw: String) -> [ChatbotChunk] {
+        let reasoningFree = AIResponseSanitizer.strippingReasoning(raw)
+        let items = [reasoningFree, raw].lazy.compactMap { source -> [Any]? in
+            guard let data = AIStructuredResponse.firstParseableObject(in: source),
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+            return AIStructuredResponse.array(anyOf: glossKeys, in: object)
+        }.first ?? []
+        return items.compactMap { item in
+            guard let entry = item as? [String: Any] else { return nil }
+            let text = (entry["text"] as? String) ?? (entry["word"] as? String) ?? (entry["chunk"] as? String) ?? ""
+            guard !text.isEmpty else { return nil }
+            let reading = (entry["reading"] as? String) ?? (entry["pinyin"] as? String) ?? (entry["ipa"] as? String) ?? ""
+            let meaning = (entry["meaning"] as? String) ?? (entry["gloss"] as? String) ?? (entry["translation"] as? String) ?? ""
+            return ChatbotChunk(
+                text: text,
+                reading: reading.trimmingCharacters(in: .whitespacesAndNewlines),
+                meaning: meaning.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+        }
+    }
+
+    static let glossKeys = ["glosses", "chunks", "words"]
+
+    /// The indices of the chunks that need a gloss: words with no meaning.
+    static func indicesNeedingGloss(_ chunks: [ChatbotChunk]) -> [Int] {
+        chunks.indices.filter { index in
+            let chunk = chunks[index]
+            return !chunk.isLineBreak && !chunk.isPunctuation && chunk.meaning.isEmpty
+        }
+    }
+
+    /// The chunks with the empty meanings (and readings) of the chunks at
+    /// `indices` filled from `glosses`.
+    ///
+    /// A gloss is used only for the chunk it names: the glosses are walked in
+    /// order and each is matched to the next chunk with the same letters, so a
+    /// response that skipped or reordered one never puts a meaning under the
+    /// wrong word. Nothing the reply already had is overwritten.
+    static func filling(_ chunks: [ChatbotChunk], at indices: [Int], with glosses: [ChatbotChunk]) -> [ChatbotChunk] {
+        var result = chunks
+        var glossCursor = 0
+        for (position, index) in indices.enumerated() where index < result.count {
+            let chunk = result[index]
+            let key = letters(of: chunk.text)
+            guard !key.isEmpty else { continue }
+            // Look ahead a few glosses for this chunk, so one stray gloss
+            // does not shift every later meaning onto the wrong word.
+            let window = glosses.indices.dropFirst(glossCursor).prefix(4)
+            guard let found = window.first(where: { letters(of: glosses[$0].text) == key }) else { continue }
+            if found > glossCursor {
+                // A gloss this match would skip names one of the next chunks:
+                // then it is this chunk's own gloss that is missing (the match
+                // belongs to a later copy of a repeated word such as 我), so
+                // this chunk stays empty and the skipped glosses stay
+                // available for the chunks they name.
+                let upcoming = Set(indices.dropFirst(position + 1).prefix(4)
+                    .filter { $0 < result.count }
+                    .map { letters(of: result[$0].text) })
+                if glosses[glossCursor..<found].contains(where: { upcoming.contains(letters(of: $0.text)) }) {
+                    continue
+                }
+            }
+            glossCursor = found + 1
+            let gloss = glosses[found]
+            result[index] = ChatbotChunk(
+                text: chunk.text,
+                reading: chunk.reading.isEmpty ? gloss.reading : chunk.reading,
+                meaning: chunk.meaning.isEmpty ? gloss.meaning : chunk.meaning
+            )
+        }
+        return result
+    }
+
+    private static func letters(of text: String) -> String {
+        String(text.filter(isWordCharacter)).lowercased()
     }
 
     /// Whether the chunks spell out the reply. A model that dropped or

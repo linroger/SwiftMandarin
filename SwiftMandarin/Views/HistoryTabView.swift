@@ -100,9 +100,15 @@ struct HistoryTabView: View {
                     }
                     #if os(iOS)
                     .listStyle(.insetGrouped)
+                    // Rows stay system list cells (no glass per row); hiding
+                    // the list's own fill lets the page backdrop show around them.
+                    .scrollContentBackground(.hidden)
                     #endif
                 }
             }
+            #if os(iOS)
+            .smPageBackground()
+            #endif
             .navigationTitle("History")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)

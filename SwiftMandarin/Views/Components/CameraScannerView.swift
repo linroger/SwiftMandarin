@@ -194,49 +194,49 @@ struct CameraScannerSheet: View {
                                 }
                                 .frame(maxHeight: 120)
                                 .padding()
-                                .background(.ultraThinMaterial)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .glassEffectCompat(cornerRadius: 12)
                             }
                             .padding()
                         }
 
-                        // Capture button
-                        HStack(spacing: 20) {
-                            Button {
-                                dismiss()
-                            } label: {
-                                Text("Cancel")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                                    .frame(width: 80, height: 44)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Capsule())
-                            }
+                        // Capture button. The side controls float over the
+                        // camera feed as one group of glass capsules.
+                        GlassGroupCompat(spacing: 20) {
+                            HStack(spacing: 20) {
+                                Button {
+                                    dismiss()
+                                } label: {
+                                    Text("Cancel")
+                                        .font(.headline)
+                                        .foregroundStyle(.primary)
+                                        .frame(width: 80, height: 44)
+                                        .glassEffectCapsuleCompat(interactive: true)
+                                }
 
-                            Button {
-                                capturedText = recognizedText
-                                dismiss()
-                            } label: {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 64))
-                                    .foregroundStyle(.white)
-                                    .shadow(radius: 4)
-                            }
-                            .disabled(recognizedText.isEmpty)
-                            .opacity(recognizedText.isEmpty ? 0.5 : 1)
-                            .accessibilityLabel(Text("Use recognized text"))
+                                Button {
+                                    capturedText = recognizedText
+                                    dismiss()
+                                } label: {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 64))
+                                        .foregroundStyle(.white)
+                                        .shadow(radius: 4)
+                                }
+                                .disabled(recognizedText.isEmpty)
+                                .opacity(recognizedText.isEmpty ? 0.5 : 1)
+                                .accessibilityLabel(Text("Use recognized text"))
 
-                            Button {
-                                isScanning.toggle()
-                            } label: {
-                                Image(systemName: isScanning ? "pause.fill" : "play.fill")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                                    .frame(width: 80, height: 44)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Capsule())
+                                Button {
+                                    isScanning.toggle()
+                                } label: {
+                                    Image(systemName: isScanning ? "pause.fill" : "play.fill")
+                                        .font(.headline)
+                                        .foregroundStyle(.primary)
+                                        .frame(width: 80, height: 44)
+                                        .glassEffectCapsuleCompat(interactive: true)
+                                }
+                                .accessibilityLabel(Text(scanToggleLabel))
                             }
-                            .accessibilityLabel(Text(scanToggleLabel))
                         }
                         .padding(.bottom, 40)
                     }

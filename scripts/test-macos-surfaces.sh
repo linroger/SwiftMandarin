@@ -66,16 +66,22 @@ window_colored_cards=$(count_matches '\.background\(\.background, in: Rounded' "
 }
 
 # Statistics is the screen that had hand-rolled surfaces; it must stay on the
-# shared ones so a future fix to the palette reaches it too.
-stats_page=$(count_matches 'background\(SMTheme\.pageBackground\)' "$stats_view")
+# shared ones so a future fix to the palette reaches it too. The shared page
+# backdrop is built on SMTheme.pageBackground.
+stats_page=$(count_matches 'smPageBackground\(\)' "$stats_view")
 [[ "$stats_page" == "1" ]] || {
-    print -u2 "Statistics no longer uses the shared page background; found $stats_page of 1"
+    print -u2 "Statistics no longer uses the shared page backdrop; found $stats_page of 1"
+    exit 1
+}
+backdrop_page=$(count_matches 'SMTheme\.pageBackground$' "$design_system")
+[[ "$backdrop_page" -ge "1" ]] || {
+    print -u2 "The shared page backdrop no longer starts from SMTheme.pageBackground"
     exit 1
 }
 
-# Five panels plus the four hero/stat tiles: Liquid Glass is for controls, so
-# the tiles that were glass (content sampling the page behind them) moved to
-# the card surface, and only the time-range picker keeps a glass capsule.
+# Five panels plus the four hero/stat tiles, all on the shared card surface
+# (Liquid Glass on OS 26, the solid card pairing above on earlier releases),
+# so none of them is a one-off glass or color fill the palette never reaches.
 stats_cards=$(count_matches 'smCardSurface\(' "$stats_view")
 [[ "$stats_cards" == "9" ]] || {
     print -u2 "Statistics no longer uses the shared card surface for its 5 panels and 4 tiles; found $stats_cards of 9"
@@ -83,8 +89,16 @@ stats_cards=$(count_matches 'smCardSurface\(' "$stats_view")
 }
 stats_glass_content=$(count_matches 'glassEffectCompat\(cornerRadius' "$stats_view")
 [[ "$stats_glass_content" == "0" ]] || {
-    print -u2 "Statistics draws $stats_glass_content content tile(s) in Liquid Glass again; glass is for controls"
+    print -u2 "Statistics draws $stats_glass_content content tile(s) with a one-off glass shape; use .smCardSurface()"
     exit 1
 }
 
-print "macOS surface wiring checks passed (7/7)"
+# Earlier releases still get the solid card, whose fill is the lighter one of
+# the macOS pairing checked above.
+solid_fallback=$(count_matches 'self\.smSolidCardSurface\(cornerRadius: cornerRadius\)' "$design_system")
+[[ "$solid_fallback" == "1" ]] || {
+    print -u2 "smCardSurface no longer falls back to the solid card before OS 26; found $solid_fallback of 1"
+    exit 1
+}
+
+print "macOS surface wiring checks passed (9/9)"

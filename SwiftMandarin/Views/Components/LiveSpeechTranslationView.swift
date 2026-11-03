@@ -68,27 +68,18 @@ struct LiveSpeechTranslationView: View {
         transcript.contains { $0.isChineseCharacter }
     }
     
-    /// Platform-aware background gradient
+    /// The shared page backdrop, washed red while recording.
     private var backgroundGradient: some View {
-        #if os(iOS)
-        LinearGradient(
-            colors: [
-                Color(uiColor: .systemBackground),
-                speechService.isRecording ? Color.red.opacity(0.05) : Color.accentColor.opacity(0.05)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        #else
-        LinearGradient(
-            colors: [
-                Color(nsColor: .windowBackgroundColor),
-                speechService.isRecording ? Color.red.opacity(0.05) : Color.accentColor.opacity(0.05)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        #endif
+        SMPageBackdrop()
+            .overlay {
+                LinearGradient(
+                    colors: [.clear, Color.red.opacity(speechService.isRecording ? 0.08 : 0)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+                .animation(.easeInOut(duration: 0.3), value: speechService.isRecording)
+            }
     }
     
     var body: some View {
@@ -450,7 +441,7 @@ struct LiveSpeechTranslationView: View {
                         Image(systemName: "speaker.wave.2.fill")
                             .font(.subheadline)
                     }
-                    .buttonStyle(.bordered)
+                    .glassButtonStyleCompat()
                     .buttonBorderShape(.capsule)
                     .controlSize(.small)
                 }
@@ -498,11 +489,7 @@ struct LiveSpeechTranslationView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
-            )
+            .smCardSurface(cornerRadius: 16)
         }
         .onChange(of: speechService.completeTranscript) { _, newValue in
             transcript = newValue
@@ -550,7 +537,7 @@ struct LiveSpeechTranslationView: View {
                         Image(systemName: "speaker.wave.2.fill")
                             .font(.subheadline)
                     }
-                    .buttonStyle(.bordered)
+                    .glassButtonStyleCompat()
                     .buttonBorderShape(.capsule)
                     .controlSize(.small)
                 }
@@ -592,14 +579,9 @@ struct LiveSpeechTranslationView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.accentColor.opacity(0.08))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.accentColor.opacity(0.2), lineWidth: 1)
-                    )
-            )
+            // Accent-tinted glass sets the translation apart from the
+            // transcript card above it; the word tiles inside stay solid.
+            .glassEffectCompat(cornerRadius: 16, tint: Color.accentColor.opacity(0.3))
         }
     }
     

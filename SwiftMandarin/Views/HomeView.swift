@@ -43,7 +43,7 @@ struct HomeView: View {
                 .frame(maxWidth: SMTheme.contentMaxWidth)
                 .frame(maxWidth: .infinity)
             }
-            .background(SMTheme.pageBackground)
+            .smPageBackground()
             .navigationTitle("Home")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -274,7 +274,7 @@ struct HomeView: View {
     }
 
     /// Streak flame + count styled for the colored hero (translucent white
-    /// capsule rather than the material capsule used on plain surfaces).
+    /// capsule rather than the glass capsule used on plain surfaces).
     private var heroStreakBadge: some View {
         HStack(spacing: 5) {
             Image(systemName: "flame.fill")
@@ -393,48 +393,52 @@ struct HomeView: View {
     @ViewBuilder
     private var wordOfTheDaySection: some View {
         if let word = dailyWord {
-            SMCard {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Label("Word of the Day", systemImage: "sparkles")
-                            .font(.headline)
-                        Spacer()
-                        Button {
-                            SpeechService.speakAuto(word.headline)
-                        } label: {
-                            Image(systemName: "speaker.wave.2.fill")
-                                .font(.body)
-                                .foregroundStyle(Color.accentColor)
+            // One glass group, so the glass "Practice" button blends into the glass
+            // card instead of stacking glass on glass.
+            GlassGroupCompat {
+                SMCard {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Label("Word of the Day", systemImage: "sparkles")
+                                .font(.headline)
+                            Spacer()
+                            Button {
+                                SpeechService.speakAuto(word.headline)
+                            } label: {
+                                Image(systemName: "speaker.wave.2.fill")
+                                    .font(.body)
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(Text("Speak"))
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(Text("Speak"))
-                    }
 
-                    Text(word.headline)
-                        .font(.system(.largeTitle, design: .rounded).weight(.bold))
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.6)
+                        Text(word.headline)
+                            .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.6)
 
-                    if let pinyin = word.pinyin {
-                        Text(PinyinConverter.coloredPinyin(fromPinyin: pinyin))
-                            .font(.title3)
-                    }
+                        if let pinyin = word.pinyin {
+                            Text(PinyinConverter.coloredPinyin(fromPinyin: pinyin))
+                                .font(.title3)
+                        }
 
-                    if !word.gloss.isEmpty {
-                        Text(word.gloss)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(3)
-                    }
+                        if !word.gloss.isEmpty {
+                            Text(word.gloss)
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(3)
+                        }
 
-                    Button {
-                        AppRouteStore.shared.triggerReview(mode: "due", source: "home")
-                    } label: {
-                        Label("Practice this word", systemImage: "rectangle.stack.fill")
-                            .font(.subheadline.weight(.semibold))
+                        Button {
+                            AppRouteStore.shared.triggerReview(mode: "due", source: "home")
+                        } label: {
+                            Label("Practice this word", systemImage: "rectangle.stack.fill")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .glassButtonStyleCompat()
+                        .padding(.top, 2)
                     }
-                    .glassButtonStyleCompat()
-                    .padding(.top, 2)
                 }
             }
         }

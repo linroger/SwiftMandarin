@@ -161,3 +161,14 @@ SwiftMandarin is a cross-platform SwiftUI learning and translation app for macOS
 - Bug found while polishing: rows overlapped because a gloss with `frame(maxWidth:)` measured as one line under an unspecified proposal but rendered on two. The gloss now gets an exact measured width, so measurement and render agree.
 - Files: `Views/ChatbotView.swift`, `Views/TranslateView.swift` (FlowLayout), `Screenshots/iOS Screenshots/iPhone-09-AIChat.png`.
 - Verified: iPhone 17 Pro Max simulator in light and dark mode; macOS build 0 warnings; `zsh init.sh` green (AI Chat 51/51 + 8/8, hygiene 11/11, smoke).
+
+### 2026-11-03 — Iteration 35: AI Chat padding, clipping, missing meanings; Stats legend; Liquid Glass everywhere
+
+- Request: tighter AI Chat padding; no clipped pinyin/English in chunk tiles; later chat rounds lost English meanings; Translate and every other view in Liquid Glass; the Words Learned legend spilled out of its card.
+- Missing meanings root cause: history sent assistant turns as {"reply","translation"} without chunks, so models copied that shape (gpt-oss dropped the chunk list at round 5). Now history carries the chunks, each request ends with a format reminder, and any chunk still without a meaning is glossed by a follow-up request.
+- Clipping root cause: gloss lineLimit(2) in a narrow fixed column, reading lineLimit(1), and FlowLayout never narrowing an item wider than the row. All three fixed.
+- Stats: the Charts legend listed all eleven types on one line; replaced with a wrapping legend of the types present.
+- Liquid Glass: shared card surface is glass on OS 26 over a new page backdrop; 7-agent conversion of every screen through the compat helpers; critic + adversarial review; two confirmed defects fixed with regression checks.
+- Files: DesignSystem, CompatModifiers, ChatbotView/Prompt/Service, TranslateView (+ FlowLayout), StatsView and ~35 other views, test-chatbot.sh, test-macos-surfaces.sh, ChatbotChecksRunner, READMEs, iPhone screenshots.
+- Tests: iOS + macOS builds 0 warnings; zsh init.sh green (AI Chat 70/70 + 11/11, macOS surfaces 8/8 + 9/9).
+- Not done: dark-mode screenshots this round, iPad screenshot refresh, physical devices.

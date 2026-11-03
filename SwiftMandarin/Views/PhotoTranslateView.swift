@@ -167,6 +167,7 @@ struct PhotoTranslateView: View {
                 }
                 .padding()
             }
+            .smPageBackground()
             .navigationTitle("Multimodal")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
@@ -324,6 +325,8 @@ struct PhotoTranslateView: View {
     // MARK: - AI Cleanup Transparency
 
     /// Warning banner shown when AI cleanup was requested but didn't run.
+    /// Lightly orange-tinted glass, matching the Workbook warning banners;
+    /// the pre-OS 26 material fallback keeps close to the old faint wash.
     private func cleanupNoticeBanner(_ notice: LocalizedStringKey) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
@@ -343,11 +346,12 @@ struct PhotoTranslateView: View {
             .accessibilityLabel(Text("Dismiss"))
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.orange.opacity(0.1)))
+        .glassEffectCompat(cornerRadius: 10, tint: Color.orange.opacity(0.25))
     }
 
     /// Badge shown when AI cleanup modified the OCR text, with a one-tap
-    /// revert to the original recognition result.
+    /// revert to the original recognition result. Lightly purple-tinted
+    /// glass, as faint as the old purple fill.
     private var cleanedTextBadge: some View {
         HStack(spacing: 8) {
             Image(systemName: "sparkles")
@@ -361,11 +365,11 @@ struct PhotoTranslateView: View {
                 revertToRawOCRText()
             }
             .font(.caption)
-            .buttonStyle(.bordered)
+            .glassButtonStyleCompat()
             .controlSize(.small)
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.purple.opacity(0.08)))
+        .glassEffectCompat(cornerRadius: 10, tint: Color.purple.opacity(0.2))
     }
 
     /// Restore the unmodified OCR text and re-run analysis on it.
@@ -409,31 +413,34 @@ struct PhotoTranslateView: View {
             .accessibilityLabel("Multimodal input type")
 
             if inputMode == .imageAndText {
-                // Image input buttons
-                HStack(spacing: 12) {
-                    #if os(iOS)
-                    if CameraScannerView.isSupported {
-                        Button {
-                            showCameraScanner = true
-                        } label: {
-                            sourceButtonLabel("Camera Scan", systemImage: "camera.fill")
+                // Image input buttons, grouped so the glass buttons blend
+                // inside the glass input card.
+                GlassGroupCompat(spacing: 12) {
+                    HStack(spacing: 12) {
+                        #if os(iOS)
+                        if CameraScannerView.isSupported {
+                            Button {
+                                showCameraScanner = true
+                            } label: {
+                                sourceButtonLabel("Camera Scan", systemImage: "camera.fill")
+                            }
+                            .glassProminentButtonStyleCompat()
+                            .disabled(!CameraScannerView.isAvailable)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(!CameraScannerView.isAvailable)
-                    }
-                    #endif
+                        #endif
 
-                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                        sourceButtonLabel("Photos", systemImage: "photo.fill")
-                    }
-                    .buttonStyle(.bordered)
+                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                            sourceButtonLabel("Photos", systemImage: "photo.fill")
+                        }
+                        .glassButtonStyleCompat()
 
-                    Button {
-                        showPhotoFiles = true
-                    } label: {
-                        sourceButtonLabel("Files", systemImage: "folder")
+                        Button {
+                            showPhotoFiles = true
+                        } label: {
+                            sourceButtonLabel("Files", systemImage: "folder")
+                        }
+                        .glassButtonStyleCompat()
                     }
-                    .buttonStyle(.bordered)
                 }
 
                 // Scan-language selector + re-recognize. Lets the user force
@@ -473,7 +480,7 @@ struct PhotoTranslateView: View {
                             Label("Rescan", systemImage: "arrow.clockwise")
                                 .font(.caption)
                         }
-                        .buttonStyle(.bordered)
+                        .glassButtonStyleCompat()
                         .controlSize(.small)
                         .disabled(isProcessing)
                     }
@@ -525,9 +532,11 @@ struct PhotoTranslateView: View {
                     .frame(minHeight: 100)
                     .scrollContentBackground(.hidden)
                     .padding(12)
+                    // A tinted fill rather than material: the editor sits
+                    // inside the glass input card, and glass is not stacked.
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.ultraThinMaterial)
+                        Color.primary.opacity(0.05),
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                     )
                     .overlay(alignment: .topLeading) {
                         if sourceText.isEmpty {
@@ -540,45 +549,43 @@ struct PhotoTranslateView: View {
                         }
                     }
 
-                HStack {
-                    Button {
-                        if let pastedText = ClipboardService.paste(), !pastedText.isEmpty {
-                            sourceText = pastedText
+                GlassGroupCompat {
+                    HStack {
+                        Button {
+                            if let pastedText = ClipboardService.paste(), !pastedText.isEmpty {
+                                sourceText = pastedText
+                            }
+                        } label: {
+                            Label("Paste", systemImage: "doc.on.clipboard")
                         }
-                    } label: {
-                        Label("Paste", systemImage: "doc.on.clipboard")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+                        .glassButtonStyleCompat()
+                        .controlSize(.small)
 
-                    Spacer()
+                        Spacer()
 
-                    if !sourceText.isEmpty {
-                        Text("\(sourceText.count) characters")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Button {
-                        let requestID = beginInputProcessingRequest()
-                        Task {
-                            await processText(sourceText, requestID: requestID)
+                        if !sourceText.isEmpty {
+                            Text("\(sourceText.count) characters")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                    } label: {
-                        Label("Analyze Translation", systemImage: "wand.and.stars")
+
+                        Button {
+                            let requestID = beginInputProcessingRequest()
+                            Task {
+                                await processText(sourceText, requestID: requestID)
+                            }
+                        } label: {
+                            Label("Analyze Translation", systemImage: "wand.and.stars")
+                        }
+                        .glassProminentButtonStyleCompat()
+                        .controlSize(.small)
+                        .disabled(sourceText.isEmpty || isProcessing)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    .disabled(sourceText.isEmpty || isProcessing)
                 }
             }
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.background)
-                .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
-        )
+        .smCardSurface()
         // Drag & drop an image onto the input area to scan it.
         .onDrop(of: [.image], isTargeted: nil, perform: handlePhotoDrop)
     }
@@ -640,7 +647,7 @@ struct PhotoTranslateView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .glassButtonStyleCompat()
             .disabled(isExtractingVocab || !hasResults)
         }
     }
@@ -690,14 +697,10 @@ struct PhotoTranslateView: View {
                         .fitSingleLine()
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .glassButtonStyleCompat()
             }
             .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.background)
-                    .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
-            )
+            .smCardSurface()
         }
     }
     
@@ -731,7 +734,7 @@ struct PhotoTranslateView: View {
                 } label: {
                     Label(translateAllTitle, systemImage: "translate")
                 }
-                .buttonStyle(.borderedProminent)
+                .glassProminentButtonStyleCompat()
                 .disabled(isTranslating)
             }
             
@@ -753,7 +756,7 @@ struct PhotoTranslateView: View {
                 Label("Save All Words to Vocabulary", systemImage: "bookmark")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .glassButtonStyleCompat()
         }
     }
 
@@ -782,7 +785,7 @@ struct PhotoTranslateView: View {
                 } label: {
                     Label(translateAllTitle, systemImage: "translate")
                 }
-                .buttonStyle(.borderedProminent)
+                .glassProminentButtonStyleCompat()
                 .disabled(isTranslating)
             }
 
@@ -802,15 +805,12 @@ struct PhotoTranslateView: View {
                     } label: {
                         Label("Read English Aloud", systemImage: "speaker.wave.2")
                     }
-                    .buttonStyle(.bordered)
+                    .glassButtonStyleCompat()
                     .controlSize(.small)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(.ultraThinMaterial)
-                )
+                .smCardSurface(cornerRadius: 12)
 
                 translationNotesSection
             }
@@ -830,11 +830,7 @@ struct PhotoTranslateView: View {
                 )
             }
             .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.background)
-                    .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
-            )
+            .smCardSurface()
             
             // Save all words button
             Button {
@@ -846,7 +842,7 @@ struct PhotoTranslateView: View {
                     .fitSingleLine()
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .glassButtonStyleCompat()
         }
     }
     
@@ -884,7 +880,7 @@ struct PhotoTranslateView: View {
                     }
                     .font(.subheadline)
                 }
-                .buttonStyle(.bordered)
+                .glassButtonStyleCompat()
                 .controlSize(.small)
                 .disabled(isFetchingNotes)
 
@@ -985,7 +981,7 @@ struct PhotoTranslateView: View {
                     await processText(sourceText, requestID: requestID)
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .glassProminentButtonStyleCompat()
         }
     }
     
@@ -1914,11 +1910,10 @@ struct SentenceCard: View {
             }
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.background)
-                .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
-        )
+        // Solid, not glass (and the speaker button stays bordered): there is
+        // one card per sentence, so a long scanned passage would otherwise
+        // stack dozens of glass layers.
+        .smSolidCardSurface()
     }
     
     private var sentenceTypeColor: Color {

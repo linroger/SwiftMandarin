@@ -46,6 +46,10 @@ struct MoreView: View {
             .navigationTitle("More")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
+            // The hub shares the app's page backdrop with the other tabs; its
+            // grouped rows stay the native solid rows.
+            .scrollContentBackground(.hidden)
+            .smPageBackground()
             #endif
             .navigationDestination(for: MoreRoute.self) { route in
                 switch route {
@@ -261,6 +265,8 @@ struct GeneralSettingsView: View {
         .navigationTitle("General")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .smPageBackground()
         #endif
     }
 }
@@ -307,6 +313,8 @@ struct TranslationSettingsView: View {
         .navigationTitle("Translation")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .smPageBackground()
         #endif
     }
 }
@@ -423,6 +431,8 @@ struct DisplaySettingsView: View {
         .navigationTitle(screenTitle)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .smPageBackground()
         #endif
     }
 }
@@ -496,6 +506,8 @@ struct AISettingsDetailView: View {
         .navigationTitle("AI Settings")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .smPageBackground()
         #endif
         .task {
             await settings.refreshConnection()
@@ -593,6 +605,8 @@ struct DataManagementView: View {
         .navigationTitle("Manage Data")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .smPageBackground()
         #endif
         .alert("Clear Vocabulary", isPresented: $showingClearVocabularyAlert) {
             Button("Cancel", role: .cancel) { }
@@ -653,9 +667,6 @@ struct AboutView: View {
                 }
                 .padding(.top, 40)
 
-                Divider()
-                    .padding(.horizontal)
-
                 // Description
                 VStack(alignment: .leading, spacing: 12) {
                     Text("About")
@@ -670,6 +681,8 @@ struct AboutView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(SMTheme.cardPadding)
+                .smCardSurface()
                 .padding(.horizontal)
 
                 // Features
@@ -683,6 +696,8 @@ struct AboutView: View {
                     FeatureRow(icon: "quote.bubble", title: "Phrases", description: "Common phrases organized by category")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(SMTheme.cardPadding)
+                .smCardSurface()
                 .padding(.horizontal)
 
                 // Credits
@@ -699,11 +714,14 @@ struct AboutView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(SMTheme.cardPadding)
+                .smCardSurface()
                 .padding(.horizontal)
 
                 Spacer(minLength: 40)
             }
         }
+        .smPageBackground()
         .navigationTitle("About")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)

@@ -1,7 +1,8 @@
 # Handoff.md — SwiftMandarin: Bilingual + Multi-Provider AI Overhaul
 
 **Last Updated (UTC):** 2026-11-02
-**Status:** Complete (iter 34 — whole-app review, hang/crash fixes, Shortcuts and AI-prompt rework, global search, Liquid Glass pass, new AI Chat feature, new screenshots; see Iteration 34)
+**Status:** Complete (iter 35 — AI Chat padding/clipping/missing meanings, Stats legend, app-wide Liquid Glass; see Iteration 35)
+**Prior Status:** Complete (iter 34 — whole-app review, hang/crash fixes, Shortcuts and AI-prompt rework, global search, Liquid Glass pass, new AI Chat feature, new screenshots; see Iteration 34)
 **Prior Status:** In Progress (iter 33 — macOS cards were drawn in the page color; see Iteration 33)
 **Prior Status:** In Progress (iter 32 — per-day mastery in the activity heatmap and a 30-day Words Learned range; see Iteration 32)
 **Prior Status:** In Progress (iter 31 — record-and-transcribe actually works; see Iteration 31)
@@ -1578,3 +1579,55 @@ Critical path: fix the harness first (nothing else is verifiable without it) →
 - 2026-11-02: Iteration 34 opened; harness, project file, persistence and vocabulary work.
 - 2026-11-03: Shortcuts/prompt/parser rework, global search, glass pass, two adversarial reviews with fixes, AI Chat, screenshots, READMEs; status Complete.
 - 2026-11-03: AI Chat reply UI polish: glass reply card, equal-height chunk tiles with even spacing, solid tile fill in both appearances, attached punctuation, refreshed iPhone-09 screenshot; macOS build 0 warnings and init.sh green.
+
+## Iteration 35 — AI Chat polish, missing meanings, Stats legend, app-wide Liquid Glass (2026-11-03)
+
+### 1) Request & Context
+- **User's request (quoted):** "the padding is still too big on the ai chat view, and also, some of the pinyin and english gets clipped if the box is not wide enough. also after a few rounds back and forth with the ai, i noticed that in the later round, the english definition is not provided by the ai. also please update the translate view to liquid glass as well. also, on the stats view, for the words learned visualization, the legend does not fit inside the rounded rectangle for the chart, and instead spills out on the left and right. please update all the views in the app to use liquid glass as well."
+- **Constraints:** iOS 17 / macOS deployment floor (all glass through the compat helpers), Swift 5 mode with MainActor default isolation, zero warnings, `zsh init.sh` green, full zh-Hans coverage for new strings, commit without attribution, branch → merge to main.
+- **Non-goals:** no behaviour changes beyond the six items; no redesign of screen information architecture.
+
+### 2) Requirements → Acceptance Checks
+| Requirement | Acceptance check | Evidence |
+|---|---|---|
+| R1 AI Chat padding tighter | iPhone simulator screenshot of a reply, compared with the 2026-11-03 11:35 capture | Screenshots/iOS Screenshots/iPhone-09-AIChat.png refreshed |
+| R2 No clipped pinyin or meaning | A seeded thread with long pinyin, long glosses and a chunk wider than the card renders without "…" or overflow on iPhone 17 Pro Max | simulator screenshot |
+| R3 Later rounds keep meanings | Six-round Ollama gpt-oss replay of the cloud and transcript paths before/after; contract checks for envelope, reminder, gloss fill | scratchpad chatrepro baseline.log / fixed.log; test-chatbot.sh |
+| R4 Translate view in Liquid Glass | Screenshot of Translate on iPhone | simulator screenshot |
+| R5 Stats legend inside the card | Screenshot of Words Learned with several word types on iPhone | simulator screenshot |
+| R6 All views Liquid Glass | Every screen built on the shared glass card/backdrop/buttons; reviewed per file; screenshots of main tabs | review workflow + screenshots |
+
+### 3) Plan
+1. Central design system: `smCardSurface` renders Liquid Glass on OS 26 (solid card earlier), new `smSolidCardSurface`, `smPageBackground()` ambient backdrop, compat glass helpers gain tint/interactive and a circle variant.
+2. AI Chat: tighter metrics; chunk chips never truncate (no line limits, gloss ideal width grows with the gloss); `FlowLayout` re-measures any item wider than the row at the row width.
+3. Missing meanings: earlier assistant turns go back with their chunk list; every request ends with a format reminder; a best-effort follow-up gloss request fills chunks that still lack meanings (all three provider paths).
+4. Stats: hide the built-in Charts legend (one unwrappable line of all eleven types); a wrapping legend lists only the types present.
+5. App-wide glass: workflow with one agent per screen group (edit-only), then central build, then an adversarial review workflow, then simulator screenshots.
+
+### 5) Findings
+- **Missing meanings root cause (reproduced):** with history sent as `{"reply","translation"}` envelopes, gpt-oss returned a reply with no chunk list at round 5 of 6 (it imitated the history's shape); on the transcript path round 5 had 3 of 24 word chunks without a meaning and round 4 broke the JSON. Evidence: scratchpad/chatrepro/baseline.log.
+- **Clipping root cause:** the gloss had `lineLimit(2)` inside a width capped at max(84, 20 × characters), so a gloss under a two-character word ("Mid-Autumn Festival holiday") needed three lines and was cut off; the reading had `lineLimit(1)`; and `FlowLayout` placed an item wider than the row at full width, past the card's edge.
+- **Stats legend root cause:** `.chartLegend(position: .bottom)` lays every entry of the eleven-type color scale on one line regardless of the data, which is wider than an iPhone card.
+
+### 4) Progress ledger
+- [x] Design system: glass `smCardSurface`, `smSolidCardSurface`, `smInsetTile`, `smPageBackground()`/`SMPageBackdrop`, compat glass helpers with tint/interactive and a circle variant (fallback tint drawn at 0.6 of the passed color; callers pass 0.2–0.5).
+- [x] AI Chat: tighter metrics (card padding 12, chip 7×5, row gap 5); no line limits; gloss ideal width = min(one-line width, max(96, chunk width, reading width, half the gloss + 8)); `FlowLayout.fitted` re-measures items wider than the row. Evidence: stress thread (a 20-character chunk, long glosses) renders with no ellipsis and no overflow.
+- [x] Missing meanings: `assistantEnvelope` history, `formatReminder` on every request, `fillingMissingMeanings` gloss request on all providers. Evidence: 6-round gpt-oss replay before (round 5 lost its chunk list; 3 blank meanings) vs after (12/12 rounds with every word glossed); gloss prompt answered every chunk in 18 s.
+- [x] Stats: built-in legend hidden, wrapping `stackedBarLegend`; Overview cells on `smInsetTile`; range picker on a tinted track.
+- [x] App-wide glass: 7-agent conversion workflow + completeness critic (22 items, real ones fixed) + 12-agent adversarial review (2 confirmed and fixed: gloss merge with a repeated word, over-strong Photo banner tints).
+- [x] Screenshots: iPhone-01…09 recaptured on the iPhone 17 Pro Max simulator.
+
+### 6) Issues, mistakes, recoveries
+- `filling(_:at:with:)` first advanced its cursor past any glosses it skipped, so a dropped gloss for the first 我 of 我…想…我 cost 想 its meaning too. Fix: a lookahead match is refused when a skipped gloss names one of the next chunks. Regression checks in ChatbotChecksRunner (repeated word, stray gloss).
+- Changing the compat fallback tint from ×0.18 to ×0.6 made callers that passed 0.5 three times stronger than the old fills. Fix: Photo/Menu-bar banners now pass 0.2–0.25; the doc comment states the convention.
+- xcodebuild rewrote both string catalogs with extraction metadata only (no key added, removed, or retranslated — verified by JSON diff); they are restored from HEAD before committing. An untracked `SwiftMandarin.xcodeproj/-Xcc/` index store appeared during a build and was removed.
+- Simulator learning-activity seeding: the app's terminate-time flush can overwrite a `defaults write` issued right after `simctl terminate`; wait a few seconds first. The 11-type legend stress test still did not take (the store appears to rebuild per-type counts), so the long-legend wrap is verified by construction (same FlowLayout as the pie legends), not by screenshot.
+
+### 8) Verification summary
+- iOS Simulator and macOS Debug builds: 0 errors, 0 warnings (Ollama package warning excluded, pre-existing).
+- `zsh init.sh`: all suites passed, including AI Chat 70/70 + 11/11 and macOS surfaces 8/8 + 9/9.
+- Visual (iPhone 17 Pro Max, light): Home, Search, Study, Learn (front and flipped), Stats, Translate, Vocabulary list and detail (Mastered toggle on/off), Conversation, AI Chat (normal and stress thread). A review agent's test app confirmed glass buttons stay visible inside grouped and ungrouped glass cards.
+- Not verified: dark mode this round (the simulator kept rendering light after `simctl ui appearance dark`; no app override exists); physical devices; iPad screenshots were not recaptured.
+
+### 10) Updates
+- 2026-11-03: Iteration 35 opened and completed.

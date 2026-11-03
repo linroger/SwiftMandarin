@@ -77,7 +77,7 @@ struct ReaderSessionView: View {
                 readerContent
             }
         }
-        .background(SMTheme.pageBackground)
+        .smPageBackground()
         .navigationTitle(text.title)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -167,10 +167,9 @@ struct ReaderSessionView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                SMTheme.cardFill,
-                in: RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous)
-            )
+            // Only the current paragraph is a card, so one glass panel at a
+            // time; the translation gloss inside stays a tinted fill.
+            .smCardSurface()
         } else {
             // Neighbors are plain text: cheap to lay out, and tapping one
             // makes it the current (interactive) paragraph.
@@ -357,7 +356,7 @@ struct ReaderSessionView: View {
                 .accessibilityLabel(Text("Dismiss"))
             }
             .padding(12)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .glassEffectCompat(cornerRadius: 12)
             .padding(.horizontal, 16)
             .transition(.move(edge: .top).combined(with: .opacity))
         }

@@ -38,7 +38,7 @@ struct ConversationView: View {
             }
             .padding()
         }
-        .background(SMTheme.pageBackground)
+        .smPageBackground()
         .navigationTitle("Conversation")
         .navigationDestination(item: $openConversationID) { id in
             ConversationChatView(conversationID: id)
@@ -96,38 +96,41 @@ struct ConversationView: View {
 
     // MARK: Recent conversations
 
+    /// Rows are solid cards rather than `SMCard`'s glass: the history grows
+    /// without bound, and one glass layer per row of a long list costs too much.
     private var recentConversations: some View {
         LazyVStack(spacing: 10) {
             ForEach(store.conversations) { conversation in
                 Button {
                     openConversationID = conversation.id
                 } label: {
-                    SMCard {
-                        HStack(spacing: 12) {
-                            Image(systemName: conversation.scenario.symbolName)
-                                .font(.body)
-                                .frame(width: 36, height: 36)
-                                .background(conversation.scenario.tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .foregroundStyle(conversation.scenario.tint)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(L(conversation.scenario.titleKey))
-                                    .font(.headline)
-                                    .foregroundStyle(.primary)
-                                    .fitSingleLine()
-                                Text(preview(for: conversation))
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
-                            Spacer(minLength: 8)
-                            Text(conversation.dateUpdated, format: .relative(presentation: .named))
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                            Image(systemName: "chevron.right")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(.tertiary)
+                    HStack(spacing: 12) {
+                        Image(systemName: conversation.scenario.symbolName)
+                            .font(.body)
+                            .frame(width: 36, height: 36)
+                            .background(conversation.scenario.tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .foregroundStyle(conversation.scenario.tint)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(L(conversation.scenario.titleKey))
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .fitSingleLine()
+                            Text(preview(for: conversation))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
                         }
+                        Spacer(minLength: 8)
+                        Text(conversation.dateUpdated, format: .relative(presentation: .named))
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.tertiary)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(SMTheme.cardPadding)
+                    .smSolidCardSurface()
                 }
                 .buttonStyle(.plain)
                 .contextMenu {
@@ -218,15 +221,21 @@ private struct ConversationChatView: View {
             // scroll underneath the glass bar and the keyboard lifts both
             // together, instead of the bar cutting the list off above it.
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                VStack(spacing: 0) {
-                    if let errorMessage {
-                        errorBanner(errorMessage)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                // The error banner and the composer are neighbouring glass
+                // surfaces, grouped so they sample the page together; zero
+                // blend spacing keeps them two panels rather than fusing them
+                // across the 4 pt gap.
+                GlassGroupCompat(spacing: 0) {
+                    VStack(spacing: 0) {
+                        if let errorMessage {
+                            errorBanner(errorMessage)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                        inputBar
                     }
-                    inputBar
                 }
             }
-            .background(SMTheme.pageBackground)
+            .smPageBackground()
             .navigationTitle(conversation.map { L($0.scenario.titleKey) } ?? L("Conversation"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -346,7 +355,7 @@ private struct ConversationChatView: View {
             .accessibilityLabel(Text("Dismiss"))
         }
         .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .glassEffectCompat(cornerRadius: 14)
         .padding(.horizontal, 12)
         .padding(.bottom, 4)
     }
@@ -529,7 +538,10 @@ private struct MessageBubble: View {
         }
     }
 
-    // MARK: Partner (leading, material)
+    // MARK: Partner (leading, solid card)
+
+    // A solid card, not glass: one bubble per message in a lazily loaded
+    // list, where a glass layer per row would cost too much while scrolling.
 
     private var partnerBubble: some View {
         HStack(alignment: .bottom) {
@@ -577,7 +589,7 @@ private struct MessageBubble: View {
                 }
             }
             .padding(12)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .smSolidCardSurface(cornerRadius: 18)
             Spacer(minLength: 40)
         }
     }
@@ -636,7 +648,7 @@ private struct TypingIndicatorBubble: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .smSolidCardSurface(cornerRadius: 18)
             Spacer(minLength: 40)
         }
         .onAppear { animating = true }

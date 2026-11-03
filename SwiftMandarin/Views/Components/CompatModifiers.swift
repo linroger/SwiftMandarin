@@ -75,22 +75,70 @@ struct TranslationTaskHost: View {
 extension View {
 
     /// Liquid Glass surface on OS 26+, ultra-thin material earlier.
+    ///
+    /// - Parameters:
+    ///   - tint: Colors the glass (for a surface that carries meaning, such as
+    ///     a selected or warning state). Pass a translucent color, about 0.2–0.5
+    ///     opacity: a fully opaque tint turns the glass into a solid colored
+    ///     slab that hides same-colored content. The fallback lays the tint
+    ///     over the material at a little over half its strength.
+    ///   - interactive: Makes the glass react to touch (scale and shimmer) on
+    ///     OS 26 — for a surface that is itself tappable.
     @ViewBuilder
-    func glassEffectCompat(cornerRadius: CGFloat) -> some View {
+    func glassEffectCompat(cornerRadius: CGFloat, tint: Color? = nil, interactive: Bool = false) -> some View {
         if #available(iOS 26.0, macOS 26.0, *) {
-            self.glassEffect(in: .rect(cornerRadius: cornerRadius))
+            self.glassEffect(
+                Glass.regular.tint(tint).interactive(interactive),
+                in: .rect(cornerRadius: cornerRadius, style: .continuous)
+            )
         } else {
-            self.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
+            self.background {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        if let tint {
+                            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                .fill(tint.opacity(0.6))
+                        }
+                    }
+            }
         }
     }
 
     /// Liquid Glass capsule on OS 26+, ultra-thin material capsule earlier.
     @ViewBuilder
-    func glassEffectCapsuleCompat() -> some View {
+    func glassEffectCapsuleCompat(tint: Color? = nil, interactive: Bool = false) -> some View {
         if #available(iOS 26.0, macOS 26.0, *) {
-            self.glassEffect(in: .capsule)
+            self.glassEffect(Glass.regular.tint(tint).interactive(interactive), in: .capsule)
         } else {
-            self.background(.ultraThinMaterial, in: Capsule())
+            self.background {
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        if let tint {
+                            Capsule().fill(tint.opacity(0.6))
+                        }
+                    }
+            }
+        }
+    }
+
+    /// Liquid Glass circle on OS 26+, ultra-thin material circle earlier. For
+    /// round icon buttons and badges.
+    @ViewBuilder
+    func glassEffectCircleCompat(tint: Color? = nil, interactive: Bool = false) -> some View {
+        if #available(iOS 26.0, macOS 26.0, *) {
+            self.glassEffect(Glass.regular.tint(tint).interactive(interactive), in: .circle)
+        } else {
+            self.background {
+                Circle()
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        if let tint {
+                            Circle().fill(tint.opacity(0.6))
+                        }
+                    }
+            }
         }
     }
 

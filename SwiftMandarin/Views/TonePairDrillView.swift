@@ -81,7 +81,7 @@ struct TonePairDrillView: View {
                 questionScreen(question)
             }
         }
-        .background(SMTheme.pageBackground)
+        .smPageBackground()
         .navigationTitle("Tone Drills")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -124,34 +124,38 @@ struct TonePairDrillView: View {
     }
 
     private func wordCard(_ question: ToneQuestion) -> some View {
-        SMCard {
-            VStack(spacing: 12) {
-                Text("Which tone pattern do you hear?")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(question.item.chinese)
-                    .font(.system(size: 52, weight: .bold, design: .rounded))
-                if selectedIndex != nil {
-                    Text(PinyinConverter.coloredPinyin(fromPinyin: question.item.pinyin))
-                        .font(.title3.weight(.semibold))
-                    if !question.item.english.isEmpty {
-                        Text(question.item.english)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+        // One glass group, so the glass speaker button blends into the glass
+        // card instead of stacking glass on glass.
+        GlassGroupCompat {
+            SMCard {
+                VStack(spacing: 12) {
+                    Text("Which tone pattern do you hear?")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text(question.item.chinese)
+                        .font(.system(size: 52, weight: .bold, design: .rounded))
+                    if selectedIndex != nil {
+                        Text(PinyinConverter.coloredPinyin(fromPinyin: question.item.pinyin))
+                            .font(.title3.weight(.semibold))
+                        if !question.item.english.isEmpty {
+                            Text(question.item.english)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
+                    Button {
+                        SpeechService.speakChinese(question.item.chinese)
+                    } label: {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.title3)
+                            .padding(10)
+                    }
+                    .glassButtonStyleCompat()
+                    .accessibilityLabel(Text("Play audio"))
                 }
-                Button {
-                    SpeechService.speakChinese(question.item.chinese)
-                } label: {
-                    Image(systemName: "speaker.wave.2.fill")
-                        .font(.title3)
-                        .padding(10)
-                }
-                .glassButtonStyleCompat()
-                .accessibilityLabel(Text("Play audio"))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
         }
     }
 
@@ -182,9 +186,12 @@ struct TonePairDrillView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(
-                chipFill(answered: answered, isCorrect: isCorrect, isChosen: isChosen),
-                in: RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous)
+            // Interactive glass while the question is open; once answered, the
+            // glass takes a green (correct) or red (wrong pick) tint.
+            .glassEffectCompat(
+                cornerRadius: SMTheme.cornerRadius,
+                tint: chipTint(answered: answered, isCorrect: isCorrect, isChosen: isChosen),
+                interactive: !answered
             )
             .overlay(
                 RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous)
@@ -201,11 +208,15 @@ struct TonePairDrillView: View {
         .animation(.spring(duration: 0.3), value: selectedIndex)
     }
 
-    private func chipFill(answered: Bool, isCorrect: Bool, isChosen: Bool) -> Color {
-        guard answered else { return SMTheme.cardFill }
-        if isCorrect { return Color.green.opacity(0.18) }
-        if isChosen { return Color.red.opacity(0.15) }
-        return SMTheme.cardFill
+    /// Glass tint for an option: nil (plain glass) until answered and for
+    /// the options that were neither right nor picked.
+    /// Translucent, so the tone-colored syllables and the green or red
+    /// border stay readable on the tinted glass.
+    private func chipTint(answered: Bool, isCorrect: Bool, isChosen: Bool) -> Color? {
+        guard answered else { return nil }
+        if isCorrect { return Color.green.opacity(0.3) }
+        if isChosen { return Color.red.opacity(0.3) }
+        return nil
     }
 
     private func chipBorder(answered: Bool, isCorrect: Bool, isChosen: Bool) -> Color {

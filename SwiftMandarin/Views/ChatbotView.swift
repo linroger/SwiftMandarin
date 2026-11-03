@@ -79,7 +79,7 @@ struct ChatbotView: View {
                 messageList
             }
         }
-        .background(SMTheme.pageBackground)
+        .smPageBackground()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
                 if let currentError {
@@ -244,7 +244,7 @@ struct ChatbotView: View {
     private var messageList: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 14) {
+                LazyVStack(spacing: 12) {
                     ForEach(messages) { message in
                         Group {
                             if message.isUser {
@@ -260,7 +260,8 @@ struct ChatbotView: View {
                             .id(Self.typingIndicatorID)
                     }
                 }
-                .padding()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
                 .frame(maxWidth: SMTheme.contentMaxWidth)
                 .frame(maxWidth: .infinity)
             }
@@ -291,14 +292,14 @@ struct ChatbotView: View {
                 .font(.body)
                 .foregroundStyle(.white)
                 .textSelection(.enabled)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
                 .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
 
     private func assistantCard(_ message: ChatbotMessage) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
                     .font(.caption.weight(.bold))
@@ -310,7 +311,7 @@ struct ChatbotView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
-                if !message.chunksFromModel {
+                if !message.chunksFromModel && Self.lacksMeanings(message) {
                     Label("Chunked on device", systemImage: "iphone")
                         .labelStyle(.titleAndIcon)
                         .font(.caption2)
@@ -341,9 +342,9 @@ struct ChatbotView: View {
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(Color.accentColor.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(Color.accentColor.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
             GlassGroupCompat(spacing: 8) {
@@ -370,11 +371,20 @@ struct ChatbotView: View {
                 .glassButtonStyleCompat()
             }
         }
-        .padding(16)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         // The reply floats as Liquid Glass over the page, like the composer;
         // the chips inside are solid tiles, so no glass sits on glass.
-        .glassEffectCompat(cornerRadius: 24)
+        .glassEffectCompat(cornerRadius: 20)
+    }
+
+    /// Whether some word chunks of a reply have no meaning to show. With the
+    /// reply split on the device, that means the follow-up gloss request
+    /// failed too, and the badge explains the gap; once the meanings were
+    /// filled in, the badge has nothing left to explain.
+    private static func lacksMeanings(_ message: ChatbotMessage) -> Bool {
+        guard let chunks = message.chunks else { return false }
+        return chunks.contains { !$0.isPunctuation && !$0.isLineBreak && $0.meaning.isEmpty }
     }
 
     // MARK: - Composer
@@ -518,9 +528,9 @@ struct ChatbotChunkFlow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, paragraph in
-                FlowLayout(spacing: 6, lineSpacing: 8, stretchesRows: true) {
+                FlowLayout(spacing: 4, lineSpacing: 5, stretchesRows: true) {
                     ForEach(Array(ChunkCluster.clusters(paragraph).enumerated()), id: \.offset) { _, cluster in
                         ChunkClusterView(
                             cluster: cluster,
@@ -631,33 +641,56 @@ struct ChatbotChunkChip: View {
 
     static let readingFont: Font = .caption.weight(.medium)
     static let meaningFont: Font = .caption2
-    static let verticalPadding: CGFloat = 7
-    static let lineGap: CGFloat = 2
+    static let horizontalPadding: CGFloat = 7
+    static let verticalPadding: CGFloat = 5
+    static let lineGap: CGFloat = 1
+    static let cornerRadius: CGFloat = 10
+
+    /// `readingFont` as a platform font, for measuring a reading's width.
+    private static var readingPlatformFont: Any {
+        #if os(iOS)
+        let base = UIFont.preferredFont(forTextStyle: .caption1)
+        return UIFont.systemFont(ofSize: base.pointSize, weight: .medium)
+        #else
+        let base = NSFont.preferredFont(forTextStyle: .caption1)
+        return NSFont.systemFont(ofSize: base.pointSize, weight: .medium)
+        #endif
+    }
 
     static func wordFont(chinese: Bool) -> Font {
         chinese ? .title3.weight(.medium) : .body.weight(.medium)
     }
 
-    /// The gloss wraps within roughly the chunk's own width, so a short word
-    /// does not grow a wide chip and a long phrase's gloss is not cut short.
-    private var glossWidth: CGFloat {
-        let perCharacter: CGFloat = chinese ? 20 : 9
-        return min(max(84, CGFloat(chunk.text.count) * perCharacter), 220)
-    }
-
-    /// The gloss's width: its own one-line width, capped at `glossWidth`.
-    /// Given as an exact width rather than a maximum because the flow layout
-    /// measures chips with no width proposal — under that, a capped gloss
-    /// reports its one-line height but renders wrapped onto two lines, and the
-    /// rows overlapped.
-    private var glossFrameWidth: CGFloat {
+    /// The gloss's ideal width.
+    ///
+    /// A short gloss keeps its one-line width. A longer one wraps, but never
+    /// onto more than about two lines: the width grows with the gloss (half
+    /// its one-line width) and with the chunk itself, so "Mid-Autumn
+    /// Festival" under a two-character word is not squeezed into a narrow
+    /// column and cut off. It is never truncated — when the reply is too
+    /// narrow even for this width, the flow layout offers the chip less room
+    /// and the gloss wraps onto more lines instead.
+    ///
+    /// It is given as an ideal width rather than only a maximum because the
+    /// flow layout measures chips with no width proposal; under that, a gloss
+    /// capped only by a maximum reports its one-line height but renders
+    /// wrapped, and the rows overlapped.
+    private var glossIdealWidth: CGFloat {
         #if os(iOS)
         let font = UIFont.preferredFont(forTextStyle: .caption2)
         #else
         let font = NSFont.preferredFont(forTextStyle: .caption2)
         #endif
-        let natural = ceil((chunk.meaning as NSString).size(withAttributes: [.font: font]).width) + 2
-        return min(natural, glossWidth)
+        let natural = ceil((chunk.meaning as NSString).size(withAttributes: [.font: font]).width) + 4
+        let perCharacter: CGFloat = chinese ? 18 : 8
+        let chunkWidth = CGFloat(chunk.text.count) * perCharacter
+        // The chip is at least as wide as its reading line, so the gloss may
+        // use that width too instead of wrapping inside a narrower column.
+        let readingWidth = showReading && !chunk.reading.isEmpty
+            ? ceil((chunk.reading as NSString).size(withAttributes: [.font: Self.readingPlatformFont]).width)
+            : 0
+        let comfortable = max(96, chunkWidth, readingWidth, ceil(natural / 2) + 8)
+        return min(natural, comfortable)
     }
 
     var body: some View {
@@ -666,27 +699,31 @@ struct ChatbotChunkChip: View {
                 // Every chip keeps the reading slot, so the words of a row
                 // share one line; the flow stretches the tiles of a row to
                 // one height, so a one-line gloss leaves no empty band.
+                // No line limits anywhere: the chip is as wide as its widest
+                // line, and only when the reply itself is narrower than that
+                // does a line wrap — it is never cut off with an ellipsis.
                 if showReading {
                     reading
                         .font(Self.readingFont)
-                        .lineLimit(1)
+                        .multilineTextAlignment(.center)
                 }
                 Text(chunk.text)
                     .font(Self.wordFont(chinese: chinese))
                     .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
                 if showMeaning && !chunk.meaning.isEmpty {
                     Text(chunk.meaning)
                         .font(Self.meaningFont)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
                         .multilineTextAlignment(.center)
-                        .frame(width: glossFrameWidth)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(idealWidth: glossIdealWidth, maxWidth: glossIdealWidth)
                 }
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, Self.horizontalPadding)
             .padding(.vertical, Self.verticalPadding)
-            .frame(minWidth: 40, maxHeight: .infinity, alignment: .top)
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .frame(minWidth: 34, maxHeight: .infinity, alignment: .top)
+            .contentShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
         }
         .buttonStyle(ChunkChipButtonStyle())
         .accessibilityElement(children: .combine)
@@ -722,12 +759,12 @@ private struct ChunkChipButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .background {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: ChatbotChunkChip.cornerRadius, style: .continuous)
                     .fill(configuration.isPressed ? Color.accentColor.opacity(0.18) : tileFill)
                     .shadow(color: SMTheme.cardShadow, radius: 2, x: 0, y: 1)
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: ChatbotChunkChip.cornerRadius, style: .continuous)
                     .strokeBorder(SMTheme.cardStroke.opacity(0.7), lineWidth: 0.5)
             }
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.96 : 1)
@@ -755,8 +792,8 @@ private struct TypingIndicatorRow: View {
                         )
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
             .glassEffectCompat(cornerRadius: 20)
             Spacer()
         }
