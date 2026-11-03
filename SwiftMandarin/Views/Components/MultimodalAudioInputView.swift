@@ -112,36 +112,38 @@ struct MultimodalAudioInputView: View {
         VStack(alignment: .leading, spacing: 14) {
             header
 
-            HStack(spacing: 10) {
-                Button {
-                    toggleRecording()
-                } label: {
-                    Label(
-                        captureService.isRecording ? "Stop Recording" : "Record Audio",
-                        systemImage: captureService.isRecording ? "stop.circle.fill" : "mic.circle.fill"
-                    )
-                    .fitSingleLine(0.72)
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(captureService.isRecording ? .red : .accentColor)
-                .disabled(isBusy)
-                .accessibilityHint(
-                    captureService.isRecording
-                        ? "Stops and prepares the current recording"
-                        : "Requests microphone access and begins a new recording"
-                )
-
-                Button {
-                    showAudioImporter = true
-                } label: {
-                    Label(selectedAudio == nil ? "Choose Audio File" : "Replace File", systemImage: "folder.badge.plus")
+            GlassGroupCompat(spacing: 10) {
+                HStack(spacing: 10) {
+                    Button {
+                        toggleRecording()
+                    } label: {
+                        Label(
+                            captureService.isRecording ? "Stop Recording" : "Record Audio",
+                            systemImage: captureService.isRecording ? "stop.circle.fill" : "mic.circle.fill"
+                        )
                         .fitSingleLine(0.72)
                         .frame(maxWidth: .infinity)
+                    }
+                    .glassProminentButtonStyleCompat()
+                    .tint(captureService.isRecording ? .red : .accentColor)
+                    .disabled(isBusy)
+                    .accessibilityHint(
+                        captureService.isRecording
+                            ? "Stops and prepares the current recording"
+                            : "Requests microphone access and begins a new recording"
+                    )
+
+                    Button {
+                        showAudioImporter = true
+                    } label: {
+                        Label(selectedAudio == nil ? "Choose Audio File" : "Replace File", systemImage: "folder.badge.plus")
+                            .fitSingleLine(0.72)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .glassButtonStyleCompat()
+                    .disabled(isBusy || captureService.isRecording)
+                    .accessibilityHint("Choose a local audio file up to 60 seconds and 100 megabytes")
                 }
-                .buttonStyle(.bordered)
-                .disabled(isBusy || captureService.isRecording)
-                .accessibilityHint("Choose a local audio file up to 60 seconds and 100 megabytes")
             }
 
             if captureService.isStartingRecording {
@@ -189,26 +191,28 @@ struct MultimodalAudioInputView: View {
                         .accessibilityLabel(String(localized: "Audio error:", bundle: .appLanguage) + " " + errorMessage)
 
                     if offerAIFallback {
-                        HStack(spacing: 8) {
-                            Button {
-                                retryWithAI(.transcribeToEditor)
-                            } label: {
-                                Label("Retry with AI", systemImage: "sparkles")
-                                    .fitSingleLine(0.7)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.small)
+                        GlassGroupCompat(spacing: 8) {
+                            HStack(spacing: 8) {
+                                Button {
+                                    retryWithAI(.transcribeToEditor)
+                                } label: {
+                                    Label("Retry with AI", systemImage: "sparkles")
+                                        .fitSingleLine(0.7)
+                                }
+                                .glassProminentButtonStyleCompat()
+                                .controlSize(.small)
 
-                            Button {
-                                retryWithAI(.translateAudio)
-                            } label: {
-                                Label("Retry & Translate", systemImage: "translate")
-                                    .fitSingleLine(0.7)
+                                Button {
+                                    retryWithAI(.translateAudio)
+                                } label: {
+                                    Label("Retry & Translate", systemImage: "translate")
+                                        .fitSingleLine(0.7)
+                                }
+                                .glassButtonStyleCompat()
+                                .controlSize(.small)
                             }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
+                            .disabled(selectedAudio == nil)
                         }
-                        .disabled(selectedAudio == nil)
                     }
                 }
             } else if let statusMessage {
@@ -224,6 +228,9 @@ struct MultimodalAudioInputView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
+        // A tinted panel, not glass: this pane sits inside PhotoTranslateView's
+        // glass input card, and glass is not stacked on glass. Only its
+        // buttons are glass, grouped so they blend into the card.
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.secondary.opacity(0.07))
@@ -334,7 +341,7 @@ struct MultimodalAudioInputView: View {
                 Image(systemName: captureService.playingURL == audio.url ? "stop.fill" : "play.fill")
                     .frame(width: 34, height: 34)
             }
-            .buttonStyle(.borderedProminent)
+            .glassProminentButtonStyleCompat()
             .buttonBorderShape(.circle)
             .disabled(isBusy || captureService.isRecording)
             .accessibilityLabel(captureService.playingURL == audio.url ? "Stop preview" : "Play preview")
@@ -493,26 +500,28 @@ struct MultimodalAudioInputView: View {
     }
 
     private var actionButtons: some View {
-        HStack(spacing: 10) {
-            Button {
-                begin(.transcribeToEditor)
-            } label: {
-                Label("Transcribe to Editor", systemImage: "text.cursor")
-                    .fitSingleLine(0.68)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
+        GlassGroupCompat(spacing: 10) {
+            HStack(spacing: 10) {
+                Button {
+                    begin(.transcribeToEditor)
+                } label: {
+                    Label("Transcribe to Editor", systemImage: "text.cursor")
+                        .fitSingleLine(0.68)
+                        .frame(maxWidth: .infinity)
+                }
+                .glassButtonStyleCompat()
 
-            Button {
-                begin(.translateAudio)
-            } label: {
-                Label("Translate Audio", systemImage: "translate")
-                    .fitSingleLine(0.68)
-                    .frame(maxWidth: .infinity)
+                Button {
+                    begin(.translateAudio)
+                } label: {
+                    Label("Translate Audio", systemImage: "translate")
+                        .fitSingleLine(0.68)
+                        .frame(maxWidth: .infinity)
+                }
+                .glassProminentButtonStyleCompat()
             }
-            .buttonStyle(.borderedProminent)
+            .disabled(selectedAudio == nil || captureService.isRecording || isPreparingFile)
         }
-        .disabled(selectedAudio == nil || captureService.isRecording || isPreparingFile)
     }
 
     private func operationProgress(_ operation: AudioInputOperation) -> some View {
@@ -527,7 +536,7 @@ struct MultimodalAudioInputView: View {
                 Button("Cancel", role: .cancel) {
                     cancelOperation()
                 }
-                .buttonStyle(.bordered)
+                .glassButtonStyleCompat()
                 .controlSize(.small)
             }
 

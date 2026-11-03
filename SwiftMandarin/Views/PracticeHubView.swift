@@ -36,7 +36,7 @@ struct PracticeHubView: View {
             }
             .padding()
         }
-        .background(SMTheme.pageBackground)
+        .smPageBackground()
         .navigationTitle("Practice")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
@@ -209,7 +209,7 @@ struct PracticeRoundSummary<Detail: View>: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
                 }
-                .buttonStyle(.borderedProminent)
+                .glassProminentButtonStyleCompat()
                 .padding(.top, 4)
             }
             .frame(maxWidth: .infinity)

@@ -374,7 +374,7 @@ struct BatchAIAnalysisControls: View {
             }
             .frame(maxWidth: .infinity, minHeight: 44)
         }
-        .buttonStyle(.borderedProminent)
+        .glassProminentButtonStyleCompat()
         .controlSize(.large)
         .disabled(!canStart(remaining: remaining))
     }
@@ -606,6 +606,10 @@ struct BatchAIAnalysisView: View {
         .navigationTitle("Batch AI Analysis & Audio")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        // Rows stay native solid cells; the page backdrop shows around them.
+        // macOS hosts these controls in its native Settings form instead.
+        .scrollContentBackground(.hidden)
+        .smPageBackground()
         #endif
     }
 }

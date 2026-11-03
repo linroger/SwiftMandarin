@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import os
 
 #if canImport(FoundationModels)
 import FoundationModels
@@ -16,6 +17,8 @@ import FoundationModels
 final class ChatbotService {
 
     static let shared = ChatbotService()
+
+    nonisolated private static let log = Logger(subsystem: "com.rogerlin.SwiftMandarin", category: "ChatbotService")
 
     private init() {}
 
@@ -47,7 +50,7 @@ final class ChatbotService {
         let parsed: ChatbotReply
         switch provider {
         case .appleIntelligence:
-            parsed = try await replyWithAppleIntelligence(system: system, history: recent)
+            parsed = try await replyWithAppleIntelligence(system: system, history: recent, context: context)
         case .ollama:
             guard OllamaService.shared.isConnected else {
                 throw AIExplanationError.ollamaNotConnected
@@ -58,7 +61,7 @@ final class ChatbotService {
             let (content, _) = try await OllamaService.shared.chat(
                 model: settings.ollamaModel,
                 systemPrompt: system,
-                userPrompt: ChatbotPromptBuilder.transcriptPrompt(history: recent.map { ($0.isUser, $0.text) }),
+                userPrompt: ChatbotPromptBuilder.transcriptPrompt(history: recent.map { ($0.isUser, $0.text) }, context: context),
                 enableThinking: false
             )
             parsed = try ChatbotResponseParser.parse(content)
@@ -73,7 +76,7 @@ final class ChatbotService {
                 provider: provider,
                 model: model,
                 system: system,
-                turns: Self.turns(from: recent),
+                turns: Self.turns(from: recent, context: context),
                 jsonMode: true,
                 maxTokens: Self.maxReplyTokens,
                 // A reply cut off at the budget still has a readable answer up
@@ -100,11 +103,18 @@ final class ChatbotService {
         if chunks.isEmpty {
             chunks = Self.localChunks(for: parsed.reply, chinese: learningIsChinese)
         }
+        let translation = Self.isInNativeLanguage(parsed.translation, learningIsChinese: learningIsChinese)
+            ? parsed.translation : ""
+        chunks = await fillingMissingMeanings(
+            chunks,
+            reply: parsed.reply,
+            translation: translation,
+            context: context,
+            provider: provider
+        )
         if learningIsChinese {
             chunks = chunks.map(Self.withoutForeignReading)
         }
-        let translation = Self.isInNativeLanguage(parsed.translation, learningIsChinese: learningIsChinese)
-            ? parsed.translation : ""
         return ChatbotMessage(
             isUser: false,
             text: parsed.reply,
@@ -117,7 +127,7 @@ final class ChatbotService {
 
     // MARK: - Providers
 
-    private func replyWithAppleIntelligence(system: String, history: [ChatbotMessage]) async throws -> ChatbotReply {
+    private func replyWithAppleIntelligence(system: String, history: [ChatbotMessage], context: ChatbotContext) async throws -> ChatbotReply {
         #if canImport(FoundationModels)
         guard #available(iOS 26.0, macOS 26.0, *), AIWordExplanationService.shared.isAvailable else {
             throw AIExplanationError.unavailable(
@@ -129,7 +139,7 @@ final class ChatbotService {
         // has to produce JSON text it might break.
         let session = LanguageModelSession(instructions: system)
         let output = try await session.respond(
-            to: ChatbotPromptBuilder.transcriptPrompt(history: history.map { ($0.isUser, $0.text) }),
+            to: ChatbotPromptBuilder.transcriptPrompt(history: history.map { ($0.isUser, $0.text) }, context: context),
             generating: ChatbotGeneratedReply.self
         ).content
         let reply = output.reply.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -157,25 +167,104 @@ final class ChatbotService {
     /// first turn to come from the user and every request to end on one; the
     /// learner always sends last here, so only the start needs a guard.
     ///
-    /// Earlier assistant turns are sent in the JSON shape the instructions
-    /// demand. Sent as prose, they taught the model by example that a prose
-    /// answer is acceptable, against the JSON-only rule.
-    private static func turns(from history: [ChatbotMessage]) -> [(role: String, content: String)] {
+    /// Earlier assistant turns are sent in the full JSON shape the
+    /// instructions demand, chunk list included, and the learner's newest
+    /// message carries the format reminder: models copy the shape of the
+    /// conversation, and history without chunks made later replies drop them.
+    private static func turns(from history: [ChatbotMessage], context: ChatbotContext) -> [(role: String, content: String)] {
         var turns = history.map { message -> (role: String, content: String) in
             guard !message.isUser else { return (role: "user", content: message.text) }
-            return (role: "assistant", content: Self.envelope(for: message))
+            return (
+                role: "assistant",
+                content: ChatbotPromptBuilder.assistantEnvelope(
+                    reply: message.text,
+                    chunks: message.chunks ?? [],
+                    translation: message.translation ?? ""
+                )
+            )
         }
         while turns.first?.role == "assistant" {
             turns.removeFirst()
         }
+        if let last = turns.indices.last, turns[last].role == "user" {
+            turns[last].content += "\n\n(" + ChatbotPromptBuilder.formatReminder(for: context) + ")"
+        }
         return turns
     }
 
-    private static func envelope(for message: ChatbotMessage) -> String {
-        let object: [String: String] = ["reply": message.text, "translation": message.translation ?? ""]
-        guard let data = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys]),
-              let json = String(data: data, encoding: .utf8) else { return message.text }
-        return json
+    // MARK: - Missing meanings
+
+    /// The most chunks glossed in one follow-up request.
+    private static let maxGlossChunks = 80
+
+    /// Fill in the meanings a reply's chunks are missing — chunks the model
+    /// left empty, or the whole reply when its chunks had to be rebuilt on
+    /// the device — with one short follow-up request to the same provider.
+    ///
+    /// Best effort: the reply is already complete, so any failure here keeps
+    /// the chunks as they were instead of failing the turn.
+    private func fillingMissingMeanings(
+        _ chunks: [ChatbotChunk],
+        reply: String,
+        translation: String,
+        context: ChatbotContext,
+        provider: AIProvider
+    ) async -> [ChatbotChunk] {
+        let indices = Array(ChatbotResponseParser.indicesNeedingGloss(chunks).prefix(Self.maxGlossChunks))
+        guard !indices.isEmpty else { return chunks }
+        let needing = indices.map { chunks[$0] }
+        let system = ChatbotPromptBuilder.glossSystemPrompt(for: context)
+        let user = ChatbotPromptBuilder.glossUserPrompt(chunks: needing, reply: reply, translation: translation)
+        do {
+            let glosses = try await glosses(system: system, user: user, provider: provider)
+            return ChatbotResponseParser.filling(chunks, at: indices, with: glosses)
+        } catch {
+            Self.log.notice("Gloss fill failed: \(error.localizedDescription, privacy: .public)")
+            return chunks
+        }
+    }
+
+    private func glosses(system: String, user: String, provider: AIProvider) async throws -> [ChatbotChunk] {
+        let settings = AIModelSettings.shared
+        switch provider {
+        case .appleIntelligence:
+            #if canImport(FoundationModels)
+            guard #available(iOS 26.0, macOS 26.0, *), AIWordExplanationService.shared.isAvailable else { return [] }
+            let session = LanguageModelSession(instructions: system)
+            let output = try await session.respond(to: user, generating: ChatbotGeneratedGlossList.self).content
+            return output.glosses.map {
+                ChatbotChunk(
+                    text: $0.text,
+                    reading: $0.reading.trimmingCharacters(in: .whitespacesAndNewlines),
+                    meaning: $0.meaning.trimmingCharacters(in: .whitespacesAndNewlines)
+                )
+            }
+            #else
+            return []
+            #endif
+        case .ollama:
+            guard OllamaService.shared.isConnected, !settings.ollamaModel.isEmpty else { return [] }
+            let (content, _) = try await OllamaService.shared.chat(
+                model: settings.ollamaModel,
+                systemPrompt: system,
+                userPrompt: user,
+                enableThinking: false
+            )
+            return ChatbotResponseParser.glosses(in: content)
+        default:
+            let model = settings.selectedModel(for: provider)
+            guard !settings.apiKey(for: provider).isEmpty, !model.isEmpty else { return [] }
+            let raw = try await CloudAIService.shared.chat(
+                provider: provider,
+                model: model,
+                system: system,
+                user: user,
+                jsonMode: true,
+                maxTokens: 4096,
+                failOnTruncation: false
+            )
+            return ChatbotResponseParser.glosses(in: raw)
+        }
     }
 
     // MARK: - Sanity checks
@@ -269,6 +358,13 @@ struct ChatbotGeneratedReply {
 
     @Guide(description: "A natural, complete translation of the reply into the learner's own language")
     let translation: String
+}
+
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+struct ChatbotGeneratedGlossList {
+    @Guide(description: "One entry per numbered chunk, in the same order, each repeating its chunk exactly with its reading and a short meaning in the learner's own language, never empty")
+    let glosses: [ChatbotGeneratedChunk]
 }
 
 @available(iOS 26.0, macOS 26.0, *)

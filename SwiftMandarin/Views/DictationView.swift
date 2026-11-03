@@ -65,7 +65,7 @@ struct DictationView: View {
                 itemScreen(item)
             }
         }
-        .background(SMTheme.pageBackground)
+        .smPageBackground()
         .navigationTitle("Dictation")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -120,6 +120,10 @@ struct DictationView: View {
                 Text("Listen, then type what you hear")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                // The replay pads stay solid orange-tinted circles: they sit
+                // inside the glass card, where glass circles would stack glass
+                // on glass (and a material circle would vanish into the solid
+                // card used before OS 26).
                 HStack(spacing: 24) {
                     Button {
                         SpeechService.speakAuto(item.promptText)
@@ -177,38 +181,42 @@ struct DictationView: View {
     }
 
     private func answerCard(_ item: PracticeItem) -> some View {
-        SMCard {
-            VStack(alignment: .leading, spacing: 12) {
-                TextField("Type what you hear", text: $input)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.title3)
-                    .autocorrectionDisabled()
-                    #if os(iOS)
-                    .textInputAutocapitalization(.never)
-                    #endif
-                    .submitLabel(.done)
-                    .focused($inputFocused)
-                    .onSubmit { check(item) }
-                    .disabled(revealed)
+        // One glass group, so the glass Check / Reveal / Skip / Next buttons
+        // blend into the glass card instead of stacking glass on glass.
+        GlassGroupCompat {
+            SMCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    TextField("Type what you hear", text: $input)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.title3)
+                        .autocorrectionDisabled()
+                        #if os(iOS)
+                        .textInputAutocapitalization(.never)
+                        #endif
+                        .submitLabel(.done)
+                        .focused($inputFocused)
+                        .onSubmit { check(item) }
+                        .disabled(revealed)
 
-                switch feedback {
-                case .correct:
-                    Label("Correct!", systemImage: "checkmark.circle.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.green)
-                case .incorrect:
-                    VStack(alignment: .leading, spacing: 6) {
-                        Label("Not quite — try again", systemImage: "xmark.circle.fill")
+                    switch feedback {
+                    case .correct:
+                        Label("Correct!", systemImage: "checkmark.circle.fill")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.red)
-                        diffText(expected: item.promptText, typed: input)
-                            .font(.system(.title3, design: .monospaced))
+                            .foregroundStyle(.green)
+                    case .incorrect:
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label("Not quite — try again", systemImage: "xmark.circle.fill")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.red)
+                            diffText(expected: item.promptText, typed: input)
+                                .font(.system(.title3, design: .monospaced))
+                        }
+                    case .none:
+                        EmptyView()
                     }
-                case .none:
-                    EmptyView()
-                }
 
-                controls(item)
+                    controls(item)
+                }
             }
         }
     }
@@ -223,7 +231,7 @@ struct DictationView: View {
                     .font(.body.weight(.semibold))
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .glassProminentButtonStyleCompat()
         } else {
             HStack(spacing: 10) {
                 Button {
@@ -233,7 +241,7 @@ struct DictationView: View {
                         .font(.body.weight(.semibold))
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .glassProminentButtonStyleCompat()
                 .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || feedback == .correct)
 
                 Button {

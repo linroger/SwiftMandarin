@@ -111,6 +111,7 @@ struct WorkbookGradingView: View {
                 }
                 .padding()
             }
+            .smPageBackground()
             .navigationTitle("Workbook Grading")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -212,7 +213,7 @@ struct WorkbookGradingView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.orange.opacity(0.1)))
+            .glassEffectCompat(cornerRadius: 12, tint: Color.orange.opacity(0.25))
         }
     }
 
@@ -278,44 +279,43 @@ struct WorkbookGradingView: View {
                 }
                 .frame(maxWidth: .infinity)
             } else {
-                HStack(spacing: 10) {
-                    // Directly from the camera (take a photo of the page now).
-                    if let onCamera {
-                        Button(action: onCamera) {
-                            Label("Camera", systemImage: "camera.fill")
+                // Glass buttons on the glass card, grouped so they blend.
+                GlassGroupCompat(spacing: 10) {
+                    HStack(spacing: 10) {
+                        // Directly from the camera (take a photo of the page now).
+                        if let onCamera {
+                            Button(action: onCamera) {
+                                Label("Camera", systemImage: "camera.fill")
+                                    .fitSingleLine()
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .glassProminentButtonStyleCompat()
+                            .controlSize(.large)
+                        }
+
+                        // From the Photos library.
+                        PhotosPicker(selection: items, maxSelectionCount: 10, matching: .images) {
+                            Label("Photos", systemImage: "photo.on.rectangle")
                                 .fitSingleLine()
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .glassButtonStyleCompat()
+                        .controlSize(.large)
+
+                        // From files (Files app on iOS, Finder on macOS).
+                        Button(action: onAddFiles) {
+                            Label("Files", systemImage: "folder")
+                                .fitSingleLine()
+                                .frame(maxWidth: .infinity)
+                        }
+                        .glassButtonStyleCompat()
                         .controlSize(.large)
                     }
-
-                    // From the Photos library.
-                    PhotosPicker(selection: items, maxSelectionCount: 10, matching: .images) {
-                        Label("Photos", systemImage: "photo.on.rectangle")
-                            .fitSingleLine()
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-
-                    // From files (Files app on iOS, Finder on macOS).
-                    Button(action: onAddFiles) {
-                        Label("Files", systemImage: "folder")
-                            .fitSingleLine()
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
                 }
             }
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.background)
-                .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
-        )
+        .smCardSurface(cornerRadius: 16)
         // Accept images dragged from Photos, Finder, Safari, other apps.
         .onDrop(of: [.image], isTargeted: nil, perform: onDrop)
     }
@@ -367,11 +367,7 @@ struct WorkbookGradingView: View {
             .textFieldStyle(.roundedBorder)
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.background)
-                .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
-        )
+        .smCardSurface(cornerRadius: 16)
     }
 
     /// The grade button's title, hoisted so each branch is a plain key.
@@ -387,7 +383,7 @@ struct WorkbookGradingView: View {
                 .fitSingleLine()
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .glassProminentButtonStyleCompat()
         .controlSize(.large)
         .disabled(!canGrade)
     }
@@ -409,7 +405,7 @@ struct WorkbookGradingView: View {
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.red.opacity(0.08)))
+            .glassEffectCompat(cornerRadius: 12, tint: Color.red.opacity(0.2))
     }
 
     private func resultsSection(_ result: GradingResult) -> some View {
@@ -434,7 +430,7 @@ struct WorkbookGradingView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
-            .background(RoundedRectangle(cornerRadius: 16).fill(.ultraThinMaterial))
+            .smCardSurface(cornerRadius: 16)
 
             if !result.summary.isEmpty {
                 Text(result.summary)
@@ -461,27 +457,29 @@ struct WorkbookGradingView: View {
 
             // Bulk actions: add every question to the review bank, and save all
             // wrong-answer vocab to the vocabulary book.
-            VStack(spacing: 10) {
-                Button {
-                    addAllToBank()
-                } label: {
-                    Label(didAddAllToBank ? "Added all" : "Add all to Review Bank",
-                          systemImage: didAddAllToBank ? "tray.full.fill" : "tray.and.arrow.down.fill")
-                        .fitSingleLine()
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(didAddAllToBank)
-
-                if result.wrongQuestions.contains(where: { $0.vocab != nil }) {
+            GlassGroupCompat(spacing: 10) {
+                VStack(spacing: 10) {
                     Button {
-                        saveAllWrongVocab()
+                        addAllToBank()
                     } label: {
-                        Label("Save All Wrong-Answer Vocabulary", systemImage: "bookmark")
+                        Label(didAddAllToBank ? "Added all" : "Add all to Review Bank",
+                              systemImage: didAddAllToBank ? "tray.full.fill" : "tray.and.arrow.down.fill")
                             .fitSingleLine()
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .glassProminentButtonStyleCompat()
+                    .disabled(didAddAllToBank)
+
+                    if result.wrongQuestions.contains(where: { $0.vocab != nil }) {
+                        Button {
+                            saveAllWrongVocab()
+                        } label: {
+                            Label("Save All Wrong-Answer Vocabulary", systemImage: "bookmark")
+                                .fitSingleLine()
+                                .frame(maxWidth: .infinity)
+                        }
+                        .glassButtonStyleCompat()
+                    }
                 }
             }
         }
@@ -911,11 +909,10 @@ private struct GradedQuestionCard: View {
             }
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(.background)
-                .shadow(color: .black.opacity(0.05), radius: 6, y: 3)
-        )
+        // Solid, not glass: one card per graded question, so a long workbook
+        // would stack dozens of glass layers. Its small buttons stay bordered
+        // for the same reason.
+        .smSolidCardSurface(cornerRadius: 14)
         .overlay(
             RoundedRectangle(cornerRadius: 14)
                 .stroke((question.isCorrect ? Color.green : Color.red).opacity(0.25), lineWidth: 1)

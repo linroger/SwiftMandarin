@@ -59,7 +59,7 @@ struct GlobalSearchView: View {
                 resultList
             }
         }
-        .background(SMTheme.pageBackground)
+        .smPageBackground()
         .navigationTitle("Search")
         .modifier(SearchFieldPlacement(query: $query, isSearchTab: isSearchTab))
         .task(id: trimmedQuery) { await runSearch(for: trimmedQuery) }

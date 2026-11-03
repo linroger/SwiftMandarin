@@ -39,6 +39,7 @@ struct TranslatedScreenshotOverlayView: View {
                     emptyStateView
                 }
             }
+            .smPageBackground()
             .navigationTitle("Translation")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -151,10 +152,7 @@ struct TranslatedScreenshotOverlayView: View {
                 .foregroundStyle(.blue)
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.ultraThinMaterial)
-        )
+        .smCardSurface(cornerRadius: 12)
     }
     
     @ViewBuilder
@@ -187,11 +185,7 @@ struct TranslatedScreenshotOverlayView: View {
             #endif
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.background)
-                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
-        )
+        .smCardSurface(cornerRadius: 12)
     }
     
     // MARK: - Processing View
@@ -255,7 +249,7 @@ struct TranslatedScreenshotOverlayView: View {
                     await store.processScreenshots()
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .glassProminentButtonStyleCompat()
         }
     }
     
@@ -340,11 +334,9 @@ struct TranslatedBlockCard: View {
             }
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.background)
-                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
-        )
+        // Solid, not glass (and the copy button stays bordered): one card per
+        // recognized text block in a lazy list, which can run long.
+        .smSolidCardSurface(cornerRadius: 12)
     }
     
     private func copyBlock() {

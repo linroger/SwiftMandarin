@@ -196,7 +196,7 @@ struct AIWordExplanationView: View {
             } label: {
                 Label("Try Again", systemImage: "arrow.clockwise")
             }
-            .buttonStyle(.bordered)
+            .glassButtonStyleCompat()
         }
         .padding()
         .frame(maxWidth: .infinity)
@@ -224,7 +224,7 @@ struct AIWordExplanationView: View {
                     .fitSingleLine()
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .glassProminentButtonStyleCompat()
             .controlSize(.large)
             
             Spacer()
@@ -263,7 +263,7 @@ struct AIWordExplanationView: View {
                     Label("Regenerate", systemImage: "arrow.clockwise")
                         .font(.caption)
                 }
-                .buttonStyle(.bordered)
+                .glassButtonStyleCompat()
                 .controlSize(.small)
                 .help("Re-run this analysis with \(currentProviderName)")
             }

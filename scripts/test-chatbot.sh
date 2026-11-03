@@ -46,6 +46,12 @@ hub=$(count_matches 'path\.append\(StudyRoute\.chat\)' "$repo_root/SwiftMandarin
 hub_destination=$(count_matches 'case \.chat: ChatbotView\(\)' "$repo_root/SwiftMandarin/Views/StudyHubView.swift")
 translate=$(count_matches 'ChatbotView\(\)' "$repo_root/SwiftMandarin/Views/TranslateView.swift")
 deeplink=$(count_matches 'case "chat": selectedTab = \.chat' "$repo_root/SwiftMandarin/Models/AppRouteStore.swift")
+# Later turns keep their meanings only while the history shows complete
+# replies, every request restates the contract, and chunks that still come
+# back without a meaning are glossed afterwards.
+history_envelope=$(count_matches 'ChatbotPromptBuilder\.assistantEnvelope\(' "$service")
+cloud_reminder=$(count_matches 'ChatbotPromptBuilder\.formatReminder\(for: context\)' "$service")
+gloss_fill=$(count_matches 'await fillingMissingMeanings\(' "$service")
 
 [[ "$parsed" == "2" ]] || { print -u2 "Expected the Ollama and cloud paths to parse through ChatbotResponseParser; found $parsed"; exit 1 }
 [[ "$generable" == "1" ]] || { print -u2 "Expected Apple Intelligence to use guided generation for chat replies; found $generable"; exit 1 }
@@ -58,4 +64,8 @@ deeplink=$(count_matches 'case "chat": selectedTab = \.chat' "$repo_root/SwiftMa
 [[ "$translate" == "1" ]] || { print -u2 "The Translate toolbar lost its AI Chat button; found $translate"; exit 1 }
 [[ "$deeplink" == "1" ]] || { print -u2 "The macOS 'chat' deep link no longer selects AI Chat; found $deeplink"; exit 1 }
 
-print "AI Chat wiring checks passed (8/8)"
+[[ "$history_envelope" == "1" ]] || { print -u2 "Earlier replies are no longer sent back with their chunk list; found $history_envelope"; exit 1 }
+[[ "$cloud_reminder" == "1" ]] || { print -u2 "Cloud requests no longer end with the format reminder; found $cloud_reminder"; exit 1 }
+[[ "$gloss_fill" == "1" ]] || { print -u2 "Chunks without a meaning are no longer glossed after the reply; found $gloss_fill"; exit 1 }
+
+print "AI Chat wiring checks passed (11/11)"

@@ -173,10 +173,7 @@ struct EnglishWordDetailSheet: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(.ultraThinMaterial)
-                    )
+                    .smCardSurface(cornerRadius: 16)
                     
                     // Word forms section
                     VStack(alignment: .leading, spacing: 8) {
@@ -207,10 +204,7 @@ struct EnglishWordDetailSheet: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.ultraThinMaterial)
-                    )
+                    .smCardSurface(cornerRadius: 12)
                     
                     // Part of speech info
                     VStack(alignment: .leading, spacing: 8) {
@@ -228,51 +222,51 @@ struct EnglishWordDetailSheet: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.ultraThinMaterial)
-                    )
+                    .smCardSurface(cornerRadius: 12)
                     
                     // Narration — the learning language always; the native
-                    // language additionally when dual narration is on.
-                    HStack(spacing: 12) {
-                        if learningChinese {
-                            Button {
-                                SpeechService.speakChinese(chineseTranslation)
-                            } label: {
-                                Label("Chinese", systemImage: "speaker.wave.2")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-                            .disabled(chineseTranslation.isEmpty)
-
-                            if prefs.dualNarration {
-                                Button {
-                                    SpeechService.speakEnglish(word.text)
-                                } label: {
-                                    Label("English", systemImage: "speaker.wave.2")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                            }
-                        } else {
-                            Button {
-                                SpeechService.speakEnglish(word.text)
-                            } label: {
-                                Label("English", systemImage: "speaker.wave.2")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-
-                            if prefs.dualNarration {
+                    // language additionally when dual narration is on. One
+                    // glass group, so the buttons blend as a single control.
+                    GlassGroupCompat(spacing: 12) {
+                        HStack(spacing: 12) {
+                            if learningChinese {
                                 Button {
                                     SpeechService.speakChinese(chineseTranslation)
                                 } label: {
                                     Label("Chinese", systemImage: "speaker.wave.2")
                                         .frame(maxWidth: .infinity)
                                 }
-                                .buttonStyle(.bordered)
+                                .glassButtonStyleCompat()
                                 .disabled(chineseTranslation.isEmpty)
+
+                                if prefs.dualNarration {
+                                    Button {
+                                        SpeechService.speakEnglish(word.text)
+                                    } label: {
+                                        Label("English", systemImage: "speaker.wave.2")
+                                            .frame(maxWidth: .infinity)
+                                    }
+                                    .glassButtonStyleCompat()
+                                }
+                            } else {
+                                Button {
+                                    SpeechService.speakEnglish(word.text)
+                                } label: {
+                                    Label("English", systemImage: "speaker.wave.2")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .glassButtonStyleCompat()
+
+                                if prefs.dualNarration {
+                                    Button {
+                                        SpeechService.speakChinese(chineseTranslation)
+                                    } label: {
+                                        Label("Chinese", systemImage: "speaker.wave.2")
+                                            .frame(maxWidth: .infinity)
+                                    }
+                                    .glassButtonStyleCompat()
+                                    .disabled(chineseTranslation.isEmpty)
+                                }
                             }
                         }
                     }
@@ -285,7 +279,7 @@ struct EnglishWordDetailSheet: View {
                             .fitSingleLine()
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .glassProminentButtonStyleCompat()
                     // A missing Chinese translation blocks the save only when
                     // Chinese is what gets stored. A Mandarin speaker studying
                     // English can save the English headword whether or not the
@@ -294,6 +288,7 @@ struct EnglishWordDetailSheet: View {
                 }
                 .padding()
             }
+            .smPageBackground()
             .navigationTitle("Word Details")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

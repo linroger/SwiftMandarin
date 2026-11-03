@@ -60,7 +60,7 @@ struct QuizView: View {
                 questionScreen(questions[currentIndex])
             }
         }
-        .background(SMTheme.pageBackground)
+        .smPageBackground()
         .navigationTitle("Quiz")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -92,9 +92,11 @@ struct QuizView: View {
 
                 promptCard(question.item)
 
-                VStack(spacing: 10) {
-                    ForEach(question.options.indices, id: \.self) { index in
-                        answerButton(question: question, index: index)
+                GlassGroupCompat(spacing: 10) {
+                    VStack(spacing: 10) {
+                        ForEach(question.options.indices, id: \.self) { index in
+                            answerButton(question: question, index: index)
+                        }
                     }
                 }
             }
@@ -103,28 +105,32 @@ struct QuizView: View {
     }
 
     private func promptCard(_ item: PracticeItem) -> some View {
-        SMCard {
-            VStack(spacing: 10) {
-                Text(item.promptText)
-                    .font(.system(size: 38, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.4)
-                if item.showsPinyin {
-                    Text(PinyinConverter.coloredPinyin(fromPinyin: item.pinyin))
-                        .font(.title3)
+        // One glass group, so the glass speaker button blends into the glass
+        // card instead of stacking glass on glass.
+        GlassGroupCompat {
+            SMCard {
+                VStack(spacing: 10) {
+                    Text(item.promptText)
+                        .font(.system(size: 38, weight: .bold, design: .rounded))
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.4)
+                    if item.showsPinyin {
+                        Text(PinyinConverter.coloredPinyin(fromPinyin: item.pinyin))
+                            .font(.title3)
+                    }
+                    Button {
+                        SpeechService.speakAuto(item.promptText)
+                    } label: {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.title3)
+                            .padding(10)
+                    }
+                    .glassButtonStyleCompat()
+                    .accessibilityLabel(Text("Play audio"))
                 }
-                Button {
-                    SpeechService.speakAuto(item.promptText)
-                } label: {
-                    Image(systemName: "speaker.wave.2.fill")
-                        .font(.title3)
-                        .padding(10)
-                }
-                .glassButtonStyleCompat()
-                .accessibilityLabel(Text("Play audio"))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
         }
     }
 
@@ -152,9 +158,12 @@ struct QuizView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                optionFill(answered: answered, isCorrect: isCorrect, isChosen: isChosen),
-                in: RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous)
+            // Interactive glass while the question is open; once answered, the
+            // glass takes a green (correct) or red (wrong pick) tint.
+            .glassEffectCompat(
+                cornerRadius: SMTheme.cornerRadius,
+                tint: optionTint(answered: answered, isCorrect: isCorrect, isChosen: isChosen),
+                interactive: !answered
             )
             .overlay(
                 RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous)
@@ -171,11 +180,14 @@ struct QuizView: View {
         .animation(.spring(duration: 0.3), value: selectedIndex)
     }
 
-    private func optionFill(answered: Bool, isCorrect: Bool, isChosen: Bool) -> Color {
-        guard answered else { return SMTheme.cardFill }
-        if isCorrect { return Color.green.opacity(0.18) }
-        if isChosen { return Color.red.opacity(0.15) }
-        return SMTheme.cardFill
+    /// Glass tint for an option: nil (plain glass) until answered and for
+    /// the options that were neither right nor picked. Translucent, so the
+    /// green checkmark and red cross on the option stay visible on it.
+    private func optionTint(answered: Bool, isCorrect: Bool, isChosen: Bool) -> Color? {
+        guard answered else { return nil }
+        if isCorrect { return Color.green.opacity(0.3) }
+        if isChosen { return Color.red.opacity(0.3) }
+        return nil
     }
 
     private func optionBorder(answered: Bool, isCorrect: Bool, isChosen: Bool) -> Color {

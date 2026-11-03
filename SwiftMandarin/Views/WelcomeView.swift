@@ -44,7 +44,7 @@ struct WelcomeView: View {
 
             controls
         }
-        .background(SMTheme.pageBackground)
+        .smPageBackground()
         #if os(macOS)
         .frame(minWidth: 520, minHeight: 580)
         #endif
@@ -109,7 +109,7 @@ struct WelcomeView: View {
                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary.opacity(0.4))
             }
             .padding(14)
-            .background(SMTheme.cardFill, in: RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous))
+            .smCardSurface()
             .overlay(
                 RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous)
                     .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
@@ -191,7 +191,7 @@ struct WelcomeView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
-            .background(SMTheme.cardFill, in: RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous))
+            .smCardSurface()
             .overlay(
                 RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous)
                     .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
@@ -229,7 +229,7 @@ struct WelcomeView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(SMTheme.cardPadding)
-                .background(SMTheme.cardFill, in: RoundedRectangle(cornerRadius: SMTheme.cornerRadius, style: .continuous))
+                .smCardSurface()
                 .padding(.top, 10)
 
                 Text("No account needed — everything else works without AI.")
@@ -285,7 +285,7 @@ struct WelcomeView: View {
                     .padding(.horizontal, 12)
                     #endif
             }
-            .buttonStyle(.borderedProminent)
+            .glassProminentButtonStyleCompat()
             .controlSize(.large)
         } else {
             Button {
@@ -300,7 +300,7 @@ struct WelcomeView: View {
                     .padding(.horizontal, 12)
                     #endif
             }
-            .buttonStyle(.borderedProminent)
+            .glassProminentButtonStyleCompat()
             .controlSize(.large)
         }
     }

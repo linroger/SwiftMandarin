@@ -57,6 +57,10 @@ struct PhrasesView: View {
             }
             #if os(iOS)
             .listStyle(.insetGrouped)
+            // Rows stay system list cells (no glass per row); hiding the
+            // list's own fill lets the page backdrop show around them.
+            .scrollContentBackground(.hidden)
+            .smPageBackground()
             #endif
             .navigationTitle("Phrases")
             #if os(iOS)
@@ -159,53 +163,55 @@ struct PhraseDetailSheet: View {
                     .padding(.top, 20)
 
                     // Actions
-                    HStack(spacing: 24) {
-                        Button {
-                            if learningChinese {
-                                SpeechService.speakChinese(phrase.chinese)
-                            } else {
-                                SpeechService.speakEnglish(phrase.english)
+                    GlassGroupCompat {
+                        HStack(spacing: 24) {
+                            Button {
+                                if learningChinese {
+                                    SpeechService.speakChinese(phrase.chinese)
+                                } else {
+                                    SpeechService.speakEnglish(phrase.english)
+                                }
+                            } label: {
+                                VStack(spacing: 4) {
+                                    Image(systemName: "speaker.wave.2")
+                                        .font(.title2)
+                                    Text("Speak")
+                                        .font(.caption)
+                                }
                             }
-                        } label: {
-                            VStack(spacing: 4) {
-                                Image(systemName: "speaker.wave.2")
-                                    .font(.title2)
-                                Text("Speak")
-                                    .font(.caption)
-                            }
-                        }
-                        .buttonStyle(.bordered)
+                            .glassButtonStyleCompat()
 
-                        Button {
-                            ClipboardService.copy(headlineText)
-                        } label: {
-                            VStack(spacing: 4) {
-                                Image(systemName: "doc.on.doc")
-                                    .font(.title2)
-                                Text("Copy")
-                                    .font(.caption)
+                            Button {
+                                ClipboardService.copy(headlineText)
+                            } label: {
+                                VStack(spacing: 4) {
+                                    Image(systemName: "doc.on.doc")
+                                        .font(.title2)
+                                    Text("Copy")
+                                        .font(.caption)
+                                }
                             }
-                        }
-                        .buttonStyle(.bordered)
+                            .glassButtonStyleCompat()
                         
-                        Button {
-                            let term = SavedTerm(
-                                chinese: phrase.chinese,
-                                pinyin: phrase.pinyin,
-                                definition: phrase.english,
-                                partOfSpeech: "phrase"
-                            )
-                            savedTermsStore.add(term)
-                            dismiss()
-                        } label: {
-                            VStack(spacing: 4) {
-                                Image(systemName: "bookmark")
-                                    .font(.title2)
-                                Text("Save")
-                                    .font(.caption)
+                            Button {
+                                let term = SavedTerm(
+                                    chinese: phrase.chinese,
+                                    pinyin: phrase.pinyin,
+                                    definition: phrase.english,
+                                    partOfSpeech: "phrase"
+                                )
+                                savedTermsStore.add(term)
+                                dismiss()
+                            } label: {
+                                VStack(spacing: 4) {
+                                    Image(systemName: "bookmark")
+                                        .font(.title2)
+                                    Text("Save")
+                                        .font(.caption)
+                                }
                             }
+                            .glassButtonStyleCompat()
                         }
-                        .buttonStyle(.bordered)
                     }
                     
                     // Usage note if available
@@ -230,6 +236,7 @@ struct PhraseDetailSheet: View {
                 }
                 .padding()
             }
+            .smPageBackground()
             .navigationTitle("Phrase")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

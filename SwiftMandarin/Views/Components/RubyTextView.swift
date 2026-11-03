@@ -403,7 +403,7 @@ struct WordDetailPopover: View {
                         Button("Try Again") {
                             Task { await fetchWordDetails() }
                         }
-                        .buttonStyle(.bordered)
+                        .glassButtonStyleCompat()
                         .controlSize(.small)
                         .padding(.top, 4)
                     }
@@ -419,80 +419,83 @@ struct WordDetailPopover: View {
 
             Divider()
 
-            // Action buttons — learning-language narration first
-            HStack(spacing: 12) {
-                if learningChinese {
-                    Button {
-                        SpeechService.speakChinese(chineseWord)
-                    } label: {
-                        Label("Chinese", systemImage: "speaker.wave.2")
-                            .fitSingleLine()
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(isLoadingTranslation || chineseWord.isEmpty)
-
-                    // Native-language narration (dual narration).
-                    if prefs.dualNarration {
-                        Button {
-                            SpeechService.speakEnglish(englishDefinition)
-                        } label: {
-                            Label("EN", systemImage: "speaker.wave.2")
-                                .fitSingleLine()
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(isLoadingTranslation || englishDefinition.isEmpty)
-                    }
-                } else {
-                    Button {
-                        SpeechService.speakEnglish(englishDefinition)
-                    } label: {
-                        Label("EN", systemImage: "speaker.wave.2")
-                            .fitSingleLine()
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(isLoadingTranslation || englishDefinition.isEmpty)
-
-                    if prefs.dualNarration {
+            // Action buttons — learning-language narration first. One glass
+            // group, so the row reads as a single glass control.
+            GlassGroupCompat(spacing: 12) {
+                HStack(spacing: 12) {
+                    if learningChinese {
                         Button {
                             SpeechService.speakChinese(chineseWord)
                         } label: {
                             Label("Chinese", systemImage: "speaker.wave.2")
                                 .fitSingleLine()
                         }
-                        .buttonStyle(.bordered)
+                        .glassButtonStyleCompat()
                         .disabled(isLoadingTranslation || chineseWord.isEmpty)
-                    }
-                }
 
-                Button {
-                    ClipboardService.copy(headlineWord)
-                    showCopiedFeedback = true
-                    onCopy()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        showCopiedFeedback = false
+                        // Native-language narration (dual narration).
+                        if prefs.dualNarration {
+                            Button {
+                                SpeechService.speakEnglish(englishDefinition)
+                            } label: {
+                                Label("EN", systemImage: "speaker.wave.2")
+                                    .fitSingleLine()
+                            }
+                            .glassButtonStyleCompat()
+                            .disabled(isLoadingTranslation || englishDefinition.isEmpty)
+                        }
+                    } else {
+                        Button {
+                            SpeechService.speakEnglish(englishDefinition)
+                        } label: {
+                            Label("EN", systemImage: "speaker.wave.2")
+                                .fitSingleLine()
+                        }
+                        .glassButtonStyleCompat()
+                        .disabled(isLoadingTranslation || englishDefinition.isEmpty)
+
+                        if prefs.dualNarration {
+                            Button {
+                                SpeechService.speakChinese(chineseWord)
+                            } label: {
+                                Label("Chinese", systemImage: "speaker.wave.2")
+                                    .fitSingleLine()
+                            }
+                            .glassButtonStyleCompat()
+                            .disabled(isLoadingTranslation || chineseWord.isEmpty)
+                        }
                     }
-                } label: {
-                    Label(showCopiedFeedback ? "Copied!" : "Copy", systemImage: showCopiedFeedback ? "checkmark" : "doc.on.doc")
-                        .fitSingleLine()
+
+                    Button {
+                        ClipboardService.copy(headlineWord)
+                        showCopiedFeedback = true
+                        onCopy()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            showCopiedFeedback = false
+                        }
+                    } label: {
+                        Label(showCopiedFeedback ? "Copied!" : "Copy", systemImage: showCopiedFeedback ? "checkmark" : "doc.on.doc")
+                            .fitSingleLine()
+                    }
+                    .glassButtonStyleCompat()
+                    .tint(showCopiedFeedback ? .green : nil)
+                    .disabled(isLoadingTranslation || headlineWord.isEmpty)
+                    
+                    Button {
+                        // Pass only the word-specific translation when saving.
+                        // The sentence-level context is never a substitute — it
+                        // used to be, and every word of a sentence ended up in the
+                        // vocabulary list "defined" by the same full-sentence
+                        // translation.
+                        onSave(wordDefinition)
+                    } label: {
+                        Label(isSaved ? "Saved" : "Save", systemImage: isSaved ? "bookmark.fill" : "bookmark")
+                            .fitSingleLine()
+                    }
+                    .glassButtonStyleCompat()
+                    .tint(isSaved ? .green : nil)
+                    .disabled(isLoadingTranslation || isSaved || wordDefinition.isEmpty)
                 }
-                .buttonStyle(.bordered)
-                .tint(showCopiedFeedback ? .green : nil)
-                .disabled(isLoadingTranslation || headlineWord.isEmpty)
-                
-                Button {
-                    // Pass only the word-specific translation when saving.
-                    // The sentence-level context is never a substitute — it
-                    // used to be, and every word of a sentence ended up in the
-                    // vocabulary list "defined" by the same full-sentence
-                    // translation.
-                    onSave(wordDefinition)
-                } label: {
-                    Label(isSaved ? "Saved" : "Save", systemImage: isSaved ? "bookmark.fill" : "bookmark")
-                        .fitSingleLine()
-                }
-                .buttonStyle(.bordered)
-                .tint(isSaved ? .green : nil)
-                .disabled(isLoadingTranslation || isSaved || wordDefinition.isEmpty)
             }
             
             // Copy-everything button (pinyin included only when the user is
@@ -515,7 +518,7 @@ struct WordDetailPopover: View {
                     .fitSingleLine()
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .glassProminentButtonStyleCompat()
             .disabled(isLoadingTranslation)
         }
         .padding()

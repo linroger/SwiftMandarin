@@ -39,7 +39,7 @@ struct ReaderView: View {
                 libraryList
             }
         }
-        .background(SMTheme.pageBackground)
+        .smPageBackground()
         .navigationTitle("Reader")
         .toolbar { addMenu }
         .navigationDestination(item: $selectedText) { text in
@@ -80,7 +80,7 @@ struct ReaderView: View {
     // MARK: - Library list
 
     /// A List (not a ScrollView) so rows get swipe-to-delete; rows are styled
-    /// as free-floating cards on the grouped page background.
+    /// as free-floating solid cards on the page backdrop.
     private var libraryList: some View {
         List {
             ForEach(store.texts) { text in
@@ -204,46 +204,49 @@ private struct ReaderTextCard: View {
     let text: ReaderText
     let knownPercent: Int?
 
+    /// The solid card rather than `SMCard`'s glass: the library grows without
+    /// bound, and one glass layer per row of a long list costs too much.
     var body: some View {
-        SMCard {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(text.title)
-                        .font(.headline)
-                        .lineLimit(1)
-                    Spacer(minLength: 8)
-                    TagChip(text: text.source.label, tint: text.source.tint)
-                }
-
-                Text(text.excerpt)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-
-                HStack(spacing: 6) {
-                    if text.isChineseContent {
-                        Text("\(text.wordCount) characters")
-                    } else {
-                        Text("\(text.wordCount) words")
-                    }
-                    if let knownPercent {
-                        Text(verbatim: "·")
-                        Text("~\(knownPercent)% known")
-                    }
-                    Spacer(minLength: 8)
-                    if text.progressFraction > 0 {
-                        Text(verbatim: "\(Int((text.progressFraction * 100).rounded()))%")
-                            .font(.system(.caption, design: .rounded).weight(.semibold))
-                            .monospacedDigit()
-                            .foregroundStyle(Color.accentColor)
-                    }
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-                SMProgressBar(progress: text.progressFraction)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(text.title)
+                    .font(.headline)
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                TagChip(text: text.source.label, tint: text.source.tint)
             }
+
+            Text(text.excerpt)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+
+            HStack(spacing: 6) {
+                if text.isChineseContent {
+                    Text("\(text.wordCount) characters")
+                } else {
+                    Text("\(text.wordCount) words")
+                }
+                if let knownPercent {
+                    Text(verbatim: "·")
+                    Text("~\(knownPercent)% known")
+                }
+                Spacer(minLength: 8)
+                if text.progressFraction > 0 {
+                    Text(verbatim: "\(Int((text.progressFraction * 100).rounded()))%")
+                        .font(.system(.caption, design: .rounded).weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            SMProgressBar(progress: text.progressFraction)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(SMTheme.cardPadding)
+        .smSolidCardSurface()
     }
 }
 

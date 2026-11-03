@@ -122,6 +122,10 @@ struct WorkbookQuestionBankView: View {
         }
         #if os(iOS)
         .listStyle(.insetGrouped)
+        // Rows stay system List rows (no per-row glass); the page backdrop
+        // shows through around them.
+        .scrollContentBackground(.hidden)
+        .smPageBackground()
         #endif
     }
 
@@ -132,8 +136,9 @@ struct WorkbookQuestionBankView: View {
             Text("Grade a workbook, then tap “Add to Bank” on a question to save it here for review and to generate fresh practice.")
         } actions: {
             Button("Done") { dismiss() }
-                .buttonStyle(.borderedProminent)
+                .glassProminentButtonStyleCompat()
         }
+        .smPageBackground()
     }
 }
 
@@ -249,6 +254,7 @@ struct ReviewQuestionGeneratorView: View {
                 }
                 .padding()
             }
+            .smPageBackground()
             .navigationTitle("Generate Practice")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -281,7 +287,7 @@ struct ReviewQuestionGeneratorView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.orange.opacity(0.1)))
+            .glassEffectCompat(cornerRadius: 12, tint: Color.orange.opacity(0.25))
         }
     }
 
@@ -321,7 +327,7 @@ struct ReviewQuestionGeneratorView: View {
                 .foregroundStyle(.secondary)
         }
         .padding()
-        .background(RoundedRectangle(cornerRadius: 16).fill(.background).shadow(color: .black.opacity(0.05), radius: 8, y: 4))
+        .smCardSurface(cornerRadius: 16)
     }
 
     private var generateButton: some View {
@@ -332,7 +338,7 @@ struct ReviewQuestionGeneratorView: View {
                 .fitSingleLine()
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .glassProminentButtonStyleCompat()
         .controlSize(.large)
         .disabled(!canGenerate)
     }
@@ -354,7 +360,7 @@ struct ReviewQuestionGeneratorView: View {
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.red.opacity(0.08)))
+            .glassEffectCompat(cornerRadius: 12, tint: Color.red.opacity(0.2))
     }
 
     private var resultsSection: some View {
@@ -370,7 +376,7 @@ struct ReviewQuestionGeneratorView: View {
                         .font(.subheadline)
                         .fitSingleLine()
                 }
-                .buttonStyle(.bordered)
+                .glassButtonStyleCompat()
                 .controlSize(.small)
             }
 
@@ -500,7 +506,9 @@ private struct GeneratedQuestionCard: View {
             }
         }
         .padding()
-        .background(RoundedRectangle(cornerRadius: 14).fill(.background).shadow(color: .black.opacity(0.05), radius: 6, y: 3))
+        // Solid, not glass: up to 20 of these stack on the page, so they stay
+        // opaque cards and their small buttons stay bordered.
+        .smSolidCardSurface(cornerRadius: 14)
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.purple.opacity(0.2), lineWidth: 1))
     }
 }

@@ -143,6 +143,8 @@ It works in **both directions**. An English speaker studying Mandarin and a Mand
 - **Every Reply Is a Study Text**: Answers arrive split into semantic chunks — words, set phrases, chengyu, measure-word phrases — with tone-colored pinyin above and the English meaning below, plus a full translation, exactly like the Translate tab
 - **Tap to Learn**: Tap a chunk to hear it, copy it, or save it to Vocabulary with its pinyin and meaning
 - **Trustworthy Chunks**: The model's chunks are laid over its own reply; anything it skipped is chunked on the device, so the chips always spell out the real answer
+- **Meanings in Every Round**: Earlier replies are sent back with their chunks and every request restates the format, so long chats keep their English meanings; any chunk still missing one is glossed by a short follow-up request
+- **Never Clipped**: Long pinyin and long meanings wrap inside their tile instead of being cut off, and a phrase wider than the reply wraps inside the card
 - **Your Settings, Your Pace**: Toggle pinyin, chunk meanings, and translations; start new chats and reopen past ones from History
 - **Both Directions**: A Mandarin speaker gets English replies with IPA and Chinese meanings
 
@@ -343,7 +345,7 @@ Experience SwiftMandarin's full power on your Mac with a spacious sidebar naviga
 
 ### iPhone
 
-Captured in the iOS 27 Simulator on an iPhone 17 Pro Max: the Liquid Glass tab bar, the new global search (tone-insensitive pinyin, matches highlighted), the Study hub, flashcards on an elevated card face, statistics, an AI translation with tone-colored ruby text, vocabulary, and the AI conversation partner correcting a mixed-language reply.
+Captured in the iOS 27 Simulator on an iPhone 17 Pro Max, with Liquid Glass cards, buttons, and controls on every screen: the Liquid Glass tab bar, the new global search (tone-insensitive pinyin, matches highlighted), the Study hub, flashcards on an elevated card face, statistics, an AI translation with tone-colored ruby text, vocabulary, and the AI conversation partner correcting a mixed-language reply.
 
 <p align="center">
   <img src="Screenshots/iOS%20Screenshots/iPhone-01-Home.png" width="24%" alt="iPhone - Home" />

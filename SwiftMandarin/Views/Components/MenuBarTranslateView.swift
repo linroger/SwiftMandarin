@@ -85,7 +85,7 @@ struct MenuBarTranslateView: View {
                     Label("Translate", systemImage: "character.bubble")
                         .fitSingleLine()
                 }
-                .buttonStyle(.borderedProminent)
+                .glassProminentButtonStyleCompat()
                 .disabled(trimmedInput.isEmpty || isTranslating)
 
                 if isTranslating {
@@ -147,7 +147,7 @@ struct MenuBarTranslateView: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(Capsule().fill(.quaternary.opacity(0.6)))
+            .glassEffectCapsuleCompat()
         }
     }
 
@@ -163,7 +163,7 @@ struct MenuBarTranslateView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 8).fill(.orange.opacity(0.12)))
+        .glassEffectCompat(cornerRadius: 8, tint: Color.orange.opacity(0.25))
     }
 
     @ViewBuilder
@@ -223,6 +223,12 @@ struct MenuBarTranslateView: View {
     }
 
     private var resultActions: some View {
+        GlassGroupCompat(spacing: 8) {
+            resultActionButtons
+        }
+    }
+
+    private var resultActionButtons: some View {
         HStack(spacing: 8) {
             Button {
                 ClipboardService.copy(resultText)
@@ -236,7 +242,7 @@ struct MenuBarTranslateView: View {
                       systemImage: showCopiedFeedback ? "checkmark" : "doc.on.doc")
                     .fitSingleLine()
             }
-            .buttonStyle(.bordered)
+            .glassButtonStyleCompat()
             .controlSize(.small)
             .tint(showCopiedFeedback ? .green : nil)
 
@@ -246,7 +252,7 @@ struct MenuBarTranslateView: View {
                 Label("Speak", systemImage: "speaker.wave.2")
                     .fitSingleLine()
             }
-            .buttonStyle(.bordered)
+            .glassButtonStyleCompat()
             .controlSize(.small)
 
             Spacer()
@@ -265,7 +271,7 @@ struct MenuBarTranslateView: View {
                           systemImage: isTermSaved ? "bookmark.fill" : "bookmark")
                         .fitSingleLine()
                 }
-                .buttonStyle(.bordered)
+                .glassButtonStyleCompat()
                 .controlSize(.small)
                 .tint(isTermSaved ? .green : nil)
                 .disabled(isTermSaved)

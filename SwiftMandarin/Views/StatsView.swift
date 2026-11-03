@@ -127,10 +127,11 @@ struct StatsView: View {
             }
             .padding(.vertical, isCompactWidth ? 12 : 16)
         }
-        // Same grouped page/card pairing as every other screen. Reading the
-        // platform colors here directly is what left the cards invisible on
-        // macOS, where the window and control backgrounds resolve identically.
-        .background(SMTheme.pageBackground)
+        // Same page backdrop as every other screen, so the glass cards have
+        // something to refract. Reading the platform colors here directly is
+        // what left the cards invisible on macOS, where the window and control
+        // backgrounds resolve identically.
+        .smPageBackground()
         .navigationTitle("Statistics")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
@@ -169,8 +170,8 @@ struct StatsView: View {
                         Spacer()
                     }
                     .padding()
-                    // Stat tiles are content, so they take the card surface;
-                    // Liquid Glass is kept for the range picker, a control.
+                    // Stat tiles are content, so they take the card surface
+                    // (Liquid Glass on OS 26, the solid card earlier).
                     .smCardSurface(cornerRadius: 16)
                     
                     // Secondary stats in horizontal row
@@ -403,7 +404,11 @@ struct StatsView: View {
                     .cornerRadius(4)
                 }
                 .chartForegroundStyleScale(posColorScale)
-                .chartLegend(position: .bottom, alignment: .center, spacing: 12)
+                // The built-in legend lays every type of the color scale on
+                // one line, which runs past both edges of the card on an
+                // iPhone; the legend below wraps and lists only the types
+                // that appear in the chart.
+                .chartLegend(.hidden)
                 .chartYAxis {
                     AxisMarks(position: .leading) { _ in
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [4]))
@@ -428,11 +433,36 @@ struct StatsView: View {
                 }
                 .frame(height: 220)
                 .padding(.horizontal)
+
+                stackedBarLegend(for: chartData)
+                    .padding(.horizontal)
             }
         }
         .padding(.vertical, 16)
         .smCardSurface(cornerRadius: 20)
         .padding(.horizontal)
+    }
+
+    /// The types shown in the bar chart, in the color scale's order, each
+    /// with its swatch and translated name; wraps onto as many lines as the
+    /// card's width needs.
+    private func stackedBarLegend(for data: [StackedBarDataPoint]) -> some View {
+        let present = Set(data.filter { $0.count > 0 }.map(\.partOfSpeech))
+        let categories = PartOfSpeechCategory.allCases.filter { present.contains($0.rawValue) }
+        return FlowLayout(spacing: 12, lineSpacing: 6) {
+            ForEach(categories, id: \.self) { category in
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(colorForPartOfSpeech(category.rawValue))
+                        .frame(width: 8, height: 8)
+                    Text(displayNameForPartOfSpeech(category.rawValue))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var stackedBarChartTitle: some View {
@@ -469,7 +499,9 @@ struct StatsView: View {
                 }
             }
         }
-        .glassEffectCapsuleCompat()
+        // A tinted track rather than glass: the picker sits inside the glass
+        // chart card, and glass is not stacked on glass.
+        .background(Color.secondary.opacity(0.12), in: Capsule())
     }
 
     private var posColorScale: KeyValuePairs<String, Color> {
@@ -936,7 +968,7 @@ struct QuickStatCell: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: 12))
+        .smInsetTile(cornerRadius: 12)
     }
 }
 

@@ -192,6 +192,11 @@ struct VocabularyView: View {
             .navigationTitle("Vocabulary")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
+            // The app's page backdrop shows around the list (whose own fill is
+            // hidden in `vocabularyList`) and behind the empty states. The rows
+            // stay native solid cells: the list can hold thousands of words.
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .smPageBackground()
             #endif
             .searchable(text: $searchText, prompt: "Search vocabulary")
             .onChange(of: savedTermsStore.terms) { _, _ in
@@ -479,7 +484,7 @@ struct VocabularyView: View {
             } label: {
                 Text("Start Translating")
             }
-            .buttonStyle(.borderedProminent)
+            .glassProminentButtonStyleCompat()
         }
     }
 
@@ -544,6 +549,9 @@ struct VocabularyView: View {
         #if os(iOS)
         list
             .listStyle(.insetGrouped)
+            // Rows stay system list cells (no glass per row); hiding the
+            // list's own fill lets the page backdrop show around them.
+            .scrollContentBackground(.hidden)
         #else
         if vocabularyDetailUsesInspector {
             list
@@ -880,7 +888,9 @@ struct TermDetailSheet: View {
             savedTermsStore: savedTermsStore,
             locale: locale
         )
-        .background(SMTheme.pageBackground)
+        // One backdrop for the whole pager, behind the transparent pages, so
+        // it stays still while the learner swipes between words.
+        .smPageBackground()
         .onChange(of: visibleTermID) { _, newID in
             guard let newID,
                   let term = terms.first(where: { $0.id == newID }) else { return }
@@ -1432,7 +1442,7 @@ private struct TermDetailPage: View {
                                     Label("Translate", systemImage: "arrow.triangle.2.circlepath")
                                         .font(.caption)
                                 }
-                                .buttonStyle(.bordered)
+                                .glassButtonStyleCompat()
                                 .controlSize(.small)
                             }
                         }
@@ -1469,53 +1479,57 @@ private struct TermDetailPage: View {
                     
                     // Adaptive action grid: two columns on compact phones,
                     // expanding naturally on iPad and at smaller text sizes.
-                    LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 130), spacing: 12)],
-                        spacing: 12
-                    ) {
-                        Button {
-                            SpeechService.speakAuto(term.headlineText)
-                            triggerHaptic()
-                        } label: {
-                            Label("Speak", systemImage: "speaker.wave.2")
+                    // The glass buttons share one container so they blend as
+                    // a single glass surface.
+                    GlassGroupCompat(spacing: 12) {
+                        LazyVGrid(
+                            columns: [GridItem(.adaptive(minimum: 130), spacing: 12)],
+                            spacing: 12
+                        ) {
+                            Button {
+                                SpeechService.speakAuto(term.headlineText)
+                                triggerHaptic()
+                            } label: {
+                                Label("Speak", systemImage: "speaker.wave.2")
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                            }
+                            .glassButtonStyleCompat()
+
+                            Button {
+                                performCopy(.headword)
+                            } label: {
+                                Label(
+                                    copiedAction == .headword ? "Copied!" : "Copy",
+                                    systemImage: copiedAction == .headword ? "checkmark" : "doc.on.doc"
+                                )
                                 .frame(maxWidth: .infinity, minHeight: 44)
-                        }
-                        .buttonStyle(.bordered)
+                            }
+                            .glassButtonStyleCompat()
+                            .tint(copiedAction == .headword ? .green : nil)
 
-                        Button {
-                            performCopy(.headword)
-                        } label: {
-                            Label(
-                                copiedAction == .headword ? "Copied!" : "Copy",
-                                systemImage: copiedAction == .headword ? "checkmark" : "doc.on.doc"
-                            )
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(copiedAction == .headword ? .green : nil)
+                            Button {
+                                performCopy(.all)
+                            } label: {
+                                Label(
+                                    copiedAction == .all ? "Copied!" : "Copy All",
+                                    systemImage: copiedAction == .all ? "checkmark" : "doc.on.doc.fill"
+                                )
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                            }
+                            .glassButtonStyleCompat()
+                            .tint(copiedAction == .all ? .green : nil)
 
-                        Button {
-                            performCopy(.all)
-                        } label: {
-                            Label(
-                                copiedAction == .all ? "Copied!" : "Copy All",
-                                systemImage: copiedAction == .all ? "checkmark" : "doc.on.doc.fill"
-                            )
-                            .frame(maxWidth: .infinity, minHeight: 44)
+                            Toggle(isOn: masteredBinding) {
+                                Label(
+                                    "Mastered",
+                                    systemImage: term.isMastered ? "checkmark.circle.fill" : "checkmark.circle"
+                                )
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                            }
+                            .toggleStyle(.button)
+                            .glassButtonStyleCompat()
+                            .tint(term.isMastered ? .green : nil)
                         }
-                        .buttonStyle(.bordered)
-                        .tint(copiedAction == .all ? .green : nil)
-                        
-                        Toggle(isOn: masteredBinding) {
-                            Label(
-                                "Mastered",
-                                systemImage: term.isMastered ? "checkmark.circle.fill" : "checkmark.circle"
-                            )
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                        }
-                        .toggleStyle(.button)
-                        .buttonStyle(.bordered)
-                        .tint(term.isMastered ? .green : nil)
                     }
                     .padding(.horizontal)
                     
@@ -1528,7 +1542,7 @@ private struct TermDetailPage: View {
                                 .fitSingleLine()
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .glassProminentButtonStyleCompat()
                         .padding(.horizontal)
                     }
                     
@@ -1568,7 +1582,8 @@ private struct TermDetailPage: View {
                 .frame(maxWidth: SMTheme.contentMaxWidth)
                 .frame(maxWidth: .infinity)
         }
-        .background(SMTheme.pageBackground)
+        // No page fill here: the page is transparent over the pager's
+        // `smPageBackground()`, so the backdrop does not slide with each word.
         .task(id: isCurrent) {
             guard isCurrent, term.glossText.isEmpty else { return }
             await fetchTranslation()
@@ -1772,29 +1787,34 @@ struct TermDetailInspector: View {
 
     private var inspectorHeader: some View {
         HStack(spacing: 10) {
-            Button {
-                navigateToNeighbor(offset: -1)
-            } label: {
-                Image(systemName: "chevron.backward")
-                    .font(.body.weight(.semibold))
-            }
-            .buttonStyle(.bordered)
-            .disabled(!canGoPrevious)
-            .keyboardShortcut(.leftArrow, modifiers: [.command])
-            .help("Previous word (⌘←)")
-            .accessibilityLabel(Text("Previous Word"))
+            // The previous/next pair blends into one glass surface.
+            GlassGroupCompat(spacing: 10) {
+                HStack(spacing: 10) {
+                    Button {
+                        navigateToNeighbor(offset: -1)
+                    } label: {
+                        Image(systemName: "chevron.backward")
+                            .font(.body.weight(.semibold))
+                    }
+                    .glassButtonStyleCompat()
+                    .disabled(!canGoPrevious)
+                    .keyboardShortcut(.leftArrow, modifiers: [.command])
+                    .help("Previous word (⌘←)")
+                    .accessibilityLabel(Text("Previous Word"))
 
-            Button {
-                navigateToNeighbor(offset: 1)
-            } label: {
-                Image(systemName: "chevron.forward")
-                    .font(.body.weight(.semibold))
+                    Button {
+                        navigateToNeighbor(offset: 1)
+                    } label: {
+                        Image(systemName: "chevron.forward")
+                            .font(.body.weight(.semibold))
+                    }
+                    .glassButtonStyleCompat()
+                    .disabled(!canGoNext)
+                    .keyboardShortcut(.rightArrow, modifiers: [.command])
+                    .help("Next word (⌘→)")
+                    .accessibilityLabel(Text("Next Word"))
+                }
             }
-            .buttonStyle(.bordered)
-            .disabled(!canGoNext)
-            .keyboardShortcut(.rightArrow, modifiers: [.command])
-            .help("Next word (⌘→)")
-            .accessibilityLabel(Text("Next Word"))
 
             if let index = currentIndex, orderedTerms.count > 1 {
                 Text("\(index + 1) of \(orderedTerms.count)")
@@ -1908,7 +1928,7 @@ struct TermDetailInspector: View {
                                 Label("Translate", systemImage: "arrow.triangle.2.circlepath")
                                     .font(.caption)
                             }
-                            .buttonStyle(.bordered)
+                            .glassButtonStyleCompat()
                             .controlSize(.small)
                         }
                     }
@@ -1927,53 +1947,55 @@ struct TermDetailInspector: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
                 
-                // Actions
-                HStack(spacing: 16) {
-                    Button {
-                        SpeechService.speakAuto(term.headlineText)
-                    } label: {
-                        VStack(spacing: 3) {
-                            Image(systemName: "speaker.wave.2")
-                                .font(.title3)
-                            Text("Speak")
-                                .font(.caption2)
+                // Actions — one glass container so the buttons blend.
+                GlassGroupCompat(spacing: 16) {
+                    HStack(spacing: 16) {
+                        Button {
+                            SpeechService.speakAuto(term.headlineText)
+                        } label: {
+                            VStack(spacing: 3) {
+                                Image(systemName: "speaker.wave.2")
+                                    .font(.title3)
+                                Text("Speak")
+                                    .font(.caption2)
+                            }
                         }
-                    }
-                    .buttonStyle(.bordered)
+                        .glassButtonStyleCompat()
 
-                    Button {
-                        performCopy(.headword, text: term.headlineText)
-                    } label: {
-                        VStack(spacing: 3) {
-                            Image(systemName: copiedAction == .headword ? "checkmark" : "doc.on.doc")
-                                .font(.title3)
-                            Text(copiedAction == .headword ? "Copied!" : "Copy")
-                                .font(.caption2)
+                        Button {
+                            performCopy(.headword, text: term.headlineText)
+                        } label: {
+                            VStack(spacing: 3) {
+                                Image(systemName: copiedAction == .headword ? "checkmark" : "doc.on.doc")
+                                    .font(.title3)
+                                Text(copiedAction == .headword ? "Copied!" : "Copy")
+                                    .font(.caption2)
+                            }
                         }
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(copiedAction == .headword ? .green : nil)
+                        .glassButtonStyleCompat()
+                        .tint(copiedAction == .headword ? .green : nil)
 
-                    Button {
-                        let parts = [
-                            term.headlineText,
-                            term.headwordReading,
-                            displayDefinition
-                        ].filter { !$0.isEmpty }
-                        let text = parts.joined(separator: "\n")
-                        performCopy(.all, text: text)
-                    } label: {
-                        VStack(spacing: 3) {
-                            Image(systemName: copiedAction == .all ? "checkmark" : "doc.on.doc.fill")
-                                .font(.title3)
-                            Text(copiedAction == .all ? "Copied!" : "Copy All")
-                                .font(.caption2)
+                        Button {
+                            let parts = [
+                                term.headlineText,
+                                term.headwordReading,
+                                displayDefinition
+                            ].filter { !$0.isEmpty }
+                            let text = parts.joined(separator: "\n")
+                            performCopy(.all, text: text)
+                        } label: {
+                            VStack(spacing: 3) {
+                                Image(systemName: copiedAction == .all ? "checkmark" : "doc.on.doc.fill")
+                                    .font(.title3)
+                                Text(copiedAction == .all ? "Copied!" : "Copy All")
+                                    .font(.caption2)
+                            }
                         }
+                        .glassButtonStyleCompat()
+                        .tint(copiedAction == .all ? .green : nil)
                     }
-                    .buttonStyle(.bordered)
-                    .tint(copiedAction == .all ? .green : nil)
                 }
-                
+
                 // Update definition button
                 if !fetchedTranslation.isEmpty && fetchedTranslation != term.definition {
                     Button {
@@ -1982,7 +2004,7 @@ struct TermDetailInspector: View {
                         Label("Update Saved Definition", systemImage: "arrow.down.doc")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .glassProminentButtonStyleCompat()
                     .padding(.horizontal)
                 }
                 
@@ -2210,22 +2232,26 @@ struct ExportSheet: View {
                 .buttonStyle(.plain)
             }
             .padding()
-            .background(.quaternary.opacity(0.3))
-            
+            // A full-width glass bar pinned above the form.
+            .glassEffectCompat(cornerRadius: 0)
+
             Divider()
             
             // Content
             Form {
                 // Format Selection with visual cards
                 Section {
-                    HStack(spacing: 12) {
-                        ForEach(VocabularyExportFormat.allCases) { format in
-                            FormatCard(
-                                format: format,
-                                isSelected: exportFormat == format
-                            ) {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    exportFormat = format
+                    // The format cards are glass, grouped so they blend.
+                    GlassGroupCompat(spacing: 12) {
+                        HStack(spacing: 12) {
+                            ForEach(VocabularyExportFormat.allCases) { format in
+                                FormatCard(
+                                    format: format,
+                                    isSelected: exportFormat == format
+                                ) {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        exportFormat = format
+                                    }
                                 }
                             }
                         }
@@ -2330,8 +2356,15 @@ struct ExportSheet: View {
                 }
             }
             .formStyle(.grouped)
+            #if os(iOS)
+            // Rows stay native solid cells; the page backdrop shows around them.
+            .scrollContentBackground(.hidden)
+            #endif
         }
         .frame(minWidth: 420, idealWidth: 480, minHeight: 480, idealHeight: 520)
+        #if os(iOS)
+        .smPageBackground()
+        #endif
         .overlay {
             if showExportSuccess {
                 exportSuccessOverlay
@@ -2387,7 +2420,7 @@ struct ExportSheet: View {
                 .font(.headline)
         }
         .padding(24)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .glassEffectCompat(cornerRadius: 16)
         .transition(.scale.combined(with: .opacity))
     }
 }
@@ -2436,12 +2469,15 @@ private struct FormatCard: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
             .padding(.horizontal, 8)
+            // The selected card keeps its solid blue fill (white text needs
+            // it); the glass beneath shows through only on the unselected one.
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(isSelected ? AnyShapeStyle(.blue) : AnyShapeStyle(.quaternary.opacity(0.5)))
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(isSelected ? Color.blue : Color.clear)
             )
+            .glassEffectCompat(cornerRadius: 10, interactive: true)
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(isSelected ? AnyShapeStyle(.clear) : AnyShapeStyle(.quaternary), lineWidth: 1)
             )
         }
@@ -2502,20 +2538,22 @@ struct AIExplanationSheet: View {
                     .font(.headline)
                 Spacer()
                 Button("Done") { dismiss() }
-                    .buttonStyle(.borderedProminent)
+                    .glassProminentButtonStyleCompat()
                     .controlSize(.small)
             }
             .padding(.horizontal)
             .padding(.vertical, 12)
             .background(.bar)
-            
+
             Divider()
-            
+
             AIWordExplanationView(
                 word: term.headlineText,
                 pinyin: term.headwordReading,
                 context: term.glossText.isEmpty ? nil : term.glossText
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .smPageBackground()
         }
         .frame(minWidth: 450, idealWidth: 500, minHeight: 550, idealHeight: 650)
         #else
@@ -2525,6 +2563,8 @@ struct AIExplanationSheet: View {
                 pinyin: term.headwordReading,
                 context: term.glossText.isEmpty ? nil : term.glossText
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .smPageBackground()
             .navigationTitle("AI Word Analysis")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -100,11 +100,30 @@ extension NSAppearance {
 // MARK: - Card surface
 
 extension View {
-    /// The standard elevated card surface — fill, a hairline border, and a
-    /// soft shadow — so cards read as distinct panels on every platform
-    /// (critical on macOS, where fill ≈ window background). Shared by `SMCard`
-    /// and the hand-rolled card rows so the whole app reads as one system.
+    /// The standard card surface, shared by `SMCard` and the hand-rolled card
+    /// rows so the whole app reads as one system.
+    ///
+    /// On OS 26 it is a Liquid Glass panel over the page backdrop. Earlier it
+    /// is the solid elevated card: fill, a hairline border, and a soft shadow,
+    /// so cards read as distinct panels on every platform (critical on macOS,
+    /// where fill ≈ window background).
+    ///
+    /// Content inside a card should stay solid (text, tinted fills, plain
+    /// buttons): glass is not stacked on glass, except for glass buttons,
+    /// which a `GlassGroupCompat` blends into the card.
+    @ViewBuilder
     func smCardSurface(cornerRadius: CGFloat = SMTheme.cornerRadius) -> some View {
+        if #available(iOS 26.0, macOS 26.0, *) {
+            self.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        } else {
+            self.smSolidCardSurface(cornerRadius: cornerRadius)
+        }
+    }
+
+    /// The solid elevated card on every release: for surfaces that must stay
+    /// opaque (a card nested inside a glass panel, a row in a long lazily
+    /// loaded list where one glass layer per row would cost too much).
+    func smSolidCardSurface(cornerRadius: CGFloat = SMTheme.cornerRadius) -> some View {
         self
             .background(SMTheme.cardFill, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
@@ -112,6 +131,67 @@ extension View {
                     .strokeBorder(SMTheme.cardStroke, lineWidth: 0.75)
             )
             .shadow(color: SMTheme.cardShadow, radius: 8, x: 0, y: 2)
+    }
+
+    /// A small solid tile for content laid out inside a glass card (a stat
+    /// cell, a chip): always lighter than the glass behind it, so it reads as
+    /// raised rather than as a gray hole in the panel.
+    func smInsetTile(cornerRadius: CGFloat = 12) -> some View {
+        modifier(SMInsetTile(cornerRadius: cornerRadius))
+    }
+
+    /// The app's page backdrop: the grouped page color with a soft wash of
+    /// accent color, so the Liquid Glass panels above it have something to
+    /// refract instead of reading as flat gray boxes. Fills under the bars.
+    func smPageBackground() -> some View {
+        background { SMPageBackdrop() }
+    }
+}
+
+private struct SMInsetTile: ViewModifier {
+    let cornerRadius: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                colorScheme == .dark ? Color.white.opacity(0.09) : SMTheme.cardFill,
+                in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(SMTheme.cardStroke.opacity(0.7), lineWidth: 0.5)
+            )
+    }
+}
+
+/// The page color plus two faint radial washes (accent at the top, teal at
+/// the bottom). Static gradients, so it costs nothing while scrolling.
+struct SMPageBackdrop: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        let strength = colorScheme == .dark ? 0.22 : 0.14
+        GeometryReader { proxy in
+            let radius = max(proxy.size.width, proxy.size.height) * 0.75
+            ZStack {
+                SMTheme.pageBackground
+                RadialGradient(
+                    colors: [Color.accentColor.opacity(strength), .clear],
+                    center: .topLeading,
+                    startRadius: 0,
+                    endRadius: radius
+                )
+                RadialGradient(
+                    colors: [Color.teal.opacity(strength * 0.8), .clear],
+                    center: .bottomTrailing,
+                    startRadius: 0,
+                    endRadius: radius
+                )
+            }
+        }
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
     }
 }
 

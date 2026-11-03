@@ -297,5 +297,28 @@
       "Open Learn and Statistics and verify cards are opaque elevated surfaces"
     ],
     "passes": true
+  },
+  {
+    "id": "feature_ai_chat_meanings_every_round",
+    "category": "functional",
+    "description": "AI Chat replies keep a meaning under every word chunk in later rounds: history carries the chunk lists, every request restates the format, and missing meanings are filled by a follow-up gloss request.",
+    "steps": [
+      "Hold a chat of six or more rounds with a cloud or Ollama provider",
+      "Verify every word chunk in the last reply shows an English meaning",
+      "Run zsh scripts/test-chatbot.sh and verify the envelope, reminder and gloss checks pass"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_liquid_glass_all_views_iter35",
+    "category": "ui",
+    "description": "Every screen uses Liquid Glass on OS 26: glass cards over a tinted page backdrop, glass buttons and controls, solid tiles inside glass panels, and solid rows in long lists; AI Chat chunk tiles never clip their pinyin or meaning; the Words Learned legend wraps inside its card.",
+    "steps": [
+      "Open Home, Translate, Study, Learn, Stats, Vocabulary, Conversation, Search and AI Chat on iOS 26+",
+      "Verify cards and buttons are glass and long lists keep solid rows",
+      "Open an AI Chat reply with long pinyin and meanings and verify nothing is cut off",
+      "Open Statistics and verify the Words Learned legend sits inside its card"
+    ],
+    "passes": true
   }
 ]
