@@ -169,7 +169,9 @@ struct StatsView: View {
                         Spacer()
                     }
                     .padding()
-                    .glassEffectCompat(cornerRadius: 16)
+                    // Stat tiles are content, so they take the card surface;
+                    // Liquid Glass is kept for the range picker, a control.
+                    .smCardSurface(cornerRadius: 16)
                     
                     // Secondary stats in horizontal row
                     HStack(spacing: 12) {
@@ -215,7 +217,7 @@ struct StatsView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 20)
-                    .glassEffectCompat(cornerRadius: 20)
+                    .smCardSurface(cornerRadius: 20)
                     
                     // Secondary stats
                     VStack(spacing: 12) {
@@ -235,7 +237,7 @@ struct StatsView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .glassEffectCompat(cornerRadius: 20)
+                    .smCardSurface(cornerRadius: 20)
                 }
                 .padding(.horizontal)
             }
@@ -962,7 +964,7 @@ struct CompactStatCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
-        .glassEffectCompat(cornerRadius: 12)
+        .smCardSurface(cornerRadius: 12)
     }
 }
 

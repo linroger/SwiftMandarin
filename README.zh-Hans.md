@@ -107,6 +107,9 @@
 - **注音文字显示**：拼音优雅地标注在汉字上方（也可设置为下方或行内）
 - **自动翻译选项**：边输入边翻译，或粘贴后立即翻译
 - **语音朗读**：使用 Apple 系统语音，或自愿开启 MiniMax AI 语音，把中英文朗读保存为可复用的 MP3
+- **教对语言的学习笔记**：配置 AI 服务后，每次翻译都可附带简短讲解与重点词汇——重点词汇始终取自你*正在学习*的语言一侧（用母语输入时就取自译文），并配以拼音或 IPA 读音
+- **不展示笔记的地方只请求译文**：阅读器段落、截图、菜单栏、快捷指令和逐词保存只向服务商请求译文，返回更快、花费更少
+- **更稳健的解析**：服务商回复中夹杂中文标点的 JSON、未转义的换行或推理前言都会被修复，而不是以原始 JSON 的形式出现；嵌套的重点词条也不会再被误当成整段译文
 
 ### 🧩 多模态翻译
 
@@ -128,6 +131,26 @@
 - **点按学习**：点按转写文本中的任意词语即可查看详情并保存
 - **双语朗读**：词语和译文都能朗读
 - **双向回填**：采用语音翻译结果时，原文与译文会同时填入翻译页，并记录到历史
+- **如实提示麦克风状态**：没有可用输入设备（没有麦克风的 Mac、被拒绝的权限）时，应用会明确说明并停止，而不是启动一个可能崩溃的音频引擎
+
+### ✨ AI 聊天——用英文或中文提问
+
+<img align="right" src="Screenshots/iOS%20Screenshots/iPhone-09-AIChat.png" width="260" alt="AI 聊天" />
+
+- **随便问，中英皆可**：用英文、中文或中英混合输入，由你在“设置 → AI”中选定的服务（Apple 智能、Ollama 或云端模型）用你正在学习的语言回答
+- **每条回复都是学习材料**：回答会被拆分成语义词块——词语、固定搭配、成语、数量短语——上方是声调着色的拼音，下方是英文释义，并附完整翻译，与翻译页完全一致
+- **点按学习**：点按词块即可朗读、复制，或连同拼音和释义保存到词汇表
+- **可靠的词块**：模型给出的词块会对齐到它自己的回复上；模型漏掉的部分在本机分块，因此词块始终拼出真实的回答
+- **按你的方式学习**：可切换拼音、词块释义和翻译；可开始新聊天，并在聊天记录中重新打开以前的对话
+- **双向支持**：中文母语者会收到带国际音标和中文释义的英文回复
+
+<br clear="right"/>
+
+### 🔎 全局搜索
+
+- **一处搜索全部内容**：已保存的词汇（按词条、释义或拼音——带不带声调都行）、常用短语、翻译历史和阅读文章，每一行都高亮显示匹配位置
+- **在你期望的位置**：iPhone 上是首页右上角的放大镜和“学习”资料库中的第一项，iPad（iOS 26）上是 Liquid Glass 标签栏中的系统搜索标签，macOS 上是侧栏项
+- **对结果直接操作**：就地打开词汇详情、短语或阅读段落，或在“翻译”中重新打开一条历史翻译
 
 ### 🤖 AI 增强功能（可选，自带服务商）
 
@@ -301,31 +324,37 @@
 </p>
 <p align="center">
   <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.05@2x.png" width="45%" alt="macOS - AI 作业批改（上传）" />
-  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.11@2x.png" width="45%" alt="macOS - AI 作业批改（结果与朗读）" />
+  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.05@2x.png" width="45%" alt="macOS - AI 作业批改（结果与朗读）" />
 </p>
 
 ### iPhone
 
-为移动场景优化的紧凑布局与直观的标签导航。
+以下截图摄于 iOS 27 模拟器（iPhone 17 Pro Max）：Liquid Glass 标签栏、新的全局搜索（拼音不分声调，匹配处高亮）、学习中心、立体卡片上的闪卡、学习统计、带声调着色注音的 AI 翻译、词汇表，以及纠正中英混杂回复的 AI 对话伙伴。
 
 <p align="center">
-  <img src="Screenshots/iOS%20Screenshots/IMG_9055.PNG" width="24%" alt="iPhone - 翻译" />
-  <img src="Screenshots/iOS%20Screenshots/IMG_9056.PNG" width="24%" alt="iPhone - 统计" />
-  <img src="Screenshots/iOS%20Screenshots/IMG_9057.PNG" width="24%" alt="iPhone - 学习" />
-  <img src="Screenshots/iOS%20Screenshots/IMG_8532.PNG" width="24%" alt="iPhone - 词汇" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-01-Home.png" width="24%" alt="iPhone - 首页" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-02-Search.png" width="24%" alt="iPhone - 全局搜索" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-03-Study.png" width="24%" alt="iPhone - 学习中心" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-04-Learn.png" width="24%" alt="iPhone - 闪卡" />
+</p>
+<p align="center">
+  <img src="Screenshots/iOS%20Screenshots/iPhone-05-Stats.png" width="24%" alt="iPhone - 统计" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-06-Translate.png" width="24%" alt="iPhone - 翻译" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-07-Vocabulary.png" width="24%" alt="iPhone - 词汇" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-08-Conversation.png" width="24%" alt="iPhone - AI 对话" />
 </p>
 
 ### iPad
 
-两全其美——宽屏布局加自适应边栏导航。
+在 iPad（iOS 26 及更高版本）上，全局搜索成为 Liquid Glass 标签栏中的系统搜索标签，与自适应边栏并列。
 
 <p align="center">
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0588.PNG" width="45%" alt="iPad - 翻译" />
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0589.PNG" width="45%" alt="iPad - 词汇" />
+  <img src="Screenshots/iPadOS%20Screenshots/iPad-01-Home.png" width="45%" alt="iPad - 首页" />
+  <img src="Screenshots/iPadOS%20Screenshots/iPad-02-Search.png" width="45%" alt="iPad - 搜索标签" />
 </p>
 <p align="center">
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0590.PNG" width="45%" alt="iPad - 学习" />
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0591.PNG" width="45%" alt="iPad - 短语" />
+  <img src="Screenshots/iPadOS%20Screenshots/iPad-03-Stats.png" width="45%" alt="iPad - 统计" />
+  <img src="Screenshots/iPadOS%20Screenshots/iPad-04-Vocabulary.png" width="45%" alt="iPad - 词汇" />
 </p>
 
 ---
@@ -339,7 +368,7 @@
 ### macOS DMG 安装包
 
 1. 从 [Releases](https://github.com/linroger/SwiftMandarin/releases) 下载最新 DMG
-2. 打开 `SwiftMandarin-4.2.0-macOS.dmg`
+2. 打开下载好的 `SwiftMandarin-<版本号>-macOS.dmg`
 3. 将 `SwiftMandarin.app` 拖入「应用程序」文件夹
 4. 从「应用程序」启动 SwiftMandarin
 
@@ -440,7 +469,8 @@ xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration
 - **NLP**：NaturalLanguage 框架完成中文分词与词性分析
 - **本地化**：字符串目录（`Localizable.xcstrings`，600+ 词条，完整双语覆盖）+ `LocalizationManager` 运行时切换 `.lproj` 实现应用内换语言
 - **存储**：UserDefaults + Codable 本地存储，并自动保留最近一次完好备份——数据损坏也不会悄悄清空词汇、历史或学习进度；API 密钥存于系统钥匙串
-- **App Intents / 快捷指令**：通过 Siri 与快捷指令完成翻译、查词、开始复习、扫描等操作
+- **App Intents / 快捷指令**：十条可直接对 Siri 说的快捷指令——翻译（可口述“成中文”/“成英文”方向）、翻译剪贴板、朗读译文、用 AI 服务解释单词、保存单词、查找词汇（拼音不分声调）、开始复习、学习统计、随机短语，以及实时扫描（iOS）。每个结果都会被朗读，保存会在快捷指令返回前完成，“使用 AI 服务”开关也会明确说明文本去向
+- **响应速度**：持久化写入合并后在主线程之外完成，导入一次性去重，离线时云端请求会立即失败而不是等待数分钟
 
 ### 文件结构
 
@@ -508,7 +538,7 @@ SwiftMandarin 以隐私为核心原则：
 | 功能 | iOS 17 | iOS 18 – 25 | iOS 26+ |
 |---|---|---|---|
 | 翻译（翻译 / 拍照 / 语音页） | 通过你配置的 AI 服务商 | Apple 端上翻译 | Apple 端上翻译 |
-| 点词查询、截图与快捷指令翻译 | 通过 AI 服务商 | 通过 AI 服务商 | Apple 端上翻译 |
+| 点词查询、截图与快捷指令翻译 | 通过 AI 服务商 | 通过 AI 服务商 | Apple 端上翻译（缺少语言包时改用 AI 服务商） |
 | 实时语音转写 | ✓（SFSpeechRecognizer） | ✓（SFSpeechRecognizer） | ✓（SpeechAnalyzer，全程端上） |
 | Apple Intelligence 服务商 | — | — | ✓ |
 | 云端 AI 服务商、Ollama、OCR、词汇、闪卡、统计、短语 | ✓ | ✓ | ✓ |

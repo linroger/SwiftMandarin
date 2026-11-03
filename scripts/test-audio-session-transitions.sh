@@ -5,7 +5,7 @@ set -euo pipefail
 repo_root="${0:A:h:h}"
 coordinator="$repo_root/SwiftMandarin/Services/AudioSessionCoordinator.swift"
 binary_path="${TMPDIR:-/tmp}/swiftmandarin-audio-session-transition-checks"
-developer_dir="${DEVELOPER_DIR:-/Applications/Xcode-beta.app/Contents/Developer}"
+developer_dir="${DEVELOPER_DIR:-$(xcode-select -p)}"
 
 service_files=(
     "$repo_root/SwiftMandarin/Services/SpeechService.swift"

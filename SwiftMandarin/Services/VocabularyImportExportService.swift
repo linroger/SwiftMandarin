@@ -467,18 +467,10 @@ final class VocabularyImportExportService {
     /// even for duplicate (skipped) terms, since they enrich words already saved.
     @discardableResult
     func importVocabulary(_ imported: ImportedVocabulary, into store: SavedTermsStore) -> ImportResult {
-        var importedCount = 0
-        var skipped = 0
-
-        for term in imported.terms {
-            // Check for duplicates based on Chinese text
-            if store.contains(chinese: term.chinese) {
-                skipped += 1
-            } else {
-                store.add(term)
-                importedCount += 1
-            }
-        }
+        // One batched add: duplicates (against the list and within the file)
+        // are skipped by the store, which also persists the list exactly once
+        // instead of once per row.
+        let (importedCount, skipped) = store.addAll(imported.terms)
 
         var restored = 0
         if !imported.explanations.isEmpty {

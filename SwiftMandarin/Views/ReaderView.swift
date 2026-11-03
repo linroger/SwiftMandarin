@@ -29,37 +29,38 @@ struct ReaderView: View {
     @State private var knownPercent: [UUID: Int] = [:]
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if store.texts.isEmpty {
-                    emptyState
-                } else {
-                    libraryList
-                }
+        // No own NavigationStack: this screen is pushed by the Study hub (iOS)
+        // or hosted in the sidebar's detail stack (macOS). Nesting a second
+        // stack inside either doubled the navigation bar.
+        Group {
+            if store.texts.isEmpty {
+                emptyState
+            } else {
+                libraryList
             }
-            .background(SMTheme.pageBackground)
-            .navigationTitle("Reader")
-            .toolbar { addMenu }
-            .navigationDestination(item: $selectedText) { text in
-                ReaderSessionView(text: text)
+        }
+        .background(SMTheme.pageBackground)
+        .navigationTitle("Reader")
+        .toolbar { addMenu }
+        .navigationDestination(item: $selectedText) { text in
+            ReaderSessionView(text: text)
+        }
+        .sheet(isPresented: $showComposeSheet, onDismiss: openPendingText) {
+            ReaderComposeSheet { title, content in
+                addComposedText(title: title, content: content)
             }
-            .sheet(isPresented: $showComposeSheet, onDismiss: openPendingText) {
-                ReaderComposeSheet { title, content in
-                    addComposedText(title: title, content: content)
-                }
-                .localizedSurface()
+            .localizedSurface()
+        }
+        .sheet(isPresented: $showGenerateSheet, onDismiss: openPendingText) {
+            StoryGenerationSheet { generated in
+                pendingOpen = generated
             }
-            .sheet(isPresented: $showGenerateSheet, onDismiss: openPendingText) {
-                StoryGenerationSheet { generated in
-                    pendingOpen = generated
-                }
-                .localizedSurface()
-            }
-            .alert("Clipboard Is Empty", isPresented: $showClipboardEmptyAlert) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("Copy some text first, then try again.")
-            }
+            .localizedSurface()
+        }
+        .alert("Clipboard Is Empty", isPresented: $showClipboardEmptyAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Copy some text first, then try again.")
         }
     }
 
@@ -430,6 +431,8 @@ private struct StoryGenerationSheet: View {
 // MARK: - Preview
 
 #Preview {
-    ReaderView()
-        .environment(SavedTermsStore.shared)
+    NavigationStack {
+        ReaderView()
+            .environment(SavedTermsStore.shared)
+    }
 }

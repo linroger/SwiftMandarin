@@ -57,7 +57,7 @@ enum SRSState: String, Codable, CaseIterable {
 
 // MARK: - Card Progress (Spaced Repetition)
 
-struct CardProgress: Codable, Identifiable {
+nonisolated struct CardProgress: Codable, Identifiable, Sendable {
     let cardId: String
     var masteryLevel: MasteryLevel
     var reviewCount: Int
@@ -271,7 +271,7 @@ struct CardProgress: Codable, Identifiable {
     }
 }
 
-enum MasteryLevel: String, Codable, CaseIterable {
+nonisolated enum MasteryLevel: String, Codable, CaseIterable, Sendable {
     case new, learning, familiar, proficient, mastered
 
     var label: String {

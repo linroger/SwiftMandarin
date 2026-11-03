@@ -41,13 +41,13 @@ struct WorkbookGradingHistoryView: View {
                     #endif
                 }
             }
-            .navigationTitle("批改历史 · Grading History")
+            .navigationTitle("Grading History")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") { dismiss() }
+                    Button("Done") { dismiss() }
                 }
                 #if os(iOS)
                 ToolbarItem(placement: .topBarLeading) {
@@ -57,25 +57,26 @@ struct WorkbookGradingHistoryView: View {
                         } label: {
                             Image(systemName: "trash")
                         }
+                        .accessibilityLabel(Text("Clear All"))
                     }
                 }
                 #endif
             }
-            .confirmationDialog("清空批改历史 · Clear grading history?",
+            .confirmationDialog("Clear grading history?",
                                 isPresented: $showClearConfirm, titleVisibility: .visible) {
-                Button("清空 · Clear all", role: .destructive) { history.clear() }
-                Button("取消 · Cancel", role: .cancel) { }
+                Button("Clear all", role: .destructive) { history.clear() }
+                Button("Cancel", role: .cancel) { }
             }
         }
     }
 
     private var emptyState: some View {
         ContentUnavailableView {
-            Label("暂无批改记录 · No graded workbooks yet", systemImage: "clock.arrow.circlepath")
+            Label("No graded workbooks yet", systemImage: "clock.arrow.circlepath")
         } description: {
-            Text("批改作业后会自动保存到这里，包含批改结果和原始照片。\nGraded workbooks are saved here automatically, with results and the original photos.")
+            Text("Graded workbooks are saved here automatically, with results and the original photos.")
         } actions: {
-            Button("完成 · Done") { dismiss() }
+            Button("Done") { dismiss() }
                 .buttonStyle(.borderedProminent)
         }
     }
@@ -182,7 +183,7 @@ struct GradedSessionDetailView: View {
                 Text(session.displayScore)
                     .font(.largeTitle)
                     .fontWeight(.bold)
-                Text("正确 \(session.correctCount) · 共 \(session.totalCount) 题")
+                Text("\(session.correctCount) correct · \(session.totalCount) total")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text(session.date.formatted(date: .long, time: .shortened))
@@ -193,6 +194,7 @@ struct GradedSessionDetailView: View {
             Image(systemName: "graduationcap.fill")
                 .font(.largeTitle)
                 .foregroundStyle(.tint)
+                .accessibilityHidden(true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -201,7 +203,7 @@ struct GradedSessionDetailView: View {
 
     private var photosSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("原始照片 · Original photos", systemImage: "photo.stack")
+            Label("Original photos", systemImage: "photo.stack")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             ScrollView(.horizontal, showsIndicators: false) {
@@ -225,7 +227,7 @@ struct GradedSessionDetailView: View {
                     _ = bank.add(question)
                 }
             } label: {
-                Label(allInBank ? "已加入题库 · Added to Bank" : "全部加入题库 · Add all to Review Bank",
+                Label(allInBank ? "Added to Bank" : "Add all to Review Bank",
                       systemImage: allInBank ? "tray.full.fill" : "tray.and.arrow.down.fill")
                     .fitSingleLine()
                     .frame(maxWidth: .infinity)
@@ -244,15 +246,21 @@ private struct PhotoRef: Identifiable { let id: String }
 private struct SessionQuestionCard: View {
     let question: WorkbookQuestion
 
+    /// The verdict the colored icon conveys, spoken for VoiceOver users.
+    private var verdictLabel: LocalizedStringKey {
+        question.wasCorrect ? "Correct" : "Incorrect"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
                 Image(systemName: question.wasCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .foregroundStyle(question.wasCorrect ? .green : .red)
                     .font(.title3)
+                    .accessibilityLabel(Text(verdictLabel))
                 VStack(alignment: .leading, spacing: 2) {
                     if !question.questionNumber.isEmpty {
-                        Text("第 \(question.questionNumber) 题")
+                        Text("Question \(question.questionNumber)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -274,12 +282,12 @@ private struct SessionQuestionCard: View {
                 }
             }
             if !question.studentAnswer.isEmpty {
-                Text("你的答案 · \(question.studentAnswer)")
+                Text("Your answer · \(question.studentAnswer)")
                     .font(.caption)
                     .foregroundStyle(question.wasCorrect ? .green : .red)
             }
             if !question.wasCorrect, !question.correctAnswer.isEmpty {
-                Text("正确答案 · \(question.correctAnswer)")
+                Text("Correct answer · \(question.correctAnswer)")
                     .font(.caption)
                     .foregroundStyle(.green)
             }
@@ -356,6 +364,7 @@ private struct PhotoViewer: View {
                             .foregroundStyle(.white, .black.opacity(0.5))
                     }
                     .padding()
+                    .accessibilityLabel(Text("Close"))
                 }
                 Spacer()
             }

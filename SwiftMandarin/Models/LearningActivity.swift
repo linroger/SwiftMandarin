@@ -8,7 +8,7 @@
 import Foundation
 
 /// Represents learning activity for a specific day
-struct DailyActivity: Codable, Identifiable {
+nonisolated struct DailyActivity: Codable, Identifiable, Sendable {
     var id: String { dateKey }
     
     /// Date key in format "yyyy-MM-dd"

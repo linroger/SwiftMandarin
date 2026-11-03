@@ -32,7 +32,14 @@ struct TranslateView: View {
     // The English-side counterpart, used when the learner is a Mandarin
     // speaker studying English and the English pane is the tappable one.
     @State private var selectedEnglishWord: AnalyzedEnglishWord?
-    
+
+    // The English text tokenized for the tappable word grid. Cached here so
+    // the NLTagger pass runs when the text changes (see `studiedLanguagePane`)
+    // instead of inside `body` on every render, where it also handed the grid
+    // fresh word identities each time.
+    @State private var englishWords: [AnalyzedEnglishWord] = []
+    @State private var englishWordsTask: Task<Void, Never>?
+
     // Settings
     @AppStorage("autoTranslate") private var autoTranslate: Bool = false
     @AppStorage("defaultDirection") private var defaultDirectionRawValue: String = TranslationDirection.persistedDefault.rawValue
@@ -182,6 +189,16 @@ struct TranslateView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
+                // AI Chat: the same chunked study view, as a conversation.
+                ToolbarItem(placement: .navigation) {
+                    NavigationLink {
+                        ChatbotView()
+                    } label: {
+                        Image(systemName: "sparkles")
+                    }
+                    .accessibilityLabel(Text("AI Chat"))
+                    .help(Text("AI Chat"))
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         clearAll()
@@ -189,6 +206,7 @@ struct TranslateView: View {
                         Image(systemName: "trash")
                     }
                     .disabled(!sharedState.hasContent)
+                    .accessibilityLabel(Text("Clear All"))
                 }
             }
             .background {
@@ -278,6 +296,7 @@ struct TranslateView: View {
             }
             .glassButtonStyleCompat()
             .buttonBorderShape(.circle)
+            .accessibilityLabel(Text("Swap languages"))
             
             Text(sharedState.direction.targetLanguageName)
                 .font(.subheadline)
@@ -309,10 +328,11 @@ struct TranslateView: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Clear"))
                 }
             }
             .padding(.horizontal)
-            
+
             TextEditor(text: sourceText)
                 .font(.title3)
                 .scrollContentBackground(.hidden)
@@ -492,7 +512,8 @@ struct TranslateView: View {
                     .buttonStyle(.plain)
                     .disabled(sharedState.sourceText.isEmpty)
                     .help("Translate with Apple Translation")
-                    
+                    .accessibilityLabel(Text("Translate"))
+
                     // AI translate button (any configured provider)
                     if aiSettings.isAnyProviderAvailable {
                         Button {
@@ -504,6 +525,7 @@ struct TranslateView: View {
                         .buttonStyle(.plain)
                         .disabled(sharedState.sourceText.isEmpty)
                         .help("Translate with \(aiSettings.effectiveProvider.displayName)")
+                        .accessibilityLabel(Text("Translate with \(aiSettings.effectiveProvider.displayName)"))
                     }
                 }
             }
@@ -538,10 +560,11 @@ struct TranslateView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(!canSaveActiveTerm)
+                    .accessibilityLabel(Text(saveTermLabel))
                 }
             }
             .padding(.horizontal)
-            
+
             // Interactive translation display
             if !sharedState.translatedText.isEmpty {
                 interactiveTranslationView
@@ -601,7 +624,8 @@ struct TranslateView: View {
                     Image(systemName: "arrow.down.circle")
                         .font(.system(size: 48))
                         .foregroundStyle(.tint)
-                    
+                        .accessibilityHidden(true)
+
                     Text("Ready to Translate")
                         .font(.headline)
                     
@@ -808,13 +832,30 @@ struct TranslateView: View {
     /// word identification, and which reading system is shown.
     private var learningContext: LearningContext { LearningContext.current }
 
-    /// The English text, tokenized for the tappable word grid. Local
+    /// Tokenize the English text for the tappable word grid right away. Local
     /// segmentation is enough here — English word boundaries are unambiguous,
-    /// so unlike Chinese this needs no model call to look right.
-    private var englishWords: [AnalyzedEnglishWord] {
-        EnglishTextAnalyzer.shared.analyzeWords(detectedEnglishText)
+    /// so unlike Chinese this needs no model call to look right. Used when
+    /// the English pane appears, so its chips render together with the
+    /// translation rather than one debounce interval later.
+    private func analyzeEnglishWords(_ text: String) {
+        englishWordsTask?.cancel()
+        englishWordsTask = nil
+        englishWords = EnglishTextAnalyzer.shared.analyzeWords(text)
     }
-    
+
+    /// Re-tokenize after the English text changes while the pane is showing,
+    /// debounced ~150 ms so a burst of updates (a mismatch fetch landing, a
+    /// programmatic source/translation swap) costs one NLTagger pass.
+    private func scheduleEnglishWordAnalysis(for text: String) {
+        englishWordsTask?.cancel()
+        englishWordsTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(150))
+            guard !Task.isCancelled else { return }
+            englishWords = EnglishTextAnalyzer.shared.analyzeWords(text)
+            englishWordsTask = nil
+        }
+    }
+
     /// Fetch additional translation when input language mismatches direction
     private func fetchAdditionalTranslation() async {
         guard inputLanguageMismatch else {
@@ -860,6 +901,11 @@ struct TranslateView: View {
         learningContext.interactiveReaderIsChinese
             ? "Getting Chinese translation..."
             : "Getting English translation..."
+    }
+
+    /// VoiceOver name for the icon-only bookmark toggle over the translation.
+    private var saveTermLabel: LocalizedStringKey {
+        isActiveTermSaved ? "Remove from Vocabulary" : "Save to Vocabulary"
     }
 
     /// The word-by-word pane for the language being studied: Chinese with
@@ -908,6 +954,16 @@ struct TranslateView: View {
                     showTranslations: false
                 ) { word in
                     selectedEnglishWord = word
+                }
+                // Tokenize when the pane appears and whenever its text moves
+                // on, instead of on every render of this view.
+                .onAppear { analyzeEnglishWords(detectedEnglishText) }
+                .onChange(of: detectedEnglishText) { _, newText in
+                    scheduleEnglishWordAnalysis(for: newText)
+                }
+                .onDisappear {
+                    englishWordsTask?.cancel()
+                    englishWordsTask = nil
                 }
             }
         }
@@ -1129,7 +1185,10 @@ struct TranslateView: View {
             startWordIdentification(for: activeChineseText)
         } catch {
             isAITranslating = false
-            sharedState.translationError = "AI Translation failed: \(error.localizedDescription)"
+            sharedState.translationError = String(
+                format: String(localized: "AI Translation failed: %@", bundle: .appLanguage),
+                error.localizedDescription
+            )
             print("AI Translation error: \(error)")
         }
     }
@@ -1178,9 +1237,13 @@ struct TranslateView: View {
         isFetchingNotes = true
         notesTask = Task {
             do {
+                // The notes quote the translation the learner is reading,
+                // not a fresh one they never see.
+                let shown = sharedState.translatedText.trimmingCharacters(in: .whitespacesAndNewlines)
                 let result = try await AIWordExplanationService.shared.translateDetailedWithProvider(
                     sourceSnapshot,
-                    sourceIsChinese: containsChinese(sourceSnapshot)
+                    sourceIsChinese: containsChinese(sourceSnapshot),
+                    existingTranslation: shown.isEmpty ? nil : shown
                 )
                 try Task.checkCancellation()
                 guard sharedState.sourceText.trimmingCharacters(in: .whitespacesAndNewlines) == sourceSnapshot else { return }
@@ -1312,9 +1375,15 @@ struct TranslateView: View {
                 // Provide user-friendly error message
                 let errorDescription = error.localizedDescription
                 if errorDescription.contains("language") || errorDescription.contains("unavailable") {
-                    sharedState.translationError = "Language pack not available. Please download it in Settings → General → Language & Region → Preferred Languages."
+                    sharedState.translationError = String(
+                        localized: "Language pack not available. Please download it in Settings → General → Language & Region → Preferred Languages.",
+                        bundle: .appLanguage
+                    )
                 } else {
-                    sharedState.translationError = "Translation failed: \(errorDescription)"
+                    sharedState.translationError = String(
+                        format: String(localized: "Translation failed: %@", bundle: .appLanguage),
+                        errorDescription
+                    )
                 }
                 print("Translation error: \(error)")
             }
@@ -1463,7 +1532,7 @@ struct TranslateView: View {
 
 /// Snapshot of the in-progress translation persisted to UserDefaults so an
 /// unfinished draft survives an app relaunch.
-private struct TranslationDraft: Codable {
+nonisolated private struct TranslationDraft: Codable, Sendable {
     var source: String
     var translated: String
     var direction: TranslationDirection
@@ -1478,44 +1547,77 @@ private struct TranslationDraft: Codable {
 
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
-    
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = arrangeSubviews(proposal: proposal, subviews: subviews)
-        return result.size
+
+    /// The subviews' ideal sizes, measured once per subview set.
+    ///
+    /// Measuring is the expensive part of laying out a flow of word chips, and
+    /// SwiftUI calls `sizeThatFits` and `placeSubviews` several times per
+    /// layout pass. The arrangement only ever uses each subview's
+    /// `.unspecified` size, so those are measured here when the subviews are
+    /// first seen and again only when SwiftUI reports that they changed
+    /// (`updateCache`); every pass then arranges the cached sizes.
+    struct Cache {
+        var sizes: [CGSize]
     }
-    
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = arrangeSubviews(proposal: proposal, subviews: subviews)
-        
-        for (index, frame) in result.frames.enumerated() {
+
+    func makeCache(subviews: Subviews) -> Cache {
+        Cache(sizes: measure(subviews))
+    }
+
+    func updateCache(_ cache: inout Cache, subviews: Subviews) {
+        cache.sizes = measure(subviews)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) -> CGSize {
+        refreshIfStale(&cache, subviews: subviews)
+        return arrange(proposal: proposal, sizes: cache.sizes).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) {
+        refreshIfStale(&cache, subviews: subviews)
+        let frames = arrange(proposal: proposal, sizes: cache.sizes).frames
+
+        for (index, frame) in frames.enumerated() {
             subviews[index].place(
                 at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
                 proposal: ProposedViewSize(frame.size)
             )
         }
     }
-    
-    private func arrangeSubviews(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, frames: [CGRect]) {
+
+    private func measure(_ subviews: Subviews) -> [CGSize] {
+        subviews.map { $0.sizeThatFits(.unspecified) }
+    }
+
+    /// SwiftUI keeps the cache in step with the subview collection, but the
+    /// arrangement indexes `subviews` by position, so a count mismatch would
+    /// be an out-of-range access — re-measure rather than trust a stale cache.
+    private func refreshIfStale(_ cache: inout Cache, subviews: Subviews) {
+        if cache.sizes.count != subviews.count {
+            cache.sizes = measure(subviews)
+        }
+    }
+
+    private func arrange(proposal: ProposedViewSize, sizes: [CGSize]) -> (size: CGSize, frames: [CGRect]) {
         let maxWidth = proposal.width ?? .infinity
         var frames: [CGRect] = []
+        frames.reserveCapacity(sizes.count)
         var currentX: CGFloat = 0
         var currentY: CGFloat = 0
         var lineHeight: CGFloat = 0
-        
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            
+
+        for size in sizes {
             if currentX + size.width > maxWidth && currentX > 0 {
                 currentX = 0
                 currentY += lineHeight + spacing
                 lineHeight = 0
             }
-            
+
             frames.append(CGRect(origin: CGPoint(x: currentX, y: currentY), size: size))
             lineHeight = max(lineHeight, size.height)
             currentX += size.width + spacing
         }
-        
+
         let totalHeight = currentY + lineHeight
         return (CGSize(width: maxWidth, height: totalHeight), frames)
     }

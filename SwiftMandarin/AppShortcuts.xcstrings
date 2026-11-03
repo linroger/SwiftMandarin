@@ -1,0 +1,216 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Translate with ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用${applicationName}翻译"
+          }
+        }
+      }
+    },
+    "Translate ${direction} with ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用${applicationName}翻译${direction}"
+          }
+        }
+      }
+    },
+    "Translate text in ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在${applicationName}中翻译文字"
+          }
+        }
+      }
+    },
+    "Translate my clipboard with ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用${applicationName}翻译剪贴板"
+          }
+        }
+      }
+    },
+    "Translate copied text with ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用${applicationName}翻译复制的文字"
+          }
+        }
+      }
+    },
+    "Speak a translation with ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用${applicationName}朗读翻译"
+          }
+        }
+      }
+    },
+    "Say it in ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在${applicationName}中朗读"
+          }
+        }
+      }
+    },
+    "Explain a word with ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用${applicationName}解释单词"
+          }
+        }
+      }
+    },
+    "Explain a word in ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在${applicationName}中解释单词"
+          }
+        }
+      }
+    },
+    "Save a word to ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存单词到${applicationName}"
+          }
+        }
+      }
+    },
+    "Add a word to my ${applicationName} vocabulary" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把单词加入${applicationName}词汇表"
+          }
+        }
+      }
+    },
+    "Scan text with ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用${applicationName}扫描文字"
+          }
+        }
+      }
+    },
+    "Open live text in ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在${applicationName}中打开实时扫描"
+          }
+        }
+      }
+    },
+    "Review due cards in ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在${applicationName}中复习到期卡片"
+          }
+        }
+      }
+    },
+    "Start a review in ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在${applicationName}中开始复习"
+          }
+        }
+      }
+    },
+    "Show my learning streak in ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在${applicationName}中查看连续学习天数"
+          }
+        }
+      }
+    },
+    "Show my learning stats in ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在${applicationName}中查看学习统计"
+          }
+        }
+      }
+    },
+    "Give me a practice phrase from ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从${applicationName}给我一个练习短语"
+          }
+        }
+      }
+    },
+    "Random phrase from ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "${applicationName}随机短语"
+          }
+        }
+      }
+    },
+    "Look up a word in ${applicationName}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在${applicationName}中查词"
+          }
+        }
+      }
+    },
+    "Search my ${applicationName} vocabulary" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索我的${applicationName}词汇表"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.1"
+}

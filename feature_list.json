@@ -212,5 +212,90 @@
       "Verify the same screens on iPhone/iPad are unchanged in Light and correct in Dark"
     ],
     "passes": true
+  },
+  {
+    "id": "feature_ai_chat",
+    "category": "functional",
+    "description": "AI Chat: the learner writes in English or Chinese; the reply comes back from the provider selected in Settings → AI in the language being learned, split into semantic chunks with readings (pinyin, or IPA for English learners) and meanings in the learner's own language, plus a full translation — the Translate tab's study view in a chat. Chunks the model wrote are laid over the reply's own text; anything they miss is chunked on the device, so the chips always spell out the reply.",
+    "steps": [
+      "Open Study → AI Chat (or the sparkles button on Translate, or AI Chat in the macOS sidebar)",
+      "Verify the welcome card names the provider and offers four suggestions",
+      "Send 'How do I order a coffee in Chinese?' and verify a Chinese reply rendered as chips with tone-colored pinyin above and English meanings below, followed by an English translation",
+      "Tap a chunk and verify the detail sheet speaks it, copies it, and saves it to Vocabulary",
+      "Open the ••• menu and toggle Pinyin, Chunk Meanings and Reply Translations; verify each hides and shows",
+      "Start a new chat, then open Chat History and verify both chats are listed and can be reopened and deleted",
+      "Switch the interface to 中文 and verify replies come back in English with IPA and Chinese meanings",
+      "Run zsh scripts/test-chatbot.sh and verify 51/51 contract and 8/8 wiring checks pass"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_global_search",
+    "category": "functional",
+    "description": "One search over saved vocabulary (headword, meaning, tone-insensitive pinyin), the phrasebook, translation history, and Reader texts, with matches highlighted. Reached from the Home toolbar and the Study Library on iPhone, the system search tab on iPad (iOS 26), and a sidebar item on macOS.",
+    "steps": [
+      "On iPhone tap the magnifying glass on Home",
+      "With the field empty, verify Recently saved and Recent translations",
+      "Type 'jing' and verify 经验, 环境 and 风景 appear with the pinyin match highlighted",
+      "Tap a past translation and verify Translate opens with it restored",
+      "Verify the iPhone tab bar still shows exactly Home, Translate, Multimodal, Study, More"
+    ],
+    "passes": true
+  },
+  {
+    "id": "bug_nested_navigation_stacks",
+    "category": "bug",
+    "description": "Learn, Practice, Conversation, and Reader no longer bring their own NavigationStack; pushed from the Study hub it nested a second stack and doubled the navigation bar. On macOS the sidebar's detail column hosts them in one stack.",
+    "steps": [
+      "On iPhone open Study → Learn and verify one navigation bar with a working back button",
+      "Open Study → Conversation, start a scenario, and verify the chat pushes with the composer floating over the messages",
+      "On macOS select Learn, Practice, Conversation and Reader and verify titles, toolbars and pushed pages work"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_shortcuts_rework",
+    "category": "functional",
+    "description": "Siri shortcuts resolve spoken directions ('to Chinese' / 'to English'), speak their results, finish vocabulary saves before returning (capped at 12 words, with an honest count), fall back to the configured AI provider when on-device translation is unavailable and say so, search vocabulary with tone-insensitive pinyin, keep phrase identities stable, and add an Explain Word shortcut. Every phrase has a Simplified Chinese Siri phrase.",
+    "steps": [
+      "In Shortcuts add 'Translate Text' and verify the toggle reads 'Use AI Provider'",
+      "Run it with Save to Vocabulary on and verify the dialog speaks the translation and the saved-word count",
+      "Add 'Look Up Vocabulary', search 'nihao', and verify entries with pinyin nǐ hǎo are returned",
+      "With the interface in 中文 verify the App Shortcuts list shows the Chinese phrases"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_learning_side_study_notes_and_lean_translation",
+    "category": "functional",
+    "description": "Translation study notes take key terms from the learning-language side, with matching readings, and quote the translation already on screen; display-only surfaces request the translation alone; damaged provider replies are repaired or rejected rather than shown.",
+    "steps": [
+      "Run zsh scripts/test-ai-prompt-contracts.sh and verify 258/258 prompt checks and 33/33 wiring checks",
+      "Translate with an AI provider, tap 'Explain this translation', and verify notes quote the translation shown"
+    ],
+    "passes": true
+  },
+  {
+    "id": "bug_hangs_and_crashes_in_normal_use",
+    "category": "bug",
+    "description": "Main-thread stalls and crash paths closed: ordered, coalesced off-main persistence flushed on background and termination; one-pass imports; filtering once per update; fast offline failure; screenshot stitching at source scale off the main thread; microphone format guard; delegate isolation; transcription and stop timeouts; indexed explanation cache; lazy export; a 5-minute Ollama request timeout instead of 60 seconds.",
+    "steps": [
+      "Import a 2,000-term CSV and verify the UI stays responsive",
+      "Turn off networking, translate with a cloud provider, and verify the error appears within seconds",
+      "Ask AI Chat a long question with a local Ollama model and verify it answers instead of 'The request timed out.'",
+      "Run zsh init.sh and verify every suite passes"
+    ],
+    "passes": true
+  },
+  {
+    "id": "feature_liquid_glass_pass_iter34",
+    "category": "ui",
+    "description": "Liquid Glass on controls and floating chrome, not content: the tab bar minimizes on scroll (iOS 26), composers and the Live Speech action bar float as glass via safe-area insets, while flashcards and statistics tiles use the elevated card surface.",
+    "steps": [
+      "On iOS 26 scroll a long screen and verify the tab bar shrinks and returns",
+      "Open a conversation or AI Chat and verify messages scroll beneath the glass composer",
+      "Open Learn and Statistics and verify cards are opaque elevated surfaces"
+    ],
+    "passes": true
   }
 ]

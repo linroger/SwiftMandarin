@@ -15,12 +15,14 @@ import UniformTypeIdentifiers
 // MARK: - DetectedLanguage Extension for Photo Translation UI
 
 extension DetectedLanguage {
-    /// Display name for UI
+    /// Display name for UI, resolved against the in-app language so the badge
+    /// follows the interface toggle. An `.other` language shows its code.
     var displayName: String {
         switch self {
-        case .english: return "英文"
-        case .chinese: return "中文"
-        case .unknown, .other: return "未知"
+        case .english: return String(localized: "English", bundle: .appLanguage)
+        case .chinese: return String(localized: "Chinese", bundle: .appLanguage)
+        case .other(let code) where !code.isEmpty: return code
+        case .unknown, .other: return String(localized: "Unknown", bundle: .appLanguage)
         }
     }
     
@@ -174,7 +176,7 @@ struct PhotoTranslateView: View {
                     Menu {
                         // Scan language override — the user-facing fix for
                         // "cannot switch languages" in the photo pipeline.
-                        Picker("识别语言 · Scan Language", selection: Binding(
+                        Picker("Scan Language", selection: Binding(
                             get: { prefs.photoScanLanguage },
                             set: { prefs.photoScanLanguage = $0 }
                         )) {
@@ -184,7 +186,7 @@ struct PhotoTranslateView: View {
                         }
 
                         // AI cleanup toggle (concern C).
-                        Toggle("AI 清理识别文字 · AI Cleanup", isOn: Binding(
+                        Toggle("AI Cleanup", isOn: Binding(
                             get: { aiSettings.aiPhotoCleanupEnabled },
                             set: { aiSettings.aiPhotoCleanupEnabled = $0 }
                         ))
@@ -194,40 +196,41 @@ struct PhotoTranslateView: View {
                         // Workbook suite — grade pages, review the question
                         // bank, and revisit past graded workbooks. All kept in
                         // the Photo tab.
-                        Section("作业 · Workbook") {
+                        Section("Workbook") {
                             Button {
                                 showWorkbookGrading = true
                             } label: {
-                                Label("作业批改 · Grade Workbook", systemImage: "checkmark.rectangle.stack")
+                                Label("Grade Workbook", systemImage: "checkmark.rectangle.stack")
                             }
                             Button {
                                 showQuestionBank = true
                             } label: {
-                                Label("复习题库 · Review Bank", systemImage: "tray.full")
+                                Label("Review Bank", systemImage: "tray.full")
                             }
                             Button {
                                 showGradingHistory = true
                             } label: {
-                                Label("批改历史 · Grading History", systemImage: "clock.arrow.circlepath")
+                                Label("Grading History", systemImage: "clock.arrow.circlepath")
                             }
                         }
 
                         Divider()
 
                         if detectedLanguage == .english {
-                            Toggle("显示语法知识点", isOn: $showGrammarPoints)
+                            Toggle("Show Grammar Points", isOn: $showGrammarPoints)
                             Divider()
                         }
 
                         Button(role: .destructive) {
                             clearAll()
                         } label: {
-                            Label("清除内容", systemImage: "trash")
+                            Label("Clear Content", systemImage: "trash")
                         }
                         .disabled(sourceText.isEmpty && !hasResults)
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
+                    .accessibilityLabel(Text("More options"))
                 }
             }
             .sheet(isPresented: $showCameraScanner) {
@@ -325,6 +328,7 @@ struct PhotoTranslateView: View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
+                .accessibilityHidden(true)
             Text(notice)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -348,6 +352,7 @@ struct PhotoTranslateView: View {
         HStack(spacing: 8) {
             Image(systemName: "sparkles")
                 .foregroundStyle(.purple)
+                .accessibilityHidden(true)
             Text("AI cleaned the scanned text")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -411,7 +416,7 @@ struct PhotoTranslateView: View {
                         Button {
                             showCameraScanner = true
                         } label: {
-                            sourceButtonLabel("相机扫描", systemImage: "camera.fill")
+                            sourceButtonLabel("Camera Scan", systemImage: "camera.fill")
                         }
                         .buttonStyle(.borderedProminent)
                         .disabled(!CameraScannerView.isAvailable)
@@ -419,14 +424,14 @@ struct PhotoTranslateView: View {
                     #endif
 
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                        sourceButtonLabel("照片", systemImage: "photo.fill")
+                        sourceButtonLabel("Photos", systemImage: "photo.fill")
                     }
                     .buttonStyle(.bordered)
 
                     Button {
                         showPhotoFiles = true
                     } label: {
-                        sourceButtonLabel("文件", systemImage: "folder")
+                        sourceButtonLabel("Files", systemImage: "folder")
                     }
                     .buttonStyle(.bordered)
                 }
@@ -435,7 +440,7 @@ struct PhotoTranslateView: View {
                 // Chinese/English recognition and re-run OCR on the same image.
                 HStack(spacing: 12) {
                     Menu {
-                        Picker("识别语言", selection: Binding(
+                        Picker("Scan Language", selection: Binding(
                             get: { prefs.photoScanLanguage },
                             set: { prefs.photoScanLanguage = $0 }
                         )) {
@@ -444,10 +449,13 @@ struct PhotoTranslateView: View {
                             }
                         }
                     } label: {
-                        Label(
-                            "识别语言: " + prefs.photoScanLanguage.displayName,
-                            systemImage: prefs.photoScanLanguage.iconName
-                        )
+                        // Interpolated key ("Scan Language: %@") so the prefix
+                        // localizes; concatenating a String bypassed the catalog.
+                        Label {
+                            Text("Scan Language: \(prefs.photoScanLanguage.displayName)")
+                        } icon: {
+                            Image(systemName: prefs.photoScanLanguage.iconName)
+                        }
                         .font(.caption)
                         .fitSingleLine()
                     }
@@ -462,7 +470,7 @@ struct PhotoTranslateView: View {
                                 await reRecognizeCurrentImage(requestID: requestID)
                             }
                         } label: {
-                            Label("重新识别", systemImage: "arrow.clockwise")
+                            Label("Rescan", systemImage: "arrow.clockwise")
                                 .font(.caption)
                         }
                         .buttonStyle(.bordered)
@@ -492,7 +500,7 @@ struct PhotoTranslateView: View {
             // Text input
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("输入中文或英文文本")
+                    Text("Enter Chinese or English text")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     
@@ -523,7 +531,7 @@ struct PhotoTranslateView: View {
                     )
                     .overlay(alignment: .topLeading) {
                         if sourceText.isEmpty {
-                            Text("输入或粘贴文字内容（支持中英文）...")
+                            Text("Type or paste text (Chinese or English)...")
                                 .font(.body)
                                 .foregroundStyle(.tertiary)
                                 .padding(.horizontal, 16)
@@ -531,33 +539,33 @@ struct PhotoTranslateView: View {
                                 .allowsHitTesting(false)
                         }
                     }
-                
+
                 HStack {
                     Button {
                         if let pastedText = ClipboardService.paste(), !pastedText.isEmpty {
                             sourceText = pastedText
                         }
                     } label: {
-                        Label("粘贴", systemImage: "doc.on.clipboard")
+                        Label("Paste", systemImage: "doc.on.clipboard")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    
+
                     Spacer()
-                    
+
                     if !sourceText.isEmpty {
-                        Text("\(sourceText.count) 字符")
+                        Text("\(sourceText.count) characters")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    
+
                     Button {
                         let requestID = beginInputProcessingRequest()
                         Task {
                             await processText(sourceText, requestID: requestID)
                         }
                     } label: {
-                        Label("分析翻译", systemImage: "wand.and.stars")
+                        Label("Analyze Translation", systemImage: "wand.and.stars")
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
@@ -626,7 +634,7 @@ struct PhotoTranslateView: View {
             } label: {
                 HStack {
                     if isExtractingVocab { ProgressView().controlSize(.small) }
-                    Label(isExtractingVocab ? "AI 提取中…" : "AI 提取重点词汇",
+                    Label(isExtractingVocab ? "Extracting with AI…" : "AI Extract Key Vocabulary",
                           systemImage: "sparkles.rectangle.stack")
                         .fitSingleLine()
                 }
@@ -643,11 +651,11 @@ struct PhotoTranslateView: View {
         if !extractedVocab.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Label("AI 重点词汇", systemImage: "sparkles")
+                    Label("AI Key Vocabulary", systemImage: "sparkles")
                         .font(.headline)
                         .foregroundStyle(.purple)
                     Spacer()
-                    Text("\(extractedVocab.count) 个词")
+                    Text("\(extractedVocab.count) words")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -678,7 +686,7 @@ struct PhotoTranslateView: View {
                 Button {
                     saveExtractedVocab()
                 } label: {
-                    Label("保存全部到词汇本", systemImage: "bookmark")
+                    Label("Save All to Vocabulary", systemImage: "bookmark")
                         .fitSingleLine()
                         .frame(maxWidth: .infinity)
                 }
@@ -693,6 +701,11 @@ struct PhotoTranslateView: View {
         }
     }
     
+    /// Title of the translate-everything button in both results sections.
+    private var translateAllTitle: LocalizedStringKey {
+        isTranslating ? "Translating..." : "Translate All"
+    }
+
     /// Results section for English text (English → Chinese)
     private var englishResultsSection: some View {
         VStack(spacing: 16) {
@@ -700,23 +713,23 @@ struct PhotoTranslateView: View {
             HStack {
                 VStack(alignment: .leading) {
                     HStack {
-                        Text("分析结果")
+                        Text("Analysis Result")
                             .font(.headline)
-                        Label("英文→中文", systemImage: "arrow.right")
+                        Label("English → Chinese", systemImage: "arrow.right")
                             .font(.caption)
                             .foregroundStyle(.blue)
                     }
-                    Text("\(analyzedSentences.count) 个句子, \(totalEnglishWordCount) 个单词")
+                    Text("\(analyzedSentences.count) sentences, \(totalEnglishWordCount) words")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 Button {
                     triggerTranslation()
                 } label: {
-                    Label(isTranslating ? "翻译中..." : "翻译全部", systemImage: "translate")
+                    Label(translateAllTitle, systemImage: "translate")
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isTranslating)
@@ -737,13 +750,13 @@ struct PhotoTranslateView: View {
             Button {
                 saveAllEnglishWordsToVocabulary()
             } label: {
-                Label("保存所有单词到词汇本", systemImage: "bookmark")
+                Label("Save All Words to Vocabulary", systemImage: "bookmark")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
         }
     }
-    
+
     /// Results section for Chinese text (Chinese → English)
     private var chineseResultsSection: some View {
         VStack(spacing: 16) {
@@ -751,43 +764,43 @@ struct PhotoTranslateView: View {
             HStack {
                 VStack(alignment: .leading) {
                     HStack {
-                        Text("分析结果")
+                        Text("Analysis Result")
                             .font(.headline)
-                        Label("中文→英文", systemImage: "arrow.right")
+                        Label("Chinese → English", systemImage: "arrow.right")
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
-                    Text("\(cleanedChineseText.count) 个字符")
+                    Text("\(cleanedChineseText.count) characters")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 Button {
                     triggerChineseTranslation()
                 } label: {
-                    Label(isTranslating ? "翻译中..." : "翻译全部", systemImage: "translate")
+                    Label(translateAllTitle, systemImage: "translate")
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isTranslating)
             }
-            
+
             // Full translation card
             if !chineseTranslation.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("英文翻译")
+                    Text("English Translation")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    
+
                     Text(chineseTranslation)
                         .font(.title3)
                         .fontWeight(.medium)
-                    
+
                     Button {
                         SpeechService.speakEnglish(chineseTranslation)
                     } label: {
-                        Label("朗读英文", systemImage: "speaker.wave.2")
+                        Label("Read English Aloud", systemImage: "speaker.wave.2")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -804,7 +817,7 @@ struct PhotoTranslateView: View {
 
             // Word-by-word analysis using existing RubyTextView
             VStack(alignment: .leading, spacing: 12) {
-                Text("逐词分析")
+                Text("Word-by-Word Analysis")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 
@@ -829,7 +842,7 @@ struct PhotoTranslateView: View {
                     await saveAllChineseWordsToVocabulary()
                 }
             } label: {
-                Label("保存所有词汇到词汇本", systemImage: "bookmark")
+                Label("Save All Vocabulary", systemImage: "bookmark")
                     .fitSingleLine()
                     .frame(maxWidth: .infinity)
             }
@@ -895,8 +908,10 @@ struct PhotoTranslateView: View {
         isFetchingNotes = true
         notesTask = Task {
             do {
+                // Notes quote the translation already on screen.
+                let shown = chineseTranslation.trimmingCharacters(in: .whitespacesAndNewlines)
                 let result = try await AIWordExplanationService.shared
-                    .translateDetailedWithProvider(source, sourceIsChinese: true)
+                    .translateDetailedWithProvider(source, sourceIsChinese: true, existingTranslation: shown.isEmpty ? nil : shown)
                 try Task.checkCancellation()
                 guard cleanedChineseText == source else { return }
                 translationNotes = result
@@ -950,21 +965,21 @@ struct PhotoTranslateView: View {
         VStack(spacing: 16) {
             ProgressView()
                 .controlSize(.large)
-            Text("正在处理...")
+            Text("Processing...")
                 .font(.headline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)
     }
-    
+
     private func errorView(_ error: String) -> some View {
         ContentUnavailableView {
-            Label("处理失败", systemImage: "exclamationmark.triangle")
+            Label("Processing Failed", systemImage: "exclamationmark.triangle")
         } description: {
             Text(error)
         } actions: {
-            Button("重试") {
+            Button("Retry") {
                 let requestID = beginInputProcessingRequest()
                 Task {
                     await processText(sourceText, requestID: requestID)
@@ -1435,7 +1450,7 @@ struct PhotoTranslateView: View {
         await MainActor.run {
             guard isCurrentEnglishTranslation(requestID, sourceTexts: sourceTexts) else { return }
             if translations.isEmpty, let lastError {
-                errorMessage = "翻译失败: \(lastError.localizedDescription)"
+                errorMessage = Self.translationFailedMessage(lastError)
             } else if saveToHistoryAutomatically {
                 let translatedIndexes = translations.keys.sorted()
                 let fullSource = translatedIndexes.map { sourceTexts[$0] }.joined(separator: " ")
@@ -1505,7 +1520,7 @@ struct PhotoTranslateView: View {
             } catch {
                 await MainActor.run {
                     guard chineseTranslationRequestID == requestID else { return }
-                    errorMessage = "翻译失败: \(error.localizedDescription)"
+                    errorMessage = Self.translationFailedMessage(error)
                     chineseTranslationRequestID = nil
                     chineseTranslationTask = nil
                     isTranslating = false
@@ -1620,12 +1635,20 @@ struct PhotoTranslateView: View {
                     sourceTexts: snapshot.sourceTexts
                 ) else { return }
                 if !Task.isCancelled {
-                    errorMessage = "翻译失败: \(error.localizedDescription)"
+                    errorMessage = Self.translationFailedMessage(error)
                 }
                 englishTranslationRequestID = nil
                 isTranslating = false
             }
         }
+    }
+
+    /// "Translation failed: <reason>", resolved against the in-app language.
+    private static func translationFailedMessage(_ error: Error) -> String {
+        String(
+            format: String(localized: "Translation failed: %@", bundle: .appLanguage),
+            error.localizedDescription
+        )
     }
     
     /// Save all English words from the analysis to vocabulary
@@ -1691,7 +1714,10 @@ struct PhotoTranslateView: View {
                 }
             }
         } catch {
-            errorMessage = "逐词保存失败: \(error.localizedDescription)"
+            errorMessage = String(
+                format: String(localized: "Saving words failed: %@", bundle: .appLanguage),
+                error.localizedDescription
+            )
         }
     }
     
@@ -1721,7 +1747,10 @@ struct PhotoTranslateView: View {
             }
         } catch {
             await MainActor.run {
-                errorMessage = "AI 词汇提取失败: \(error.localizedDescription)"
+                errorMessage = String(
+                    format: String(localized: "AI vocabulary extraction failed: %@", bundle: .appLanguage),
+                    error.localizedDescription
+                )
                 isExtractingVocab = false
             }
         }
@@ -1824,7 +1853,7 @@ struct SentenceCard: View {
                     )
                 
                 Spacer()
-                
+
                 Button {
                     SpeechService.speakEnglish(sentence.text)
                 } label: {
@@ -1832,48 +1861,50 @@ struct SentenceCard: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
+                .accessibilityLabel(Text("Read sentence aloud"))
             }
-            
+
             // Original sentence
             Text(sentence.text)
                 .font(.title3)
                 .fontWeight(.medium)
-            
+
             // Translation
             if let translation = sentence.translation {
                 Text(translation)
                     .font(.body)
                     .foregroundStyle(.secondary)
             }
-            
+
             Divider()
-            
+
             // Word-by-word analysis
-            Text("逐词释义")
+            Text("Word-by-Word Definitions")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            
+
             EnglishRubyTextView(
                 words: sentence.words,
                 showTranslations: true,
                 onWordTap: onWordTap
             )
-            
+
             // Grammar points
             if showGrammarPoints && !sentence.grammarPoints.isEmpty {
                 Divider()
-                
+
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("语法知识点")
+                    Text("Grammar Points")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    
+
                     ForEach(sentence.grammarPoints, id: \.self) { point in
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "lightbulb.fill")
                                 .foregroundStyle(.yellow)
                                 .font(.caption)
-                            
+                                .accessibilityHidden(true)
+
                             Text(point)
                                 .font(.caption)
                                 .foregroundStyle(.primary)

@@ -11,7 +11,7 @@
 import SwiftUI
 
 struct PracticeHubView: View {
-    @State private var path: [PracticeMode] = []
+    @State private var activeMode: PracticeMode?
 
     /// Singletons accessed via computed properties so @Observable tracking
     /// registers on every body evaluation (matches PhrasesView's pattern).
@@ -20,28 +20,32 @@ struct PracticeHubView: View {
     private var localization: LocalizationManager { .shared }
 
     var body: some View {
-        NavigationStack(path: $path) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    header
-                    modeCards
-                    if usesStarterDeck {
-                        starterDeckFootnote
-                    }
+        // No own NavigationStack: this screen is pushed by the Study hub (iOS)
+        // or hosted in the sidebar's detail stack (macOS). Nesting a second
+        // stack inside either doubled the navigation bar.
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                header
+                modeCards
+                if usesMasteredWords {
+                    masteredWordsFootnote
                 }
-                .padding()
+                if usesStarterDeck {
+                    starterDeckFootnote
+                }
             }
-            .background(SMTheme.pageBackground)
-            .navigationTitle("Practice")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.large)
-            #endif
-            .navigationDestination(for: PracticeMode.self) { mode in
-                switch mode {
-                case .quiz: QuizView()
-                case .dictation: DictationView()
-                case .toneDrill: TonePairDrillView()
-                }
+            .padding()
+        }
+        .background(SMTheme.pageBackground)
+        .navigationTitle("Practice")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.large)
+        #endif
+        .navigationDestination(item: $activeMode) { mode in
+            switch mode {
+            case .quiz: QuizView()
+            case .dictation: DictationView()
+            case .toneDrill: TonePairDrillView()
             }
         }
     }
@@ -65,7 +69,7 @@ struct PracticeHubView: View {
                 subtitleKey: subtitle(for: .quiz, description: L("Multiple choice from your vocabulary")),
                 badge: badge(for: .quiz)
             ) {
-                path.append(.quiz)
+                activeMode = .quiz
             }
             HeroActionRow(
                 icon: "ear.and.waveform",
@@ -74,7 +78,7 @@ struct PracticeHubView: View {
                 subtitleKey: subtitle(for: .dictation, description: L("Listen and type what you hear")),
                 badge: badge(for: .dictation)
             ) {
-                path.append(.dictation)
+                activeMode = .dictation
             }
             // Tone drills train Mandarin tone perception — meaningless for a
             // 中文-UI user, who is learning English.
@@ -86,7 +90,7 @@ struct PracticeHubView: View {
                     subtitleKey: subtitle(for: .toneDrill, description: L("Train your ear for tones")),
                     badge: badge(for: .toneDrill)
                 ) {
-                    path.append(.toneDrill)
+                    activeMode = .toneDrill
                 }
             }
         }
@@ -115,10 +119,26 @@ struct PracticeHubView: View {
 
     // MARK: - Starter-deck footnote
 
+    /// Whether the drills are drawing on words the learner already marked
+    /// mastered, because fewer than four are still in progress.
+    private var usesMasteredWords: Bool {
+        PracticeStore.poolIncludesMasteredWords
+    }
+
     /// Whether the quiz/dictation pool is currently topped up with the
-    /// built-in starter deck (fewer than 4 quizzable saved terms).
+    /// built-in starter deck (fewer than 4 quizzable saved terms in all).
     private var usesStarterDeck: Bool {
-        PracticeStore.vocabularyItems().count < PracticeStore.minimumVocabularyForSoloPool
+        PracticeStore.poolIncludesStarterDeck
+    }
+
+    private var masteredWordsFootnote: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Image(systemName: "checkmark.seal")
+                .font(.caption)
+            Text("Drills use the words you are still learning. Mastered words rejoin while fewer than four are in progress.")
+                .font(.caption)
+        }
+        .foregroundStyle(.secondary)
     }
 
     private var starterDeckFootnote: some View {
@@ -201,6 +221,8 @@ struct PracticeRoundSummary<Detail: View>: View {
 // MARK: - Preview
 
 #Preview {
-    PracticeHubView()
-        .environment(SavedTermsStore.shared)
+    NavigationStack {
+        PracticeHubView()
+            .environment(SavedTermsStore.shared)
+    }
 }

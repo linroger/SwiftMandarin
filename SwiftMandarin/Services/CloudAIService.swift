@@ -97,7 +97,11 @@ final class CloudAIService {
         // structured/vision generations need a generous timeout.
         config.timeoutIntervalForRequest = 180
         config.timeoutIntervalForResource = 300
-        config.waitsForConnectivity = true
+        // Fail fast when there is no network. With `waitsForConnectivity` a
+        // request made in airplane mode or a dead zone did not fail at all — it
+        // waited for the 300-second resource timeout, so every AI feature spun
+        // for five minutes before saying anything.
+        config.waitsForConnectivity = false
         return URLSession(configuration: config)
     }()
 
@@ -233,6 +237,10 @@ final class CloudAIService {
     ///   - imageData: optional single image for vision-capable providers.
     ///   - images: optional multiple images (combined with `imageData`).
     ///   - jsonMode: request a JSON object response where supported.
+    ///   - failOnTruncation: throw when the provider cut the answer off at
+    ///     the token cap. Right for callers that decode a strict shape, which
+    ///     a fragment can never satisfy; pass `false` when the caller's parser
+    ///     can salvage a partial answer.
     func chat(
         provider: AIProvider,
         model: String,
@@ -241,8 +249,30 @@ final class CloudAIService {
         imageData: Data? = nil,
         images: [Data] = [],
         jsonMode: Bool = false,
-        maxTokens: Int = 4096
+        maxTokens: Int = 4096,
+        failOnTruncation: Bool = true
     ) async throws -> String {
+        try await chatCompletion(
+            provider: provider, model: model, system: system, user: user,
+            imageData: imageData, images: images, jsonMode: jsonMode,
+            maxTokens: maxTokens, failOnTruncation: failOnTruncation
+        ).text
+    }
+
+    /// `chat`, plus whether the provider reported cutting the answer off, so
+    /// a caller that salvages partial answers can still blame the token cap
+    /// when its parser finds nothing usable.
+    private func chatCompletion(
+        provider: AIProvider,
+        model: String,
+        system: String,
+        user: String,
+        imageData: Data?,
+        images: [Data],
+        jsonMode: Bool,
+        maxTokens: Int,
+        failOnTruncation: Bool
+    ) async throws -> (text: String, truncated: Bool) {
         guard provider.isCloud else { throw CloudAIError.notCloudProvider }
         let settings = AIModelSettings.shared
         let key = settings.apiKey(for: provider)
@@ -273,7 +303,8 @@ final class CloudAIService {
                 images: imagesToSend,
                 jsonMode: jsonMode, useResponseFormat: useResponseFormat, maxTokens: maxTokens,
                 // Kimi's coding (thinking-only) model rejects any temperature ≠ 1.
-                allowsCustomTemperature: provider != .kimi
+                allowsCustomTemperature: provider != .kimi,
+                reasoningEffort: Self.reasoningEffortOverride(provider: provider, model: model)
             )
         case .anthropic:
             body = Self.anthropicBody(
@@ -301,8 +332,16 @@ final class CloudAIService {
         case .anthropic: content = Self.parseAnthropicContent(from: data)
         }
 
-        guard let text = content else { throw CloudAIError.emptyResponse }
-        return try Self.answerText(from: text)
+        // finish_reason "length" (OpenAI style) / stop_reason "max_tokens"
+        // (Anthropic style) mean the token cap cut the generation short. A
+        // strict-shape caller gets the actual cause instead of a parse error
+        // on the fragment; a salvaging caller still gets the fragment, which
+        // can hold a complete answer (see `AITruncatedCompletion`).
+        let truncated = Self.isTruncated(data)
+        let text = try Self.deliveredText(
+            content: content, truncated: truncated, failOnTruncation: failOnTruncation
+        )
+        return (try Self.answerText(from: text), truncated)
     }
 
     /// Send a multi-turn chat request and return the assistant's text content.
@@ -319,7 +358,8 @@ final class CloudAIService {
         system: String,
         turns: [(role: String, content: String)],
         jsonMode: Bool = false,
-        maxTokens: Int = 2048
+        maxTokens: Int = 2048,
+        failOnTruncation: Bool = true
     ) async throws -> String {
         guard provider.isCloud else { throw CloudAIError.notCloudProvider }
         let settings = AIModelSettings.shared
@@ -345,7 +385,8 @@ final class CloudAIService {
                 model: model, system: system, turns: turns,
                 jsonMode: jsonMode, useResponseFormat: useResponseFormat, maxTokens: maxTokens,
                 // Kimi's coding (thinking-only) model rejects any temperature ≠ 1.
-                allowsCustomTemperature: provider != .kimi
+                allowsCustomTemperature: provider != .kimi,
+                reasoningEffort: Self.reasoningEffortOverride(provider: provider, model: model)
             )
         case .anthropic:
             body = Self.anthropicBodyTurns(
@@ -372,8 +413,28 @@ final class CloudAIService {
         case .anthropic: content = Self.parseAnthropicContent(from: data)
         }
 
-        guard let text = content else { throw CloudAIError.emptyResponse }
+        // See the matching check in `chatCompletion`: only a caller that
+        // cannot use a fragment fails on a token-cap cut.
+        let text = try Self.deliveredText(
+            content: content, truncated: Self.isTruncated(data), failOnTruncation: failOnTruncation
+        )
         return try Self.answerText(from: text)
+    }
+
+    /// Shown when the token cap cut an answer off and nothing usable remains.
+    private static var truncationError: CloudAIError {
+        .unexpectedResponse(String(localized: "The model hit its output token limit before finishing, so the answer was truncated. Retry, pick a smaller model, or raise the token budget.", bundle: .appLanguage))
+    }
+
+    /// The completion to hand on, or the error that explains why there is none.
+    private static func deliveredText(content: String?, truncated: Bool, failOnTruncation: Bool) throws -> String {
+        switch AITruncatedCompletion.disposition(
+            content: content, truncated: truncated, failOnTruncation: failOnTruncation
+        ) {
+        case .deliver(let text): return text
+        case .reportTruncation: throw truncationError
+        case .reportEmpty: throw CloudAIError.emptyResponse
+        }
     }
 
     /// The assistant's answer with any inline chain of thought removed.
@@ -404,21 +465,57 @@ final class CloudAIService {
         _ text: String,
         context: AITranslationContext,
         provider: AIProvider,
-        model: String
+        model: String,
+        includeStudyNotes: Bool = true,
+        existingTranslation: String? = nil
     ) async throws -> AITranslationResult {
-        let system = AITranslationPromptBuilder.instructions(for: context)
+        let system = AITranslationPromptBuilder.instructions(for: context, includeStudyNotes: includeStudyNotes)
             + "\n\n"
-            + AITranslationPromptBuilder.jsonOutputContract(for: context)
-        let user = AITranslationPromptBuilder.request(text: text, context: context)
-        let raw = try await chat(
+            + AITranslationPromptBuilder.jsonOutputContract(for: context, includeStudyNotes: includeStudyNotes)
+        let user = AITranslationPromptBuilder.request(
+            text: text,
+            context: context,
+            includeStudyNotes: includeStudyNotes,
+            existingTranslation: existingTranslation
+        )
+        // A translation cut off inside its study notes still carries the
+        // complete translation, so the cap alone is no reason to fail: the
+        // parser salvages what it can, and the token limit is blamed only
+        // when nothing usable survives.
+        let completion = try await chatCompletion(
             provider: provider,
             model: model,
             system: system,
             user: user,
+            imageData: nil,
+            images: [],
             jsonMode: true,
-            maxTokens: AIOutputBudget.tokens(forSourceLength: text.count)
+            maxTokens: Self.outputBudget(forSourceLength: text.count, provider: provider, model: model),
+            failOnTruncation: false
         )
-        return try AITranslationResponseParser.result(from: raw)
+        do {
+            return try AITranslationResponseParser.result(from: completion.text)
+        } catch AITranslationResponseError.noTranslation where completion.truncated {
+            throw Self.truncationError
+        }
+    }
+
+    /// The output budget for a passage-shaped request. Thinking models count
+    /// their reasoning against `max_tokens`, so the length-based budget alone
+    /// left them cut off mid-JSON on anything but a short passage; they get a
+    /// floor of 8k and up to twice the plain budget.
+    private static func outputBudget(forSourceLength length: Int, provider: AIProvider, model: String) -> Int {
+        let budget = AIOutputBudget.tokens(forSourceLength: length)
+        guard isThinkingModel(provider: provider, model: model) else { return budget }
+        return min(max(budget * 2, 8192), 16384)
+    }
+
+    /// Models that reason before answering: the OpenAI o-series and "reasoner"
+    /// families, Kimi's coding lineup (thinking-only), and GLM-5.
+    private static func isThinkingModel(provider: AIProvider, model: String) -> Bool {
+        if isReasoningModel(model) { return true }
+        if provider == .kimi { return true }
+        return reasoningEffortOverride(provider: provider, model: model) != nil
     }
 
     // MARK: - Audio Transcription
@@ -580,7 +677,7 @@ final class CloudAIService {
     private static func openAIBody(
         model: String, system: String, user: String,
         images: [Data], jsonMode: Bool, useResponseFormat: Bool, maxTokens: Int,
-        allowsCustomTemperature: Bool = true
+        allowsCustomTemperature: Bool = true, reasoningEffort: String? = nil
     ) -> [String: Any] {
         var systemPrompt = system
         var userContent: Any = user
@@ -627,6 +724,10 @@ final class CloudAIService {
             body["max_tokens"] = maxTokens
         }
 
+        if let reasoningEffort {
+            body["reasoning_effort"] = reasoningEffort
+        }
+
         if useResponseFormat {
             body["response_format"] = ["type": "json_object"]
         }
@@ -640,7 +741,7 @@ final class CloudAIService {
     private static func openAIBodyTurns(
         model: String, system: String, turns: [(role: String, content: String)],
         jsonMode: Bool, useResponseFormat: Bool, maxTokens: Int,
-        allowsCustomTemperature: Bool = true
+        allowsCustomTemperature: Bool = true, reasoningEffort: String? = nil
     ) -> [String: Any] {
         var systemPrompt = system
         if jsonMode, !systemPrompt.lowercased().contains("json") {
@@ -672,6 +773,10 @@ final class CloudAIService {
         } else {
             body["temperature"] = 0.3
             body["max_tokens"] = maxTokens
+        }
+
+        if let reasoningEffort {
+            body["reasoning_effort"] = reasoningEffort
         }
 
         if useResponseFormat {
@@ -730,6 +835,32 @@ final class CloudAIService {
     /// o-series plus "reasoner" families such as DeepSeek's `deepseek-reasoner`.
     private static func isReasoningModel(_ modelID: String) -> Bool {
         isOpenAIReasoningModel(modelID) || bareModelID(modelID).contains("reasoner")
+    }
+
+    /// GLM-5 models cannot turn thinking off, and the coding endpoint's default
+    /// effort ("max") spends thousands of reasoning tokens that count against
+    /// `max_tokens`. The visible answer then gets cut mid-JSON
+    /// (`finish_reason` "length") and every structured feature fails parsing
+    /// it. "low" is the least reasoning these models accept and keeps complete
+    /// answers comfortably inside the budget. The glm-4.x family uses a
+    /// different `thinking` switch, so it is left untouched.
+    private static func reasoningEffortOverride(provider: AIProvider, model: String) -> String? {
+        guard provider == .zhipu, bareModelID(model).hasPrefix("glm-5") else { return nil }
+        return "low"
+    }
+
+    /// Whether the provider cut the generation off at the token cap: OpenAI
+    /// style reports `finish_reason` "length", Anthropic style `stop_reason`
+    /// "max_tokens".
+    private static func isTruncated(_ data: Data) -> Bool {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return false
+        }
+        if (json["stop_reason"] as? String) == "max_tokens" { return true }
+        guard let choices = json["choices"] as? [[String: Any]], let first = choices.first else {
+            return false
+        }
+        return (first["finish_reason"] as? String) == "length"
     }
 
     private static func anthropicBody(

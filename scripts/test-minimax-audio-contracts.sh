@@ -8,7 +8,7 @@ binary_path="${TMPDIR:-/tmp}/swiftmandarin-minimax-audio-contract-checks"
 # This runner compiles the production cache, decoder, and persistence sources
 # but only invokes their pure/offline entry points. It does not access Keychain,
 # construct an API credential, or call MiniMax (or any other network service).
-DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-beta.app/Contents/Developer}" \
+DEVELOPER_DIR="${DEVELOPER_DIR:-$(xcode-select -p)}" \
     xcrun swiftc \
     "$repo_root/SwiftMandarin/Models/LanguageBundleOverride.swift" \
     "$repo_root/SwiftMandarin/Models/MiniMaxAudioModels.swift" \

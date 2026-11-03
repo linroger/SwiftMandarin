@@ -131,7 +131,7 @@ struct LiveSpeechTranslationView: View {
                             }
                         }
                         .padding(.horizontal)
-                        .padding(.bottom, 100) // Space for action bar
+                        .padding(.bottom, 16)
                         .animation(.easeInOut(duration: 0.3), value: transcript.isEmpty)
                         .animation(.easeInOut(duration: 0.3), value: translatedText.isEmpty)
                     }
@@ -139,16 +139,17 @@ struct LiveSpeechTranslationView: View {
                     Spacer(minLength: 0)
                 }
                 
-                // Floating action bar at bottom
-                VStack {
-                    Spacer()
-                    if !transcript.isEmpty {
-                        actionBar
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                }
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: transcript.isEmpty)
             }
+            // The action bar is a safe-area inset rather than an overlay, so
+            // the transcript scrolls underneath the glass buttons and its last
+            // line is never hidden behind them.
+            .safeAreaInset(edge: .bottom) {
+                if !transcript.isEmpty {
+                    actionBar
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: transcript.isEmpty)
             .navigationTitle("Voice Translation")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -312,10 +313,7 @@ struct LiveSpeechTranslationView: View {
                 .foregroundStyle(.primary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                )
+                .glassEffectCapsuleCompat()
             }
             
             Spacer()
@@ -331,10 +329,7 @@ struct LiveSpeechTranslationView: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-                .background(
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                )
+                .glassEffectCapsuleCompat()
             }
         }
     }
@@ -633,12 +628,9 @@ struct LiveSpeechTranslationView: View {
     // MARK: - Action Bar
     
     private var actionBar: some View {
-        VStack(spacing: 0) {
-            // Glass effect divider
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .frame(height: 1)
-            
+        // One glass group, so the two buttons read as a single floating
+        // control over the transcript rather than two separate pills.
+        GlassGroupCompat(spacing: 12) {
             HStack(spacing: 12) {
                 // Use transcript button
                 Button {
@@ -652,11 +644,11 @@ struct LiveSpeechTranslationView: View {
                     }
                     .font(.subheadline.weight(.medium))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 6)
                 }
-                .buttonStyle(.bordered)
+                .glassButtonStyleCompat()
                 .buttonBorderShape(.capsule)
-                
+
                 // Use translation button
                 Button {
                     Task { await speechService.stopRecording() }
@@ -669,16 +661,16 @@ struct LiveSpeechTranslationView: View {
                     }
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 6)
                 }
-                .buttonStyle(.borderedProminent)
+                .glassProminentButtonStyleCompat()
                 .buttonBorderShape(.capsule)
                 .disabled(translatedText.isEmpty && transcript.isEmpty)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .background(.ultraThinMaterial)
+            .controlSize(.large)
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
     }
     
     // MARK: - Actions
@@ -692,7 +684,7 @@ struct LiveSpeechTranslationView: View {
             } catch let error as SpeechRecognitionError {
                 switch error {
                 case .notAuthorized:
-                    permissionAlertMessage = "Please enable Speech Recognition and Microphone access in Settings to use this feature."
+                    permissionAlertMessage = String(localized: "Please enable Speech Recognition and Microphone access in Settings to use this feature.", bundle: .appLanguage)
                     showPermissionAlert = true
                 default:
                     translationError = error.localizedDescription
@@ -783,7 +775,7 @@ struct LiveSpeechTranslationView: View {
         } catch {
             await MainActor.run {
                 isTranslating = false
-                translationError = "Translation failed: \(error.localizedDescription)"
+                translationError = String(format: String(localized: "Translation failed: %@", bundle: .appLanguage), error.localizedDescription)
             }
         }
     }
@@ -807,7 +799,7 @@ struct LiveSpeechTranslationView: View {
         } catch {
             await MainActor.run {
                 isTranslating = false
-                translationError = "Translation failed: \(error.localizedDescription)"
+                translationError = String(format: String(localized: "Translation failed: %@", bundle: .appLanguage), error.localizedDescription)
             }
         }
     }

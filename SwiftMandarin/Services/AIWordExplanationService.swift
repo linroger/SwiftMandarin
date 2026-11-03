@@ -166,18 +166,28 @@ struct TranslationOutput {
     @Guide(description: "The complete translation of the source text into the target language and nothing else: no label, preface, quotation marks, romanization, alternative rendering, note, or commentary. Preserve the source's paragraph breaks.")
     let translation: String
 
-    @Guide(description: "In the learner's native language, at most three sentences on what a learner would most likely get wrong here and why this rendering is right — a non-literal idiom, a reordered clause, an omitted subject, an aspect or measure-word decision, a register choice, or a cultural reference — quoting the exact source words involved. Never restate the translation or retell the content. An EMPTY string when the source is genuinely straightforward.")
+    @Guide(description: "In the learner's native language, at most three sentences on what a learner would most likely get wrong here and why this rendering is right — a non-literal idiom, a reordered clause, an omitted subject, an aspect or measure-word decision, a register choice, or a cultural reference — quoting the exact words involved, from the source or the translation. Never restate the translation or retell the content. An EMPTY string when the source is genuinely straightforward.")
     let explanation: String
 
-    @Guide(description: "Only words or phrases a learner would actually have to look up. Skip beginner vocabulary, function words, pronouns, numbers, and anything the context makes obvious. Return none for a short or easy source, two to four for a sentence or short paragraph, and at most eight for a long passage, drawn from across the whole text. Never pad the list.", .maximumCount(8))
+    @Guide(description: "Only words or phrases a learner would actually have to look up, taken from whichever side is written in the language the learner is studying — the source when it is, otherwise the translation — and never from the learner's own language. Skip beginner vocabulary, function words, pronouns, numbers, and anything the context makes obvious. Return none for a short or easy source, two to four for a sentence or short paragraph, and at most eight for a long passage, drawn from across the whole text. Never pad the list.", .maximumCount(8))
     let keyTerms: [TranslationKeyTerm]
+}
+
+/// The single-field shape for callers that only display or speak the
+/// translation. Guided generation cannot leave fields out of a struct, so the
+/// lean request has its own.
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+struct TranslationOnlyOutput {
+    @Guide(description: "The complete translation of the source text into the target language and nothing else: no label, preface, quotation marks, romanization, alternative rendering, note, or commentary. Preserve the source's paragraph breaks.")
+    let translation: String
 }
 
 /// One studied term from a translation request.
 @available(iOS 26.0, macOS 26.0, *)
 @Generable
 struct TranslationKeyTerm {
-    @Guide(description: "The word or phrase exactly as it appears in the source text, preferring the whole word, set phrase, or collocation over a single character")
+    @Guide(description: "The word or phrase exactly as it appears in the learning-language text (the source when the source is in the language being learned, otherwise the translation), preferring the whole word, set phrase, or collocation over a single character")
     let term: String
 
     @Guide(description: "The reading of this term: Hanyu pinyin with accurate tone marks (ā á ǎ à) when the term is Chinese, or IPA between slashes with primary stress marked when the term is English. Match the term exactly and never mix the two systems")
@@ -303,11 +313,11 @@ final class AIWordExplanationService {
     var unavailabilityReason: String? {
         #if canImport(FoundationModels)
         guard #available(iOS 26.0, macOS 26.0, *) else {
-            return "Apple Intelligence requires iOS 26 or later"
+            return String(localized: "Apple Intelligence requires iOS 26 or later", bundle: .appLanguage)
         }
         return getUnavailabilityReason()
         #else
-        return "Apple Intelligence is not available on this device"
+        return String(localized: "Apple Intelligence is not available on this device.", bundle: .appLanguage)
         #endif
     }
 
@@ -460,7 +470,12 @@ final class AIWordExplanationService {
     ///   - text: The text to translate
     ///   - context: Translation direction plus the learner's note language
     /// - Returns: The translation and its study notes
-    func translate(_ text: String, context: AITranslationContext) async throws -> AITranslationResult {
+    func translate(
+        _ text: String,
+        context: AITranslationContext,
+        includeStudyNotes: Bool = true,
+        existingTranslation: String? = nil
+    ) async throws -> AITranslationResult {
         #if canImport(FoundationModels)
         guard #available(iOS 26.0, macOS 26.0, *) else {
             throw AIExplanationError.unavailable(reason: String(localized: "Apple Intelligence requires iOS 26 or later", bundle: .appLanguage))
@@ -469,10 +484,28 @@ final class AIWordExplanationService {
             throw AIExplanationError.unavailable(reason: unavailabilityReason ?? "Unknown")
         }
 
-        let prompt = AITranslationPromptBuilder.request(text: text, context: context)
+        let prompt = AITranslationPromptBuilder.request(
+            text: text,
+            context: context,
+            includeStudyNotes: includeStudyNotes,
+            existingTranslation: existingTranslation
+        )
 
         // Create session with translation instructions
-        let session = LanguageModelSession(instructions: AITranslationPromptBuilder.instructions(for: context))
+        let session = LanguageModelSession(
+            instructions: AITranslationPromptBuilder.instructions(for: context, includeStudyNotes: includeStudyNotes)
+        )
+
+        // Display-only callers get the single-field shape: fewer output tokens
+        // and nothing for the on-device model to pad.
+        guard includeStudyNotes else {
+            let lean = try await session.respond(to: prompt, generating: TranslationOnlyOutput.self)
+            let translation = AITranslationResponseParser.sanitizedEnvelopeValue(lean.content.translation)
+            guard !translation.isEmpty else {
+                throw AITranslationResponseError.noTranslation
+            }
+            return AITranslationResult(translation: translation)
+        }
 
         // Generate a structured translation. Guided generation is what keeps
         // commentary out of the result; the parser then removes any wrapper the
@@ -557,7 +590,11 @@ final class AIWordExplanationService {
     /// Callers that only display or speak the translation use this; the study
     /// notes come from `translateDetailedWithProvider` in the same round trip.
     func translateWithProvider(_ text: String, sourceIsChinese: Bool) async throws -> String {
-        try await translateDetailedWithProvider(text, sourceIsChinese: sourceIsChinese).translation
+        // Display-only callers ask for the translation alone: the study-note
+        // half of the contract costs prompt and output tokens that Reader
+        // paragraphs, screenshots, the menu bar, and Shortcuts never showed.
+        try await translateDetailedWithProvider(text, sourceIsChinese: sourceIsChinese, includeStudyNotes: false)
+            .translation
     }
 
     /// Translate text using the configured AI provider, keeping the study
@@ -565,10 +602,16 @@ final class AIWordExplanationService {
     /// - Parameters:
     ///   - text: The text to translate
     ///   - sourceIsChinese: Whether the source is Chinese
+    ///   - existingTranslation: The translation already on screen, when the
+    ///     notes are fetched on demand for another engine's translation; the
+    ///     notes then quote that text instead of a rendering the learner
+    ///     never sees, and the result carries it unchanged.
     /// - Returns: The translation plus its explanation and key terms
     func translateDetailedWithProvider(
         _ text: String,
-        sourceIsChinese: Bool
+        sourceIsChinese: Bool,
+        includeStudyNotes: Bool = true,
+        existingTranslation: String? = nil
     ) async throws -> AITranslationResult {
         let settings = AIModelSettings.shared
         // On systems without Apple's Translation API this is the only
@@ -581,20 +624,32 @@ final class AIWordExplanationService {
         let provider = settings.effectiveProvider
         let context = AITranslationContext.current(sourceIsChinese: sourceIsChinese)
 
+        let result: AITranslationResult
         switch provider {
         case .appleIntelligence:
-            return try await translate(text, context: context)
+            result = try await translate(
+                text, context: context, includeStudyNotes: includeStudyNotes, existingTranslation: existingTranslation
+            )
         case .ollama:
-            return try await translateWithOllama(text, context: context)
+            result = try await translateWithOllama(
+                text, context: context, includeStudyNotes: includeStudyNotes, existingTranslation: existingTranslation
+            )
         default:
             let model = settings.selectedModel(for: provider)
             guard !settings.apiKey(for: provider).isEmpty else {
                 throw AIExplanationError.unavailable(reason: "No API key for \(provider.displayName)")
             }
-            return try await CloudAIService.shared.translate(
-                text, context: context, provider: provider, model: model
+            result = try await CloudAIService.shared.translate(
+                text, context: context, provider: provider, model: model,
+                includeStudyNotes: includeStudyNotes, existingTranslation: existingTranslation
             )
         }
+
+        // The notes were written about the translation on screen, so that is
+        // the translation they travel with, even if the model reworded it.
+        guard let shown = existingTranslation?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !shown.isEmpty else { return result }
+        return AITranslationResult(translation: shown, explanation: result.explanation, keyTerms: result.keyTerms)
     }
     
     // MARK: - Ollama-Specific Methods
@@ -726,7 +781,15 @@ final class AIWordExplanationService {
             systemPrompt: AIExplanationPromptBuilder.teacherInstructions(for: direction.promptContext),
             userPrompt: prompt,
             schema: schema,
-            enableThinking: settings.enableThinking
+            enableThinking: settings.enableThinking,
+            // Sized to the answer, not the prompt: the nine-field object is
+            // long however short the word, and a reasoning model spends its
+            // thinking from the same cap. Matches the cloud path's 8192, with
+            // reasoning room on top; a cut-off object cannot be decoded.
+            maxOutputTokens: OllamaService.willReason(
+                model: settings.ollamaModel,
+                enableThinking: settings.enableThinking
+            ) ? 16384 : 8192
         )
         
         // Parse JSON response
@@ -747,7 +810,9 @@ final class AIWordExplanationService {
     /// Translate text using Ollama
     private func translateWithOllama(
         _ text: String,
-        context: AITranslationContext
+        context: AITranslationContext,
+        includeStudyNotes: Bool = true,
+        existingTranslation: String? = nil
     ) async throws -> AITranslationResult {
         let settings = AIModelSettings.shared
 
@@ -762,7 +827,9 @@ final class AIWordExplanationService {
         return try await OllamaService.shared.translate(
             text,
             context: context,
-            model: settings.ollamaModel
+            model: settings.ollamaModel,
+            includeStudyNotes: includeStudyNotes,
+            existingTranslation: existingTranslation
         )
     }
     
@@ -811,7 +878,10 @@ final class AIWordExplanationService {
             system: system,
             user: prompt,
             jsonMode: true,
-            maxTokens: 4096
+            // Reasoning models spend their budget on thinking before the JSON:
+            // 4096 truncated the object mid-string on thinking models (GLM-5 at
+            // default effort), which parses as "could not parse the explanation".
+            maxTokens: 8192
         )
 
         guard let data = Self.extractJSONObject(from: content) else {
@@ -1230,7 +1300,7 @@ final class AIWordExplanationService {
             }
             json = try await CloudAIService.shared.chat(
                 provider: provider, model: model, system: system, user: user,
-                imageData: nil, jsonMode: true, maxTokens: 4096
+                imageData: nil, jsonMode: true, maxTokens: 8192
             )
         }
 
@@ -1274,6 +1344,15 @@ final class AIWordExplanationService {
         var i = 0
         while i < chars.count {
             let c = chars[i]
+            // A raw line break or tab inside a string value is the other
+            // mistake models make constantly in multi-line fields such as
+            // "nuances"; JSON forbids it, so write the escape instead.
+            if inString, !escaped, c == "\n" || c == "\r" || c == "\t" {
+                out.append("\\")
+                out.append(c == "\n" ? "n" : (c == "\r" ? "r" : "t"))
+                i += 1
+                continue
+            }
             out.append(c)
 
             var valueJustClosed = false
@@ -1314,6 +1393,14 @@ final class AIWordExplanationService {
     /// Extract the first balanced JSON object from a model response, tolerating
     /// markdown code fences and surrounding prose.
     static func extractJSONObject(from text: String) -> Data? {
+        // Prefer the first balanced object that actually parses: the old
+        // first-`{`-to-last-`}` slice swallowed any trailing sentence that
+        // happened to contain a brace, and blamed the model for the result.
+        if let parseable = AIStructuredResponse.firstParseableObject(in: text) {
+            return parseable
+        }
+        // Fall back to the widest slice so `repairJSON` still gets a chance at
+        // a damaged object.
         guard let start = text.firstIndex(of: "{"),
               let end = text.lastIndex(of: "}"),
               start < end else {
@@ -1356,14 +1443,16 @@ enum AIExplanationError: LocalizedError {
     
     var errorDescription: String? {
         switch self {
+        // Shown in the error banners of every AI surface, so it follows the
+        // in-app language like the rest of the interface.
         case .unavailable(let reason):
-            return "AI unavailable: \(reason)"
+            return String(format: String(localized: "AI unavailable: %@", bundle: .appLanguage), reason)
         case .generationFailed(let message):
-            return "Failed to generate explanation: \(message)"
+            return String(format: String(localized: "Failed to generate explanation: %@", bundle: .appLanguage), message)
         case .ollamaNotConnected:
-            return "Ollama server is not connected. Please check that Ollama is running."
+            return String(localized: "Ollama server is not connected. Please check that Ollama is running.", bundle: .appLanguage)
         case .ollamaNoModelSelected:
-            return "No Ollama model selected. Please select a model in Settings."
+            return String(localized: "No Ollama model selected. Please select a model in Settings.", bundle: .appLanguage)
         }
     }
 }
@@ -1422,7 +1511,17 @@ struct GradedQuestion: Identifiable, Decodable {
         question = (try? c.decode(String.self, forKey: .question)) ?? ""
         studentAnswer = (try? c.decode(String.self, forKey: .studentAnswer)) ?? ""
         correctAnswer = (try? c.decode(String.self, forKey: .correctAnswer)) ?? ""
-        isCorrect = (try? c.decode(Bool.self, forKey: .isCorrect)) ?? false
+        // Models write the verdict as true, "true", "yes", or 1; a strict
+        // Bool decode marked every one of those answers wrong.
+        if let flag = try? c.decode(Bool.self, forKey: .isCorrect) {
+            isCorrect = flag
+        } else if let text = try? c.decode(String.self, forKey: .isCorrect) {
+            isCorrect = ["true", "yes", "correct", "1", "对", "正确"].contains(text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
+        } else if let number = try? c.decode(Int.self, forKey: .isCorrect) {
+            isCorrect = number != 0
+        } else {
+            isCorrect = false
+        }
         explanation = (try? c.decode(String.self, forKey: .explanation)) ?? ""
         fullSentence = (try? c.decode(String.self, forKey: .fullSentence)) ?? ""
         vocab = try? c.decode(ExtractedVocabItem.self, forKey: .vocab)

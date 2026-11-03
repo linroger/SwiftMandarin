@@ -2,18 +2,26 @@
 //  SwiftMandarinShortcutsProvider.swift
 //  SwiftMandarin
 //
+//  The App Shortcuts Siri offers without setup. Apple allows ten per app, and
+//  all ten are used, so adding one means retiring one: "Translate
+//  Screenshots" lost its phrases (it needs images Siri cannot supply by voice
+//  and stays available as a Shortcuts action) to make room for "Explain Word".
+//
 
 import AppIntents
 
 struct SwiftMandarinShortcutsProvider: AppShortcutsProvider {
     @AppShortcutsBuilder
     static var appShortcuts: [AppShortcut] {
+        // The direction is a parameter of the phrase, resolved through the
+        // enum's synonyms ("to Chinese", "to English"); the old literal
+        // "Translate to Chinese" phrases launched the intent with Auto.
         AppShortcut(
             intent: TranslateTextIntent(),
             phrases: [
                 "Translate with \(.applicationName)",
-                "Translate to Chinese with \(.applicationName)",
-                "Translate to English with \(.applicationName)"
+                "Translate \(\.$direction) with \(.applicationName)",
+                "Translate text in \(.applicationName)"
             ],
             shortTitle: "Translate",
             systemImageName: "character.bubble"
@@ -21,7 +29,7 @@ struct SwiftMandarinShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: TranslateClipboardIntent(),
             phrases: [
-                "Translate clipboard with \(.applicationName)",
+                "Translate my clipboard with \(.applicationName)",
                 "Translate copied text with \(.applicationName)"
             ],
             shortTitle: "Translate Clipboard",
@@ -30,26 +38,41 @@ struct SwiftMandarinShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: SpeakTranslationIntent(),
             phrases: [
-                "Speak translation with \(.applicationName)",
-                "Speak translation in \(.applicationName)"
+                "Speak a translation with \(.applicationName)",
+                "Say it in \(.applicationName)"
             ],
             shortTitle: "Speak",
             systemImageName: "speaker.wave.2"
         )
         AppShortcut(
+            intent: ExplainWordIntent(),
+            // Only an AppEnum or AppEntity may appear inside a phrase, so the
+            // word itself is asked for after the phrase is spoken.
+            phrases: [
+                "Explain a word with \(.applicationName)",
+                "Explain a word in \(.applicationName)"
+            ],
+            shortTitle: "Explain Word",
+            systemImageName: "text.magnifyingglass"
+        )
+        AppShortcut(
             intent: SaveVocabularyTermIntent(),
             phrases: [
-                "Save to \(.applicationName) vocabulary",
-                "Add to \(.applicationName) vocabulary"
+                "Save a word to \(.applicationName)",
+                "Add a word to my \(.applicationName) vocabulary"
             ],
             shortTitle: "Save Word",
             systemImageName: "bookmark"
         )
+        // Offered on both platforms: the phrase catalog is shared, and a phrase
+        // that exists only on iOS is flagged as unused by the macOS build. On
+        // macOS the intent opens the Multimodal workspace, where a photo can
+        // be scanned instead of the live camera.
         AppShortcut(
             intent: OpenCameraScannerIntent(),
             phrases: [
-                "Open live text in \(.applicationName)",
-                "Scan text with \(.applicationName)"
+                "Scan text with \(.applicationName)",
+                "Open live text in \(.applicationName)"
             ],
             shortTitle: "Live Scanner",
             systemImageName: "camera.viewfinder"
@@ -58,7 +81,7 @@ struct SwiftMandarinShortcutsProvider: AppShortcutsProvider {
             intent: StartReviewIntent(),
             phrases: [
                 "Review due cards in \(.applicationName)",
-                "Start review in \(.applicationName)"
+                "Start a review in \(.applicationName)"
             ],
             shortTitle: "Start Review",
             systemImageName: "brain.head.profile"
@@ -66,8 +89,8 @@ struct SwiftMandarinShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: GetLearningStatsIntent(),
             phrases: [
-                "Learning stats in \(.applicationName)",
-                "Mandarin streak in \(.applicationName)"
+                "Show my learning streak in \(.applicationName)",
+                "Show my learning stats in \(.applicationName)"
             ],
             shortTitle: "Stats",
             systemImageName: "chart.bar"
@@ -75,8 +98,8 @@ struct SwiftMandarinShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: GetRandomPhraseIntent(),
             phrases: [
-                "Random Chinese phrase in \(.applicationName)",
-                "Give me a phrase in \(.applicationName)"
+                "Give me a practice phrase from \(.applicationName)",
+                "Random phrase from \(.applicationName)"
             ],
             shortTitle: "Random Phrase",
             systemImageName: "quote.bubble"
@@ -84,21 +107,11 @@ struct SwiftMandarinShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: LookupVocabularyIntent(),
             phrases: [
-                "Find in \(.applicationName)",
-                "Lookup vocabulary in \(.applicationName)"
+                "Look up a word in \(.applicationName)",
+                "Search my \(.applicationName) vocabulary"
             ],
-            shortTitle: "Find Word",
+            shortTitle: "Look Up Word",
             systemImageName: "magnifyingglass"
-        )
-        AppShortcut(
-            intent: TranslateScreenshotsIntent(),
-            phrases: [
-                "Translate screenshots with \(.applicationName)",
-                "Translate images with \(.applicationName)",
-                "OCR translate with \(.applicationName)"
-            ],
-            shortTitle: "Translate Screenshots",
-            systemImageName: "doc.text.image"
         )
     }
 }

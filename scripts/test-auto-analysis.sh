@@ -9,7 +9,7 @@ binary_path="${TMPDIR:-/tmp}/swiftmandarin-auto-analysis-checks"
 # app source (it does — see the synchronized `scripts` group). `AutoAnalysisQueue`
 # itself needs no flag: it is deliberately free of app dependencies so the rules
 # that bound automatic spending can be checked without a provider or a cache.
-DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-beta.app/Contents/Developer}" \
+DEVELOPER_DIR="${DEVELOPER_DIR:-$(xcode-select -p)}" \
     xcrun swiftc \
     "$repo_root/SwiftMandarin/Models/AutoAnalysisQueue.swift" \
     "$repo_root/scripts/auto-analysis-checks/AutoAnalysisQueueChecksRunner.swift" \
@@ -46,13 +46,13 @@ count_code_matches() {
 
 coordinator="$repo_root/SwiftMandarin/Models/AutoAnalysisCoordinator.swift"
 
-# Every capture surface saves through `SavedTermsStore.add`, so both overloads
-# must notify the queue or whole features (Shortcuts, import, photo capture)
-# would silently stop being analyzed.
+# Every capture surface saves through `SavedTermsStore.add` or the bulk
+# `addAll` import path, so all three must notify the queue or whole features
+# (Shortcuts, import, photo capture) would silently stop being analyzed.
 store_hooks=$(count_matches 'AutoAnalysisCoordinator\.shared\.noteTermAdded' \
     "$repo_root/SwiftMandarin/Models/SavedTerm.swift")
-[[ "$store_hooks" == "2" ]] || {
-    print -u2 "Saving a term no longer feeds the automatic analysis queue; found $store_hooks of 2 add() overloads"
+[[ "$store_hooks" == "3" ]] || {
+    print -u2 "Saving a term no longer feeds the automatic analysis queue; found $store_hooks of 3 add()/addAll() paths"
     exit 1
 }
 

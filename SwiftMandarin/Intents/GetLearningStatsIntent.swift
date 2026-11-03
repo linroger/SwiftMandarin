@@ -17,11 +17,12 @@ struct GetLearningStatsIntent: AppIntent {
         Summary("Get learning stats for \(\.$range)")
     }
 
+    @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let summaryText = await MainActor.run {
-            LearningStatsSummary(range: range).formatted
-        }
-        return .result(value: summaryText)
+        let summary = LearningStatsSummary(range: range)
+        // Siri speaks the dialog, so the numbers go there as one sentence;
+        // the line-per-stat text stays the value for Shortcuts to use.
+        return .result(value: summary.formatted, dialog: IntentDialog(stringLiteral: summary.spoken))
     }
 }
 
@@ -56,6 +57,14 @@ private struct LearningStatsSummary {
         }
 
         streak = activityStore.currentStreak
+    }
+
+    /// One spoken sentence for Siri.
+    var spoken: String {
+        String(
+            format: String(localized: "%lld words learned, %lld reviews, %lld translations, and a %lld-day streak.", bundle: .appLanguage),
+            Int64(wordsLearned), Int64(reviewsCompleted), Int64(translationsMade), Int64(streak)
+        )
     }
 
     /// Localized line-per-stat summary (follows the in-app language toggle).

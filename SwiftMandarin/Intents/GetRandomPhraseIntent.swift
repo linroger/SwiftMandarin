@@ -6,7 +6,9 @@
 import Foundation
 import AppIntents
 
-struct GetRandomPhraseIntent: AppIntent {
+/// `AudioPlaybackIntent` so "Speak Phrase" can play from Siri or the Lock
+/// Screen without the app in front.
+struct GetRandomPhraseIntent: AudioPlaybackIntent {
     static var title: LocalizedStringResource = "Get Random Phrase"
     static var description = IntentDescription("Pick a random phrase, optionally speak it, copy it, or save it to vocabulary.")
 
@@ -37,29 +39,35 @@ struct GetRandomPhraseIntent: AppIntent {
         // Speak/copy the side in the language the user is LEARNING (the
         // opposite of the interface language).
         let learningEnglish = LocalizationManager.shared.nativeIsChinese
+        let studied = learningEnglish ? phrase.english : phrase.chinese
+        let gloss = learningEnglish ? phrase.chinese : phrase.english
 
         if speakPhrase {
-            if learningEnglish {
-                try await SpeechService.speakAndWait(phrase.english, languageCode: "en-US")
-            } else {
-                try await SpeechService.speakAndWait(phrase.chinese, languageCode: "zh-CN")
-            }
+            try await SpeechService.speakAndWait(studied, languageCode: learningEnglish ? "en-US" : "zh-CN")
         }
 
         if copyToClipboard {
-            ClipboardService.copy(learningEnglish ? phrase.english : phrase.chinese)
+            ClipboardService.copy(studied)
         }
 
+        var dialogText = "\(studied) — \(gloss)"
         if saveToVocabulary {
-            ShortcutHelpers.saveToVocabularyIfNeeded(
-                chinese: phrase.chinese,
-                english: phrase.english,
-                partOfSpeech: "phrase",
-                saveAsPhrase: true
+            let saved = ShortcutHelpers.saveTermIfNeeded(
+                chineseSide: phrase.chinese,
+                englishSide: phrase.english,
+                partOfSpeech: "phrase"
             )
+            if saved {
+                ShortcutHelpers.persistIntentChanges()
+            }
+            dialogText += " " + (saved
+                ? String(localized: "Saved to vocabulary.", bundle: .appLanguage)
+                : String(localized: "Already in your vocabulary.", bundle: .appLanguage))
         }
 
-        return .result(value: phrase)
+        // Siri reads the dialog, so the phrase itself goes there — a bare
+        // entity value gave voice users nothing to hear.
+        return .result(value: phrase, dialog: IntentDialog(stringLiteral: dialogText))
     }
 
     private func pickPhrase() -> PhraseEntity {

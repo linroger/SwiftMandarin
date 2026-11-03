@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-enum TranslationDirection: String, CaseIterable, Identifiable, Codable {
+nonisolated enum TranslationDirection: String, CaseIterable, Identifiable, Codable, Sendable {
     case englishToChinese
     case chineseToEnglish
     
@@ -106,7 +106,7 @@ enum TranslationDirection: String, CaseIterable, Identifiable, Codable {
     /// interface language — which is the user's native language — gives each
     /// audience the direction they actually want. Nonisolated so it can serve
     /// as an `@AppStorage` default and be read from a nonisolated `init`.
-    static var persistedDefault: TranslationDirection {
+    @MainActor static var persistedDefault: TranslationDirection {
         AppLanguage.persisted == .chinese ? .chineseToEnglish : .englishToChinese
     }
 }

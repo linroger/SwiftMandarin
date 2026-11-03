@@ -207,7 +207,10 @@ final class ConversationService {
                 model: model,
                 system: system,
                 turns: Self.turns(from: history),
-                jsonMode: true
+                jsonMode: true,
+                // A turn cut off inside "feedback" still carries a complete
+                // reply, and parseReply salvages it from the broken envelope.
+                failOnTruncation: false
             )
         }
 
@@ -290,8 +293,25 @@ final class ConversationService {
            let decoded = try? JSONDecoder().decode(PartnerReply.self, from: data),
            !decoded.reply.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             result = decoded
+        } else if let salvaged = AIStructuredResponse.salvagedField(anyOf: ["reply"], in: raw),
+                  !salvaged.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            // The envelope broke (an unescaped quote in the feedback is the
+            // usual cause) but the partner's line is still readable up to the
+            // damage; take it rather than showing the learner raw JSON.
+            result = PartnerReply(
+                reply: salvaged,
+                pinyin: nil,
+                translation: AIStructuredResponse.salvagedField(anyOf: ["translation"], in: raw) ?? "",
+                feedback: nil
+            )
         } else {
-            result = PartnerReply(reply: stripFences(raw), pinyin: nil, translation: "", feedback: nil)
+            let plain = stripFences(raw)
+            // A reply that still looks like an object is machine output, not
+            // something the partner said.
+            let fallback = plain.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{")
+                ? String(localized: "I didn't catch that — could you say it again?", bundle: .appLanguage)
+                : plain
+            result = PartnerReply(reply: fallback, pinyin: nil, translation: "", feedback: nil)
         }
 
         result.reply = result.reply.trimmingCharacters(in: .whitespacesAndNewlines)

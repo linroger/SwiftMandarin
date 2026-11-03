@@ -107,6 +107,9 @@ It works in **both directions**. An English speaker studying Mandarin and a Mand
 - **Ruby Text Display**: Pinyin displayed elegantly above Chinese characters
 - **Auto-Translate Options**: Translate automatically as you type or on paste
 - **Text-to-Speech**: Use Apple's system voices, or opt into MiniMax AI Audio for persistent, reusable Mandarin and English MP3 speech
+- **Study Notes That Teach the Right Language**: With an AI provider, every translation can carry a short explanation and key terms — and the key terms always come from the side written in the language you are *learning* (your translation when you type in your own language), with pinyin or IPA readings to match
+- **Lean Requests Where Notes Are Not Shown**: Reader paragraphs, screenshots, the menu bar, Shortcuts, and per-word saves ask the provider for the translation only, so they return faster and cost less
+- **Robust Parsing**: Provider replies written with Chinese punctuation around the JSON, stray line breaks, or a reasoning preamble are repaired instead of surfacing as raw JSON; a nested key term can no longer be mistaken for the whole translation
 
 <br clear="right"/>
 
@@ -130,6 +133,26 @@ It works in **both directions**. An English speaker studying Mandarin and a Mand
 - **Tap-to-Study**: Tap any word in the transcript to open its details and save it
 - **Dual-Language Narration**: Hear both the word and its translation read aloud
 - **Use Both Sides**: Accepting a spoken translation fills in both the transcript and the result on the Translate tab, and records it to History
+- **Honest About the Microphone**: If no input device is available (a Mac without a microphone, a denied permission) the app says so and stops, instead of starting an engine that could crash
+
+### ✨ AI Chat — Ask in English or 中文
+
+<img align="right" src="Screenshots/iOS%20Screenshots/iPhone-09-AIChat.png" width="260" alt="AI Chat" />
+
+- **Ask Anything, in Either Language**: Type in English, Chinese, or a mix; the provider you selected in **Settings → AI** (Apple Intelligence, Ollama, or a cloud model) answers in the language you are learning
+- **Every Reply Is a Study Text**: Answers arrive split into semantic chunks — words, set phrases, chengyu, measure-word phrases — with tone-colored pinyin above and the English meaning below, plus a full translation, exactly like the Translate tab
+- **Tap to Learn**: Tap a chunk to hear it, copy it, or save it to Vocabulary with its pinyin and meaning
+- **Trustworthy Chunks**: The model's chunks are laid over its own reply; anything it skipped is chunked on the device, so the chips always spell out the real answer
+- **Your Settings, Your Pace**: Toggle pinyin, chunk meanings, and translations; start new chats and reopen past ones from History
+- **Both Directions**: A Mandarin speaker gets English replies with IPA and Chinese meanings
+
+<br clear="right"/>
+
+### 🔎 Global Search
+
+- **One Search Over Everything**: Saved vocabulary (by headword, meaning, or pinyin — with or without tone marks), the phrasebook, translation history, and Reader texts, with the match highlighted in each row
+- **Where You Expect It**: The magnifying glass on Home and the first Library row in Study on iPhone, the system search tab in the Liquid Glass tab bar on iPad (iOS 26), and a sidebar item on macOS
+- **Act on a Result**: Open a word's details, a phrase, or a reading passage in place, or reopen a past translation in Translate
 
 ### 🤖 AI-Powered Features (Optional, Bring Your Own Provider)
 
@@ -146,7 +169,7 @@ It works in **both directions**. An English speaker studying Mandarin and a Mand
 
 ### ✅ AI Workbook Grading
 
-<img align="right" src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.11@2x.png" width="400" alt="Workbook Grading Results" />
+<img align="right" src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.05@2x.png" width="400" alt="Workbook Grading Results" />
 
 - **Photo-Based Grading**: Upload photos of a workbook (and answers, if on a separate sheet) and a vision-capable AI grades every question
 - **Per-Question Feedback**: See a ✓/✗ verdict, the correct answer, and a short explanation for each item
@@ -315,31 +338,37 @@ Experience SwiftMandarin's full power on your Mac with a spacious sidebar naviga
 </p>
 <p align="center">
   <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.05@2x.png" width="45%" alt="macOS - AI Workbook Grading (upload)" />
-  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.11@2x.png" width="45%" alt="macOS - AI Workbook Grading (results with read-aloud)" />
+  <img src="Screenshots/macOS%20Screenshots/SwiftMandarin%202026-06-07%20at%2023.28.05@2x.png" width="45%" alt="macOS - AI Workbook Grading (results with read-aloud)" />
 </p>
 
 ### iPhone
 
-A mobile-optimized experience with compact layouts and intuitive tab navigation.
+Captured in the iOS 27 Simulator on an iPhone 17 Pro Max: the Liquid Glass tab bar, the new global search (tone-insensitive pinyin, matches highlighted), the Study hub, flashcards on an elevated card face, statistics, an AI translation with tone-colored ruby text, vocabulary, and the AI conversation partner correcting a mixed-language reply.
 
 <p align="center">
-  <img src="Screenshots/iOS%20Screenshots/IMG_9055.PNG" width="24%" alt="iPhone - Translate" />
-  <img src="Screenshots/iOS%20Screenshots/IMG_9056.PNG" width="24%" alt="iPhone - Statistics" />
-  <img src="Screenshots/iOS%20Screenshots/IMG_9057.PNG" width="24%" alt="iPhone - Learn" />
-  <img src="Screenshots/iOS%20Screenshots/IMG_8532.PNG" width="24%" alt="iPhone - Vocabulary" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-01-Home.png" width="24%" alt="iPhone - Home" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-02-Search.png" width="24%" alt="iPhone - Global Search" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-03-Study.png" width="24%" alt="iPhone - Study hub" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-04-Learn.png" width="24%" alt="iPhone - Flashcards" />
+</p>
+<p align="center">
+  <img src="Screenshots/iOS%20Screenshots/iPhone-05-Stats.png" width="24%" alt="iPhone - Statistics" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-06-Translate.png" width="24%" alt="iPhone - Translate" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-07-Vocabulary.png" width="24%" alt="iPhone - Vocabulary" />
+  <img src="Screenshots/iOS%20Screenshots/iPhone-08-Conversation.png" width="24%" alt="iPhone - AI Conversation" />
 </p>
 
 ### iPad
 
-The best of both worlds—spacious layouts with adaptive sidebar navigation.
+On iPad (iOS 26 and later) global search becomes a system search tab in the Liquid Glass tab bar, beside the adaptive sidebar.
 
 <p align="center">
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0588.PNG" width="45%" alt="iPad - Translate" />
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0589.PNG" width="45%" alt="iPad - Vocabulary" />
+  <img src="Screenshots/iPadOS%20Screenshots/iPad-01-Home.png" width="45%" alt="iPad - Home" />
+  <img src="Screenshots/iPadOS%20Screenshots/iPad-02-Search.png" width="45%" alt="iPad - Search tab" />
 </p>
 <p align="center">
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0590.PNG" width="45%" alt="iPad - Learn" />
-  <img src="Screenshots/iPadOS%20Screenshots/IMG_0591.PNG" width="45%" alt="iPad - Phrases" />
+  <img src="Screenshots/iPadOS%20Screenshots/iPad-03-Stats.png" width="45%" alt="iPad - Statistics" />
+  <img src="Screenshots/iPadOS%20Screenshots/iPad-04-Vocabulary.png" width="45%" alt="iPad - Vocabulary" />
 </p>
 
 ---
@@ -353,7 +382,7 @@ Download SwiftMandarin from the [App Store](https://apps.apple.com/app/swiftmand
 ### macOS DMG Installer
 
 1. Download the latest DMG from [Releases](https://github.com/linroger/SwiftMandarin/releases)
-2. Open `SwiftMandarin-4.2.0-macOS.dmg`
+2. Open the downloaded `SwiftMandarin-<version>-macOS.dmg`
 3. Drag `SwiftMandarin.app` to your Applications folder
 4. Launch SwiftMandarin from Applications
 
@@ -454,7 +483,8 @@ xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration
 - **NLP**: NaturalLanguage framework for Chinese segmentation and lexical analysis
 - **Localization**: String Catalog (`Localizable.xcstrings`, 600+ keys, fully bilingual) + a `LocalizationManager` that swaps the active `.lproj` bundle for the in-app language toggle
 - **Storage**: UserDefaults + Codable locally, with automatic last-known-good backups so corrupted data never silently wipes your vocabulary, history, or progress; API keys in the system Keychain
-- **App Intents / Shortcuts**: Translate, look up vocabulary, start a review, scan, and more from Siri & Shortcuts
+- **App Intents / Shortcuts**: Ten Siri-ready shortcuts — translate (with spoken "to Chinese"/"to English" directions), translate the clipboard, speak a translation, explain a word with your AI provider, save a word, look up vocabulary (tone-insensitive pinyin), start a review, learning stats, a random phrase, and the live scanner (iOS). Every result is spoken back, saves finish before the shortcut returns, and the "Use AI Provider" toggle says exactly where text goes
+- **Responsiveness**: Persistence is coalesced and written off the main thread, imports deduplicate in one pass, and offline cloud requests fail fast instead of waiting minutes for connectivity
 
 ### File Structure
 
@@ -522,7 +552,7 @@ Your learning journey is yours alone.
 | Capability | iOS 17 | iOS 18 – 25 | iOS 26+ |
 |---|---|---|---|
 | Translation (Translate / Photo / Live Speech tabs) | Via your configured AI provider | Apple on-device translation | Apple on-device translation |
-| Word-tap lookups, screenshot & Shortcuts translation | Via AI provider | Via AI provider | Apple on-device translation |
+| Word-tap lookups, screenshot & Shortcuts translation | Via AI provider | Via AI provider | Apple on-device translation (AI provider when a language pack is missing) |
 | Live speech transcription | ✓ (SFSpeechRecognizer) | ✓ (SFSpeechRecognizer) | ✓ (SpeechAnalyzer, fully on-device) |
 | Apple Intelligence provider | — | — | ✓ |
 | Cloud AI providers, Ollama, OCR, vocabulary, flashcards, stats, phrases | ✓ | ✓ | ✓ |

@@ -6,7 +6,7 @@ repo_root="${0:A:h:h}"
 binary_path="${TMPDIR:-/tmp}/swiftmandarin-vocabulary-paging-checks"
 
 # The opt-in flag leaves the external runner inert if Xcode ever sees it as an app source.
-DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-beta.app/Contents/Developer}" \
+DEVELOPER_DIR="${DEVELOPER_DIR:-$(xcode-select -p)}" \
     xcrun swiftc \
     "$repo_root/SwiftMandarin/Models/VocabularyPaging.swift" \
     "$repo_root/scripts/vocabulary-paging-checks/VocabularyPagingChecksRunner.swift" \

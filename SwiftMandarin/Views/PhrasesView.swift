@@ -246,7 +246,9 @@ struct PhraseDetailSheet: View {
 // MARK: - Phrase Model
 
 struct Phrase: Identifiable, Hashable {
-    let id = UUID()
+    /// Stable identity: a phrase stored in a Shortcut must resolve to the
+    /// same phrase after relaunch, and a per-launch `UUID` broke that.
+    var id: String { chinese + "|" + english }
     let chinese: String
     let pinyin: String
     let english: String
@@ -263,7 +265,9 @@ struct Phrase: Identifiable, Hashable {
 // MARK: - Phrase Category
 
 struct PhraseCategory: Identifiable {
-    let id = UUID()
+    /// Identity by name, so the filtered copies the search builds on every
+    /// keystroke keep their section identity instead of rebuilding each one.
+    var id: String { name }
     let name: String
     let icon: String
     let phrases: [Phrase]

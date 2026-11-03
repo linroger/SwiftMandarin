@@ -141,3 +141,15 @@ SwiftMandarin is a cross-platform SwiftUI learning and translation app for macOS
 - Files: `Services/WordTranslationService.swift`, `Views/Components/RubyTextView.swift`, `Views/TranslateView.swift`. No new strings beyond reused catalog keys ("Try Again").
 - Tests: generic iOS Simulator Debug and macOS Debug builds via Xcode-beta; iOS clean (only the pre-existing "duplicate build file" warnings), macOS log checked the same way.
 - Not done / data note: vocabulary entries already saved with sentence definitions on the device are stored data; the code fix prevents new ones but existing rows need re-saving (delete + tap the word again) or an AI re-analysis pass. The sentence-level translation quality itself ("Obey orders and obey orders." for 服从命令听指挥) is model output, not app logic.
+
+### 2026-11-02 → 2026-11-03 — Iteration 34: whole-app review, AI Chat, new screenshots
+
+- Requests: (1) review every component, fix audio-to-text, hangs and crashes, Liquid Glass + latest SwiftUI, visible new features, Shortcuts and AI-translate prompt, simulator screenshots, EN/zh-Hans READMEs; (2) Word of the Day and Practice from unmastered words; (3) a chatbot that answers English or Chinese input through the selected provider, broken into semantic chunks with pinyin and English, like Translate but as a chat.
+- Harness: all `scripts/test-*.sh` default to `xcode-select -p` (Xcode-beta was removed); 223 duplicate PBXBuildFile entries and 100 stray references removed from the project; new `scripts/test-project-hygiene.sh` (11 guards) and `scripts/test-chatbot.sh` (51 contract + 8 wiring checks) in `init.sh`.
+- Fixes: ordered, coalesced off-main persistence flushed on background/termination; one-pass imports; vocabulary filtering once per update; offline fast-fail; screenshot stitching off-main at source scale; microphone format guard; transcription/stop timeouts; indexed explanation cache; lazy export; Ollama 5-minute request timeout; nested NavigationStacks removed; ~150 UI strings localized.
+- Shortcuts: spoken directions, spoken results, awaited and flushed saves, honest AI-provider fallback, searchable entities, stable phrase ids, Explain Word, Chinese Siri phrases.
+- Prompts: learning-side key terms, lean envelope for display-only callers, notes quote the translation on screen, hardened parser (Chinese punctuation, nested objects, control characters).
+- New: Global Search; AI Chat (Study hub, Translate toolbar, macOS sidebar) with chunk layout over the reply, per-chat request state, history, chunk detail/save.
+- Reviews: 29-agent review of the diff (24 confirmed, all fixed and re-reviewed); 22-agent review of AI Chat (17 confirmed, all fixed, each parser fix pinned by a regression check).
+- Verified: macOS and iOS Simulator builds with 0 warnings; `zsh init.sh` green; AI Chat exercised live with Apple Intelligence and Ollama gpt-oss; 8 iPhone + 4 iPad screenshots captured with seeded data.
+- Not verified: Apple's Translation framework (unsupported in the Simulator); physical devices.

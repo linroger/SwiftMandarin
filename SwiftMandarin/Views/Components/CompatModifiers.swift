@@ -104,3 +104,53 @@ extension View {
         }
     }
 }
+
+// MARK: - Liquid Glass chrome (OS 26+)
+
+extension View {
+
+    /// On iOS 26 the tab bar shrinks to a pill while the content scrolls down
+    /// and re-expands on scroll up, giving reading surfaces the full height.
+    /// No-op on earlier releases and on macOS, which has no tab bar.
+    @ViewBuilder
+    func tabBarMinimizeOnScrollCompat() -> some View {
+        #if os(iOS)
+        if #available(iOS 26.0, *) {
+            self.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+
+    /// `.buttonStyle(.glassProminent)` on OS 26+, `.borderedProminent` earlier.
+    /// For the one primary call to action on a screen.
+    @ViewBuilder
+    func glassProminentButtonStyleCompat() -> some View {
+        if #available(iOS 26.0, macOS 26.0, *) {
+            self.buttonStyle(.glassProminent)
+        } else {
+            self.buttonStyle(.borderedProminent)
+        }
+    }
+}
+
+/// Groups neighbouring glass elements so they render as one glass surface
+/// and blend when they move toward each other, instead of each sampling the
+/// background independently. Transparent on releases without Liquid Glass.
+struct GlassGroupCompat<Content: View>: View {
+    var spacing: CGFloat? = nil
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        if #available(iOS 26.0, macOS 26.0, *) {
+            GlassEffectContainer(spacing: spacing) {
+                content
+            }
+        } else {
+            content
+        }
+    }
+}

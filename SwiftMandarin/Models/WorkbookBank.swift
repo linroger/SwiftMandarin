@@ -27,7 +27,7 @@ import os.log
 /// A single question the learner can review later: either lifted from a graded
 /// workbook (`isGenerated == false`) or produced by the AI as new practice
 /// (`isGenerated == true`).
-struct WorkbookQuestion: Identifiable, Codable, Equatable, Hashable {
+nonisolated struct WorkbookQuestion: Identifiable, Codable, Equatable, Hashable, Sendable {
     let id: UUID
     var questionNumber: String
     var question: String
@@ -246,7 +246,7 @@ final class WorkbookQuestionBankStore {
 
 /// A past graded workbook kept for review, including references to the original
 /// scanned photos (stored on disk via `WorkbookImageStore`).
-struct GradedSession: Identifiable, Codable {
+nonisolated struct GradedSession: Identifiable, Codable, Sendable {
     let id: UUID
     var date: Date
     var score: String

@@ -639,7 +639,11 @@ nonisolated private struct GeneratedAudioFileUnreadable: LocalizedError {
     var errorDescription: String? { message }
 }
 
-private final class SpeechSessionReleaser: NSObject, AVSpeechSynthesizerDelegate {
+// Both delegate helpers are `nonisolated` on purpose: AVFoundation delivers
+// these callbacks on its own queues, so a main-actor-inferred class would be
+// a wrong-isolation entry point the moment the project moves to Swift 6. Each
+// method extracts a Sendable identifier and hops to the main actor itself.
+nonisolated private final class SpeechSessionReleaser: NSObject, AVSpeechSynthesizerDelegate {
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         let utteranceID = ObjectIdentifier(utterance)
         Task { @MainActor in
@@ -655,7 +659,7 @@ private final class SpeechSessionReleaser: NSObject, AVSpeechSynthesizerDelegate
     }
 }
 
-private final class GeneratedAudioPlaybackDelegate: NSObject, AVAudioPlayerDelegate {
+nonisolated private final class GeneratedAudioPlaybackDelegate: NSObject, AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         let playerID = ObjectIdentifier(player)
         Task { @MainActor in

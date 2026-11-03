@@ -7,7 +7,7 @@ import AppIntents
 
 struct TranslateTextIntent: AppIntent {
     static var title: LocalizedStringResource = "Translate Text"
-    static var description = IntentDescription("Translate text between English and Chinese. Optionally save Chinese phrases (2+ characters) to vocabulary with auto-detected part of speech.")
+    static var description = IntentDescription("Translate text between English and Chinese. Optionally save the words in the language you are learning to your vocabulary, with the part of speech detected automatically.")
 
     @Parameter(title: "Text", inputOptions: .init(capitalizationType: .sentences))
     var text: String
@@ -15,7 +15,11 @@ struct TranslateTextIntent: AppIntent {
     @Parameter(title: "Direction", default: .auto)
     var direction: ShortcutTranslationDirection
 
-    @Parameter(title: "Use Apple Intelligence", default: false)
+    @Parameter(
+        title: "Use AI Provider",
+        description: "Translate with the AI provider selected in SwiftMandarin's AI settings instead of Apple's on-device translation. The text is sent to that provider.",
+        default: false
+    )
     var useAI: Bool
 
     @Parameter(title: "Save to Vocabulary", default: false)
@@ -46,22 +50,31 @@ struct TranslateTextIntent: AppIntent {
             direction: resolvedDirection
         )
 
-        // Save the studied language's phrases to vocabulary if enabled
+        // Save the studied language's phrases to vocabulary if enabled —
+        // awaited, so the save finishes before the intent returns.
+        var saveOutcome: ShortcutHelpers.VocabularySaveOutcome?
         if saveToVocabulary {
             let chinese = resolvedDirection == .englishToChinese ? result.translation : trimmed
             let english = resolvedDirection == .englishToChinese ? trimmed : result.translation
-
-            ShortcutHelpers.saveStudiedPhrasesToVocabulary(
+            saveOutcome = await ShortcutHelpers.saveStudiedPhrasesToVocabulary(
                 chineseText: chinese,
                 englishTranslation: english
             )
         }
 
-        let dialog = useAI && !result.usedAI
-            ? IntentDialog("Apple Intelligence wasn't available, so SwiftMandarin used standard translation.")
-            : IntentDialog("Translation complete.")
+        // The history entry and any saved words are on disk before Shortcuts
+        // reports success, even if the process is suspended right after.
+        ShortcutHelpers.persistIntentChanges()
 
-        return .result(value: result.translation, dialog: dialog)
+        return .result(
+            value: result.translation,
+            dialog: ShortcutHelpers.translationDialog(
+                translation: result.translation,
+                requestedAI: useAI,
+                usedAI: result.usedAI,
+                saveOutcome: saveOutcome
+            )
+        )
     }
 }
 
@@ -74,13 +87,13 @@ enum TranslationIntentError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .emptyText:
-            return "Please provide text to translate."
+            return String(localized: "Please provide text to translate.", bundle: .appLanguage)
         case .translationFailed(let message):
             return message
         case .noImages:
-            return "No images provided."
+            return String(localized: "No images provided.", bundle: .appLanguage)
         case .invalidImages:
-            return "Could not load the provided images."
+            return String(localized: "Could not load the provided images.", bundle: .appLanguage)
         }
     }
 }

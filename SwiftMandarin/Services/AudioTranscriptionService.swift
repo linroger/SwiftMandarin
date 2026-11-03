@@ -174,6 +174,25 @@ final class AudioTranscriptionService {
     /// check rejected perfectly good recognizers.
     private static let availabilityTimeout: Duration = .seconds(3)
 
+    /// How long the modern analyzer may spend on a file before it is treated
+    /// as stalled: twice the audio's duration, never under 30 seconds, never
+    /// over 10 minutes. The legacy recognizer has had a deadline since it
+    /// shipped; the analyzer had none, so an analysis that never finished —
+    /// an asset that failed mid-load, a session the system dropped — left the
+    /// Multimodal "Transcribe" spinner running until the user gave up.
+    private static func analyzerTimeout(forAudioDuration seconds: TimeInterval) -> Duration {
+        let bounded = min(max(seconds * 2, 30), 600)
+        return .seconds(bounded)
+    }
+
+    /// Seconds of audio in `file`, or 0 when the header does not say — which
+    /// gets the shortest deadline rather than none.
+    private static func duration(of file: AVAudioFile) -> TimeInterval {
+        let sampleRate = file.fileFormat.sampleRate
+        guard sampleRate > 0, file.length > 0 else { return 0 }
+        return TimeInterval(file.length) / sampleRate
+    }
+
     /// Transcribe one app-owned audio file with the learner's chosen engine.
     ///
     /// Routing lives here rather than in the view so every audio surface picks
@@ -307,33 +326,60 @@ final class AudioTranscriptionService {
             return String(text.characters)
         }
 
-        do {
-            try await withTaskCancellationHandler {
+        // The analysis runs as its own task and reports through a gate that
+        // resolves exactly once — from the analysis, the deadline, or
+        // cancellation, whichever comes first — so a stalled analyzer can
+        // never hold this caller. A structured child task would not do: the
+        // group would still wait for the stalled call to return, and the
+        // whole point is to stop waiting.
+        let gate = AudioRecognitionGate()
+        let analysis = Task {
+            do {
                 if let lastSample = try await analyzer.analyzeSequence(from: audioFile) {
                     try await analyzer.finalizeAndFinish(through: lastSample)
                 } else {
                     await analyzer.cancelAndFinishNow()
                 }
+                let transcript = try await collector.value
+                gate.succeed(transcript)
+            } catch {
+                gate.fail(error)
+            }
+        }
+
+        // The gate resolves exactly once, so this fires only if the analysis
+        // has not finished by then; releasing the caller comes first, and
+        // telling the analyzer to stop is best effort after that.
+        let deadline = Self.analyzerTimeout(forAudioDuration: Self.duration(of: audioFile))
+        let watchdog = Task {
+            try? await Task.sleep(for: deadline)
+            guard !Task.isCancelled else { return }
+            gate.fail(AudioTranscriptionError.timedOut)
+            await analyzer.cancelAndFinishNow()
+        }
+        defer { watchdog.cancel() }
+
+        let transcript: String
+        do {
+            transcript = try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { continuation in
+                    gate.install(continuation)
+                }
             } onCancel: {
+                gate.cancel()
                 Task { await analyzer.cancelAndFinishNow() }
             }
         } catch {
             collector.cancel()
+            analysis.cancel()
             if error is CancellationError { throw CancellationError() }
+            if let failure = error as? AudioTranscriptionError { throw failure }
             throw AudioTranscriptionError.recognitionFailed(Self.describe(error))
         }
 
-        let transcript: String
-        do {
-            transcript = try await collector.value.trimmingCharacters(in: .whitespacesAndNewlines)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            throw AudioTranscriptionError.recognitionFailed(Self.describe(error))
-        }
-
-        guard !transcript.isEmpty else { throw AudioTranscriptionError.emptyTranscript }
-        return transcript
+        let trimmed = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw AudioTranscriptionError.emptyTranscript }
+        return trimmed
     }
 
     /// Download and install the locale's recognition assets when they are not
