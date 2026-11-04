@@ -47,6 +47,10 @@ struct HomeView: View {
             .navigationTitle("Home")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            // The greeting card is the page's header. An inline "Home" title
+            // above it only floated over the card's text once the page
+            // scrolled under the bar, so the bar keeps just its search button.
+            .hidesNavigationTitleCompat()
             .toolbar {
                 // Global search from the screen people land on. macOS has a
                 // Search sidebar item, and iPad at full width has the search

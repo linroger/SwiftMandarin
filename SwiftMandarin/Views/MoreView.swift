@@ -36,20 +36,26 @@ struct MoreView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            List {
-                headerSection
-                learningSection
-                quickSetupSection
-                settingsSection
-                aboutSection
+            ScrollView {
+                // Liquid Glass sections over the app's page backdrop, like the
+                // other hubs (Home, Study). A system List draws its grouped rows
+                // opaque, so the hub lays its rows out itself.
+                VStack(alignment: .leading, spacing: 22) {
+                    headerSection
+                    learningSection
+                    quickSetupSection
+                    settingsSection
+                    aboutSection
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .frame(maxWidth: SMTheme.contentMaxWidth)
+                .frame(maxWidth: .infinity)
             }
+            .smPageBackground()
             .navigationTitle("More")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
-            // The hub shares the app's page backdrop with the other tabs; its
-            // grouped rows stay the native solid rows.
-            .scrollContentBackground(.hidden)
-            .smPageBackground()
             #endif
             .navigationDestination(for: MoreRoute.self) { route in
                 switch route {
@@ -67,66 +73,76 @@ struct MoreView: View {
     // MARK: - Sections
 
     private var learningSection: some View {
-        Section {
+        MoreSection("Learning Tools") {
             NavigationLink(value: MoreRoute.learn) {
-                Label(AppTab.learn.titleKey, systemImage: AppTab.learn.icon)
+                MoreRow(AppTab.learn.titleKey, systemImage: AppTab.learn.icon)
             }
+            MoreDivider()
             NavigationLink(value: MoreRoute.practice) {
-                Label(AppTab.practice.titleKey, systemImage: AppTab.practice.icon)
+                MoreRow(AppTab.practice.titleKey, systemImage: AppTab.practice.icon)
             }
+            MoreDivider()
             NavigationLink(value: MoreRoute.conversation) {
-                Label(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
+                MoreRow(AppTab.conversation.titleKey, systemImage: AppTab.conversation.icon)
             }
+            MoreDivider()
             NavigationLink(value: MoreRoute.reader) {
-                Label(AppTab.reader.titleKey, systemImage: AppTab.reader.icon)
+                MoreRow(AppTab.reader.titleKey, systemImage: AppTab.reader.icon)
             }
+            MoreDivider()
             NavigationLink(value: MoreRoute.phrases) {
-                Label(AppTab.phrases.titleKey, systemImage: AppTab.phrases.icon)
+                MoreRow(AppTab.phrases.titleKey, systemImage: AppTab.phrases.icon)
             }
+            MoreDivider()
             NavigationLink(value: MoreRoute.stats) {
-                Label(AppTab.stats.titleKey, systemImage: AppTab.stats.icon)
+                MoreRow(AppTab.stats.titleKey, systemImage: AppTab.stats.icon)
             }
-        } header: {
-            Text("Learning Tools")
         }
     }
 
     private var headerSection: some View {
-        Section {
-            HStack(spacing: 14) {
-                Image(systemName: "character.book.closed.fill")
-                    .font(.system(size: 30))
-                    .foregroundStyle(.tint)
-                    .frame(width: 52, height: 52)
-                    .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("SwiftMandarin")
-                        .font(.headline)
-                    Text(verbatim: "\(L("Version")) \(AppConfig.appVersion)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
+        HStack(spacing: 14) {
+            Image(systemName: "character.book.closed.fill")
+                .font(.system(size: 30))
+                .foregroundStyle(.tint)
+                .frame(width: 52, height: 52)
+                .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("SwiftMandarin")
+                    .font(.headline)
+                Text(verbatim: "\(L("Version")) \(AppConfig.appVersion)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .padding(.vertical, 4)
+            Spacer()
         }
+        .padding(16)
+        .smCardSurface(cornerRadius: moreSectionCornerRadius)
+        .accessibilityElement(children: .combine)
     }
 
     private var quickSetupSection: some View {
-        Section {
-            Picker("App Language", selection: $localization.language) {
-                ForEach(AppLanguage.allCases) { language in
-                    Label(language.displayName, systemImage: language.iconName).tag(language)
-                }
+        MoreSection("Quick Setup") {
+            MoreRow("App Language", systemImage: localization.language.iconName, showsChevron: false) {
+                MoreMenuPicker(
+                    titleKey: "App Language",
+                    selection: $localization.language,
+                    options: AppLanguage.allCases,
+                    name: \.displayName,
+                    systemImage: \.iconName
+                )
             }
-
-            Picker("I am a…", selection: $prefs.learnerMode) {
-                ForEach(LearnerMode.allCases) { mode in
-                    Label(mode.displayName, systemImage: mode.iconName).tag(mode)
-                }
+            MoreDivider()
+            MoreRow("I am a…", systemImage: prefs.learnerMode.iconName, showsChevron: false) {
+                MoreMenuPicker(
+                    titleKey: "I am a…",
+                    selection: $prefs.learnerMode,
+                    options: LearnerMode.allCases,
+                    name: \.displayName,
+                    systemImage: \.iconName
+                )
             }
-        } header: {
-            Text("Quick Setup")
         }
     }
 
@@ -140,92 +156,216 @@ struct MoreView: View {
     }
 
     private var settingsSection: some View {
-        Section {
+        MoreSection("Settings") {
             NavigationLink {
                 GeneralSettingsView()
             } label: {
-                Label("General", systemImage: "gearshape")
+                MoreRow("General", systemImage: "gearshape")
             }
-
+            MoreDivider()
             NavigationLink {
                 AISettingsDetailView()
             } label: {
-                HStack {
-                    Label("AI Provider", systemImage: "cpu")
-                    Spacer()
+                MoreRow("AI Provider", systemImage: "cpu") {
                     Text(aiSettings.provider.displayName)
                         .foregroundStyle(.secondary)
                         .fitSingleLine(0.8)
                 }
             }
-
+            MoreDivider()
             NavigationLink {
                 AIAudioSettingsView()
             } label: {
-                HStack {
-                    Label("AI Audio", systemImage: "waveform")
-                    Spacer()
+                MoreRow("AI Audio", systemImage: "waveform") {
                     Text(prefs.aiAudioEnabled ? "On" : "Off")
                         .foregroundStyle(.secondary)
                 }
             }
-
+            MoreDivider()
             NavigationLink {
                 BatchAIAnalysisView()
             } label: {
-                HStack {
-                    Label("Batch AI Analysis", systemImage: "sparkles.rectangle.stack")
-                    Spacer()
+                MoreRow("Batch AI Analysis", systemImage: "sparkles.rectangle.stack") {
                     // Live progress, visible even from the hub root, so the user
                     // knows a background run is still going after navigating back.
                     BatchAIAnalysisStatusBadge()
                 }
             }
-
+            MoreDivider()
             NavigationLink {
                 TranslationSettingsView()
             } label: {
-                Label("Translation", systemImage: "character.bubble")
+                MoreRow("Translation", systemImage: "character.bubble")
             }
-
+            MoreDivider()
             NavigationLink {
                 DisplaySettingsView()
             } label: {
-                Label(displaySettingsTitle, systemImage: "textformat")
+                MoreRow(displaySettingsTitle, systemImage: "textformat")
             }
-
+            MoreDivider()
             NavigationLink {
                 DataManagementView()
             } label: {
-                Label("Manage Data", systemImage: "externaldrive")
+                MoreRow("Manage Data", systemImage: "externaldrive")
             }
-        } header: {
-            Text("Settings")
         }
     }
 
     private var aboutSection: some View {
-        Section {
+        MoreSection("About & Support") {
             NavigationLink {
                 AboutView()
             } label: {
-                Label("About", systemImage: "info.circle")
+                MoreRow("About", systemImage: "info.circle")
             }
-
+            MoreDivider()
             Link(destination: AppConfig.privacyPolicyURL) {
-                Label("Privacy Policy", systemImage: "hand.raised")
+                MoreRow("Privacy Policy", systemImage: "hand.raised", trailingSymbol: "arrow.up.right")
             }
-
+            MoreDivider()
             Link(destination: AppConfig.reviewURL) {
-                Label("Rate App", systemImage: "star")
+                MoreRow("Rate App", systemImage: "star", trailingSymbol: "arrow.up.right")
             }
-
+            MoreDivider()
             ShareLink(item: AppConfig.appStoreURL) {
-                Label("Share App", systemImage: "square.and.arrow.up")
+                MoreRow("Share App", systemImage: "square.and.arrow.up", showsChevron: false)
             }
-        } header: {
-            Text("About & Support")
         }
+    }
+}
+
+// MARK: - Hub building blocks
+
+/// The corner radius of the hub's glass panels.
+private let moreSectionCornerRadius: CGFloat = 22
+
+/// A titled Liquid Glass panel of rows, the hub's stand-in for a grouped
+/// list section. The rows inside stay plain, so no glass sits on glass.
+private struct MoreSection<Content: View>: View {
+    let titleKey: LocalizedStringKey
+    @ViewBuilder var content: Content
+
+    init(_ titleKey: LocalizedStringKey, @ViewBuilder content: () -> Content) {
+        self.titleKey = titleKey
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(titleKey)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 16)
+                .accessibilityAddTraits(.isHeader)
+            VStack(spacing: 0) {
+                content
+            }
+            .buttonStyle(MoreRowButtonStyle())
+            .smCardSurface(cornerRadius: moreSectionCornerRadius)
+        }
+    }
+}
+
+/// One hub row: a tinted icon, its title, an optional trailing value, and
+/// the disclosure chevron of a row that pushes a screen.
+private struct MoreRow<Trailing: View>: View {
+    let titleKey: LocalizedStringKey
+    let systemImage: String
+    var showsChevron = true
+    var trailingSymbol = "chevron.right"
+    @ViewBuilder var trailing: Trailing
+
+    init(
+        _ titleKey: LocalizedStringKey,
+        systemImage: String,
+        showsChevron: Bool = true,
+        trailingSymbol: String = "chevron.right",
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() }
+    ) {
+        self.titleKey = titleKey
+        self.systemImage = systemImage
+        self.showsChevron = showsChevron
+        self.trailingSymbol = trailingSymbol
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.body)
+                .foregroundStyle(.tint)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+            Text(titleKey)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .layoutPriority(1)
+            Spacer(minLength: 8)
+            trailing
+            if showsChevron {
+                Image(systemName: trailingSymbol)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
+        .frame(minHeight: 50)
+        .contentShape(Rectangle())
+    }
+}
+
+/// A row's menu picker: the current choice on one line in the row (a menu
+/// picker's own label wraps a long choice over several lines and spills out
+/// of the row), with every choice, its icon and a checkmark in the menu.
+private struct MoreMenuPicker<Option: Hashable>: View {
+    let titleKey: LocalizedStringKey
+    @Binding var selection: Option
+    let options: [Option]
+    let name: KeyPath<Option, String>
+    let systemImage: KeyPath<Option, String>
+
+    var body: some View {
+        Menu {
+            Picker(titleKey, selection: $selection) {
+                ForEach(options, id: \.self) { option in
+                    Label(option[keyPath: name], systemImage: option[keyPath: systemImage]).tag(option)
+                }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            HStack(spacing: 4) {
+                Text(selection[keyPath: name])
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.footnote.weight(.semibold))
+                    .accessibilityHidden(true)
+            }
+            .foregroundStyle(.tint)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(titleKey))
+        .accessibilityValue(Text(selection[keyPath: name]))
+    }
+}
+
+/// The hairline between two rows, inset to the title like a grouped list.
+private struct MoreDivider: View {
+    var body: some View {
+        Divider()
+            .padding(.leading, 58)
+    }
+}
+
+/// Plain rows that highlight while pressed, like a list cell.
+private struct MoreRowButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(configuration.isPressed ? Color.primary.opacity(0.08) : Color.clear)
     }
 }
 

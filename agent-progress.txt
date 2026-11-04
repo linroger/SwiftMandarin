@@ -172,3 +172,11 @@ SwiftMandarin is a cross-platform SwiftUI learning and translation app for macOS
 - Files: DesignSystem, CompatModifiers, ChatbotView/Prompt/Service, TranslateView (+ FlowLayout), StatsView and ~35 other views, test-chatbot.sh, test-macos-surfaces.sh, ChatbotChecksRunner, READMEs, iPhone screenshots.
 - Tests: iOS + macOS builds 0 warnings; zsh init.sh green (AI Chat 70/70 + 11/11, macOS surfaces 8/8 + 9/9).
 - Not done: dark-mode screenshots this round, iPad screenshot refresh, physical devices.
+
+### 2026-11-04 — Iteration 36: Home header, Liquid Glass More hub
+
+- Home: content scrolled under a hard frosted strip with the inline "Home" title floating over the hero card. Soft top scroll edge app-wide via smPageBackground(); Home hides its bar title (greeting card is the header) and keeps the glass search button.
+- More: system List (opaque rows) replaced by glass section cards with the same rows, strings and destinations; Quick Setup pickers use a one-line menu label so a long learner mode no longer wraps out of the card.
+- Files: CompatModifiers.swift, DesignSystem.swift, HomeView.swift, MoreView.swift, iPhone-01-Home.png, handoff.md.
+- Tests: iOS + macOS builds, zsh init.sh; simulator checks of Home (rest/scrolled), More (rest/scrolled, picker menu, push to General).
+
