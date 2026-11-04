@@ -143,8 +143,13 @@ extension View {
     /// The app's page backdrop: the grouped page color with a soft wash of
     /// accent color, so the Liquid Glass panels above it have something to
     /// refract instead of reading as flat gray boxes. Fills under the bars.
+    ///
+    /// It also asks for the soft top scroll-edge effect, so a page's content
+    /// fades out under the glass navigation bar rather than showing through a
+    /// hard frosted strip.
     func smPageBackground() -> some View {
         background { SMPageBackdrop() }
+            .softTopScrollEdgeCompat()
     }
 }
 

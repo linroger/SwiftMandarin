@@ -173,6 +173,36 @@ extension View {
         #endif
     }
 
+    /// The soft scroll-edge effect at the top on OS 26+: content scrolling
+    /// under the navigation bar fades out behind the glass title and buttons
+    /// instead of sitting under a hard, frosted strip with a divider line.
+    /// No-op earlier and on visionOS, which has no scroll-edge effects.
+    @ViewBuilder
+    func softTopScrollEdgeCompat() -> some View {
+        #if os(visionOS)
+        self
+        #else
+        if #available(iOS 26.0, macOS 26.0, *) {
+            self.scrollEdgeEffectStyle(.soft, for: .top)
+        } else {
+            self
+        }
+        #endif
+    }
+
+    /// Hides the navigation title from the bar on iOS 18+/macOS 15+ while
+    /// keeping it for VoiceOver, the back button, and the app switcher. For a
+    /// screen whose own content is its header, where an inline title would
+    /// only float over that content as it scrolls underneath.
+    @ViewBuilder
+    func hidesNavigationTitleCompat() -> some View {
+        if #available(iOS 18.0, macOS 15.0, *) {
+            self.toolbar(removing: .title)
+        } else {
+            self
+        }
+    }
+
     /// `.buttonStyle(.glassProminent)` on OS 26+, `.borderedProminent` earlier.
     /// For the one primary call to action on a screen.
     @ViewBuilder

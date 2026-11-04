@@ -1631,3 +1631,12 @@ Critical path: fix the harness first (nothing else is verifiable without it) →
 
 ### 10) Updates
 - 2026-11-03: Iteration 35 opened and completed.
+
+## Iteration 36 — Home header under the bar, Liquid Glass More hub (2026-11-04)
+
+- **Request:** "fix this header issue. also make the more view liquid glass" (two iPhone screenshots: Home scrolled, with the hero's "Good evening" showing through a hard frosted strip under the inline "Home" title; More as an opaque grouped List).
+- **Root causes:** (1) the scroll views took iOS 26's hard top scroll-edge style, an opaque strip with a divider line; (2) on Home the inline "Home" title sat over the bright hero card as it scrolled underneath, so even the soft edge left its text showing through the title; (3) More was a system `List`, whose grouped rows are always opaque.
+- **Changes:** `softTopScrollEdgeCompat()` (soft top scroll edge on OS 26, no-op earlier and on visionOS), applied by `smPageBackground()` to every page; `hidesNavigationTitleCompat()` (`.toolbar(removing: .title)`, iOS 18+/macOS 15+) on Home, whose greeting card is the header; the title stays for VoiceOver. More rebuilt as a ScrollView of glass section cards (`MoreSection`, `MoreRow`, `MoreDivider`, `MoreRowButtonStyle`) with the same rows, strings, destinations, links and share sheet; the two Quick Setup pickers became `MoreMenuPicker` (one-line current choice; the menu still lists every choice with its icon and a checkmark) because a menu picker's own label wrapped "English speaker learning 中文" over four lines and spilled out of the card.
+- **Verified (iPhone 17 Pro Max simulator, light):** Home at rest and scrolled (no strip, no title over the card); More at rest and scrolled (glass sections, collapsed inline title fades softly); the "I am a…" menu opens with all three modes; General pushes. iOS and macOS builds and `zsh init.sh` (see below).
+- **Not changed:** the settings screens More opens keep native grouped forms over the glass backdrop.
+
