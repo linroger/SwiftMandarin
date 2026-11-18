@@ -33,7 +33,25 @@ enum SpeechService {
     private static var activeRequestID: UUID?
     private static var activeAudioSessionOwner: AudioSessionOwner?
     private static var trackedRequestIDs: Set<UUID> = []
+    /// Callers suspended in `waitForCompletion`, resumed by the delegate
+    /// callbacks that end a request.
+    private static var completionWaiters: [UUID: CheckedContinuation<SpeechRequestOutcome, Never>] = [:]
+    /// Outcomes that arrived before their caller began waiting.
     private static var completedRequestOutcomes: [UUID: SpeechRequestOutcome] = [:]
+    /// Run once, when a tracked request's audio actually begins, with the
+    /// voice that began it.
+    private static var startHandlers: [UUID: @MainActor (SpeechVoiceEngine) -> Void] = [:]
+    /// Drops the cached voice choice when the person installs or removes a
+    /// system voice, so a newly downloaded enhanced voice is used at once.
+    private static let voiceChangeObserver: any NSObjectProtocol = NotificationCenter.default.addObserver(
+        forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification,
+        object: nil,
+        queue: .main
+    ) { _ in
+        MainActor.assumeIsolated {
+            voiceCache.removeAll()
+        }
+    }
 
     static func speak(_ text: String, languageCode: String? = nil) {
         _ = routeSpeech(
@@ -73,15 +91,37 @@ enum SpeechService {
 
     /// Async convenience for App Intents and other workflows that must not
     /// return until generation and playback have completed.
-    static func speakAndWait(_ text: String, languageCode: String? = nil) async throws {
+    ///
+    /// - Parameters:
+    ///   - engine: Which voice speaks. `nil` follows the app-wide AI Audio
+    ///     switch, as every other read-aloud action does. A value overrides
+    ///     it for this request only: the Interpreter uses this to offer its
+    ///     own choice between the system voice and MiniMax.
+    ///   - onStart: Runs when audio actually begins, which is later than the
+    ///     call for a voice that has to be loaded or a clip that has to be
+    ///     generated. It is told which voice is speaking, which is the
+    ///     system's when a MiniMax request fell back to it.
+    ///
+    /// Throws `CancellationError` when the speech is stopped or replaced
+    /// before it finishes.
+    static func speakAndWait(
+        _ text: String,
+        languageCode: String? = nil,
+        engine: SpeechVoiceEngine? = nil,
+        onStart: (@MainActor (SpeechVoiceEngine) -> Void)? = nil
+    ) async throws {
         guard let requestID = routeSpeech(
             text,
             languageCode: languageCode,
             localRate: Float(AppPreferences.shared.ttsRate),
             aiSpeedScale: 1,
-            trackCompletion: true
+            trackCompletion: true,
+            engine: engine
         ) else { return }
 
+        if let onStart {
+            startHandlers[requestID] = onStart
+        }
         try await waitForCompletion(of: requestID)
     }
 
@@ -99,36 +139,50 @@ enum SpeechService {
             localRate: Float(AppPreferences.shared.ttsRate),
             aiSpeedScale: 1,
             trackCompletion: true,
-            requireMiniMax: true
+            engine: .miniMax,
+            allowsSystemFallback: false
         ) else { return }
 
         try await waitForCompletion(of: requestID)
     }
 
+    /// Suspends until the request ends, however it ends. The synthesizer's
+    /// and player's delegate callbacks resume it through
+    /// `completeTrackedRequest`; nothing polls.
     private static func waitForCompletion(of requestID: UUID) async throws {
-        do {
-            while true {
-                if let outcome = completedRequestOutcomes.removeValue(forKey: requestID) {
-                    trackedRequestIDs.remove(requestID)
-                    switch outcome {
-                    case .success:
-                        return
-                    case .failed(let message):
-                        throw AIAudioSpeechFailure(message: message)
-                    case .cancelled:
-                        throw CancellationError()
-                    }
+        let outcome = await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<SpeechRequestOutcome, Never>) in
+                // A safety net: nothing between routing a request and
+                // reaching this line suspends, so an outcome should not be
+                // waiting here. If one ever is, it is not lost.
+                if let finished = completedRequestOutcomes.removeValue(forKey: requestID) {
+                    continuation.resume(returning: finished)
+                } else {
+                    completionWaiters[requestID] = continuation
                 }
-                try Task.checkCancellation()
-                try await Task.sleep(for: .milliseconds(50))
             }
-        } catch {
-            if activeRequestID == requestID {
-                stop()
+        } onCancel: {
+            // The caller gave up waiting. Stop its speech, which ends the
+            // request; if another request has already replaced it, end it
+            // directly.
+            Task { @MainActor in
+                if activeRequestID == requestID {
+                    stop()
+                }
+                completeTrackedRequest(requestID, outcome: .cancelled)
             }
-            trackedRequestIDs.remove(requestID)
-            completedRequestOutcomes.removeValue(forKey: requestID)
-            throw error
+        }
+
+        trackedRequestIDs.remove(requestID)
+        completedRequestOutcomes.removeValue(forKey: requestID)
+        startHandlers.removeValue(forKey: requestID)
+        switch outcome {
+        case .success:
+            return
+        case .failed(let message):
+            throw AIAudioSpeechFailure(message: message)
+        case .cancelled:
+            throw CancellationError()
         }
     }
 
@@ -140,6 +194,7 @@ enum SpeechService {
     /// Plays an existing library item without contacting MiniMax.
     static func playGeneratedAudio(recordID: String) async throws {
         SourceAudioActivityCoordinator.shared.stopSourceAudioForSpeech()
+        InterpreterAudioBridge.otherAudioWillStart()
         stop()
         let requestID = UUID()
         let sessionOwner = AudioSessionOwner()
@@ -223,12 +278,14 @@ enum SpeechService {
         localRate: Float,
         aiSpeedScale: Double,
         trackCompletion: Bool,
-        requireMiniMax: Bool = false
+        engine: SpeechVoiceEngine? = nil,
+        allowsSystemFallback: Bool = true
     ) -> UUID? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
 
         SourceAudioActivityCoordinator.shared.stopSourceAudioForSpeech()
+        InterpreterAudioBridge.otherAudioWillStart()
         stop()
         AIAudioRuntimeState.shared.clearNotice()
         let requestID = UUID()
@@ -240,7 +297,15 @@ enum SpeechService {
         }
         let resolvedLanguage = languageCode ?? (trimmed.containsCJK ? "zh-CN" : "en-US")
         let preferences = AppPreferences.shared
-        guard preferences.aiAudioEnabled || requireMiniMax else {
+        // An explicit engine is the caller's choice for this request; without
+        // one, the app-wide AI Audio switch decides.
+        let usesMiniMax: Bool
+        switch engine {
+        case .system?: usesMiniMax = false
+        case .miniMax?: usesMiniMax = true
+        case nil: usesMiniMax = preferences.aiAudioEnabled
+        }
+        guard usesMiniMax else {
             speakLocally(
                 trimmed,
                 languageCode: resolvedLanguage,
@@ -266,7 +331,7 @@ enum SpeechService {
             message: String(localized: "Generating AI audio…", bundle: .appLanguage)
         )
 
-        let fallback = requireMiniMax ? false : preferences.aiAudioFallbackToSystemSpeech
+        let fallback = allowsSystemFallback && preferences.aiAudioFallbackToSystemSpeech
         generationTask = Task { @MainActor in
             do {
                 let generated = try await MiniMaxSpeechPipeline.shared.speech(
@@ -419,6 +484,7 @@ enum SpeechService {
                     String(localized: "The audio player could not start.", bundle: .appLanguage)
                 )
             }
+            notifyStarted(requestID, engine: .miniMax)
         } catch let error as MiniMaxAudioError {
             if generatedAudioPlayer === player {
                 generatedAudioPlayer = nil
@@ -544,6 +610,13 @@ enum SpeechService {
         }
     }
 
+    fileprivate static func systemSpeechDidStart(utteranceID: ObjectIdentifier) {
+        guard let currentUtterance = activeUtterance,
+              ObjectIdentifier(currentUtterance) == utteranceID,
+              let requestID = activeRequestID else { return }
+        notifyStarted(requestID, engine: .system)
+    }
+
     fileprivate static func systemSpeechDidFinish(
         utteranceID: ObjectIdentifier,
         cancelled: Bool
@@ -594,17 +667,39 @@ enum SpeechService {
         }
     }
 
+    /// Ends a tracked request with its first outcome. A request can be ended
+    /// from more than one place — `stop()` and then the delegate's own cancel
+    /// callback — and only the first counts.
     private static func completeTrackedRequest(
         _ requestID: UUID,
         outcome: SpeechRequestOutcome
     ) {
         guard trackedRequestIDs.contains(requestID) else { return }
-        completedRequestOutcomes[requestID] = outcome
+        if let waiter = completionWaiters.removeValue(forKey: requestID) {
+            waiter.resume(returning: outcome)
+        } else if completedRequestOutcomes[requestID] == nil {
+            completedRequestOutcomes[requestID] = outcome
+        }
+    }
+
+    /// Tells a tracked request's caller that its audio has begun, and with
+    /// which voice.
+    private static func notifyStarted(_ requestID: UUID, engine: SpeechVoiceEngine) {
+        startHandlers.removeValue(forKey: requestID)?(engine)
     }
 
     // MARK: - Voice Selection
 
+    /// Whether the best installed system voice for `code` is better than the
+    /// compact default. The Interpreter uses this to suggest downloading one
+    /// when it is not.
+    static func hasEnhancedSystemVoice(forLanguage code: String) -> Bool {
+        guard let quality = bestVoice(forLanguage: code)?.quality else { return false }
+        return quality == .enhanced || quality == .premium
+    }
+
     private static func bestVoice(forLanguage code: String) -> AVSpeechSynthesisVoice? {
+        _ = voiceChangeObserver
         if let cached = voiceCache[code] { return cached }
 
         let matches = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == code }
@@ -644,6 +739,13 @@ nonisolated private struct GeneratedAudioFileUnreadable: LocalizedError {
 // a wrong-isolation entry point the moment the project moves to Swift 6. Each
 // method extracts a Sendable identifier and hops to the main actor itself.
 nonisolated private final class SpeechSessionReleaser: NSObject, AVSpeechSynthesizerDelegate {
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        let utteranceID = ObjectIdentifier(utterance)
+        Task { @MainActor in
+            SpeechService.systemSpeechDidStart(utteranceID: utteranceID)
+        }
+    }
+
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         let utteranceID = ObjectIdentifier(utterance)
         Task { @MainActor in

@@ -373,6 +373,7 @@ final class SourceAudioActivityCoordinator {
     private func handleAudioSessionLoss(message: String) async {
         service?.handleAudioSessionLoss(message: message)
         SpeechService.handleAudioSessionLoss(message: message)
+        InterpreterAudioBridge.audioSessionLost(message: message)
         await SpeechRecognitionService.shared.handleAudioSessionLoss(message: message)
     }
 }
@@ -424,6 +425,7 @@ final class AudioCaptureService: NSObject, AVAudioPlayerDelegate {
         guard recordingStartID == requestID else { throw CancellationError() }
 
         stopPlayback()
+        InterpreterAudioBridge.otherAudioWillStart()
         await SpeechRecognitionService.shared.stopRecording()
         try Task.checkCancellation()
         guard recordingStartID == requestID else { throw CancellationError() }

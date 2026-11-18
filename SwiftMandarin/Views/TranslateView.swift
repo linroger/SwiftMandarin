@@ -201,6 +201,15 @@ struct TranslateView: View {
                     .accessibilityLabel(Text("AI Chat"))
                     .help(Text("AI Chat"))
                 }
+                ToolbarItem(placement: .navigation) {
+                    NavigationLink {
+                        InterpreterView()
+                    } label: {
+                        Image(systemName: AppTab.interpreter.icon)
+                    }
+                    .accessibilityLabel(Text("Interpreter"))
+                    .help(Text("Interpreter"))
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         clearAll()

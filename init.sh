@@ -19,5 +19,6 @@ zsh scripts/test-stats-heatmap.sh
 zsh scripts/test-macos-surfaces.sh
 zsh scripts/test-project-hygiene.sh
 zsh scripts/test-chatbot.sh
+zsh scripts/test-interpreter.sh
 
 echo "SwiftMandarin smoke checks passed."

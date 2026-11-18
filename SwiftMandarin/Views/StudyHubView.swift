@@ -24,6 +24,7 @@ enum StudyRoute: String, Hashable {
     case stats
     case search
     case chat
+    case interpreter
 }
 
 struct StudyHubView: View {
@@ -61,6 +62,7 @@ struct StudyHubView: View {
                 case .stats: StatsView()
                 case .search: GlobalSearchView(selectedTab: $selectedTab)
                 case .chat: ChatbotView()
+                case .interpreter: InterpreterView()
                 }
             }
         }
@@ -145,6 +147,14 @@ struct StudyHubView: View {
                 subtitleKey: chatSubtitle
             ) {
                 path.append(StudyRoute.chat)
+            }
+            HeroActionRow(
+                icon: AppTab.interpreter.icon,
+                tint: .orange,
+                titleKey: "Interpreter",
+                subtitleKey: "Hold a button, speak, and hear it in the other language"
+            ) {
+                path.append(StudyRoute.interpreter)
             }
             HeroActionRow(
                 icon: AppTab.practice.icon,

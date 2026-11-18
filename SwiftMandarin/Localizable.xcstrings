@@ -718,6 +718,486 @@
         }
       }
     },
+    "Checking what is installed…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在检查已安装的内容…"
+          }
+        }
+      }
+    },
+    "Clear Conversation" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清空对话"
+          }
+        }
+      }
+    },
+    "Copied" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已复制"
+          }
+        }
+      }
+    },
+    "Didn't catch that. Hold the button and try again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有听清。请按住按钮再说一次。"
+          }
+        }
+      }
+    },
+    "Double-tap to start speaking, and double-tap again to stop." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点两下开始说话，再轻点两下停止。"
+          }
+        }
+      }
+    },
+    "Download" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载"
+          }
+        }
+      }
+    },
+    "Downloading the speech models…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在下载语音模型…"
+          }
+        }
+      }
+    },
+    "Fast" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快速"
+          }
+        }
+      }
+    },
+    "Finishing…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在完成识别…"
+          }
+        }
+      }
+    },
+    "Hold a button while you speak and let go when you finish. The Interpreter says it aloud in the other language." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说话时按住按钮，说完后松开。对话翻译会用另一种语言朗读出来。"
+          }
+        }
+      }
+    },
+    "Hold a button, speak, and hear it in the other language" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按住按钮说话，听到另一种语言的翻译"
+          }
+        }
+      }
+    },
+    "Hold the button while you speak, then let go." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说话时按住按钮，说完后松开。"
+          }
+        }
+      }
+    },
+    "Interpreter" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话翻译"
+          }
+        }
+      }
+    },
+    "Interpreter Options" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话翻译选项"
+          }
+        }
+      }
+    },
+    "Interpreter Voice" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话翻译语音"
+          }
+        }
+      }
+    },
+    "The microphone changed while you were speaking. Hold the button and try again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说话时麦克风发生了变化。请按住按钮再试一次。"
+          }
+        }
+      }
+    },
+    "Translation took too long. Please try again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "翻译耗时过长，请重试。"
+          }
+        }
+      }
+    },
+    "Listening…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在聆听…"
+          }
+        }
+      }
+    },
+    "Microphone access is turned off for SwiftMandarin." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftMandarin 的麦克风访问权限已关闭。"
+          }
+        }
+      }
+    },
+    "MiniMax AI Voice" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MiniMax AI 语音"
+          }
+        }
+      }
+    },
+    "Natural" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自然"
+          }
+        }
+      }
+    },
+    "Replay" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重播"
+          }
+        }
+      }
+    },
+    "Simulator: speech recognition and translation are stand-ins here, and say so. Speech output is real." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模拟器：此处的语音识别和翻译均为替代内容，并已注明。语音朗读是真实的。"
+          }
+        }
+      }
+    },
+    "Space" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空格"
+          }
+        }
+      }
+    },
+    "Speak, and hear it translated" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开口说，听到翻译"
+          }
+        }
+      }
+    },
+    "Speech recognition stopped: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语音识别已停止：%@"
+          }
+        }
+      }
+    },
+    "Speech recognition took too long to finish. Please try again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语音识别耗时过长，未能完成。请重试。"
+          }
+        }
+      }
+    },
+    "System Voice" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统语音"
+          }
+        }
+      }
+    },
+    "The download finished, but the speech model is still not available." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载已完成，但语音模型仍不可用。"
+          }
+        }
+      }
+    },
+    "The English and Chinese translation languages need to be downloaded first." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要先下载英语和中文的翻译语言。"
+          }
+        }
+      }
+    },
+    "The Interpreter chooses its voice separately from the switch above. The system voice works offline and sends nothing. The MiniMax voice sends each spoken translation to MiniMax, using the model, voices and speed set here." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话翻译的语音与上方的开关分开设置。系统语音可离线使用，不会发送任何内容。MiniMax 语音会将每句要朗读的译文发送给 MiniMax，并使用此处设置的模型、音色和语速。"
+          }
+        }
+      }
+    },
+    "The Interpreter needs iOS 26 or macOS 26 or later." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话翻译需要 iOS 26 或 macOS 26 及以上版本。"
+          }
+        }
+      }
+    },
+    "The Interpreter needs speech recognition. Allow it in Settings and try again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话翻译需要使用语音识别。请在“设置”中允许后重试。"
+          }
+        }
+      }
+    },
+    "The Interpreter needs the English and Chinese speech models and translation languages on this device. They are downloaded once and then work offline." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话翻译需要在此设备上安装英语和中文的语音模型及翻译语言。只需下载一次，之后可离线使用。"
+          }
+        }
+      }
+    },
+    "The Interpreter needs the microphone. Allow microphone access in Settings and try again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话翻译需要使用麦克风。请在“设置”中允许访问麦克风后重试。"
+          }
+        }
+      }
+    },
+    "The microphone could not start: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "麦克风无法启动：%@"
+          }
+        }
+      }
+    },
+    "The microphone's audio format cannot be converted." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法转换麦克风的音频格式。"
+          }
+        }
+      }
+    },
+    "The MiniMax voice needs an API key. Add one in AI Audio settings, or choose the system voice." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MiniMax 语音需要 API 密钥。请在“AI 语音”设置中添加，或改用系统语音。"
+          }
+        }
+      }
+    },
+    "The recognizer offered no audio format." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "识别器未提供可用的音频格式。"
+          }
+        }
+      }
+    },
+    "The speech models could not be downloaded: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法下载语音模型：%@"
+          }
+        }
+      }
+    },
+    "The speech models for English and Chinese need to be downloaded first." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要先下载英语和中文的语音模型。"
+          }
+        }
+      }
+    },
+    "The translation came back empty." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "译文为空。"
+          }
+        }
+      }
+    },
+    "The translation could not be spoken: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法朗读译文：%@"
+          }
+        }
+      }
+    },
+    "This device cannot recognize %@ speech on its own." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此设备无法在本机识别%@语音。"
+          }
+        }
+      }
+    },
+    "This device cannot recognize or translate English and Chinese on its own, so the Interpreter is not available here." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此设备无法在本机识别或翻译英语和中文，因此无法使用对话翻译。"
+          }
+        }
+      }
+    },
+    "This device cannot translate between English and Chinese on its own." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此设备无法在本机进行英语和中文互译。"
+          }
+        }
+      }
+    },
+    "This device has reached its limit of downloaded speech languages. Remove one in Settings, then try again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此设备已达到可下载语音语言的数量上限。请在“设置”中移除一种后重试。"
+          }
+        }
+      }
+    },
+    "Tip: the system's Mandarin voice sounds more natural once an Enhanced voice is downloaded in the system's voice settings. A MiniMax voice is the other choice, in the options menu." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提示：在系统的语音设置中下载“优化”音质的普通话语音后，系统语音会更自然。也可以在选项菜单中改用 MiniMax 语音。"
+          }
+        }
+      }
+    },
     "→ %@" : {
       "comment" : "A label displaying the translation direction. The argument is the source language, and the second is the target language.",
       "isCommentAutoGenerated" : true
@@ -2167,6 +2647,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输入时自动翻译"
+          }
+        }
+      }
+    },
+    "Automatic" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动"
           }
         }
       }
@@ -7716,6 +8206,16 @@
         }
       }
     },
+    "Press to start speaking, and press again to stop." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按一下开始说话，再按一下停止。"
+          }
+        }
+      }
+    },
     "Preview" : {
       "comment" : "A section header that indicates the preview of the exported vocabulary.",
       "localizations" : {
@@ -8420,6 +8920,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "慢速重播"
+          }
+        }
+      }
+    },
+    "Reply Voice" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "朗读声音"
           }
         }
       }

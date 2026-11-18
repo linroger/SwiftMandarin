@@ -451,6 +451,152 @@ private struct TransitionChecks {
         await coordinator.waitForPendingTransitions()
     }
 
+    /// A pinned session is configured once and then left alone: owners come
+    /// and go inside it without an activation, a category change or a
+    /// deactivation between them.
+    mutating func runPinnedSessionChecks() async throws {
+        let backend = ControllableAudioSessionBackend()
+        let coordinator = AudioSessionCoordinator(testing: backend)
+        let conversation = AudioSessionOwner(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000A1")!
+        )
+        let reply = AudioSessionOwner(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000A2")!
+        )
+
+        try await coordinator.pin(.speechConversation, owner: conversation)
+        let pinnedEvents = await backend.snapshot()
+        try expectEqual(
+            pinnedEvents,
+            [.activationStarted(.speechConversation), .activationSucceeded(.speechConversation)],
+            "Pinning activates the pinned profile once"
+        )
+        try expectEqual(coordinator.testingPinnedProfile, .speechConversation, "The pin is recorded")
+
+        try await coordinator.acquire(.spokenPlayback, owner: reply)
+        try expectEqual(coordinator.testingCurrentOwner, reply, "An owner is still recorded while pinned")
+        try expectEqual(coordinator.testingCurrentProfile, .spokenPlayback, "The owner's own profile is still recorded")
+        coordinator.release(reply)
+        await coordinator.waitForPendingTransitions()
+        let eventsAfterReply = await backend.snapshot()
+        try expectEqual(
+            eventsAfterReply,
+            pinnedEvents,
+            "A reply inside a pinned session neither reconfigures nor deactivates it"
+        )
+        try expect(coordinator.testingCurrentOwner == nil, "The reply's ownership ended")
+
+        // A second reply, and a recorder, change nothing either.
+        let recorder = AudioSessionOwner(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000A3")!
+        )
+        try await coordinator.acquire(.liveRecognition, owner: recorder)
+        coordinator.release(recorder)
+        try await coordinator.acquire(.spokenPlayback, owner: reply)
+        coordinator.release(reply)
+        await coordinator.waitForPendingTransitions()
+        let eventsAfterMoreOwners = await backend.snapshot()
+        try expectEqual(
+            eventsAfterMoreOwners.count,
+            2,
+            "Any number of owners pass through a pinned session untouched"
+        )
+
+        // Pinning again, as after an interruption, reactivates.
+        try await coordinator.pin(.speechConversation, owner: conversation)
+        let eventsAfterRepin = await backend.snapshot()
+        try expectEqual(
+            Array(eventsAfterRepin.suffix(2)),
+            [.activationStarted(.speechConversation), .activationSucceeded(.speechConversation)],
+            "Pinning again reactivates the session"
+        )
+
+        // Someone else cannot end the pin.
+        coordinator.unpin(reply)
+        await coordinator.waitForPendingTransitions()
+        try expectEqual(coordinator.testingPinnedProfile, .speechConversation, "Only the pin's owner can end it")
+
+        coordinator.unpin(conversation)
+        await coordinator.waitForPendingTransitions()
+        try expect(coordinator.testingPinnedProfile == nil, "Unpinning ends the pin")
+        let eventsAfterUnpin = await backend.snapshot()
+        try expectEqual(
+            Array(eventsAfterUnpin.suffix(2)),
+            [.deactivationStarted, .deactivationSucceeded],
+            "Unpinning an idle session deactivates it"
+        )
+
+        // After the pin, the ordinary rules are back.
+        try await coordinator.acquire(.spokenPlayback, owner: reply)
+        coordinator.release(reply)
+        await coordinator.waitForPendingTransitions()
+        let eventsAfterPin = await backend.snapshot()
+        try expectEqual(
+            Array(eventsAfterPin.suffix(4)),
+            [
+                .activationStarted(.spokenPlayback),
+                .activationSucceeded(.spokenPlayback),
+                .deactivationStarted,
+                .deactivationSucceeded,
+            ],
+            "Without a pin an owner activates and deactivates as before"
+        )
+    }
+
+    /// Unpinning while a reply is still playing must not cut it off: the
+    /// reply's own release ends the session.
+    mutating func runUnpinWhileOwnedCheck() async throws {
+        let backend = ControllableAudioSessionBackend()
+        let coordinator = AudioSessionCoordinator(testing: backend)
+        let conversation = AudioSessionOwner(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000B1")!
+        )
+        let reply = AudioSessionOwner(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000B2")!
+        )
+
+        try await coordinator.pin(.speechConversation, owner: conversation)
+        try await coordinator.acquire(.spokenPlayback, owner: reply)
+        coordinator.unpin(conversation)
+        await coordinator.waitForPendingTransitions()
+        let eventsWhileOwned = await backend.snapshot()
+        try expect(
+            !eventsWhileOwned.contains(.deactivationStarted),
+            "Unpinning does not deactivate a session a feature is still using"
+        )
+        try expectEqual(coordinator.testingCurrentOwner, reply, "The reply keeps the session after the pin ends")
+
+        coordinator.release(reply)
+        await coordinator.waitForPendingTransitions()
+        let eventsAfterLastRelease = await backend.snapshot()
+        try expectEqual(
+            Array(eventsAfterLastRelease.suffix(2)),
+            [.deactivationStarted, .deactivationSucceeded],
+            "The last owner's release deactivates the session"
+        )
+    }
+
+    /// A pin that cannot activate is not recorded, and the caller hears why.
+    mutating func runPinFailureCheck() async throws {
+        let backend = ControllableAudioSessionBackend(activationOutcomes: [.activationFailure])
+        let coordinator = AudioSessionCoordinator(testing: backend)
+        let conversation = AudioSessionOwner(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000C1")!
+        )
+        do {
+            try await coordinator.pin(.speechConversation, owner: conversation)
+            throw CheckFailure(message: "A failed activation must fail the pin")
+        } catch InjectedBackendError.activationFailed {
+            // Expected.
+        }
+        try expect(coordinator.testingPinnedProfile == nil, "A failed pin is not recorded")
+
+        try await coordinator.pin(.speechConversation, owner: conversation)
+        try expectEqual(coordinator.testingPinnedProfile, .speechConversation, "A later pin recovers")
+        coordinator.unpin(conversation)
+        await coordinator.waitForPendingTransitions()
+    }
+
     mutating func runMacOSNoOpProfileCheck() async throws {
         #if os(macOS)
         let coordinator = AudioSessionCoordinator.shared
@@ -459,6 +605,7 @@ private struct TransitionChecks {
             .sourcePreview,
             .clipRecording,
             .liveRecognition,
+            .speechConversation,
         ]
 
         for profile in profiles {
@@ -492,6 +639,9 @@ private struct AudioSessionTransitionChecksRunner {
             try await checks.runReleaseBeforeAcquireOrderingCheck()
             try await checks.runSameOwnerReleaseReacquireCheck()
             try await checks.runCancelledStaleReconciliationCheck()
+            try await checks.runPinnedSessionChecks()
+            try await checks.runUnpinWhileOwnedCheck()
+            try await checks.runPinFailureCheck()
             try await checks.runMacOSNoOpProfileCheck()
             let count = checks.checksRun
             print("Audio-session transition checks passed (\(count)/\(count))")

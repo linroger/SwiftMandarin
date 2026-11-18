@@ -38,6 +38,11 @@ struct SwiftMandarinApp: App {
         // Ensures app shortcuts are registered and entity-backed parameters are refreshed.
         SwiftMandarinShortcutsProvider.updateAppShortcutParameters()
         Self.installTerminationFlush()
+        #if INTERPRETER_SELFTEST
+        // Only in the build scripts/run-interpreter-selftest.sh makes, and
+        // only when launched with -InterpreterSelfTest.
+        InterpreterSelfTestLauncher.startIfRequested()
+        #endif
     }
 
     var body: some Scene {

@@ -167,6 +167,8 @@ final class AppPreferences {
         static let aiAudioEnglishVoiceUsesCustomLanguage = "ai_audio_english_voice_custom_language"
         static let aiAudioSpeed = "ai_audio_speed"
         static let aiAudioFallbackToSystemSpeech = "ai_audio_fallback_to_system_speech"
+        static let interpreterVoiceEngine = "interpreter_voice_engine"
+        static let interpreterTranslationQuality = "interpreter_translation_quality"
     }
 
     /// The allowed text-to-speech rate range. 0.5 is
@@ -325,6 +327,50 @@ final class AppPreferences {
         }
     }
 
+    /// The voice that speaks the Interpreter's replies, once the person has
+    /// chosen one. `nil` until then.
+    private var chosenInterpreterVoiceEngine: SpeechVoiceEngine?
+
+    /// Which voice speaks the Interpreter's replies. This is the
+    /// Interpreter's own choice: the app-wide AI Audio switch keeps governing
+    /// read-aloud everywhere else.
+    ///
+    /// Until the person chooses, it follows what they have already set up:
+    /// MiniMax when AI Audio is on and a key is stored, the system voice
+    /// otherwise. Reading the key here rather than in `init` keeps this
+    /// singleton from depending on `AIModelSettings` while it is being built.
+    var interpreterVoiceEngine: SpeechVoiceEngine {
+        get {
+            if let chosenInterpreterVoiceEngine { return chosenInterpreterVoiceEngine }
+            let hasMiniMaxKey = !AIModelSettings.shared.apiKey(for: .minimax).isEmpty
+            return aiAudioEnabled && hasMiniMaxKey ? .miniMax : .system
+        }
+        set {
+            chosenInterpreterVoiceEngine = newValue
+            UserDefaults.standard.set(newValue.rawValue, forKey: Keys.interpreterVoiceEngine)
+        }
+    }
+
+    /// Makes the Interpreter's voice a choice of its own from here on. Until
+    /// then it follows AI Audio, as the getter above describes. The screens
+    /// that show the choice call this when they appear, so that what they
+    /// show cannot change later because a different switch was flipped.
+    func settleInterpreterVoiceEngine() {
+        guard chosenInterpreterVoiceEngine == nil else { return }
+        interpreterVoiceEngine = interpreterVoiceEngine
+    }
+
+    /// Which translation model produces the Interpreter's replies, on
+    /// devices that have two. Automatic until the person chooses.
+    var interpreterTranslationQuality: InterpreterTranslationQuality {
+        didSet {
+            UserDefaults.standard.set(
+                interpreterTranslationQuality.rawValue,
+                forKey: Keys.interpreterTranslationQuality
+            )
+        }
+    }
+
     /// Account-created voices can use system-looking prefixes, but that proof
     /// belongs to the MiniMax account and regional catalog where it was
     /// observed. Crossing either boundary must fail closed until a live
@@ -430,5 +476,12 @@ final class AppPreferences {
 
         self.aiAudioFallbackToSystemSpeech =
             UserDefaults.standard.object(forKey: Keys.aiAudioFallbackToSystemSpeech) as? Bool ?? true
+
+        self.chosenInterpreterVoiceEngine = UserDefaults.standard
+            .string(forKey: Keys.interpreterVoiceEngine)
+            .flatMap(SpeechVoiceEngine.init(rawValue:))
+        self.interpreterTranslationQuality = UserDefaults.standard
+            .string(forKey: Keys.interpreterTranslationQuality)
+            .flatMap(InterpreterTranslationQuality.init(rawValue:)) ?? .automatic
     }
 }

@@ -12,7 +12,7 @@ import os.log
 import AVFAudio
 #endif
 
-/// The four session configurations currently used by SwiftMandarin. Keeping
+/// The five session configurations currently used by SwiftMandarin. Keeping
 /// profile selection here makes category configuration and activation one
 /// ordered transition instead of two independently interleavable operations.
 nonisolated enum AudioSessionProfile: Sendable, Equatable {
@@ -20,6 +20,9 @@ nonisolated enum AudioSessionProfile: Sendable, Equatable {
     case sourcePreview
     case clipRecording
     case liveRecognition
+    /// Recording and playback under one configuration, for the Interpreter's
+    /// back-and-forth of listening and replying. Meant to be pinned.
+    case speechConversation
 }
 
 /// Created before an asynchronous acquisition begins, so a synchronous stop
@@ -75,6 +78,8 @@ final class AudioSessionCoordinator {
     private var transitionTail: Task<Void, Never> = Task {}
     private var currentOwner: AudioSessionOwner?
     private var currentProfile: AudioSessionProfile?
+    /// The configuration the session is being held in, and who holds it.
+    private var pin: (owner: AudioSessionOwner, profile: AudioSessionProfile)?
 
     private init() {
         backend = SystemAudioSessionBackend()
@@ -90,12 +95,20 @@ final class AudioSessionCoordinator {
     /// the backend reports success. Cancellation of the awaiting caller does
     /// not cancel the system transition; callers must reconcile their owner
     /// token after this returns and release a request that became stale.
+    ///
+    /// While the session is pinned it is already active in the pinned
+    /// configuration, which every profile can work within, so nothing is
+    /// reconfigured: the owner is recorded and the call returns. That relies
+    /// on the holder of the pin giving it up when the system takes the
+    /// session away, which the Interpreter does as soon as it is told.
     func acquire(_ profile: AudioSessionProfile, owner: AudioSessionOwner) async throws {
         let previous = transitionTail
         let operation = Task { @MainActor [backend] () -> Result<Void, any Error> in
             await previous.value
             do {
-                try await backend.activate(profile: profile)
+                if self.pin == nil {
+                    try await backend.activate(profile: profile)
+                }
                 self.currentOwner = owner
                 self.currentProfile = profile
                 return .success(())
@@ -123,6 +136,55 @@ final class AudioSessionCoordinator {
             // error. The next queued acquisition must still be able to recover.
             self.currentOwner = nil
             self.currentProfile = nil
+            // A pin keeps the session active between owners.
+            guard self.pin == nil else { return }
+            do {
+                try await backend.deactivate()
+            } catch {
+                log.error(
+                    "Audio session deactivation failed: \(error.localizedDescription, privacy: .public)"
+                )
+            }
+        }
+    }
+
+    /// Activates `profile` and holds the session in it until `unpin(owner)`.
+    ///
+    /// Between `pin` and `unpin`, `acquire` reconfigures nothing and
+    /// `release` deactivates nothing. That is what lets a conversation switch
+    /// between recording and speaking without an activation or a category
+    /// change in the middle of a turn, each of which blocks. Pinning again —
+    /// after an interruption, say — reactivates the session.
+    func pin(_ profile: AudioSessionProfile, owner: AudioSessionOwner) async throws {
+        let previous = transitionTail
+        let operation = Task { @MainActor [backend] () -> Result<Void, any Error> in
+            await previous.value
+            do {
+                try await backend.activate(profile: profile)
+                self.pin = (owner, profile)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }
+        transitionTail = Task { @MainActor in
+            _ = await operation.value
+        }
+
+        try await operation.value.get()
+    }
+
+    /// Enqueues the end of a pin. Only the owner that holds the pin when its
+    /// FIFO turn arrives may end it. The session is deactivated unless a
+    /// feature is still using it, in which case that feature's own release
+    /// deactivates it.
+    func unpin(_ owner: AudioSessionOwner) {
+        let previous = transitionTail
+        transitionTail = Task { @MainActor [backend, log] in
+            await previous.value
+            guard let pin = self.pin, pin.owner == owner else { return }
+            self.pin = nil
+            guard self.currentOwner == nil else { return }
             do {
                 try await backend.deactivate()
             } catch {
@@ -145,6 +207,10 @@ final class AudioSessionCoordinator {
 
     var testingCurrentProfile: AudioSessionProfile? {
         currentProfile
+    }
+
+    var testingPinnedProfile: AudioSessionProfile? {
+        pin?.profile
     }
     #endif
 }
@@ -252,6 +318,22 @@ nonisolated private extension AudioSessionProfile {
                 mode: .measurement,
                 options: [.duckOthers, .defaultToSpeaker]
             )
+        case .speechConversation:
+            // `.defaultToSpeaker` is what sends the reply to the loudspeaker
+            // rather than the earpiece. `.duckOthers` is left out on purpose:
+            // another app's audio should stop, not keep playing quietly into
+            // the microphone. Bluetooth's high-quality recording option is
+            // left out too: it is documented as valid only with the default
+            // mode, and as adding input latency.
+            try session.setCategory(
+                .playAndRecord,
+                mode: .spokenAudio,
+                options: [.defaultToSpeaker, .allowBluetoothHFP]
+            )
+            // The press-and-hold button confirms with a haptic the moment the
+            // microphone is live, which the system mutes during recording
+            // unless told otherwise.
+            try session.setAllowHapticsAndSystemSoundsDuringRecording(true)
         }
     }
 }

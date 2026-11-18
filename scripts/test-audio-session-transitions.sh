@@ -11,6 +11,8 @@ service_files=(
     "$repo_root/SwiftMandarin/Services/SpeechService.swift"
     "$repo_root/SwiftMandarin/Services/AudioCaptureService.swift"
     "$repo_root/SwiftMandarin/Services/SpeechRecognitionService.swift"
+    "$repo_root/SwiftMandarin/Services/PushToTalkTranscriptionService.swift"
+    "$repo_root/SwiftMandarin/Services/InterpreterAdapters.swift"
 )
 
 for service_file in "${service_files[@]}"; do

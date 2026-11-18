@@ -235,6 +235,26 @@ struct AIAudioSettingsView: View {
             }
 
             Section {
+                Picker("Interpreter Voice", selection: $preferences.interpreterVoiceEngine) {
+                    Text("System Voice").tag(SpeechVoiceEngine.system)
+                    Text("MiniMax AI Voice").tag(SpeechVoiceEngine.miniMax)
+                }
+
+                if preferences.interpreterVoiceEngine == .miniMax && !hasMiniMaxKey {
+                    Label("Add a MiniMax API key before using AI Audio.", systemImage: "key.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+            } header: {
+                Text("Interpreter")
+                    // From the first time it is seen, this is a choice of its
+                    // own and no longer follows the switch above.
+                    .onAppear { preferences.settleInterpreterVoiceEngine() }
+            } footer: {
+                Text("The Interpreter chooses its voice separately from the switch above. The system voice works offline and sends nothing. The MiniMax voice sends each spoken translation to MiniMax, using the model, voices and speed set here.")
+            }
+
+            Section {
                 VStack(alignment: .leading, spacing: 10) {
                     Button {
                         preview(

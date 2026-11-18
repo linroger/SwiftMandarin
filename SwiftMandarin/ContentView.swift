@@ -65,6 +65,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     case translate
     case photo
     case chat
+    case interpreter
     case reader
     case study
     case practice
@@ -88,6 +89,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .translate: return "Translate"
         case .photo: return "Multimodal"
         case .chat: return "AI Chat"
+        case .interpreter: return "Interpreter"
         case .reader: return "Reader"
         case .study: return "Study"
         case .practice: return "Practice"
@@ -108,6 +110,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .translate: return "character.bubble"
         case .photo: return "sparkles.rectangle.stack"
         case .chat: return "sparkles"
+        case .interpreter: return "person.2.wave.2.fill"
         case .reader: return "book.pages"
         case .study: return "graduationcap.fill"
         case .practice: return "checklist"
@@ -243,7 +246,7 @@ struct MacOSContentView: View {
 
     /// Sidebar sections. `more` (iOS settings hub) and `study` (iOS hub for
     /// what the sidebar already lists directly) are intentionally absent.
-    private static let toolTabs: [AppTab] = [.translate, .photo, .chat]
+    private static let toolTabs: [AppTab] = [.translate, .photo, .chat, .interpreter]
     private static let studyTabs: [AppTab] = [.learn, .practice, .conversation, .reader]
     private static let libraryTabs: [AppTab] = [.vocabulary, .phrases, .history, .stats]
 
@@ -298,6 +301,8 @@ struct MacOSContentView: View {
             TranslateView()
         case .chat:
             hosted { ChatbotView() }
+        case .interpreter:
+            hosted { InterpreterView() }
         case .photo:
             PhotoTranslateView()
         case .reader:

@@ -319,6 +319,7 @@ final class SpeechRecognitionService {
             try ensureCurrentOperation(requestID)
 
             SourceAudioActivityCoordinator.shared.stopSourceAudioForSpeech()
+            InterpreterAudioBridge.otherAudioWillStart()
             SpeechService.stop()
             currentLanguage = language
 
