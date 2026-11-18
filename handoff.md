@@ -1,7 +1,8 @@
 # Handoff.md — SwiftMandarin: Bilingual + Multi-Provider AI Overhaul
 
-**Last Updated (UTC):** 2026-11-18
-**Status:** Planning (iter 37 — push-to-talk interpreter; plan written and awaiting approval, no feature code yet; see Iteration 37)
+**Last Updated (UTC):** 2026-11-18T22:10Z
+**Status:** In Progress (iter 38 — push-to-talk Interpreter built and pushed on `nov-19-2026-push-to-talk-speech-translation`, not merged; a spoken turn through the real microphone, any audible reply, the MiniMax voice and a physical iPhone are still to be checked by the owner; see Iteration 38 §9)
+**Prior Status:** Planning (iter 37 — push-to-talk interpreter; plan written and awaiting approval, no feature code yet; see Iteration 37)
 **Prior Status:** Complete (iter 36 — Home header under the bar, Liquid Glass More hub; see Iteration 36)
 **Prior Status:** Complete (iter 35 — AI Chat padding/clipping/missing meanings, Stats legend, app-wide Liquid Glass; see Iteration 35)
 **Prior Status:** Complete (iter 34 — whole-app review, hang/crash fixes, Shortcuts and AI-prompt rework, global search, Liquid Glass pass, new AI Chat feature, new screenshots; see Iteration 34)
@@ -13,7 +14,8 @@
 **Prior Status:** In Progress (iter 28 — translation study notes, transcription repair, AI transcription; see Iteration 28)
 **Prior Status:** In Progress (iter 27 — structured AI translation output; see Iteration 27)
 **Prior Status:** In Progress (iter 16 — step-change overhaul on branch `jul-07-2026-step-change-overhaul`: RECOMMENDATIONS.md + Home dashboard + FSRS + Reader + AI conversation + UI overhaul)
-**Current Focus (latest):** Approval of the push-to-talk interpreter plan (`docs/handoff/push-to-talk-interpreter/PLANS.md`) on branch `nov-19-2026-push-to-talk-speech-translation`; after approval, Phase 0 probes. See Iteration 37.
+**Current Focus (latest):** The push-to-talk Interpreter is built on branch `nov-19-2026-push-to-talk-speech-translation` and now waits on its owner: the hands-on checklist in Iteration 38 §9 (the microphone permission on the Mac, a turn that is spoken and heard, the MiniMax voice, a physical iPhone), then the six `feature_interpreter_*` entries and the decision to merge. See Iteration 38.
+**Prior Focus:** Approval of the push-to-talk interpreter plan (`docs/handoff/push-to-talk-interpreter/PLANS.md`) on branch `nov-19-2026-push-to-talk-speech-translation`; after approval, Phase 0 probes. See Iteration 37.
 **Prior Focus:** macOS cards are visible again. `windowBackgroundColor` and `controlBackgroundColor` resolve to the **same** value in both appearances, so every card was filled with exactly the page color; each surface now picks a different system color per appearance, with the card always the lighter one. See Iteration 33.
 **Prior Focus:** The Statistics screen now counts **words and phrases mastered each day** in the activity heatmap — un-mastering refunds the day the word was *earned* on, not today — and the Words Learned chart offers a **30-day** range beside 7 and 14. See Iteration 32.
 **Prior Focus:** An opt-in **Auto-Translate New Words** toggle in the Batch AI Analysis menu: every word saved to the vocabulary list is translated and analyzed in the background by the selected LLM provider, through a bounded, resumable queue that shares its cache with the reviewed batch run. See Iteration 30.
@@ -1753,3 +1755,284 @@ The probe sources were kept in the session scratchpad. Phase 0 commits them as a
 
 ### 10) Updates
 - 2026-11-18T17:51Z: Iteration 37 opened. Branch created, inspection and probes done, plan written, harness updated. Awaiting approval.
+
+## Iteration 38 — Push-to-talk interpreter: implementation (2026-11-18)
+
+**Status:** In progress. The plan in Iteration 37 was approved with its seven default decisions ("Approve plan", 2026-11-18T17:59Z).
+**Branch:** `nov-19-2026-push-to-talk-speech-translation`.
+
+### 1) Request & Context
+- **User's request:** approval of `docs/handoff/push-to-talk-interpreter/PLANS.md`, which is the brief quoted in Iteration 37 plus "find ways to optimize this workflow" and "an option to use the minimax tts api … or to use apple's native tts api for the final portion".
+- **Constraints carried over:** iOS 17.0 and macOS 26.2 floors with the feature gated at OS 26; Swift 5 target mode with new pipeline files proven Swift 6-clean by script; zero warnings; zh-Hans for every new string; no attribution lines in commits; nothing merged to `main` without the user's say.
+- **A constraint added by the hour:** the work was done between 02:00 and 03:00 local time, so nothing is played through the Mac's speakers without the user asking. The end-to-end run is silent by default (see §7).
+
+### 2) Phase 0 — probes and baseline (done)
+
+Baseline on the branch before any feature code: macOS Debug build 60 s, iOS Simulator Debug build 89 s, `zsh init.sh` 29 s, zero warnings in either build log, every suite green.
+
+The probes are `scripts/probe-interpreter.sh` and `scripts/interpreter-checks/InterpreterProbe.swift` (a measurement tool, not part of `init.sh`). Results on macOS 27.3 and the iOS 27.2 simulator:
+
+| Question | Result | Consequence |
+|---|---|---|
+| A1. Does `SpeechAnalyzer` run for both locales? | Yes, from a command-line process, for `en-US` and `zh-CN`. | Confirmed inside the sandboxed app by the self-test (§7). |
+| A2. Is speech-recognition authorization needed as well as the microphone? | No. `SFSpeechRecognizer.authorizationStatus()` was `notDetermined` throughout and both `SpeechTranscriber` and `DictationTranscriber` analyzed audio. | Only the microphone permission is requested. |
+| A3. Can the iOS Simulator run the real stages? | No. `SpeechTranscriber.isAvailable` is false with zero supported locales; `DictationTranscriber` installs its asset but `bestAvailableAudioFormat` returns nil; Translation reports every English ⇄ Chinese pair `unsupported`. | The Simulator uses labeled stand-ins for the transcript and the translation; speech output is real there. |
+| How often do partial results arrive? | `SpeechTranscriber` with `.volatileResults`: one burst after about 4 s (English), or nothing until release (a 5 s Mandarin clip). With `.fastResults` added: about every 1 s. `DictationTranscriber` (`.progressiveShortDictation`): about every 0.25 s. | `.fastResults` is on from the start (it was row N, a Phase 7 experiment): without it a typical press shows no live transcript at all. |
+| How long is finalization after the input ends? | 50–250 ms across recognizers and locales. | Within the 400 ms target. |
+| What does `prepareToAnalyze` save? | 60–165 ms on the first analyzer of a locale, 2–20 ms after that with `.processLifetime` retention. | Recognizers are prepared when the screen opens and rebuilt during each reply. |
+| What do results look like? | Volatile results repeat one range with growing text; a final replaces it and the next volatile range starts where the final ended. English segments carry their own leading space. Mandarin contained a stray space before "？". A final's range differed from the volatile range it replaced by 60 ms. With `.fastResults` the Mandarin final lost its closing "。". | `TranscriptAssembler` replaces by overlap rather than equality, joins verbatim, and removes spaces that touch Chinese text. |
+| Asset status in a fresh process | `.supported` although `installedLocales` listed the locale; `downloadAndInstall()` then returned at once and the status became `.installed`. | The provisioner claims assets that are already on disk without asking, and only shows Download when a real download is needed. |
+| Tap buffer size | The `installTap` header documents 100–400 ms as the supported range. | The tap asks for 100 ms; the tail after release is bounded at 150 ms. |
+| A4. MiniMax stream framing | Not measured yet: the API key is readable only by the app, so the probe moved into the self-test (`--minimax`). | Decision 6 (streaming playback) stays open until that run. |
+
+### 3) Changes to the approved plan, with reasons
+1. **`.fastResults` is baseline, not an experiment** — the measurement above.
+2. **No speech-recognition permission prompt** — A2 was false.
+3. **`.bluetoothHighQualityRecording` is not set.** The SDK header documents it as compatible only with the default session mode and as adding input latency; the brief's mode is `.spokenAudio`.
+4. **No AI-provider fallback for translation.** The plan said the Interpreter would fall back to the configured AI provider when Apple's translation fails. That would send conversation text off the device without the person choosing it, and it contradicts the plan's own statement that everything except the optional MiniMax voice stays on the device. A failed translation is retried once with a fresh session and then reported with a Try Again action.
+5. **A turn overtaken while it was being translated is kept as text, not dropped.** The plan's invariant I2 said "dropped"; what matters is that it is never spoken. Keeping the text means nothing the person said is lost.
+6. **The microphone sits behind `InterpreterAudioCapturing`.** The self-test feeds the real recognizer synthesized speech through that seam.
+7. **The classic `installTap(onBus:bufferSize:format:block:)` is kept.** OS 27 deprecates it for an error-returning variant that has no Swift spelling in this SDK's interface; at the app's deployment targets the classic call is not deprecated and raises no warning.
+8. **Phases 2 to 5 did not land as four commits.** The coordinator is pure, so its checks were written first, before the services it drives.
+9. **Row G (translate while the button is held, show a live preview, reuse it when the final transcript matches) was measured and not built.** Its rule was reuse in at least 30% of test turns. It was 0 of 4: with `.fastResults` the live text arrives in bursts about a second apart and trails the audio by up to a second, so at release it lacked the last words every time, and an English final adds a closing period the live text does not have. Two further measurements make it harmful rather than merely useless: a natural translation cannot be cancelled (cancelled 80 ms in, it returned after 578 ms), and the system runs one translation at a time across sessions and models (a fast one started 100 ms into a natural one took 679 ms instead of 30), so a stale speculative translation would delay the real one by up to half a second. Reusing sentence by sentence instead would change what the natural model says, because it reads a sentence in the light of the one before ("It was closed" became 银行关门了 with its neighbour and 它关门了 alone).
+10. **Row H (at release run both models, wait at most 350 ms for the natural one) was replaced by "Automatic" quality with a different rule.** The two models cannot race: one at a time, no cancellation, and each change of model costs 0.2 to 0.3 s (the natural model 670 ms instead of 473 right after the fast one; the fast one 310 ms instead of 30 right after the natural one). Automatic therefore picks one model for the visit: the natural one, until it outlasts its allowance on two turns in a row or fails, and then the fast one until the screen is closed. The allowance is 400 ms plus a tenth of the time the button was held, between 0.5 and 1.2 s. Automatic is the default, as Decision 5 said the adaptive rule would be. The setting is shown only where the device has two models.
+11. **New, and the largest gain: the turn's translation model is kept warm while the button is held.** Found by chasing a discrepancy: the same two-sentence translation took about 480 ms in the probe and 880 to 1040 ms inside a turn. The natural model goes cold between 4 and 6 idle seconds (480 ms after 4 s, 856 ms after 6 s, the same after 20 s; the fast model stays at 30 to 40 ms), and a hold is longer than that. One word is enough to load it again (186 ms warm, 563 ms cold, and the sentence after it takes the warm 480 ms). The coordinator now asks the translator to `warm` the turn's model at the press and every 2.5 s of the hold, and stops at release. The model is fixed at the press, so the one kept warm is the one used. Before and after are in §7.
+12. **Rows J and K (MiniMax streaming playback, a connection opened at press time) were not built.** Decision 6 made J depend on a measured gain of 300 ms. The account answered every synthesis request, streaming or not, with `status_code 1008`, "insufficient balance", so there was nothing to measure. The MiniMax voice itself is built and goes through the existing cache-first path; it could not be heard for the same reason.
+13. **Row O (seed the recognizer with saved vocabulary) was measured and not built.** Its rule was that test phrases improve. Four harder clips were added for it. The recognizer heard 事倍功半 as its homophone 是被公办; with `contextualStrings` set to that idiom the result was the same, with `SpeechTranscriber` and with `DictationTranscriber`. Two pinyin place names in an English sentence were misheard identically with and without the hint.
+14. **The Simulator build does not ask for the microphone, and can run silently.** Its transcriber is scripted and never opens the microphone, so `SimulatorInterpreterEnvironment` reports the permission as not required. `-InterpreterSimulatorMuted` replaces the voice with a silent stand-in that takes about as long as speech would, so the screen can be driven from a script at night.
+15. **A translation that runs out of time has its own error, and is not chased with a second one.** The second could only wait behind the first, which cannot be stopped. Under Automatic the visit moves to the fast model, so Try Again uses it.
+16. **`InterpreterTranslationQuality` was split in two.** The setting has three values (automatic, natural, fast); the translator is asked for one of two models (`InterpreterTranslationModel`). The translator protocol lost `prepare()` and gained `warm(_:model:)` and `offersTwoModels`.
+17. **"A new press always wins" (I10) now has a limit: it wins over a reply, not over words.** As planned, a press that arrived while the previous speaker's words were still being finalized tore that capture down, and those words were lost. The second speaker pressing just as the first lets go is an ordinary thing to do. Such a press now waits (`pendingPressDirection`) and starts the moment the transcript is in, if its button is still down; the earlier turn is translated and kept as text, and not spoken. The same wait covers a real hold that follows a slip at once. Found by the independent review (§6a).
+18. **A turn records the voice that spoke it, not the voice that was asked for.** A MiniMax reply that fell back to the system voice was shown with the MiniMax mark. `InterpreterSpeaking.speak`'s `onStart` now reports the voice.
+19. **The Interpreter's voice default is settled the first time a screen shows it.** Decision 4 made the default follow AI Audio. Left at that, flipping the AI Audio switch later would silently change the Interpreter's voice, against the settings text that calls it a separate choice. The first appearance of the Interpreter, or of its section in AI Audio settings, now stores the default as the choice.
+20. **The look of the controls changed after seeing them.** The hold buttons are a bottom bar that the conversation fades out behind, and the screen opens on the latest turn; before, earlier turns sat under the buttons. The Mandarin speaker's colour is a deeper teal: white on the system teal measured about 2.5 to 1. The buttons are the same height with or without the key cap, and stack at the largest text sizes.
+
+### 4) To-Do & Progress Ledger
+- [x] **Phase 0, probes and baseline.** Evidence: §2. The probes are kept as `scripts/probe-interpreter.sh` (`capabilities`, `translation`, `translation-behaviour`, `speech`, `simulator`, `simulator-speech`).
+- [x] **Phase 2, permissions, entitlements, provisioning.** `SpeechModelProvisioner`; readiness by `AssetInventory.status(forModules:)`; install with progress; the choice between `SpeechTranscriber` and `DictationTranscriber`. The usage strings and the audio-input entitlement were already in the project. Evidence: the readiness and permission groups of the contract checks; the self-test's asset lines in §7.1; the denied-permission picture.
+- [x] **Phase 3, streaming speech-to-text.** `TranscriptAssembler`, `PushToTalkTranscriptionService`. Evidence: the assembler group; §7.1 (both languages through the real recognizer, 5 and 14 live updates, the 120 ms press). Not evidenced: the real microphone (see §9).
+- [x] **Phase 4, translation and speech.** `InterpreterTranslationService`; `SpeechService.speakAndWait` with a per-request voice and completion by continuation; the `.speechConversation` profile and the pin; the two preferences and the settings section. Evidence: §7.1; the audio-session transition checks. Not evidenced: any audible reply; the MiniMax voice (see §9).
+- [x] **Phase 5, coordinator and screen.** `SpeechTranslationCoordinator`, `InterpreterView`, `HoldToSpeakButton`, the three entry points, the strings. Evidence: the contract checks; §7.3; the pictures.
+- [x] **Phase 7, measured optimizations.** Kept: keeping the model warm during the hold; Automatic quality. Measured and dropped: speculative translation with a live preview; racing the two models; vocabulary hints. Could not be measured: MiniMax streaming and the early connection. Evidence: §3 items 9 to 13, §7.2, plan §11.
+- [x] **Phase 6, builds and verification.** Evidence: §8.
+- [ ] **A turn spoken by a person and heard by one.** Blocked on the microphone permission for the app on this Mac, on an hour at which sound can be played, and on a physical iPhone. See §9.
+- [ ] **MiniMax voice heard, and its streaming measured.** Blocked on the account's balance.
+
+### 5) Findings, Decisions, Assumptions
+- **Finding (translation engine).** Repeatable; the natural model uses the previous sentence; a started translation cannot be cancelled; one runs at a time across sessions and models; changing model costs 0.2 to 0.3 s; the natural model goes cold after about 5 s and one word warms it. Implication: one worker, one model per turn, warm during the hold, no speculation, no racing. Source: `zsh scripts/probe-interpreter.sh translation-behaviour`.
+- **Finding (recognizer).** With `.fastResults`, live text comes in bursts about 1 s apart and trails the audio; the final arrives 44 to 108 ms after the input ends; `contextualStrings` changed nothing in the cases tried. Source: `zsh scripts/probe-interpreter.sh speech`.
+- **Finding (first sentence on a new session).** In some runs the first sentence-length call on a new fast-model session cost 110 to 290 ms more than later ones even after a one-word warm-up (224 and 172 ms, then 176 and 110 ms, against about 34 and 42 in a run where it did not happen). When it happens it is paid once per session and direction, and only when the fast model is in use. Not addressed.
+- **Finding (a wrong "not installed").** On one cold start the system reported the traditional translation model as not installed, the natural one as installed, and then translated with both a second later. See §6.
+- **Finding (the hook logs).** `SwiftMandarin/logs/<session>/pre_tool_use.json` and `post_tool_use.json` appeared inside the app's source folder, written by the repository's logging hooks while a shell command of mine had its working directory there. The folder is a file-system-synchronized group, so every build made in that state copied both files into the app bundle. `.gitignore` already names this hazard. See §6.
+- **Decision.** Keep `Automatic` simple and sticky: one model per visit, not per turn. Alternatives considered: racing (impossible, above); a per-device speed estimate (more state for a case that cannot be measured on this Mac); a fixed 350 ms cap (would send every multi-sentence turn, where the natural model matters most, to the fast one).
+- **Decision.** In the Simulator, do not ask for a permission the build does not use. The permission flow is covered by the contract checks and was seen once in the Simulator before the change (screenshot in the evidence folder).
+- **Decision.** All six feature entries stay `passes: false` (see §9). Each has at least one step that needs a person: a real voice into the real microphone, a reply heard through the speaker, a MiniMax account with balance, or a physical iPhone.
+- **Assumption A1** (the recognizer runs inside the sandboxed app for both locales): true. The self-test runs it there.
+- **Assumption A2** (speech-recognition authorization is needed): false.
+- **Assumption A3** (the Simulator cannot run the real stages): true.
+- **Assumption A4** (MiniMax streams event-stream framed MP3): not tested; the account has no balance.
+- **Assumption A5** (activating the iOS audio session per press is costly enough to justify the pin) and **A6** (a pinned idle session does not show the microphone indicator): not tested; both need a device. The pin is built and its bookkeeping is checked against the fake backend.
+- **Assumption A7 (new).** The cooling time and the model-change cost measured on this Mac are of the same order on an iPhone. Not tested. If the natural model cools faster than 2.5 s there, the interval in `InterpreterTuning.translationKeepWarmInterval` is the one number to change; if it is much slower overall, Automatic moves to the fast model after two turns.
+
+### 6) Issues, Mistakes, Recoveries
+- **Both hold buttons stayed disabled in the Simulator.** Symptom: the screen opened, readiness was fine, the buttons were greyed out. Root cause: `canStartTurn` returned early on `isActive`, which was computed from an `@ObservationIgnored` counter, so the view that asked was never told when the screen became active. Fix: `isActive` is an observed stored property and `canStartTurn` reads all three of its inputs before deciding. Guardrail: the "observation" group in `scripts/interpreter-checks/InterpreterChecksRunner.swift`; with the fix reverted it fails on "Becoming active is observed by whoever asked whether a turn can start".
+- **The first run of the contract checks hung.** Root cause: the harness awaited coordinator tasks that were parked on a test gate. Fix: the harness settles by yielding a fixed number of times; the coordinator has no test-only hook.
+- **The self-test printed nothing and appeared stalled.** Root cause: stdout was block-buffered, and not every system voice sends the zero-length buffer that marks the end of a rendered sentence. Fix: line buffering, and a poll that takes what has arrived once it stops growing.
+- **Hook logs inside the app bundle.** Symptom: `pre_tool_use.json` and `post_tool_use.json` in the built `.app`. Root cause: an earlier shell command of mine ran `cd SwiftMandarin`, and the logging hooks write relative to the working directory. Fix: the two files were moved, not deleted, to `logs/dd6d63ba-b07d-4e25-a638-7edb0704511f/*.from-app-source-folder.json`; the empty `SwiftMandarin/logs/` was removed; the stale copies in the build products were cleared with `xcodebuild clean`. Guardrail: every shell command in this work now starts from the repository root by absolute path, and the final builds are clean builds whose bundles are searched for `*tool_use.json`. Nothing was committed in that state. The hooks themselves are the user's configuration and were not changed; making them write to `$CLAUDE_PROJECT_DIR` would remove the cause.
+- **`rm` is blocked by a repository hook.** Respected. Build products are cleared with `xcodebuild clean`; nothing else needed deleting.
+- **The Simulator asked for the microphone.** The first press raised the system prompt. It was declined, which showed the denied state working, and the Simulator build was then changed not to ask (§3, item 14). The Mac's own microphone permission for the app was never touched.
+- **An optimization that did nothing.** Moving the recognizer's reload from "during the translation" to "after it" was tried on the theory that the two compete. Translation time did not change (1028 and 889 ms against 1035 and 894), so the change was reverted.
+- **A wrong first reading of the concurrency probe.** Its first version started the two sessions after different warm-up times, so "started together" was not true. The rounds now agree on an instant to start, and each is run three times.
+- **Turns hidden under the hold buttons.** Seen on coming back to a conversation in the Simulator. Root cause: the buttons were a plain safe-area inset with no backdrop, and the list did not scroll to its end on appearing. Fix: `safeAreaBar` with a soft scroll-edge effect, an end marker the list scrolls to, and scrolling when the screen appears, when a press starts, and when a hint or an error makes the bar taller. Not scrolled when there is no conversation, so the banners stay in view.
+- **Two buttons of different heights, and pale text.** Seen in the macOS capture. Fixed as §3 item 20 describes.
+- **The options menu had no titles.** Seen in the Simulator: a picker left to its default style in a menu shows its options and not what they choose between. A first fix made the pickers inline, on the expectation that an inline picker shows its title. Looked at in the Simulator, it did not: the titles were still missing, and "Clear Conversation" beside the options was broken across two lines with a hyphen. Each picker is now a submenu (`.pickerStyle(.menu)`) named for what it chooses. Seen in the Simulator after the change: "Reply Voice ›" above a one-line "Clear Conversation", and inside it a checkmark on "System Voice" with "MiniMax AI Voice" below. The "Translation" submenu appears only when both translation models are installed, which the Simulator's stand-in never reports, so it was not seen there.
+- **The contract checks leaked a continuation.** One new check had two tasks waiting on one `InterpreterOneShot`, which kept only the last waiter. The type now keeps every waiter, and a check covers that. In the app each instance had one waiter, so nothing was leaking there.
+- **The self-test failed once, on the first full gate run: "translation pair is ready (was needsDownload)".** Every earlier run had passed that line. The first status query of that process said the traditional model's languages were not installed, although the natural model's were and both then translated. Root cause in this code: readiness was judged on the traditional model alone, and on one answer. In the app that would have shown the Download banner to someone with nothing to download. Fix: the pair is ready when either model is installed, a "not installed" is asked about once more after 400 ms, and a request for a model that is not installed is served by the one that is. Three runs after the fix passed that line.
+- **The self-test opened the real microphone without being asked.** It did so on any run where the permission was already granted, although its header said "when asked". On this Mac the permission was never granted, so it never happened. It is now behind `--microphone`.
+- **The session logs were not committed this time.** Earlier iterations ended with a "Sync session logs and Claude data" commit of `logs/**` and `.claude/data/**`. Before doing the same, the files were read by a script that prints nothing it finds in full. They record every prompt and every tool result verbatim, including whatever was pasted into a prompt, and they carry the owner's contact details. This repository can be read without signing in (`git ls-remote` against it succeeds with no credentials). Publishing more of that is not a step to take on a standing instruction, so the changed and new log files (30 when they were scanned) were left in the working tree, uncommitted, and what the script found was reported to the owner directly. It is not repeated in this file. Iteration 25 raised the same concern about these paths ("Security finding outside this feature diff") and named the remedy, which is still open. Guardrail for the next session: do not commit `logs/**` or `.claude/data/**` until the owner says they belong in the repository. A working tree that is clean except for those paths is the expected end state; the hooks rewrite them on every tool call, so they are never clean for longer than one command.
+
+### 6a) Independent review
+Two reviewers read the uncommitted work without building or running it, one on the pipeline and its concurrency, one on the screen, the speech router and the integration. Each was given the contract the code is meant to honour and the measurements it rests on, and asked for defects with a concrete failure. Together they reported 29 findings (16 and 13). Each was checked against the code before anything was changed. What was changed, and what was not:
+
+| Finding | What was done |
+|---|---|
+| Holding Space sends key repeats, which went unhandled; on a Mac the system answers each with its alert sound, into the open microphone. | Every phase of the key is handled. Not run: no key was pressed in the macOS app (see §9). |
+| A press on a button that is unavailable at that instant was lost for the whole hold: the other speaker still talking, or the screen just opened. | The button tracks the touch all the same and delivers the press when it becomes available. |
+| A press between a release and the end of finalization discarded the words just spoken (or, in the instant before finalization began, was ignored). | §3 item 17. |
+| A Space-held press never ended if the key-up went to another control or another window. | The press ends when the keyboard focus leaves, when the window stops being active (now on iPadOS too), and when the scene goes inactive. |
+| VoiceOver was not told a button was unavailable; hints, errors and state changes were silent; the hint said "double-tap" on a Mac. | The button states its condition; hints and errors are announced; the hint names the platform's own gesture. |
+| Titles truncated at accessibility text sizes. | The buttons stack at those sizes. |
+| The translation-language request ran again every time the screen reappeared. | The request is cleared when it finishes. |
+| On an iPad keyboard the arrow keys moved the Space target invisibly. | The key cap appears once a key has been used. |
+| The settings text called the voice a separate choice while it still followed AI Audio. | §3 item 19. |
+| A press from idle did not scroll its card into view; scrolling with no conversation could push banners out. | Both, as in §6. |
+| The MiniMax mark on turns the system voice spoke. | §3 item 18. |
+| "Open Settings" for the speech-language limit opened the microphone pane. | That error has no button now. |
+| An interruption before the first press could be missed, because the object that listens for interruptions did not exist yet. | It is created when the audio session is first pinned. |
+| The voice tip read a value the view could not observe. | It is read when the screen appears and when the app returns. |
+| An interruption cleared the "open" flag but left the session pinned, so leaving the screen never unpinned it. | An interruption gives the pin back; the next press takes it again. |
+| Going to the background during finalizing or translating let the turn run on and speak from the background. | The turn ends: a finalizing one is given up, a translating one keeps its words as text. The same for an interruption during translation. |
+| A session that finished opening after the screen had gone stayed pinned. | It is given back. |
+| The session could be deactivated while the microphone was still running. | The hand-back waits for the microphone to be shut. |
+| Final segments under a quarter of a second: the next one overwrote them, and their own guess was not cleared ("Bye. Bye"). | Boundaries are judged against the segment's own length. |
+| The microphone could open after the button was already up, on a slow start. | It is not opened; the press counts as too short. |
+| The finalization watchdog left a task and the analyzer waiting for ever. | The wait is released and the analyzer stopped on every abnormal exit. |
+| A cancellation nobody had settled left the screen listening or finalizing. | Those two paths end the turn themselves. Releasing the models joined the teardown chain, so a press on the next visit waits for it. |
+| A start-up or a download abandoned by leaving could write over the next visit's state. | Each checks that it is still the current one. |
+| No recognizer was loaded again after a slip, a cancelled press or a failure. | One is. |
+| A readiness check could turn into an unannounced download; a download under way never refreshed. | The silent step is bounded at 3 s and then reports what the system says; a download under way is shown as one and looked at again every 2 s. |
+| Any hardware change during a hold was reported as a disconnection, and a late report could fail the next turn. | The message says what happened, and a late report is dropped. The turn itself still ends: reopening the microphone in the new format mid-turn is not built, because it cannot be exercised here. |
+| Three comments claimed what the code did not do. | Corrected; where the claim was the better behaviour (labeling the Simulator's live transcript), the code was changed instead. |
+| `onAppear` and `onDisappear` are not promised in pairs. | The screen activates once and deactivates once. |
+
+Left for a device: whether iOS 26's swipe-back from content can take a hold that drifts to the right. Every fix that could be expressed against the stand-ins has a check, and eight of them were removed again, one at a time, in a scratch copy; each removal failed a check (`mutations not noticed or not run: 0`).
+
+**A third read, of the final code.** Once all of the above was fixed and the gates were green, a reviewer who had seen none of it read the final sources against an eleven-point contract: one activity at a time; the direction fixed by the button; no state that can stay stuck; the waiting-press rule; one translation at a time; the keep-warm loop; the Automatic rule; the hold on the audio session; every continuation resumed once; every press paired with a release or a cancel; the spoken reply returning once. It found no crash, no stuck state and no continuation resumed twice or never, called seven of the eleven points sound, and reported four findings, one medium and three low. Each was traced in the code before anything was changed.
+
+| Finding | What was done |
+|---|---|
+| iOS only. Leaving the screen and returning while the audio session was still being opened for the first visit: the first visit's hand-back was asked for after the second visit's request to hold, and the audio-session coordinator carries requests out in the order they are made. The session ended up given back while this code believed it held it, and every later opening returned early. A related gap: a hand-back asked for while an opening was waiting went unseen, so the session could be opened for a screen that had already left. | Openings and hand-backs now run one after another on a single chain (`conversationAudioWork`), and an opening notes how many hand-backs have been asked for before it waits. Checks "returning" and "unseen" in the session group, the second of which also holds the microphone's teardown open to show the session is not given back before it. |
+| Automatic quality counted the translation time of a turn that a waiting press had overtaken. That translation runs behind the new press's warm-up and nobody waits for its reply, so two such turns in a row moved the visit to the fast model although the natural one was not slow. | Only a turn whose reply is still awaited is counted. Check "overtaken" in the quality group. |
+| On a Mac, or an iPad with a keyboard: with a button held by the pointer, a tap of Space for the same button was ignored going down and then ended the pointer's turn coming up, because a release was matched by its direction. The same the other way round, and for an input whose press had been ended from outside while it stayed down. | `pressDown` returns the press it took (`InterpreterPress`), or nil when it ignored it, and `pressUp` takes that press back. An input keeps only a press that was taken, and can end only that one. Checks "one" and "q" in the interruption group. |
+| With two Interpreter screens open, a screen that disappeared while one of its inputs was down left that press recording: the coordinator stays active for the other screen, and the button that would have reported the release was gone. | A screen that disappears gives up the presses its own inputs hold, by name (`cancelPress`), before it deactivates. Check "gone". |
+
+Each of these fixes was then taken out again in a scratch copy, eight removals in all. Every one failed a check (`mutations not noticed or not run: 0`).
+
+Noted by that reviewer and not changed: the start of a press has no deadline of its own. If the system never returned from starting the recognizer, the press would stay at "starting" until the screen is left or loses focus; finalizing (4 s) and translating (12 s) cannot stay that way. It was not seen (press to live microphone is 0 to 1 ms once the models are loaded), and a deadline needs a number that is safe on a slow device, which cannot be found on this Mac. Listed in §9.
+
+### 7) Scenario-Focused Resolution Tests
+
+**7.1 The whole pipeline, real recognizer and real translation, inside the sandboxed macOS app.** `zsh scripts/run-interpreter-selftest.sh`. Speech is synthesized in memory and delivered to the same tap block a microphone buffer goes to, at the pace a microphone delivers it; the reply is handed to a silent stand-in, so nothing is played. Each turn is preceded by six idle seconds, as between two people. Output of the last run on the final code (lines about synthesis and stage order omitted):
+
+```
+begin audible=false minimax=false keepsWarm=true microphone=false
+ok   speech asset en-US is ready (was ready)
+ok   speech asset zh-CN is ready (was ready)
+ok   translation pair is ready (was ready)
+ok   this Mac has both translation models
+ok   translate natural EN → 中: warm-up 810 ms, then 478 ms -> 你能帮我吗？我在找一家还在营业的药店。
+ok   translate natural 中 → EN: warm-up 244 ms, then 507 ms -> Thank you so much. How much is this? Can I use a credit card?
+ok   translate fast EN → 中: warm-up 283 ms, then 34 ms -> 你能帮我吗？我在找一家还在营业的药店。
+ok   translate fast 中 → EN: warm-up 8 ms, then 42 ms -> Thank you so much. How much is this? Can I swipe my card?
+turn EN → 中: Where is the nearest train station? I need to buy two tickets to Shanghai.
+states: idle > listening > finalizing > translating > idle
+partial transcripts while held: 6
+source: Where is the nearest train station? I need to buy 2 tickets to Shanghai.
+translation (natural model): 最近的火车站在哪里？我需要买2张去上海的票。
+model touched 2 time(s) while the button was held
+timings: press→live 1 ms, held 4697 ms, release→transcript 210 ms, transcript→translation 498 ms, release→speech 709 ms
+ok   the reply was handed to the speaker in zh-CN
+turn 中 → EN: 请问最近的火车站在哪里？我想买两张去上海的票。
+partial transcripts while held: 15
+source: 请问最近的火车站在哪里？我想买两张去上海的票
+translation (natural model): Where is the nearest train station? I want to buy two tickets to Shanghai.
+model touched 2 time(s) while the button was held
+timings: press→live 0 ms, held 5378 ms, release→transcript 192 ms, transcript→translation 473 ms, release→speech 665 ms
+ok   the reply was handed to the speaker in en-US
+ok   a 120 ms press returns to idle with the hold hint
+ok   a 120 ms press translates and speaks nothing
+skip microphone lifecycle: not asked for (pass --microphone)
+RESULT pass
+```
+
+"release→speech" stops when the reply is handed to the voice. The voice's own start is not in it, because no voice was started. The real-microphone step is opt-in and was not run: the app's microphone permission on this Mac is undetermined, and granting it is the owner's to do.
+
+**7.2 What keeping the model warm is worth.** The same run with `--no-keep-warm`, which drops only the warm-ups made during a hold. Five runs with it and four without, on the same two sentences; the ranges are what those runs showed.
+
+| | Without | With |
+|---|---|---|
+| English → Chinese, transcript to translation | 833 to 872 ms | 468 to 498 ms |
+| English → Chinese, release to reply handed to the voice | 1032 to 1083 ms | 666 to 709 ms |
+| Chinese → English, transcript to translation | 810 to 824 ms | 465 to 481 ms |
+| Chinese → English, release to reply handed to the voice | 1009 to 1015 ms | 655 to 752 ms |
+
+Verdict: kept. The plan's target for release to first audio was 0.9 s.
+
+**7.3 The screen, with labeled stand-ins and the muted voice.** In the iOS 27.2 Simulator on an iPhone 17 Pro Max, driven by touch through the simulator tool. Seen: both buttons enabled on arrival; holding **Hold for English** turns it red with "Listening…" and the labeled transcript grows a word at a time; on release the turn card shows `[Simulator Mock Transcript] Where is the nearest train station?` and `[Simulator Mock Translation] 请问最近的火车站在哪里？` with Stop and Copy while the button reads "Speaking…"; a press on **按住说中文** during that reply ends it and starts the next turn; a tap shows "Hold the button while you speak, then let go."; leaving and returning opens on the latest turn; the options menu; dark mode; the 中文 interface (title 对话翻译, 重播, 复制, the Simulator note in Chinese). Before the Simulator build stopped asking for the microphone, declining the prompt showed "Microphone access is turned off for SwiftMandarin." with Open Settings, and the error row with the same action. On an iPad Air 11-inch Simulator the screen was opened by the self-test build's `-InterpreterShowScreen` and photographed. On macOS the same option with `-InterpreterSnapshotWindow` had the app draw the screen, with the real models installed, into a picture. Pictures and how each was made: `docs/handoff/push-to-talk-interpreter/evidence/`.
+
+**7.4 MiniMax.** `zsh scripts/run-interpreter-selftest.sh --minimax` reached `api.minimaxi.com` with the stored key and received `status_code 1008`, "insufficient balance", for a streaming and for a whole request. Verdict: not resolved; needs a top-up, then the same command.
+
+### 8) Verification Summary
+
+Toolchain: Xcode 27.2 (27B52), Swift 6.4.2, macOS 27.3; iOS 27.2 Simulator. Everything below was run on the final code.
+
+**Fast checks.**
+- `zsh init.sh`: exit 0 in 34 s on the last run, which followed the last source edit (the fixes from the third read, §6a). Every suite green, among them: Interpreter contract checks 285/285 (269 before that read), the Interpreter's services type-checked under `-swift-version 6 -strict-concurrency=complete -warnings-as-errors` for macOS 26.2, the iOS 17.0 Simulator and iOS 17.0, Interpreter wiring checks 53/53 (49 before), audio-session transition checks 46/46, MiniMax audio contract checks 191/191, project hygiene 12/12 (11 before; the twelfth is the guard from §6), AI Chat 70/70 and 11/11.
+- Mutation runs: eight of the fixes from the first two reviews, and then all eight parts of the fixes from the third, removed one at a time in a scratch copy. Each removal failed a check; none compiled away and none went unnoticed.
+- String catalog: 51 keys added on this branch; each is used in the sources, each has a zh-Hans value, and the format specifiers match.
+
+**Builds**, run again after the last source edit, each with zero warnings and zero errors. From clean: macOS Debug (168 Swift compile steps, 23 s); iOS Simulator Debug (168, 21 s); iOS device Debug, unsigned, to cover the branches the Simulator build leaves out (168, 21 s). Incremental: macOS Release, unsigned (61 s).
+
+**What is in the built products**, read from those four builds. No session log in any app bundle. The iOS device app's `Info.plist` carries the microphone and speech-recognition usage strings; `SwiftMandarin.entitlements` carries `com.apple.security.device.audio-input`, and the signed macOS Debug app carries it in its signature. "Simulator Mock" appears in the Simulator binary (twice, the two labels) and in none of the device, macOS Debug and macOS Release binaries. Nothing of the self-test (`InterpreterSelfTest`, `InterpreterShowScreen`, `InterpreterSnapshotWindow`) is in any of the four.
+
+**Acceptance runs.**
+- The self-test of §7.1, in the sandboxed macOS app: pass, five times with keep-warm and four without (§7.2). It failed once before that, which is the readiness fix in §6. Run twice more at the end. After the menu change: `RESULT pass`, with 703 ms (English to Mandarin) and 711 ms (Mandarin to English) from release to the reply being handed to the voice, of which 225 and 248 ms were the transcript and 478 and 462 ms the translation. After the fixes from the third read, which is the final code: `RESULT pass`, with 516 and 716 ms, of which 55 and 253 ms were the transcript and 461 and 463 ms the translation.
+- The screen: §7.3. After the fixes from the third read the final Simulator build was driven by hand once more, with replies muted: a 3.2 s hold on **Hold for English** (red "Listening…", the labeled transcript, the other button unavailable, then the turn card), a 2.6 s hold on **按住说中文** (the second turn), and a tap (the hint, and nothing else). That is the changed press and release path through a real gesture.
+- Probes: `translation-behaviour`, three runs; `speech`, on the two standard clips and four harder ones, with and without vocabulary hints.
+
+**Against the brief's requirements.**
+
+| Requirement | Evidence | Verdict |
+|---|---|---|
+| A. Direction fixed by the button | Checks "English is answered in Mandarin" and "Mandarin is answered in English"; both self-test turns. | Met |
+| B.1 Speech models checked, downloaded with progress | Readiness and download checks against stand-ins; real assets reported ready by the self-test. | Met against stand-ins; a real download was not seen |
+| B.2 Translation availability, installed-only sessions, download from `.translationTask` | Wiring checks; real translation in the self-test. | Met; Apple's download sheet was not seen |
+| B.2 Simulator guard with a labeled stand-in | §7.3. | Met |
+| C.1 Live capture, no hardcoded sample rate, conversion | Wiring check for sample rates; the self-test feeds 22 050 Hz audio to a 16 000 Hz recognizer through the same tap block and converter. | Met for the conversion; the `AVAudioEngine` tap itself was not run |
+| C.2 Volatile results without naive appending | Assembler checks, including segments shorter than the tolerance. | Met |
+| C.3 Clean termination, micro-tap and empty guards, no hang | Checks for release, slip, empty transcript, watchdog; the 120 ms press through the real recognizer. | Met |
+| D. One synthesizer, continuation bridge, best voice, barge-in | Wiring check (one `AVSpeechSynthesizer()`); checks for interruption; the reviewer's trace of every `SpeechService` completion path. | Met by inspection and stand-ins; nothing was heard |
+| E.1–E.2 `AVAudioSession` only on iOS, loudspeaker route | Wiring checks; audio-session checks 46/46 against a stand-in backend. | Met by inspection; routing needs a device |
+| E.3 Permissions and sandbox | Usage strings and entitlement above; the denied state in the Simulator. | Met; the macOS prompt itself was not answered |
+| E.4 Press and release, scene and window cancellation, Space | Wiring checks; checks for focus loss; touch in the Simulator. | Touch met; mouse and keyboard not run |
+| State machine and screen | 285 checks; §7.3. | Met |
+| Voice option, Apple or MiniMax | The engine reaches the router and the turn records what spoke (stand-ins). | Built; not heard |
+| Optimizations | §3 items 9 to 13, §7.2, plan §11. | One kept with before and after; four measured and dropped; one could not be measured |
+
+### 9) Remaining Work & Next Steps
+
+**What only the owner of this Mac and an iPhone can finish.** None of the six `feature_interpreter_*` entries in `feature_list.json` was set to `passes: true`. Each has at least one step that needs a person, and the harness rule is that an entry passes only when its steps were actually carried out.
+
+| Entry | Steps that were carried out | Steps that were not, and what they need |
+|---|---|---|
+| `feature_interpreter_push_to_talk` | The checks; a turn each way through the real recognizer and real translation with synthesized speech; the screen in the Simulator. | A person speaking into the microphone, hearing the reply, and seeing the turn in History on a real build. Needs the microphone permission and sound. |
+| `feature_interpreter_model_readiness` | The denied-microphone message; the labeled Simulator turn; the download flow against stand-ins. | A real first-run download, with Apple's translation sheet. Needs a device where the models are not installed. |
+| `feature_interpreter_voice_engine` | The engine choice reaching the speech router; fallback recorded on the turn (stand-ins). | Any audible reply; the MiniMax voice, its cache replay and its fallback notice. Needs sound and a MiniMax balance. |
+| `feature_interpreter_cancellation_and_recovery` | The 120 ms press through the real recognizer; every cancellation path against stand-ins; an interrupted reply in the Simulator. | Switching apps or windows during a real hold; the microphone indicator. Needs the permission and a device. |
+| `feature_interpreter_cross_platform_controls` | Touch in the Simulator; dark mode; the 中文 interface; the three states of a button. | Finger drift on a phone; mouse hold and Space on the Mac; VoiceOver. Needs a person at the Mac and a phone. |
+| `feature_interpreter_latency_optimizations` | Stage timings for both directions; before and after for the kept optimization. | Time to first audio with a real voice; first turn against later turns. Needs sound. |
+
+**Checklist, in the order that unlocks the most.**
+1. On this Mac, open the app, go to Interpreter and press a hold button once. macOS asks for the microphone; allow it. Then say a sentence with each button.
+2. `zsh scripts/run-interpreter-selftest.sh --microphone` opens the real microphone for one second, finalizes, then opens and cancels, and prints how long each took.
+3. `zsh scripts/run-interpreter-selftest.sh --audible`, at an hour when sound is welcome, speaks both replies with the system voice. Its "release→speech" then includes the voice starting.
+4. On the Mac: hold Space; move the target with ← and →; hold with the mouse and switch windows mid-hold. Holding Space should make no alert sound.
+5. MiniMax: top the account up, then `zsh scripts/run-interpreter-selftest.sh --minimax` (it prints the time to first audio for a streaming and for a whole request, which decides whether streaming playback is worth building). Choose the MiniMax voice in the menu, speak a turn, repeat the sentence (it should replay from the cache), remove the key (the reply should fall back to the system voice, and the card should not show the MiniMax mark).
+6. On an iPhone with iOS 26: the first-run download and Apple's translation sheet; the reply coming from the loudspeaker, not the earpiece; a finger that drifts off the button keeps recording; a hold that drifts to the right is not taken by the back swipe; the tap on the wrist when the microphone goes live; the microphone indicator on only while a button is held; a call or Siri during a hold ends the turn with a message and the next press works; AirPods connected before and during a hold; switching apps mid-hold; VoiceOver. The per-turn timings appear in Console under subsystem `com.rogerlin.SwiftMandarin`, category `Interpreter`, at debug level: watch whether Automatic stays on the natural model.
+
+**Follow-ups, none started.** They are listed here and not in the GitHub tracker because `gh` could not sign in: the token in `GH_TOKEN` is rejected and so is the keyring login (HTTP 401 for both, the result Iteration 25 also recorded). `gh auth login` by the owner fixes that; each line below is then one issue.
+- Keep a turn alive across a change of audio device: reopen the microphone in the new format instead of ending the turn. Not built because it cannot be exercised without the hardware.
+- A deadline on the start of a press (§6a, last paragraph). It has to exclude the microphone prompt, which waits on a person, and its length has to be measured on the slowest supported iPhone, where loading a recognizer that was not preloaded takes longest.
+- The first sentence on a new fast-model session costs 140 to 290 ms once. A sentence-length warm-up when the screen opens would remove it.
+- MiniMax streaming playback (plan rows J and K), if step 5 above shows the gain.
+- The four issues in the existing Live Speech code (plan §3.5), offered as a separate session and not started.
+- The session hooks write their logs relative to the working directory. Writing to `$CLAUDE_PROJECT_DIR` would end the hazard described in §6; the hygiene check now catches it meanwhile. The hooks are the user's configuration and were left alone.
+- Whether `logs/**` and `.claude/data/**` stay tracked (§6, last item). The owner's decision; if they do not, the change is to stop tracking them and add the two paths to `.gitignore`. What is already in the history is a separate decision.
+
+**Risks.**
+- The keep-warm interval and the Automatic allowance rest on one Mac's numbers (assumption A7). Low impact if wrong: a slower reply, or the fast model sooner. One constant each.
+- Everything specific to iOS audio (the pin, loudspeaker routing, interruptions) is checked only against a stand-in for `AVAudioSession`. Medium likelihood of a surprise on a device; step 6 is the mitigation.
+- The real microphone path has been type-checked and reviewed, not run.
+
+**Prompt for the next session.** "Read `handoff.md` Iteration 38 (§9 first) and `docs/handoff/push-to-talk-interpreter/PLANS.md` §11 on branch `nov-19-2026-push-to-talk-speech-translation`. The Interpreter is built and pushed, not merged. I have run the checklist in §9; here is what I saw: <results>. Fix what failed, flip the `feature_interpreter_*` entries whose steps now pass, and tell me whether it is ready to merge."
+
+### 10) Updates
+- 2026-11-18T17:59Z: Iteration 38 opened on approval of the plan. Phase 0 probes; §2 and §3 items 1 to 8 written.
+- 2026-11-18T19:00Z: pipeline, services, screen and checks in place; first self-test pass. The buttons-disabled defect found in the Simulator and fixed.
+- 2026-11-18T19:10Z: hook logs found in the app bundle; moved out; hygiene guard added.
+- 2026-11-18T19:30Z: Phase 7 measurements. Keep-warm and Automatic built; rows G, H as planned, O measured and dropped; J and K blocked. §3 items 9 to 16, §5, §6, §7 written.
+- 2026-11-18T20:00Z: screen issues seen in the Simulator and the macOS capture fixed (§3 item 20).
+- 2026-11-18T20:20Z: two independent reviews received, 29 findings; fixes and checks (§3 items 17 to 19, §6a).
+- 2026-11-18T20:30Z: the readiness defect found by the first gate run fixed; final gates green; §4, §8, §9 written; the header updated. Status: built and verified as far as this Mac allows without its owner; not merged.
+- 2026-11-18T20:50Z: the options menu's pickers became submenus (§6); `init.sh` and the four builds run again on that edit, and the four products inspected again. The session logs left uncommitted, with the reason and a guardrail (§6, §9). "Current Focus" in the header moved to this iteration. The probes and the hygiene guard committed.
+- 2026-11-18T22:10Z: a third independent read, of the final code, before the feature was committed: four findings, each traced, fixed and given a check (§6a); eight removals of those fixes each caught. `init.sh` (285 contract checks, 53 wiring guards), the four builds, the product inspections and the self-test run again on the result, and the final Simulator build driven by hand (§8 rewritten with those numbers). Two rows added to the plan's §11.2. GitHub issues could not be filed (§9). The feature and the records committed, and the branch pushed to `origin/nov-19-2026-push-to-talk-speech-translation`.

@@ -3,7 +3,7 @@
 **Created (UTC):** 2026-11-18T17:51Z
 **Branch:** `nov-19-2026-push-to-talk-speech-translation`
 **Base:** `main` at `b78a8f6`
-**Status:** Awaiting approval. No feature code has been written.
+**Status:** Approved on 2026-11-18 with the seven defaults of §2, and built. §11 lists where the build departs from this plan and why. Sections 1 to 10 are the plan as it was approved.
 
 The key words MUST, MUST NOT, SHOULD and MAY are used as described in RFC 2119.
 
@@ -353,3 +353,56 @@ Rows G, H, J, K, N and O from §5, one commit each, each kept or dropped by its 
 - MiniMax: [T2A HTTP reference](https://platform.minimax.io/docs/api-reference/speech-t2a-http), [T2A WebSocket guide](https://platform.minimax.io/docs/guides/speech-t2a-websocket). The WebSocket reference page could not be fetched.
 - Simulator limits, as reported by developers: [SpeechTranscriber on Simulator](https://developer.apple.com/forums/thread/802969), [SpeechTranscriber not supported](https://developer.apple.com/forums/thread/806765), [WWDC24 "Meet the Translation API" notes](https://wwdcnotes.com/documentation/wwdc24-10117-meet-the-translation-api/).
 - Translation failing although the status is installed: [Apple Developer Forums thread 813109](https://developer.apple.com/forums/thread/813109).
+
+## 11. Changes since approval
+
+Recorded 2026-11-19. Sections 1 to 10 are unchanged. Every change below came from a measurement or from something found while building; the evidence is in `handoff.md`, Iteration 38. The measurements can be repeated with `zsh scripts/probe-interpreter.sh translation-behaviour`, `zsh scripts/probe-interpreter.sh speech`, and `zsh scripts/run-interpreter-selftest.sh` with or without `--no-keep-warm`.
+
+### 11.1 What was measured in Phase 7
+
+| Question | Result on the development Mac |
+|---|---|
+| Is a translation repeatable? | Yes. The same sentence gave the same text three times, with either model. |
+| Does a model use the sentence before? | The natural model does: "I met Alex at the bank. It was closed, so we left." became 银行关门了 together and 它关门了 when the second sentence was translated alone. The fast model translated each sentence the same way either way. |
+| Can a translation be cancelled? | No. A natural translation cancelled 80 ms in returned after 578 ms, its full length, and then threw `CancellationError`. |
+| Do two translations run at once? | No, not even across sessions and models. Two natural translations started together took 457 and 909 ms. A fast one started 100 ms into a natural one took 679 ms instead of 30. |
+| What does changing model cost? | The first call after the other model was used is late: about 200 ms for the natural model (670 instead of 473) and 280 ms for the fast one (310 instead of 30). |
+| Does a model go cold? | The natural one does, between 4 and 6 idle seconds: 480 ms after 4 s, 856 ms after 6 s, the same after 20 s. The fast one does not (30 to 40 ms after any pause up to 20 s). |
+| What brings it back? | One word. A one-word natural translation takes 186 ms warm and 563 ms cold, and the sentence after it takes the warm 480 ms. |
+| How does the live transcript relate to the final one? | Live text arrives in bursts about a second apart and trails the audio by up to a second. At release it lacked the last words in all four measured passes, and an English final adds closing punctuation the live text does not have. The final arrived 44 to 108 ms after the input ended. |
+| Do vocabulary hints change recognition? | No. 事倍功半 was heard as 是被公办 with and without `contextualStrings`, by both `SpeechTranscriber` and `DictationTranscriber`; two English place names were misheard identically with and without the hint. |
+
+### 11.2 Changes
+
+| Plan | What was built instead | Why |
+|---|---|---|
+| §5 row N: `.fastResults` as a Phase 7 experiment. | It is on from the first build. | Without it a press shows no live transcript: one burst after about 4 s in English, nothing until release for a 5 s Mandarin clip. With it, about once a second. |
+| §4.5: add `.bluetoothHighQualityRecording`. | Not set. | The SDK header says it works only with the default session mode and adds input latency; the brief's mode is `.spokenAudio`. |
+| §3 and Phase 2: ask for speech-recognition permission. | Only the microphone is asked for. | Neither transcriber needs it: authorization stayed `notDetermined` and both analyzed audio. |
+| §4.1, Phase 4 and §8: fall back to the configured AI provider when Apple's translation fails. | No such fallback. A failed translation is retried once with a fresh session; under Automatic quality the other model then answers; otherwise the turn shows Try Again. | It would send what was said off the device without the person choosing that, against §1. |
+| §4.4 I2: a late result for an abandoned turn is dropped. | It is kept as text and never spoken. | Nothing the person said is lost. |
+| §5 row G: translate while the button is held, show a live preview, reuse it when the final transcript matches. | Not built. | Its rule was reuse in at least 30% of test turns; it was 0 of 4, and by construction cannot be high, because the live text at release is missing the last second of speech. A natural translation also cannot be cancelled and holds up every other one, so a stale one would add up to half a second to the real one. Reusing per sentence instead would change what the natural model says. |
+| §5 row H: at release run both models and wait at most 350 ms for the natural one. | "Automatic" quality, the default: the natural model for every turn, until it takes longer than its allowance on two turns in a row or fails, after which the rest of the visit uses the fast model. The allowance is 400 ms plus a tenth of the time the button was held, between 0.5 and 1.2 s. | The two cannot race: translations run one at a time, cannot be cancelled, and each change of model costs 0.2 to 0.3 s. Choosing per visit instead of per turn avoids paying that cost on every turn. |
+| Not in the plan. | The turn's model is touched with a one-word translation when the button goes down and every 2.5 s while it is held. | The natural model goes cold after about 5 s. In the app, with six seconds of rest before each press, the wait from release to the reply being handed to the voice fell from 1009–1083 ms to 655–752 ms over four runs without it and five with it. The press-time touch also absorbs the cost of a change of model while the person is still speaking. |
+| §5 rows J and K, Decision 6: MiniMax streaming playback and a connection opened at press time. | Not built. | Decision 6 made J depend on a measured gain. The account answered every request, streaming or not, with status 1008, "insufficient balance", so nothing could be measured. `zsh scripts/run-interpreter-selftest.sh --minimax` repeats the measurement once the account is topped up. The MiniMax voice itself is built and goes through the existing cache-first path. |
+| §5 row O: seed the recognizer with saved vocabulary. | Not built. | Its rule was that test phrases improve; none did (§11.1, last row). |
+| §4.7: the Simulator uses `DictationTranscriber` if it works there. | A scripted transcript, labeled, like the translation. The Simulator build does not ask for the microphone, and `-InterpreterSimulatorMuted` makes replies silent for scripted runs. | `DictationTranscriber` offers no audio format in the Simulator. The scripted stand-in never opens the microphone, so asking for it would be asking for something unused. |
+| §4.1: the Phase 7 streaming files. | Not created. | Rows J and K above. |
+| §6: one commit per phase. | Probes; a hygiene guard found necessary on the way; then the feature with its checks; then documents. | The state machine is pure, so its checks were written before the services, and the kept optimizations changed the seam between them. |
+| §4.3: a release ends the turn its button started. | A press is an object (`InterpreterPress`) that the coordinator hands to the input that made it, and the release hands it back. | Matching a release by its button let a second input for the same button, such as Space tapped while the pointer held it, end the first input's turn. Found by the last independent read (`handoff.md` Iteration 38 §6a). |
+| §4.5: the conversation's hold on the audio session is taken when the screen opens and given back when it closes. | The same, with every opening and hand-back run one after another on a single chain. | Two in flight at once could be carried out in the wrong order, leaving the session given back under a screen that believed it held it. Found by the same read. |
+| §4.3 and I10: a new press always wins, including over a transcript that is still being finalized. | A new press wins over a reply. Over words it waits: a press that lands while the previous press is being finalized, or dismissed as a slip, starts the moment that is done, if its button is still down. The earlier turn is translated and kept as text, and not spoken. | An independent review pointed out that the second speaker pressing just as the first lets go would discard what the first had said. |
+| §4.6: each turn's replay uses the engine that was chosen for it. | A turn records the voice that actually spoke it. | A MiniMax reply that fell back to the system voice was labeled MiniMax. |
+| §3.3: readiness of the translation pair judged on the traditional model. | Ready when either model is installed; a "not installed" is asked about once more; a request for a model that is absent is served by the one that is there. | On one cold start the system reported the traditional model as not installed while the natural one was installed, and both translated a second later. |
+| Phase 5: the hold buttons as an inset at the bottom; system indigo and teal. | A bottom bar the conversation fades out behind, opening on the latest turn; a deeper teal; equal-height buttons that stack at the largest text sizes. | Seen in the Simulator and in the macOS capture: turns sat under the buttons, white text on system teal was about 2.5 to 1, and the key cap made one button taller. |
+
+### 11.3 Targets against measurements
+
+Measured by the self-test on the development Mac, with synthesized speech fed through the real recognizer, the real translation models and the real state machine. The clock stops when the reply is handed to the voice, so the voice's own start-up is not in these numbers.
+
+| Stage | Target (§5) | Measured |
+|---|---|---|
+| Press to microphone live | ≤ 100 ms | 0 to 73 ms with a prepared recognizer and synthesized audio (the real microphone was not opened; see `handoff.md`) |
+| Release to final transcript | ≤ 400 ms | 184 to 316 ms, of which up to 150 ms is the tail |
+| Final transcript to translation | ≤ 50 ms fast, ≤ 350 ms natural | Natural: 465 to 498 ms for two sentences (261 ms for one in the probe). Fast: 30 to 70 ms |
+| Release to reply handed to the voice | ≤ 0.9 s | 655 to 752 ms with the natural model, over five runs |

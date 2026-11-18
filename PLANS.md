@@ -8,13 +8,15 @@
 
 **Base:** `main` at `b78a8f6`
 
-**Approval:** Awaiting approval. No feature code has been written.
+**Approval:** Approved on 2026-11-18 with the plan's seven default decisions, and built on this branch. Where the build departs from the plan, and the measurement behind each departure, is §11 of the full plan. Not merged to `main`.
 
 The full plan — inspection findings, design, optimizations, phases, verification and risks — is in [`docs/handoff/push-to-talk-interpreter/PLANS.md`](docs/handoff/push-to-talk-interpreter/PLANS.md). The slice adds an Interpreter screen with two hold-to-speak buttons (**Hold for English** / **按住说中文**). Held, a button streams the microphone into `SpeechAnalyzer` and shows the live transcript; released, the transcript is finalized, translated on the device with the Translation framework, and spoken with either Apple's on-device voice or a MiniMax voice, chosen in the screen and in AI Audio settings.
 
 The inspection changed three assumptions in the brief. The app's iOS floor is 17.0, so the feature is availability-gated at iOS 26 rather than raising the floor. The target compiles in Swift 5 mode, so new pipeline files are proven Swift 6-clean by a script, as existing contract slices are. And the app already has a single speech router (`SpeechService`), a single audio-session owner (`AudioSessionCoordinator`) and a MiniMax pipeline with a persistent cache, so the feature extends those instead of adding parallel ones.
 
 Two measurements on this Mac drive the optimization work: the low-latency translation strategy (OS 26.4+) takes 20–50 ms per sentence against 265–520 ms for the default high-fidelity one, and `AssetInventory.status(forModules:)` reports `.supported` for locales that `installedLocales` lists as installed, so readiness must be decided by the former.
+
+The build added one more, which turned out to matter most: the natural translation model goes cold after about five idle seconds and then answers some 0.4 s late, and a translation can be neither cancelled nor run beside another. So a turn uses one model, chosen at the press, and keeps it warm while the button is held. With that, the wait from release to the reply being handed to the voice measured about 0.7 s on this Mac, against about 1.0 s without.
 
 ## Active slice: Live MiniMax audio catalog and batch audio
 

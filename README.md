@@ -135,6 +135,18 @@ It works in **both directions**. An English speaker studying Mandarin and a Mand
 - **Use Both Sides**: Accepting a spoken translation fills in both the transcript and the result on the Translate tab, and records it to History
 - **Honest About the Microphone**: If no input device is available (a Mac without a microphone, a denied permission) the app says so and stops, instead of starting an engine that could crash
 
+### 🗣️ Interpreter — Hold to Talk, Hear It Translated
+
+- **Two People, Two Buttons**: Hold **Hold for English** or **按住说中文** while you speak and let go when you finish. The app shows what it heard, translates it, and says it aloud in the other language. Each button fixes the direction, so nothing has to guess who is speaking
+- **On the Device**: Speech recognition (Apple's `SpeechAnalyzer`) and translation (Apple's Translation framework) run on the device and work offline once the English and Chinese models are downloaded — the screen checks for them when it opens and offers a one-tap download. Requires iOS 26 or macOS 26
+- **Choose the Voice**: Apple's system voice (offline, free) or a MiniMax AI voice (the translated text is sent to MiniMax, using the voices you set up in AI Audio). Switch from the options menu on the screen or in **Settings → AI Audio**. If MiniMax cannot answer, the reply falls back to the system voice when that fallback is turned on
+- **Interrupt Any Time**: Pressing either button while a reply is playing stops it at once and starts listening. A press that lands just as the other speaker lets go waits for their words to be finalized instead of cutting them off. A press that is too short, or one where nothing was heard, is not translated or spoken
+- **A Conversation You Can Read Back**: Every turn keeps its transcript and translation, with **Replay** and **Copy**; turns are added to Translation History when history saving is on
+- **Built for a Short Wait**: The models are loaded before you press, the audio session stays configured for the whole conversation, and the translation model is kept warm while you hold the button. On the development Mac the reply starts about 0.7 s after release for a two-sentence utterance with the system voice chosen (measured with the built-in self-test, which stops the clock when the reply is handed to the voice; without the keep-warm step it was about 1.0 s)
+- **Translation Quality**: Where a device has both of Apple's translation models, choose **Automatic** (the natural-sounding model, moving to the fast one only if it proves slow on that device), **Natural**, or **Fast**
+- **Keyboard and VoiceOver**: On a Mac, or an iPad with a keyboard, hold **Space** to talk and use ← → to choose which button Space presses. With VoiceOver the buttons are toggles: activate once to start and again to stop. At the largest text sizes the two buttons stack so their titles stay whole
+- **Where to Find It**: The **Study** tab, the Translate toolbar, and the Mac sidebar
+
 ### ✨ AI Chat — Ask in English or 中文
 
 <img align="right" src="Screenshots/iOS%20Screenshots/iPhone-09-AIChat.png" width="260" alt="AI Chat" />
@@ -466,6 +478,15 @@ xcodebuild -project SwiftMandarin.xcodeproj -scheme SwiftMandarin -configuration
 
 > Image OCR works without AI. Audio transcription uses Apple's Speech framework and may use Apple services when on-device recognition is unavailable. Translation, AI photo cleanup, and workbook grading use the translation/provider configuration described in Settings.
 
+### Using the Interpreter
+
+1. Open **Study → Interpreter** (or **Interpreter** in the Mac sidebar). The first time, tap **Download** if the screen asks for the English and Chinese models
+2. The English speaker holds **Hold for English**, speaks, and lets go; the reply is spoken in Mandarin
+3. The Mandarin speaker holds **按住说中文**, speaks, and lets go; the reply is spoken in English
+4. Use the options menu (top right) to change the voice, the translation quality, or clear the conversation
+
+> The first press asks for the microphone. Nothing is recorded outside a held press, and the transcript and translation stay on the device. Only the MiniMax voice, if you choose it, sends the translated text to MiniMax.
+
 ### Switching the App Language
 
 1. Open **Settings** (the More tab on iOS, or ⌘, on Mac) and find **Language**
@@ -501,6 +522,7 @@ SwiftMandarin/
 │   ├── LearnView.swift              # Flashcard learning
 │   ├── PhrasesView.swift            # Common phrases
 │   ├── StatsView.swift              # Analytics dashboard
+│   ├── InterpreterView.swift        # Push-to-talk interpreter
 │   ├── MacOSSettingsView.swift      # Settings (macOS)
 │   ├── MoreView.swift               # Settings hub (iOS)
 │   └── Components/                  # Camera scanner, live speech, AI cards, etc.
@@ -518,6 +540,8 @@ SwiftMandarin/
 │   ├── KeychainHelper.swift         # Secure API-key storage
 │   ├── PinyinConverter.swift        # Pinyin conversion
 │   ├── SpeechService.swift          # Text-to-speech
+│   ├── SpeechTranslationCoordinator.swift # Interpreter state machine
+│   ├── PushToTalkTranscriptionService.swift # Microphone → SpeechAnalyzer
 │   ├── ChineseTextAnalyzer.swift    # NLP analysis
 │   └── ClipboardService.swift       # Clipboard handling
 ├── Intents/                         # App Intents / Siri Shortcuts
@@ -535,7 +559,7 @@ SwiftMandarin is designed with privacy as a core principle:
 - **On-Device Translation**: Apple Translation framework processes text on-device
 - **No Tracking**: No analytics, no telemetry, no third-party tracking SDKs
 - **Offline Core**: Translation, vocabulary, flashcards, phrases, stats, and on-device OCR work fully offline (after downloading language packs)
-- **AI Is Opt-In**: Cloud AI features are disabled until *you* choose a provider and add a key. Apple Intelligence and Ollama run locally; cloud providers receive only the text or image you submit. When MiniMax AI Audio is enabled, the text you ask the app to speak is sent to MiniMax. API keys remain in the Keychain and are transmitted only to the configured provider.
+- **AI Is Opt-In**: Cloud AI features are disabled until *you* choose a provider and add a key. Apple Intelligence and Ollama run locally; cloud providers receive only the text or image you submit. When MiniMax AI Audio is enabled, or the MiniMax voice is chosen in the Interpreter, the text you ask the app to speak is sent to MiniMax. API keys remain in the Keychain and are transmitted only to the configured provider.
 
 Your learning journey is yours alone.
 
@@ -556,6 +580,7 @@ Your learning journey is yours alone.
 | Translation (Translate / Photo / Live Speech tabs) | Via your configured AI provider | Apple on-device translation | Apple on-device translation |
 | Word-tap lookups, screenshot & Shortcuts translation | Via AI provider | Via AI provider | Apple on-device translation (AI provider when a language pack is missing) |
 | Live speech transcription | ✓ (SFSpeechRecognizer) | ✓ (SFSpeechRecognizer) | ✓ (SpeechAnalyzer, fully on-device) |
+| Interpreter (hold to talk, speech to speech) | — | — | ✓ (on-device speech recognition and translation; a choice of translation model on 26.4+) |
 | Apple Intelligence provider | — | — | ✓ |
 | Cloud AI providers, Ollama, OCR, vocabulary, flashcards, stats, phrases | ✓ | ✓ | ✓ |
 | Liquid Glass design / sidebar-adaptable tab bar | Material fallback / classic tab bar | Material fallback / ✓ | ✓ / ✓ |
