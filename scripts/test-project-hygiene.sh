@@ -34,6 +34,18 @@ junk_refs=$(count_matches 'path = "?(logs|\.remember|\.claude)/' "$pbxproj")
     exit 1
 }
 
+# The synchronized group needs no reference to bundle a file: whatever sits
+# under `SwiftMandarin/` is copied into the app. Session hooks write their
+# logs relative to the shell's working directory, so one command run from
+# inside that folder put `pre_tool_use.json` and `post_tool_use.json` into
+# every build made afterwards. `.gitignore` hides such folders from git, which
+# is exactly why nothing else notices them.
+stray_dirs=$({ find "$repo_root/SwiftMandarin" -maxdepth 2 \( -name logs -o -name .claude -o -name .remember \) -print 2>/dev/null || true; } | wc -l | tr -d ' ')
+[[ "$stray_dirs" == "0" ]] || {
+    print -u2 "$stray_dirs session-log or scratch folder(s) sit inside SwiftMandarin/, where Xcode bundles them into the app; move them out of the source folder"
+    exit 1
+}
+
 # The toolchain is whatever `xcode-select` points at; a hard-coded Xcode path
 # stops the whole suite the day that Xcode is removed.
 pinned_xcode=$(count_matches 'Xcode-beta\.app' "$repo_root"/scripts/*.sh "$repo_root/init.sh")
@@ -126,4 +138,4 @@ minimize=$(count_matches 'tabBarMinimizeOnScrollCompat\(\)' "$repo_root/SwiftMan
     exit 1
 }
 
-print "Project hygiene checks passed (11/11)"
+print "Project hygiene checks passed (12/12)"
