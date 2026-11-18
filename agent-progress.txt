@@ -180,3 +180,14 @@ SwiftMandarin is a cross-platform SwiftUI learning and translation app for macOS
 - Files: CompatModifiers.swift, DesignSystem.swift, HomeView.swift, MoreView.swift, iPhone-01-Home.png, handoff.md.
 - Tests: iOS + macOS builds, zsh init.sh; simulator checks of Home (rest/scrolled), More (rest/scrolled, picker menu, push to General).
 
+
+### 2026-11-18 — Iteration 37: push-to-talk interpreter, plan only
+
+- Branch: `nov-19-2026-push-to-talk-speech-translation` from `main` at `b78a8f6`.
+- Request: a new branch and a plan for a push-to-talk English ⇄ Mandarin speech-to-speech feature (Speech → Translation → speech out) for iOS and macOS, with ways to optimize the pipeline and a choice between Apple's voice and a MiniMax voice for the spoken reply.
+- Done: Phase 1 inspection (project file, entitlements, existing speech, audio-session, TTS, MiniMax and Translation code, navigation, settings, localization, check scripts); API signatures checked against the Xcode 27.2 SDK interface files; two read-only probes on this Mac; MiniMax streaming contract read from the API reference.
+- Result: `docs/handoff/push-to-talk-interpreter/PLANS.md`, indexed from the root `PLANS.md`; `handoff.md` Iteration 37; six `passes: false` entries in `feature_list.json`.
+- Key findings: the iOS floor is 17.0 and the target is in Swift 5 mode, so the feature is availability-gated and new files are proven Swift 6-clean by script; the app already has one speech router, one audio-session owner and a cached MiniMax pipeline to extend; `.lowLatency` translation took 20–50 ms per sentence against 265–520 ms for the default; `AssetInventory.status(forModules:)` reports `.supported` for locales that `installedLocales` lists.
+- Files touched: `PLANS.md`, `docs/handoff/push-to-talk-interpreter/PLANS.md`, `handoff.md`, `feature_list.json`, `agent-progress.txt`. No source files.
+- Tests: `python3 -m json.tool feature_list.json`. No build or `init.sh` run, because no code changed.
+- Next: plan approval and the seven decisions in plan §2, then Phase 0.

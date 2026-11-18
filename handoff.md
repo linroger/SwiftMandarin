@@ -1,7 +1,9 @@
 # Handoff.md — SwiftMandarin: Bilingual + Multi-Provider AI Overhaul
 
-**Last Updated (UTC):** 2026-11-02
-**Status:** Complete (iter 35 — AI Chat padding/clipping/missing meanings, Stats legend, app-wide Liquid Glass; see Iteration 35)
+**Last Updated (UTC):** 2026-11-18
+**Status:** Planning (iter 37 — push-to-talk interpreter; plan written and awaiting approval, no feature code yet; see Iteration 37)
+**Prior Status:** Complete (iter 36 — Home header under the bar, Liquid Glass More hub; see Iteration 36)
+**Prior Status:** Complete (iter 35 — AI Chat padding/clipping/missing meanings, Stats legend, app-wide Liquid Glass; see Iteration 35)
 **Prior Status:** Complete (iter 34 — whole-app review, hang/crash fixes, Shortcuts and AI-prompt rework, global search, Liquid Glass pass, new AI Chat feature, new screenshots; see Iteration 34)
 **Prior Status:** In Progress (iter 33 — macOS cards were drawn in the page color; see Iteration 33)
 **Prior Status:** In Progress (iter 32 — per-day mastery in the activity heatmap and a 30-day Words Learned range; see Iteration 32)
@@ -11,7 +13,8 @@
 **Prior Status:** In Progress (iter 28 — translation study notes, transcription repair, AI transcription; see Iteration 28)
 **Prior Status:** In Progress (iter 27 — structured AI translation output; see Iteration 27)
 **Prior Status:** In Progress (iter 16 — step-change overhaul on branch `jul-07-2026-step-change-overhaul`: RECOMMENDATIONS.md + Home dashboard + FSRS + Reader + AI conversation + UI overhaul)
-**Current Focus (latest):** macOS cards are visible again. `windowBackgroundColor` and `controlBackgroundColor` resolve to the **same** value in both appearances, so every card was filled with exactly the page color; each surface now picks a different system color per appearance, with the card always the lighter one. See Iteration 33.
+**Current Focus (latest):** Approval of the push-to-talk interpreter plan (`docs/handoff/push-to-talk-interpreter/PLANS.md`) on branch `nov-19-2026-push-to-talk-speech-translation`; after approval, Phase 0 probes. See Iteration 37.
+**Prior Focus:** macOS cards are visible again. `windowBackgroundColor` and `controlBackgroundColor` resolve to the **same** value in both appearances, so every card was filled with exactly the page color; each surface now picks a different system color per appearance, with the card always the lighter one. See Iteration 33.
 **Prior Focus:** The Statistics screen now counts **words and phrases mastered each day** in the activity heatmap — un-mastering refunds the day the word was *earned* on, not today — and the Words Learned chart offers a **30-day** range beside 7 and 14. See Iteration 32.
 **Prior Focus:** An opt-in **Auto-Translate New Words** toggle in the Batch AI Analysis menu: every word saved to the vocabulary list is translated and analyzed in the background by the selected LLM provider, through a bounded, resumable queue that shares its cache with the reviewed batch run. See Iteration 30.
 **Prior Focus:** Photo-tab workbook expansion — direct camera capture, a review-question **database** (bank), AI **review-question generation**, **grading history** with the original scanned photos, **analytics** integration (graded questions in the contribution heatmap), and a decluttered **More** tab. Plus a 43-agent codebase audit written to `EXECPLAN2.md` (132 findings, 23 confirmed). See Updates iter 11.
@@ -1640,3 +1643,113 @@ Critical path: fix the harness first (nothing else is verifiable without it) →
 - **Verified (iPhone 17 Pro Max simulator, light):** Home at rest and scrolled (no strip, no title over the card); More at rest and scrolled (glass sections, collapsed inline title fades softly); the "I am a…" menu opens with all three modes; General pushes. iOS and macOS builds and `zsh init.sh` (see below).
 - **Not changed:** the settings screens More opens keep native grouped forms over the glass backdrop.
 
+
+## Iteration 37 — Push-to-talk interpreter: plan (2026-11-18)
+
+**Status:** Planning complete; awaiting approval. No feature code has been written.
+**Branch:** `nov-19-2026-push-to-talk-speech-translation`, created from `main` at `b78a8f6`.
+**Plan:** [`docs/handoff/push-to-talk-interpreter/PLANS.md`](docs/handoff/push-to-talk-interpreter/PLANS.md), indexed from the root `PLANS.md`.
+
+### 1) Request & Context
+- **User's request (quoted):** "create a new branch. i want to implement the following feature. please create a plan for this." The brief that followed is titled "Build a Push-to-Talk Bidirectional Mandarin <-> English Speech-to-Speech Feature (iOS & macOS)": an on-device pipeline of Speech (`SpeechAnalyzer`, `SpeechTranscriber`, `AssetInventory`), Translation (`LanguageAvailability`, `.translationTask`, `TranslationSession`) and AVFoundation (`AVSpeechSynthesizer`), six phases, an explicit `PipelineState` machine in an `@Observable @MainActor final class SpeechTranslationCoordinator`, and dual hold-to-speak controls. It ended: "find ways to optimize this workflow, and also introduce an option to use the minimax tts api from the minimax audio for the final tts portion, or to use apple's native tts api for the final portion."
+- **Constraints:** plan first and implement only after approval; iOS 17.0 and macOS 26.2 deployment floors; Swift 5 mode with MainActor default isolation; zero warnings; full zh-Hans coverage for new strings; commits without attribution; work on a branch.
+- **Non-goals of this iteration:** any feature code.
+- **Changes since start:** none.
+
+### 2) Requirements → Acceptance Checks (this iteration)
+| Requirement | Acceptance check | Outcome | Evidence |
+|---|---|---|---|
+| P1 A new branch exists | `git branch --show-current` | `nov-19-2026-push-to-talk-speech-translation` | command output this session |
+| P2 The plan is grounded in the repository | Every file, build setting and line reference in the plan was read this session | Plan §3.1, §3.2, §3.5 | the plan |
+| P3 The plan is grounded in the SDK | Signatures taken from the `.swiftinterface` files and AVFAudio headers of the iOS 27.2 SDK in Xcode 27.2 | Plan §3.3 | the plan |
+| P4 Optimizations are identified, with measurements where possible | Two read-only probes run on this Mac | Plan §3.3 and §5 | raw output in §7 below |
+| P5 The Apple-or-MiniMax voice option is designed | Design covers setting, behaviour, failure, replay | Plan §4.6 | the plan |
+| P6 Harness reflects the new work | `feature_list.json` gains six `passes: false` entries and still parses | 29 entries, 6 failing | `python3 -m json.tool feature_list.json` |
+
+The requirement → check table for the implementation itself is §7 of the plan.
+
+### 3) Plan
+Phases, each ending in a green build, a green `zsh init.sh`, recorded evidence and one pushed commit: Phase 0 probes and baseline; Phase 2 permissions and model provisioning; Phase 3 streaming speech-to-text; Phase 4 translation and speech output, including the voice option and the audio-session pin; Phase 5 coordinator and screen; Phase 6 builds and verification; Phase 7 measured optimizations. Phase 1 (inspection) is this iteration. Order rationale: the probes settle the unknowns that could change the design (Simulator behaviour, whether speech authorization is needed, MiniMax stream framing) before any feature code depends on them; the services are built bottom-up so each can be verified alone before the coordinator composes them.
+
+### 4) To-Do & Progress Ledger
+- [x] Branch created from `main`.
+- [x] Phase 1 inspection: project file, entitlements, the speech, audio-session, TTS, MiniMax and Translation code, navigation, settings, localization, the check scripts.
+- [x] SDK interface check for Speech, Translation and AVFAudio.
+- [x] Capability probe and translation timing probe on this Mac.
+- [x] MiniMax T2A streaming contract read from the API reference.
+- [x] Plan written; root `PLANS.md` indexed; six feature entries added.
+- [ ] Plan approved, and the seven decisions in plan §2 confirmed or changed.
+- [ ] Phases 0 and 2–7.
+
+### 5) Findings, Decisions, Assumptions
+- **Finding:** the brief assumes iOS 26.0+ and Swift 6; the target is iOS 17.0 and Swift 5 mode with MainActor default isolation. Implication: availability-gate the feature, and prove new files Swift 6-clean by script.
+- **Finding:** `SpeechService`, `AudioSessionCoordinator` and the MiniMax pipeline already provide the single synthesizer, the single session owner and cached MiniMax speech. Implication: extend them; do not build parallel ones.
+- **Finding:** on this Mac `SpeechTranscriber.installedLocales` lists `en-US` and `zh-CN` while `AssetInventory.status(forModules:)` reports `.supported` for both. Implication: readiness is decided by `status(forModules:)`.
+- **Finding:** `TranslationSession.Strategy` (OS 26.4+). `.lowLatency` took 20–50 ms per sentence, `.highFidelity` and the default initializer 265–520 ms; the first call in a process took 0.7–1.5 s. Implication: choose the strategy explicitly, warm the sessions on entry, and consider the adaptive rule in plan §5 row H.
+- **Finding:** `zh-CN` has only default-quality system voices on this Mac. Implication: the MiniMax option matters for Mandarin output, and the screen should say when a better system voice can be downloaded.
+- **Finding:** MiniMax streaming returns hex chunks with `data.status` 1 or 2, and the final chunk repeats the audio unless `stream_options.exclude_aggregated_audio` is set. The stream framing and the formats allowed while streaming were not stated on the pages read.
+- **Decisions (defaults, pending approval):** the seven rows of plan §2.
+- **Assumption A1:** `SpeechAnalyzer` runs inside the sandboxed macOS app for both locales. Falsify with the Phase 0 self-test.
+- **Assumption A2:** speech-recognition authorization is required in addition to the microphone. Falsify in Phase 0; if it is not required for `SpeechTranscriber`, request it only for the `DictationTranscriber` fallback.
+- **Assumption A3:** the iOS 27.2 simulator cannot run `SpeechTranscriber` or Translation. Falsify with the Phase 0 simulator probe.
+- **Assumption A4:** the MiniMax HTTP stream is event-stream framed and allows MP3. Falsify with one live request in Phase 0.
+- **Assumption A5:** activating the iOS audio session costs enough per press to justify the pin (estimated 100–300 ms; not measured). Falsify with signposts on a device.
+- **Assumption A6:** a pinned but idle `.playAndRecord` session does not show the microphone indicator. Falsify on a device.
+
+### 6) Issues, Mistakes, Recoveries
+- A grep aborted because zsh expanded an unquoted `--include=*.swift`. Re-ran with the pattern quoted. Guardrail: quote glob arguments in zsh.
+- The MiniMax WebSocket reference page could not be fetched. The guide page covered the event names; everything else about that page is marked "not stated" in the plan rather than assumed.
+- Issues found in existing code, recorded as follow-ups and not fixed here (plan §3.5): the Live Speech engine cancels its results task right after finalizing; finalized segments are joined with a space in every language; readiness is judged by `installedLocales`; visionOS is listed as supported although Translation is unavailable there. None was reproduced.
+
+### 7) Scenario-Focused Resolution Tests
+No feature scenario exists yet. The two probes that back the plan's numbers, both read-only command-line programs built with `swiftc -parse-as-library`:
+
+```
+== Speech ==
+SpeechTranscriber.isAvailable: true
+SpeechTranscriber.supportedLocales count: 45
+SpeechTranscriber.installedLocales: ["en-AU", "en-CA", "en-GB", "en-IE", "en-IN", "en-NZ", "en-SG", "en-US", "en-ZA", "ja-JP", "zh-CN", "zh-TW"]
+DictationTranscriber.supportedLocales count: 54
+DictationTranscriber.installedLocales: ["en-GB", "en-US", "ja-JP", "zh-CN", "zh-TW"]
+AssetInventory.maximumReservedLocales: 5
+AssetInventory.reservedLocales: []
+locale en-US: speech -> en-US | dictation -> en-US
+   asset status: supported | analyzer format: 1 ch, 16000 Hz, Int16
+locale zh-CN: speech -> zh-CN | dictation -> zh-CN
+   asset status: supported | analyzer format: 1 ch, 16000 Hz, Int16
+locale zh-Hans-CN: speech -> zh-CN | dictation -> zh-CN
+locale zh_CN: speech -> zh-CN | dictation -> zh-CN
+== Translation ==
+status en -> zh-Hans: installed          status zh-Hans -> en: installed
+status en-US -> zh-Hans-CN: installed    status zh-Hans-CN -> en-US: installed
+status en-US -> zh-CN: installed         status zh-CN -> en-US: installed
+preferredStrategy == lowLatency: false
+strategy lowLatency en -> zh-Hans: installed
+strategy highFidelity en -> zh-Hans: installed
+== Voices ==
+en-US: 29 voices — quality 1: 28, quality 2: 1
+zh-CN: 9 voices — quality 1: 9
+
+== translation timing, three sentences per direction, first pass then warm pass (ms) ==
+default      en->zh-Hans: first [1540, 535, 647]  warm [275, 494, 459]
+default      zh-Hans->en: first [387, 483, 517]   warm [319, 462, 516]
+lowLatency   en->zh-Hans: first [701, 64, 79]     warm [23, 30, 48]
+lowLatency   zh-Hans->en: first [83, 48, 50]      warm [20, 34, 42]
+highFidelity en->zh-Hans: first [466, 485, 445]   warm [265, 484, 444]
+highFidelity zh-Hans->en: first [379, 466, 513]   warm [311, 471, 510]
+```
+
+The probe sources were kept in the session scratchpad. Phase 0 commits them as a guarded script so the numbers can be re-measured.
+
+### 8) Verification Summary
+- `python3 -m json.tool feature_list.json` passes; the file has 29 entries, 6 failing, and the first 23 are byte-identical to before.
+- No code changed, so no build and no `zsh init.sh` run this iteration.
+
+### 9) Remaining Work & Next Steps
+- **Blocker:** plan approval, with the seven decisions in plan §2.
+- **Risks:** plan §8.
+- **Next working interval:** Phase 0. Record baseline builds and `init.sh`; probe the iOS 27.2 simulator; run `SpeechAnalyzer` in the macOS app on `say`-generated English and Mandarin clips; make one credential-safe MiniMax streaming request. Done when each of A1–A4 above has a recorded result.
+- **Prompt for the next session:** "Read `handoff.md` Iteration 37 and `docs/handoff/push-to-talk-interpreter/PLANS.md` on branch `nov-19-2026-push-to-talk-speech-translation`. The plan is approved with these decisions: <list>. Start Phase 0 and continue in order, one commit per phase."
+
+### 10) Updates
+- 2026-11-18T17:51Z: Iteration 37 opened. Branch created, inspection and probes done, plan written, harness updated. Awaiting approval.

@@ -320,5 +320,89 @@
       "Open Statistics and verify the Words Learned legend sits inside its card"
     ],
     "passes": true
+  },
+  {
+    "id": "feature_interpreter_push_to_talk",
+    "category": "functional",
+    "description": "Interpreter screen: holding 'Hold for English' or '按住说中文' streams the microphone into SpeechAnalyzer and shows the live transcript; releasing finalizes it, translates it on the device, and speaks the translation in the other language.",
+    "steps": [
+      "On macOS or an iOS 26+ device open Interpreter from the Study hub, the Translate toolbar, or the macOS sidebar",
+      "Hold 'Hold for English', say 'Where is the train station?', and verify the transcript appears while speaking",
+      "Release and verify the state moves through finalizing, translating and speaking, and Mandarin is spoken",
+      "Hold '按住说中文', say '请问洗手间在哪里', release, and verify English is spoken",
+      "Verify both turns appear in the conversation with source text, translation and a working replay button",
+      "Verify the turns appear in Translation History",
+      "Run zsh scripts/test-interpreter.sh and verify the transcript-assembler and state-machine checks pass"
+    ],
+    "passes": false
+  },
+  {
+    "id": "feature_interpreter_model_readiness",
+    "category": "functional",
+    "description": "The Interpreter checks the en-US and zh-CN speech assets and the English ⇄ Chinese translation pair when it opens, shows a banner with a one-tap download and progress when anything is missing, and never records before everything is ready.",
+    "steps": [
+      "Open Interpreter with a speech locale or the translation pair not installed",
+      "Verify the banner names what is missing and both hold buttons are disabled",
+      "Tap Download and verify speech-model progress is shown and Apple's translation download prompt appears",
+      "After installation verify the banner disappears and the buttons enable",
+      "Deny microphone access and verify a message with an Open Settings action instead of a silent failure",
+      "In the iOS Simulator verify the translation is labeled [Simulator Mock Translation] and a full turn still completes"
+    ],
+    "passes": false
+  },
+  {
+    "id": "feature_interpreter_voice_engine",
+    "category": "functional",
+    "description": "The spoken reply uses Apple's on-device voice or a MiniMax AI voice, chosen in the Interpreter's Voice menu and in AI Audio settings independently of the app-wide AI Audio switch, with cache-first synthesis and fallback to the system voice.",
+    "steps": [
+      "Choose the Apple voice and verify a turn is spoken with the best installed voice while offline",
+      "Choose MiniMax with a configured key and verify the reply uses the configured MiniMax voice",
+      "Repeat the same phrase and verify it replays from the saved-audio cache without a new request",
+      "Remove the MiniMax key and verify the reply falls back to the system voice with a notice when fallback is on",
+      "Turn fallback off and verify the turn shows an error with Retry instead",
+      "Verify the app-wide AI Audio switch still governs read-aloud on other screens"
+    ],
+    "passes": false
+  },
+  {
+    "id": "feature_interpreter_cancellation_and_recovery",
+    "category": "reliability",
+    "description": "Push-to-talk ends cleanly on every path: a press under 250 ms or an empty transcript returns to idle without translating or speaking; a press during a reply stops speech and starts listening; leaving the app or window cancels capture; a stalled finalization cannot hang the screen.",
+    "steps": [
+      "Tap a hold button briefly and verify no translation or speech occurs and the state returns to idle",
+      "Hold without speaking, release, and verify the state returns to idle with a hint",
+      "Press a hold button while a reply is being spoken and verify speech stops at once and listening starts",
+      "While holding, switch apps on iOS or click another window on macOS and verify capture is cancelled and the microphone is released",
+      "Run zsh scripts/test-interpreter.sh and verify the cancellation, stale-turn, watchdog and failure scenarios pass",
+      "Verify the microphone indicator is off whenever no button is held"
+    ],
+    "passes": false
+  },
+  {
+    "id": "feature_interpreter_cross_platform_controls",
+    "category": "ui",
+    "description": "Hold-to-speak works by touch on iOS, by mouse press-and-hold and by holding Space on macOS, and as a start/stop toggle for VoiceOver, with distinct visual feedback while recording, processing and speaking.",
+    "steps": [
+      "On iPhone hold a button, drift the finger off it, and verify recording continues until release",
+      "On macOS click and hold a button with the mouse and verify recording lasts for the hold",
+      "On macOS hold Space and verify the selected direction records until the key is released",
+      "With VoiceOver on, double-tap a button to start and again to stop, and verify a full turn",
+      "Verify each button shows distinct states for recording, processing and speaking, in light and dark mode",
+      "Switch the app language to 中文 and verify every Interpreter label is translated"
+    ],
+    "passes": false
+  },
+  {
+    "id": "feature_interpreter_latency_optimizations",
+    "category": "functional",
+    "description": "The Interpreter keeps each turn fast: assets and permissions are checked on entry, the iOS audio session stays configured while the screen is open, an analyzer is prepared for each direction before the press, translation sessions are warmed, and every turn records its stage timings.",
+    "steps": [
+      "Open Interpreter and verify the first press starts listening without a model-loading pause",
+      "Run the macOS self-test and verify it prints press-to-live, release-to-transcript, translation and first-audio timings for both directions",
+      "Verify release to first audio is at most 0.9 s with the Apple voice on the self-test clips on the development Mac",
+      "Verify the first turn after opening is not more than 200 ms slower than later turns",
+      "For each Phase 7 optimization verify handoff.md records before and after timings and whether it was kept"
+    ],
+    "passes": false
   }
 ]

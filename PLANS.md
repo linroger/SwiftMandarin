@@ -1,5 +1,21 @@
 # SwiftMandarin implementation plans
 
+## Active slice: Push-to-talk interpreter (English ⇄ Mandarin speech-to-speech)
+
+**Created (UTC):** 2026-11-18T17:51Z
+
+**Branch:** `nov-19-2026-push-to-talk-speech-translation`
+
+**Base:** `main` at `b78a8f6`
+
+**Approval:** Awaiting approval. No feature code has been written.
+
+The full plan — inspection findings, design, optimizations, phases, verification and risks — is in [`docs/handoff/push-to-talk-interpreter/PLANS.md`](docs/handoff/push-to-talk-interpreter/PLANS.md). The slice adds an Interpreter screen with two hold-to-speak buttons (**Hold for English** / **按住说中文**). Held, a button streams the microphone into `SpeechAnalyzer` and shows the live transcript; released, the transcript is finalized, translated on the device with the Translation framework, and spoken with either Apple's on-device voice or a MiniMax voice, chosen in the screen and in AI Audio settings.
+
+The inspection changed three assumptions in the brief. The app's iOS floor is 17.0, so the feature is availability-gated at iOS 26 rather than raising the floor. The target compiles in Swift 5 mode, so new pipeline files are proven Swift 6-clean by a script, as existing contract slices are. And the app already has a single speech router (`SpeechService`), a single audio-session owner (`AudioSessionCoordinator`) and a MiniMax pipeline with a persistent cache, so the feature extends those instead of adding parallel ones.
+
+Two measurements on this Mac drive the optimization work: the low-latency translation strategy (OS 26.4+) takes 20–50 ms per sentence against 265–520 ms for the default high-fidelity one, and `AssetInventory.status(forModules:)` reports `.supported` for locales that `installedLocales` lists as installed, so readiness must be decided by the former.
+
 ## Active slice: Live MiniMax audio catalog and batch audio
 
 **Created (UTC):** 2026-07-20T22:07:52Z
