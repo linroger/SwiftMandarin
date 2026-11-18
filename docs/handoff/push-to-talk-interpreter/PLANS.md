@@ -345,3 +345,11 @@ Rows G, H, J, K, N and O from §5, one commit each, each kept or dropped by its 
 - An App Intent or Siri phrase for the Interpreter.
 - Pinyin and word-by-word study inside turns; an "Open in Translate" action is the natural follow-up.
 - Automatic language detection, hands-free mode, and a face-to-face layout.
+
+## 10. Sources
+
+- Speech, Translation and `_Translation_SwiftUI` `.swiftinterface` files and the AVFAudio headers in the iOS 27.2 SDK of Xcode 27.2 (primary source for every signature in §3.3).
+- Apple documentation: [SpeechAnalyzer](https://developer.apple.com/documentation/speech/speechanalyzer), [SpeechTranscriber](https://developer.apple.com/documentation/speech/speechtranscriber), [TranslationSession](https://developer.apple.com/documentation/translation/translationsession).
+- MiniMax: [T2A HTTP reference](https://platform.minimax.io/docs/api-reference/speech-t2a-http), [T2A WebSocket guide](https://platform.minimax.io/docs/guides/speech-t2a-websocket). The WebSocket reference page could not be fetched.
+- Simulator limits, as reported by developers: [SpeechTranscriber on Simulator](https://developer.apple.com/forums/thread/802969), [SpeechTranscriber not supported](https://developer.apple.com/forums/thread/806765), [WWDC24 "Meet the Translation API" notes](https://wwdcnotes.com/documentation/wwdc24-10117-meet-the-translation-api/).
+- Translation failing although the status is installed: [Apple Developer Forums thread 813109](https://developer.apple.com/forums/thread/813109).
